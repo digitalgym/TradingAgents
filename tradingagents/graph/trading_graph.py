@@ -21,6 +21,7 @@ from tradingagents.agents.utils.agent_states import (
     RiskDebateState,
 )
 from tradingagents.dataflows.config import set_config
+from tradingagents.dataflows.mt5_data import get_asset_type
 
 # Import the new abstract tool methods from agent_utils
 from tradingagents.agents.utils.agent_utils import (
@@ -48,19 +49,31 @@ class TradingAgentsGraph:
 
     def __init__(
         self,
-        selected_analysts=["market", "social", "news", "fundamentals"],
+        selected_analysts=None,
         debug=False,
         config: Dict[str, Any] = None,
     ):
         """Initialize the trading agents graph and components.
 
         Args:
-            selected_analysts: List of analyst types to include
+            selected_analysts: List of analyst types to include. If None, auto-selects based on asset_type.
+                             For commodities/forex: ["market", "social", "news"]
+                             For stocks: ["market", "social", "news", "fundamentals"]
             debug: Whether to run in debug mode
             config: Configuration dictionary. If None, uses default config
         """
         self.debug = debug
         self.config = config or DEFAULT_CONFIG
+        
+        # Auto-select analysts based on asset type if not specified
+        if selected_analysts is None:
+            asset_type = self.config.get("asset_type", "auto")
+            if asset_type in ["commodity", "forex"]:
+                selected_analysts = ["market", "social", "news"]
+            else:
+                selected_analysts = ["market", "social", "news", "fundamentals"]
+        
+        self.selected_analysts = selected_analysts
 
         # Update the interface's config
         set_config(self.config)
@@ -72,9 +85,13 @@ class TradingAgentsGraph:
         )
 
         # Initialize LLMs
-        if self.config["llm_provider"].lower() == "openai" or self.config["llm_provider"] == "ollama" or self.config["llm_provider"] == "openrouter":
-            self.deep_thinking_llm = ChatOpenAI(model=self.config["deep_think_llm"], base_url=self.config["backend_url"])
-            self.quick_thinking_llm = ChatOpenAI(model=self.config["quick_think_llm"], base_url=self.config["backend_url"])
+        if self.config["llm_provider"].lower() in ["openai", "ollama", "openrouter", "xai", "grok"]:
+            # For xAI/Grok, use XAI_API_KEY env var
+            api_key = None
+            if self.config["llm_provider"].lower() in ["xai", "grok"]:
+                api_key = os.getenv("XAI_API_KEY")
+            self.deep_thinking_llm = ChatOpenAI(model=self.config["deep_think_llm"], base_url=self.config["backend_url"], api_key=api_key)
+            self.quick_thinking_llm = ChatOpenAI(model=self.config["quick_think_llm"], base_url=self.config["backend_url"], api_key=api_key)
         elif self.config["llm_provider"].lower() == "anthropic":
             self.deep_thinking_llm = ChatAnthropic(model=self.config["deep_think_llm"], base_url=self.config["backend_url"])
             self.quick_thinking_llm = ChatAnthropic(model=self.config["quick_think_llm"], base_url=self.config["backend_url"])
@@ -84,12 +101,19 @@ class TradingAgentsGraph:
         else:
             raise ValueError(f"Unsupported LLM provider: {self.config['llm_provider']}")
         
-        # Initialize memories
-        self.bull_memory = FinancialSituationMemory("bull_memory", self.config)
-        self.bear_memory = FinancialSituationMemory("bear_memory", self.config)
-        self.trader_memory = FinancialSituationMemory("trader_memory", self.config)
-        self.invest_judge_memory = FinancialSituationMemory("invest_judge_memory", self.config)
-        self.risk_manager_memory = FinancialSituationMemory("risk_manager_memory", self.config)
+        # Initialize memories (requires OpenAI API for embeddings)
+        if self.config.get("use_memory", True):
+            self.bull_memory = FinancialSituationMemory("bull_memory", self.config)
+            self.bear_memory = FinancialSituationMemory("bear_memory", self.config)
+            self.trader_memory = FinancialSituationMemory("trader_memory", self.config)
+            self.invest_judge_memory = FinancialSituationMemory("invest_judge_memory", self.config)
+            self.risk_manager_memory = FinancialSituationMemory("risk_manager_memory", self.config)
+        else:
+            self.bull_memory = None
+            self.bear_memory = None
+            self.trader_memory = None
+            self.invest_judge_memory = None
+            self.risk_manager_memory = None
 
         # Create tool nodes
         self.tool_nodes = self._create_tool_nodes()
@@ -118,7 +142,7 @@ class TradingAgentsGraph:
         self.log_states_dict = {}  # date to full state dict
 
         # Set up the graph
-        self.graph = self.graph_setup.setup_graph(selected_analysts)
+        self.graph = self.graph_setup.setup_graph(self.selected_analysts)
 
     def _create_tool_nodes(self) -> Dict[str, ToolNode]:
         """Create tool nodes for different data sources using abstract methods."""

@@ -17,13 +17,29 @@ DEFAULT_CONFIG = {
     "max_debate_rounds": 1,
     "max_risk_discuss_rounds": 1,
     "max_recur_limit": 100,
+    # Memory settings
+    "use_memory": True,
+    # Embedding provider: "auto", "local", "openai", "ollama"
+    # "auto" = local for xAI/grok, OpenAI for others
+    # "local" = sentence-transformers (no API needed)
+    "embedding_provider": "auto",
+    "local_embedding_model": "all-MiniLM-L6-v2",  # Model for local embeddings
     # Data vendor configuration
     # Category-level configuration (default for all tools in category)
     "data_vendors": {
-        "core_stock_apis": "yfinance",       # Options: yfinance, alpha_vantage, local
+        "core_stock_apis": "yfinance",       # Options: yfinance, alpha_vantage, local, mt5
         "technical_indicators": "yfinance",  # Options: yfinance, alpha_vantage, local
         "fundamental_data": "alpha_vantage", # Options: openai, alpha_vantage, local
         "news_data": "alpha_vantage",        # Options: openai, alpha_vantage, google, local
+    },
+    # Asset type: stock, commodity, forex (affects which analysts are used)
+    "asset_type": "auto",  # Options: auto, stock, commodity, forex
+    # Commodity symbol mappings for convenience
+    "commodity_symbols": {
+        "gold": "XAUUSD",
+        "silver": "XAGUSD",
+        "platinum": "XPTUSD",
+        "copper": "COPPER-C",
     },
     # Tool-level configuration (takes precedence over category-level)
     "tool_vendors": {

@@ -1,3 +1,4 @@
+import os
 import chromadb
 from chromadb.config import Settings
 from openai import OpenAI
@@ -5,21 +6,57 @@ from openai import OpenAI
 
 class FinancialSituationMemory:
     def __init__(self, name, config):
-        if config["backend_url"] == "http://localhost:11434/v1":
+        self.llm_provider = config.get("llm_provider", "openai").lower()
+        backend_url = config.get("backend_url", "https://api.openai.com/v1")
+        embedding_provider = config.get("embedding_provider", "auto").lower()
+        
+        # Determine embedding provider
+        # "auto" = use local for xAI/grok, OpenAI for others
+        # "local" = always use sentence-transformers
+        # "openai" = always use OpenAI API
+        # "ollama" = use Ollama local embeddings
+        
+        if embedding_provider == "local" or (embedding_provider == "auto" and self.llm_provider in ["xai", "grok"]):
+            # Use local sentence-transformers (no API needed)
+            self._use_local = True
+            self._local_model = None  # Lazy load
+            self._local_model_name = config.get("local_embedding_model", "all-MiniLM-L6-v2")
+            self.client = None
+        elif embedding_provider == "ollama" or backend_url == "http://localhost:11434/v1":
+            # Ollama local
+            self._use_local = False
             self.embedding = "nomic-embed-text"
+            self.client = OpenAI(base_url="http://localhost:11434/v1")
         else:
+            # Default to OpenAI for embeddings
+            self._use_local = False
             self.embedding = "text-embedding-3-small"
-        self.client = OpenAI(base_url=config["backend_url"])
+            self.client = OpenAI(
+                base_url="https://api.openai.com/v1",
+                api_key=os.getenv("OPENAI_API_KEY")
+            )
+        
         self.chroma_client = chromadb.Client(Settings(allow_reset=True))
         self.situation_collection = self.chroma_client.create_collection(name=name)
 
+    def _get_local_model(self):
+        """Lazy load the sentence-transformers model."""
+        if self._local_model is None:
+            from sentence_transformers import SentenceTransformer
+            self._local_model = SentenceTransformer(self._local_model_name)
+        return self._local_model
+
     def get_embedding(self, text):
-        """Get OpenAI embedding for a text"""
-        
-        response = self.client.embeddings.create(
-            model=self.embedding, input=text
-        )
-        return response.data[0].embedding
+        """Get embedding for a text"""
+        if self._use_local:
+            model = self._get_local_model()
+            embedding = model.encode(text, convert_to_numpy=True)
+            return embedding.tolist()
+        else:
+            response = self.client.embeddings.create(
+                model=self.embedding, input=text
+            )
+            return response.data[0].embedding
 
     def add_situations(self, situations_and_advice):
         """Add financial situations and their corresponding advice. Parameter is a list of tuples (situation, rec)"""
