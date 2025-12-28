@@ -133,6 +133,14 @@ def select_shallow_thinking_agent(provider) -> str:
             ("GPT-4.1-mini - Compact model with good performance", "gpt-4.1-mini"),
             ("GPT-4o - Standard model with solid capabilities", "gpt-4o"),
         ],
+        "xai (grok)": [
+            ("Grok 4.1 Fast Reasoning - Best tool-calling with 2M context", "grok-4-1-fast-reasoning"),
+            ("Grok 4.1 Fast Non-Reasoning - Fast without reasoning", "grok-4-1-fast-non-reasoning"),
+            ("Grok 4 Fast Reasoning - 2M context with reasoning", "grok-4-fast-reasoning"),
+            ("Grok 4 Fast Non-Reasoning - 2M context without reasoning", "grok-4-fast-non-reasoning"),
+            ("Grok Code Fast - Speedy reasoning for agentic coding", "grok-code-fast-1"),
+            ("Grok 3 Mini - Fast and efficient for quick tasks", "grok-3-mini"),
+        ],
         "anthropic": [
             ("Claude Haiku 3.5 - Fast inference and standard capabilities", "claude-3-5-haiku-latest"),
             ("Claude Sonnet 3.5 - Highly capable standard model", "claude-3-5-sonnet-latest"),
@@ -194,6 +202,13 @@ def select_deep_thinking_agent(provider) -> str:
             ("o3 - Full advanced reasoning model", "o3"),
             ("o1 - Premier reasoning and problem-solving model", "o1"),
         ],
+        "xai (grok)": [
+            ("Grok 4.1 Fast Reasoning - 2M context, best tool-calling", "grok-4-1-fast-reasoning"),
+            ("Grok 4 Fast Reasoning - 2M context with reasoning", "grok-4-fast-reasoning"),
+            ("Grok 4 - 256K context, powerful reasoning", "grok-4-0709"),
+            ("Grok 4 Fast Non-Reasoning - 2M context, fast", "grok-4-fast-non-reasoning"),
+            ("Grok 3 Mini - Compact but capable", "grok-3-mini"),
+        ],
         "anthropic": [
             ("Claude Haiku 3.5 - Fast inference and standard capabilities", "claude-3-5-haiku-latest"),
             ("Claude Sonnet 3.5 - Highly capable standard model", "claude-3-5-sonnet-latest"),
@@ -244,6 +259,7 @@ def select_llm_provider() -> tuple[str, str]:
     # Define OpenAI api options with their corresponding endpoints
     BASE_URLS = [
         ("OpenAI", "https://api.openai.com/v1"),
+        ("xAI (Grok)", "https://api.x.ai/v1"),
         ("Anthropic", "https://api.anthropic.com/"),
         ("Google", "https://generativelanguage.googleapis.com/v1"),
         ("Openrouter", "https://openrouter.ai/api/v1"),
@@ -274,3 +290,128 @@ def select_llm_provider() -> tuple[str, str]:
     print(f"You selected: {display_name}\tURL: {url}")
     
     return display_name, url
+
+
+def select_asset_type() -> str:
+    """Select the asset type (stock or commodity)."""
+    ASSET_TYPES = [
+        ("Stock - Equities like NVDA, AAPL, SPY", "stock"),
+        ("Commodity - Gold (XAUUSD), Silver (XAGUSD), Platinum (XPTUSD), Copper", "commodity"),
+    ]
+    
+    choice = questionary.select(
+        "Select Asset Type:",
+        choices=[
+            questionary.Choice(display, value=value)
+            for display, value in ASSET_TYPES
+        ],
+        instruction="\n- Use arrow keys to navigate\n- Press Enter to select",
+        style=questionary.Style(
+            [
+                ("selected", "fg:cyan noinherit"),
+                ("highlighted", "fg:cyan noinherit"),
+                ("pointer", "fg:cyan noinherit"),
+            ]
+        ),
+    ).ask()
+    
+    if choice is None:
+        console.print("\n[red]No asset type selected. Exiting...[/red]")
+        exit(1)
+    
+    return choice
+
+
+def select_data_vendor(category: str, is_commodity: bool = False) -> str:
+    """Select data vendor for a specific category."""
+    
+    VENDOR_OPTIONS = {
+        "core_stock_apis": {
+            "stock": [
+                ("yfinance - Free Yahoo Finance data", "yfinance"),
+                ("Alpha Vantage - Premium market data", "alpha_vantage"),
+                ("Local - Cached/offline data", "local"),
+            ],
+            "commodity": [
+                ("MT5 - MetaTrader 5 (requires MT5 terminal)", "mt5"),
+                ("yfinance - Yahoo Finance (limited commodity support)", "yfinance"),
+            ],
+        },
+        "news_data": {
+            "stock": [
+                ("Alpha Vantage - News from Alpha Vantage API", "alpha_vantage"),
+                ("Google - Google News search", "google"),
+                ("xAI - Grok web search (real-time)", "xai"),
+                ("OpenAI - AI-generated news summary", "openai"),
+            ],
+            "commodity": [
+                ("xAI - Grok web search (real-time, recommended)", "xai"),
+                ("Google - Google News search", "google"),
+                ("Alpha Vantage - News from Alpha Vantage API", "alpha_vantage"),
+            ],
+        },
+    }
+    
+    asset_key = "commodity" if is_commodity else "stock"
+    options = VENDOR_OPTIONS.get(category, {}).get(asset_key, [])
+    
+    if not options:
+        return "yfinance"  # Default fallback
+    
+    choice = questionary.select(
+        f"Select data vendor for [{category}]:",
+        choices=[
+            questionary.Choice(display, value=value)
+            for display, value in options
+        ],
+        instruction="\n- Use arrow keys to navigate\n- Press Enter to select",
+        style=questionary.Style(
+            [
+                ("selected", "fg:blue noinherit"),
+                ("highlighted", "fg:blue noinherit"),
+                ("pointer", "fg:blue noinherit"),
+            ]
+        ),
+    ).ask()
+    
+    if choice is None:
+        return options[0][1]  # Return first option as default
+    
+    return choice
+
+
+def select_sentiment_source(llm_provider: str) -> str:
+    """Select sentiment data source."""
+    
+    SENTIMENT_OPTIONS = [
+        ("Local - Finnhub insider sentiment", "local"),
+        ("xAI - X (Twitter) sentiment via Grok", "xai"),
+    ]
+    
+    # If using xAI, recommend xAI sentiment
+    if "xai" in llm_provider.lower():
+        SENTIMENT_OPTIONS = [
+            ("xAI - X (Twitter) sentiment via Grok (recommended)", "xai"),
+            ("Local - Finnhub insider sentiment", "local"),
+        ]
+    
+    choice = questionary.select(
+        "Select Sentiment Data Source:",
+        choices=[
+            questionary.Choice(display, value=value)
+            for display, value in SENTIMENT_OPTIONS
+        ],
+        instruction="\n- Use arrow keys to navigate\n- Press Enter to select",
+        style=questionary.Style(
+            [
+                ("selected", "fg:green noinherit"),
+                ("highlighted", "fg:green noinherit"),
+                ("pointer", "fg:green noinherit"),
+            ]
+        ),
+    ).ask()
+    
+    if choice is None:
+        return "local"
+    
+    return choice

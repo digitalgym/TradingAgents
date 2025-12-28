@@ -177,10 +177,10 @@ COMMODITY_CONFIG.update({
     },
     # Set asset type to commodity (auto-excludes fundamentals analyst)
     "asset_type": "commodity",
-    # LLM settings - Using xAI Grok
+    # LLM settings - Using xAI Grok (latest models)
     "llm_provider": "xai",
-    "deep_think_llm": "grok-3-latest",
-    "quick_think_llm": "grok-3-mini-latest",
+    "deep_think_llm": "grok-4-1-fast-reasoning",   # Best tool-calling with 2M context
+    "quick_think_llm": "grok-4-fast-non-reasoning", # Fast 2M context without reasoning
     "backend_url": "https://api.x.ai/v1",
     # Enable memory with local embeddings (no API needed)
     "use_memory": True,
@@ -397,7 +397,7 @@ def main():
     # You can change this to any of: XAUUSD, XAGUSD, XPTUSD, COPPER-C
     # Or use aliases: gold, silver, platinum, copper
     
-    symbol = "XAGUSD"  # Silver
+    symbol = "XPTUSD"  # Silver
     trade_date = "2025-12-26"  # Recent trading date
     
     try:

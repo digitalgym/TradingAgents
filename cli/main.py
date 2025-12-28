@@ -27,7 +27,11 @@ from rich.rule import Rule
 from tradingagents.graph.trading_graph import TradingAgentsGraph
 from tradingagents.default_config import DEFAULT_CONFIG
 from cli.models import AnalystType
-from cli.utils import *
+from cli.utils import (
+    get_ticker, get_analysis_date, select_analysts, select_research_depth,
+    select_shallow_thinking_agent, select_deep_thinking_agent, select_llm_provider,
+    select_asset_type, select_data_vendor, select_sentiment_source
+)
 
 console = Console()
 
@@ -429,76 +433,139 @@ def get_user_selections():
             box_content += f"\n[dim]Default: {default}[/dim]"
         return Panel(box_content, border_style="blue", padding=(1, 2))
 
-    # Step 1: Ticker symbol
+    # Step 1: Asset Type (Stock or Commodity)
     console.print(
         create_question_box(
-            "Step 1: Ticker Symbol", "Enter the ticker symbol to analyze", "SPY"
+            "Step 1: Asset Type", "Select whether you're analyzing stocks or commodities"
         )
     )
-    selected_ticker = get_ticker()
+    selected_asset_type = select_asset_type()
+    is_commodity = selected_asset_type == "commodity"
+    
+    # Step 2: Ticker symbol
+    if is_commodity:
+        ticker_prompt = "Enter commodity symbol (XAUUSD=Gold, XAGUSD=Silver, XPTUSD=Platinum)"
+        ticker_default = "XAUUSD"
+    else:
+        ticker_prompt = "Enter the ticker symbol to analyze"
+        ticker_default = "SPY"
+    
+    console.print(
+        create_question_box(
+            "Step 2: Ticker Symbol", ticker_prompt, ticker_default
+        )
+    )
+    selected_ticker = get_ticker(default=ticker_default)
 
-    # Step 2: Analysis date
+    # Step 3: Analysis date
     default_date = datetime.datetime.now().strftime("%Y-%m-%d")
     console.print(
         create_question_box(
-            "Step 2: Analysis Date",
+            "Step 3: Analysis Date",
             "Enter the analysis date (YYYY-MM-DD)",
             default_date,
         )
     )
     analysis_date = get_analysis_date()
 
-    # Step 3: Select analysts
+    # Step 4: Select analysts (auto-exclude Fundamentals for commodities)
     console.print(
         create_question_box(
-            "Step 3: Analysts Team", "Select your LLM analyst agents for the analysis"
+            "Step 4: Analysts Team", 
+            "Select your LLM analyst agents for the analysis" + 
+            (" (Fundamentals excluded for commodities)" if is_commodity else "")
         )
     )
     selected_analysts = select_analysts()
+    
+    # Auto-remove Fundamentals analyst for commodities
+    if is_commodity:
+        selected_analysts = [a for a in selected_analysts if a != AnalystType.FUNDAMENTALS]
+        if not selected_analysts:
+            # Ensure at least one analyst
+            selected_analysts = [AnalystType.MARKET, AnalystType.NEWS]
+    
     console.print(
         f"[green]Selected analysts:[/green] {', '.join(analyst.value for analyst in selected_analysts)}"
     )
 
-    # Step 4: Research depth
+    # Step 5: Research depth
     console.print(
         create_question_box(
-            "Step 4: Research Depth", "Select your research depth level"
+            "Step 5: Research Depth", "Select your research depth level"
         )
     )
     selected_research_depth = select_research_depth()
 
-    # Step 5: OpenAI backend
+    # Step 6: LLM Provider
     console.print(
         create_question_box(
-            "Step 5: OpenAI backend", "Select which service to talk to"
+            "Step 6: LLM Provider", "Select which LLM service to use"
         )
     )
     selected_llm_provider, backend_url = select_llm_provider()
     
-    # Step 6: Thinking agents
+    # Step 7: Thinking agents
     console.print(
         create_question_box(
-            "Step 6: Thinking Agents", "Select your thinking agents for analysis"
+            "Step 7: Thinking Agents", "Select your thinking agents for analysis"
         )
     )
     selected_shallow_thinker = select_shallow_thinking_agent(selected_llm_provider)
     selected_deep_thinker = select_deep_thinking_agent(selected_llm_provider)
 
+    # Step 8: Data vendors (for commodities or if user wants to customize)
+    data_vendors = {}
+    tool_vendors = {}
+    
+    if is_commodity:
+        console.print(
+            create_question_box(
+                "Step 8: Data Sources", "Select data sources for commodity analysis"
+            )
+        )
+        # Price data vendor
+        data_vendors["core_stock_apis"] = select_data_vendor("core_stock_apis", is_commodity=True)
+        # News data vendor
+        data_vendors["news_data"] = select_data_vendor("news_data", is_commodity=True)
+        # Technical indicators - use yfinance for commodities
+        data_vendors["technical_indicators"] = "yfinance"
+        # Fundamentals not used for commodities
+        data_vendors["fundamental_data"] = "openai"
+        
+        # Sentiment source
+        console.print(
+            create_question_box(
+                "Step 9: Sentiment Source", "Select sentiment data source"
+            )
+        )
+        sentiment_source = select_sentiment_source(selected_llm_provider)
+        if sentiment_source == "xai":
+            tool_vendors["get_insider_sentiment"] = "xai"
+
+    # Normalize LLM provider name for the graph
+    llm_provider_normalized = selected_llm_provider.lower()
+    if "xai" in llm_provider_normalized or "grok" in llm_provider_normalized:
+        llm_provider_normalized = "xai"
+    
     return {
         "ticker": selected_ticker,
         "analysis_date": analysis_date,
         "analysts": selected_analysts,
         "research_depth": selected_research_depth,
-        "llm_provider": selected_llm_provider.lower(),
+        "llm_provider": llm_provider_normalized,
         "backend_url": backend_url,
         "shallow_thinker": selected_shallow_thinker,
         "deep_thinker": selected_deep_thinker,
+        "asset_type": selected_asset_type,
+        "data_vendors": data_vendors,
+        "tool_vendors": tool_vendors,
     }
 
 
-def get_ticker():
+def get_ticker(default="SPY"):
     """Get ticker symbol from user input."""
-    return typer.prompt("", default="SPY")
+    return typer.prompt("", default=default)
 
 
 def get_analysis_date():
@@ -747,6 +814,17 @@ def run_analysis():
     config["deep_think_llm"] = selections["deep_thinker"]
     config["backend_url"] = selections["backend_url"]
     config["llm_provider"] = selections["llm_provider"].lower()
+    
+    # Apply asset type and data vendors for commodities
+    if selections.get("asset_type") == "commodity":
+        config["asset_type"] = "commodity"
+        if selections.get("data_vendors"):
+            config["data_vendors"] = selections["data_vendors"]
+        if selections.get("tool_vendors"):
+            config["tool_vendors"] = selections["tool_vendors"]
+        # Enable local embeddings for memory (no API needed)
+        config["use_memory"] = True
+        config["embedding_provider"] = "local"
 
     # Initialize the graph
     graph = TradingAgentsGraph(
@@ -768,7 +846,7 @@ def run_analysis():
             func(*args, **kwargs)
             timestamp, message_type, content = obj.messages[-1]
             content = content.replace("\n", " ")  # Replace newlines with spaces
-            with open(log_file, "a") as f:
+            with open(log_file, "a", encoding="utf-8") as f:
                 f.write(f"{timestamp} [{message_type}] {content}\n")
         return wrapper
     
@@ -779,7 +857,7 @@ def run_analysis():
             func(*args, **kwargs)
             timestamp, tool_name, args = obj.tool_calls[-1]
             args_str = ", ".join(f"{k}={v}" for k, v in args.items())
-            with open(log_file, "a") as f:
+            with open(log_file, "a", encoding="utf-8") as f:
                 f.write(f"{timestamp} [Tool Call] {tool_name}({args_str})\n")
         return wrapper
 
@@ -792,7 +870,7 @@ def run_analysis():
                 content = obj.report_sections[section_name]
                 if content:
                     file_name = f"{section_name}.md"
-                    with open(report_dir / file_name, "w") as f:
+                    with open(report_dir / file_name, "w", encoding="utf-8") as f:
                         f.write(content)
         return wrapper
 
