@@ -397,7 +397,7 @@ def main():
     # You can change this to any of: XAUUSD, XAGUSD, XPTUSD, COPPER-C
     # Or use aliases: gold, silver, platinum, copper
     
-    symbol = "XPTUSD"  # Silver
+    symbol = "XAGUSD"  # Silver
     trade_date = "2025-12-26"  # Recent trading date
     
     try:
