@@ -151,6 +151,26 @@ An interface will appear showing results as they load, letting you track the age
   <img src="assets/cli/cli_transaction.png" width="100%" style="display: inline-block; margin: 0 2%;">
 </p>
 
+### CLI Commodity Trading
+
+The CLI supports commodity trading with MT5 and xAI Grok:
+
+1. **Step 1: Asset Type** - Select "Commodity" to enable commodity mode
+2. **Step 2: Ticker** - Defaults to XAUUSD (Gold). Other options: XAGUSD (Silver), XPTUSD (Platinum)
+3. **Step 6: LLM Provider** - Select "xAI (Grok)" for real-time news and X sentiment
+4. **Step 8: Data Sources** - Choose MT5 for price data, xAI for news
+5. **Step 9: Sentiment** - Choose xAI for X (Twitter) sentiment analysis
+
+When commodity mode is selected:
+- Fundamentals Analyst is automatically excluded (commodities don't have company financials)
+- Default ticker changes to XAUUSD (Gold)
+- MT5 and xAI data vendors become available
+
+**Requirements for commodity trading:**
+- MetaTrader 5 terminal installed and logged in
+- `pip install MetaTrader5`
+- `export XAI_API_KEY=$YOUR_XAI_API_KEY` (for xAI Grok)
+
 ## TradingAgents Package
 
 ### Implementation Details
@@ -223,8 +243,8 @@ from tradingagents.default_config import DEFAULT_CONFIG
 config = DEFAULT_CONFIG.copy()
 config.update({
     "llm_provider": "xai",
-    "deep_think_llm": "grok-3-latest",
-    "quick_think_llm": "grok-3-mini-latest",
+    "deep_think_llm": "grok-4-1-fast-reasoning",    # Best tool-calling with 2M context
+    "quick_think_llm": "grok-4-fast-non-reasoning", # Fast 2M context without reasoning
     "backend_url": "https://api.x.ai/v1",
     # Use xAI for news (web search) and sentiment (X/Twitter)
     "data_vendors": {
@@ -238,6 +258,17 @@ config.update({
 ta = TradingAgentsGraph(debug=True, config=config)
 _, decision = ta.propagate("NVDA", "2024-05-10")
 ```
+
+**Available Grok Models:**
+| Model | Context | Description |
+|-------|---------|-------------|
+| `grok-4-1-fast-reasoning` | 2M | Best tool-calling, reasoning enabled |
+| `grok-4-1-fast-non-reasoning` | 2M | Fast without reasoning |
+| `grok-4-fast-reasoning` | 2M | Reasoning enabled |
+| `grok-4-fast-non-reasoning` | 2M | Fast without reasoning |
+| `grok-4-0709` | 256K | Powerful reasoning |
+| `grok-code-fast-1` | 256K | Optimized for coding |
+| `grok-3-mini` | - | Compact and efficient |
 
 ---
 
