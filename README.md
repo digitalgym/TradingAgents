@@ -204,6 +204,160 @@ print(decision)
 
 You can view the full list of configurations in `tradingagents/default_config.py`.
 
+---
+
+## Alternative LLM Providers
+
+### Using xAI Grok
+
+TradingAgents supports xAI's Grok models as an alternative to OpenAI. This includes access to real-time news via web search and X (Twitter) sentiment analysis.
+
+```bash
+export XAI_API_KEY=$YOUR_XAI_API_KEY
+```
+
+```python
+from tradingagents.graph.trading_graph import TradingAgentsGraph
+from tradingagents.default_config import DEFAULT_CONFIG
+
+config = DEFAULT_CONFIG.copy()
+config.update({
+    "llm_provider": "xai",
+    "deep_think_llm": "grok-3-latest",
+    "quick_think_llm": "grok-3-mini-latest",
+    "backend_url": "https://api.x.ai/v1",
+    # Use xAI for news (web search) and sentiment (X/Twitter)
+    "data_vendors": {
+        "news_data": "xai",  # Uses Grok's web_search tool
+    },
+    "tool_vendors": {
+        "get_insider_sentiment": "xai",  # Uses Grok's x_search for Twitter sentiment
+    },
+})
+
+ta = TradingAgentsGraph(debug=True, config=config)
+_, decision = ta.propagate("NVDA", "2024-05-10")
+```
+
+---
+
+## Commodity Trading with MT5
+
+TradingAgents supports commodity trading (Gold, Silver, Platinum, Copper) using MetaTrader 5 for price data.
+
+### Prerequisites
+1. Install MetaTrader 5 terminal and login to your broker (e.g., Vantage)
+2. Install MT5 Python package: `pip install MetaTrader5`
+
+### Usage
+
+```python
+from tradingagents.graph.trading_graph import TradingAgentsGraph
+from tradingagents.default_config import DEFAULT_CONFIG
+
+config = DEFAULT_CONFIG.copy()
+config.update({
+    "data_vendors": {
+        "core_stock_apis": "mt5",  # Use MT5 for OHLCV data
+    },
+    "asset_type": "commodity",  # Auto-excludes fundamentals analyst
+})
+
+ta = TradingAgentsGraph(debug=True, config=config)
+
+# Analyze Gold
+_, decision = ta.propagate("XAUUSD", "2025-12-26")
+```
+
+See `examples/trade_commodities.py` for a complete example with xAI Grok and MT5.
+
+---
+
+## Memory System & Learning from Past Trades
+
+TradingAgents includes a memory system that learns from past trading decisions. When a trade completes, you can reflect on the outcome to store lessons for future analysis.
+
+### Embedding Providers
+
+The memory system uses embeddings to find similar past situations. Configure the embedding provider:
+
+```python
+config["use_memory"] = True
+config["embedding_provider"] = "local"  # Options: auto, local, openai, ollama
+config["local_embedding_model"] = "all-MiniLM-L6-v2"  # For local embeddings
+```
+
+- **`local`**: Uses `sentence-transformers` (no API needed, runs locally)
+- **`openai`**: Uses OpenAI's embedding API (requires `OPENAI_API_KEY`)
+- **`ollama`**: Uses Ollama's local embeddings
+- **`auto`**: Uses local for xAI/Grok, OpenAI for others
+
+### Trade Lifecycle with Reflection
+
+The memory system learns by reflecting on completed trades:
+
+```python
+from examples.trade_commodities import (
+    analyze_commodity, 
+    complete_trade, 
+    list_pending_trades
+)
+
+# STEP 1: Analyze and save state for later reflection
+final_state, signal, trade_id = analyze_commodity(
+    "XAUUSD", 
+    "2025-12-26", 
+    entry_price=2650.00,
+    save_for_reflection=True
+)
+# Output: Trade ID: XAUUSD_2025-12-26_143052
+
+# STEP 2: Execute trade based on signal...
+
+# STEP 3: Days/weeks later, when trade closes
+list_pending_trades()  # See pending trades
+
+# STEP 4: Complete trade with actual exit price
+complete_trade("XAUUSD_2025-12-26_143052", exit_price=2720.00)
+# This calculates returns (+2.64%), runs reflection, stores lessons
+```
+
+### How Memory Works
+
+1. **Analysis**: `final_state` contains market reports, news, sentiment, and decisions
+2. **Execution**: Trade is executed based on signal (BUY/SELL/HOLD)
+3. **Outcome**: When trade closes, you provide the actual returns/losses
+4. **Reflection**: LLM analyzes what went right/wrong, generates lessons
+5. **Storage**: Lessons are stored with situation embedding
+6. **Retrieval**: Future similar situations retrieve past lessons via embedding similarity
+
+The lessons are injected into agent prompts as "Learning from Past Mistakes" to improve future decisions.
+
+---
+
+## Data Vendors
+
+TradingAgents supports multiple data vendors for different data types:
+
+| Category | Vendors | Description |
+|----------|---------|-------------|
+| `core_stock_apis` | yfinance, alpha_vantage, local, **mt5** | OHLCV price data |
+| `technical_indicators` | yfinance, alpha_vantage, local | Technical indicators (RSI, MACD, etc.) |
+| `fundamental_data` | alpha_vantage, openai, local | Company financials |
+| `news_data` | alpha_vantage, google, openai, **xai**, local | Market news |
+| `get_insider_sentiment` | local, **xai** | Sentiment analysis (xAI uses X/Twitter) |
+
+Configure in your config:
+```python
+config["data_vendors"] = {
+    "core_stock_apis": "mt5",
+    "news_data": "xai",
+}
+config["tool_vendors"] = {
+    "get_insider_sentiment": "xai",
+}
+```
+
 ## Contributing
 
 We welcome contributions from the community! Whether it's fixing a bug, improving documentation, or suggesting a new feature, your input helps make this project better. If you are interested in this line of research, please consider joining our open-source financial AI research community [Tauric Research](https://tauric.ai/).
