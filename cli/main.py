@@ -1184,6 +1184,7 @@ def run_analysis():
 
 def prompt_trade_execution(ticker: str, signal: str, final_state: dict):
     """Prompt user to execute the trade via MT5."""
+    import questionary
     from tradingagents.dataflows.mt5_data import (
         execute_trade_signal,
         get_mt5_current_price,
@@ -1374,6 +1375,7 @@ def save_trade_state(
 
 @app.command()
 def analyze():
+    """Run trading analysis."""
     run_analysis()
 
 
