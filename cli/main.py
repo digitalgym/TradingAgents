@@ -1176,11 +1176,850 @@ def run_analysis():
         display_complete_report(final_state)
 
         update_display(layout)
+        
+        # Prompt for trade execution if commodity mode with MT5
+        if selections.get("asset_type") == "commodity" and selections.get("data_vendors", {}).get("core_stock_apis") == "mt5":
+            prompt_trade_execution(selections["ticker"], decision, final_state)
+
+
+def prompt_trade_execution(ticker: str, signal: str, final_state: dict):
+    """Prompt user to execute the trade via MT5."""
+    from tradingagents.dataflows.mt5_data import (
+        execute_trade_signal,
+        get_mt5_current_price,
+        get_mt5_symbol_info,
+    )
+    
+    console.print("\n")
+    console.print(Panel(
+        f"[bold]Trade Signal: {signal}[/bold]\n\n"
+        f"Would you like to execute this trade on MT5?",
+        title="🚀 Trade Execution",
+        border_style="green" if signal == "BUY" else "red" if signal == "SELL" else "yellow",
+    ))
+    
+    if signal == "HOLD":
+        console.print("[yellow]Signal is HOLD - no trade to execute.[/yellow]")
+        return
+    
+    # Ask user if they want to execute
+    execute = questionary.confirm(
+        f"Execute {signal} order for {ticker}?",
+        default=False,
+    ).ask()
+    
+    if not execute:
+        console.print("[yellow]Trade execution skipped.[/yellow]")
+        return
+    
+    try:
+        # Get current price and symbol info
+        price_info = get_mt5_current_price(ticker)
+        symbol_info = get_mt5_symbol_info(ticker)
+        
+        current_price = price_info["ask"] if signal == "BUY" else price_info["bid"]
+        
+        console.print(f"\n[cyan]Current {ticker} price: {current_price}[/cyan]")
+        console.print(f"[dim]Spread: {symbol_info['spread']} | Min lot: {symbol_info['volume_min']}[/dim]")
+        
+        # Get trade parameters from user
+        console.print("\n[bold]Enter trade parameters:[/bold]")
+        
+        # Volume
+        volume = questionary.text(
+            "Lot size (e.g., 0.01, 0.1, 1.0):",
+            default="0.01",
+        ).ask()
+        volume = float(volume)
+        
+        # Entry price
+        entry_input = questionary.text(
+            f"Entry price (leave blank for current: {current_price}):",
+            default="",
+        ).ask()
+        entry_price = float(entry_input) if entry_input else current_price
+        
+        # Stop Loss
+        if signal == "BUY":
+            default_sl = round(entry_price * 0.98, symbol_info["digits"])  # 2% below
+            default_tp = round(entry_price * 1.04, symbol_info["digits"])  # 4% above
+        else:
+            default_sl = round(entry_price * 1.02, symbol_info["digits"])  # 2% above
+            default_tp = round(entry_price * 0.96, symbol_info["digits"])  # 4% below
+        
+        sl_input = questionary.text(
+            f"Stop Loss price (default: {default_sl}):",
+            default=str(default_sl),
+        ).ask()
+        stop_loss = float(sl_input) if sl_input else default_sl
+        
+        # Take Profit
+        tp_input = questionary.text(
+            f"Take Profit price (default: {default_tp}):",
+            default=str(default_tp),
+        ).ask()
+        take_profit = float(tp_input) if tp_input else default_tp
+        
+        # Order type
+        use_limit = questionary.confirm(
+            "Use limit order? (No = market order)",
+            default=True,
+        ).ask()
+        
+        # Confirm
+        console.print("\n[bold]Order Summary:[/bold]")
+        console.print(f"  Symbol: {ticker}")
+        console.print(f"  Type: {signal} {'LIMIT' if use_limit else 'MARKET'}")
+        console.print(f"  Volume: {volume} lots")
+        console.print(f"  Entry: {entry_price}")
+        console.print(f"  Stop Loss: {stop_loss}")
+        console.print(f"  Take Profit: {take_profit}")
+        
+        confirm = questionary.confirm(
+            "Confirm and place order?",
+            default=False,
+        ).ask()
+        
+        if not confirm:
+            console.print("[yellow]Order cancelled.[/yellow]")
+            return
+        
+        # Execute the trade
+        result = execute_trade_signal(
+            symbol=ticker,
+            signal=signal,
+            entry_price=entry_price,
+            stop_loss=stop_loss,
+            take_profit=take_profit,
+            volume=volume,
+            use_limit_order=use_limit,
+            comment=f"TradingAgents {signal}",
+        )
+        
+        if result.get("success"):
+            console.print(f"\n[bold green]✅ Order placed successfully![/bold green]")
+            console.print(f"  Order ID: {result.get('order_id')}")
+            console.print(f"  Price: {result.get('price')}")
+            
+            # Save trade state for later reflection
+            save_trade_state(
+                ticker=ticker,
+                signal=signal,
+                order_id=result.get('order_id'),
+                entry_price=entry_price,
+                stop_loss=stop_loss,
+                take_profit=take_profit,
+                volume=volume,
+                final_state=final_state,
+            )
+        else:
+            console.print(f"\n[bold red]❌ Order failed: {result.get('error')}[/bold red]")
+            
+    except Exception as e:
+        console.print(f"\n[bold red]❌ Error: {e}[/bold red]")
+
+
+def save_trade_state(
+    ticker: str,
+    signal: str,
+    order_id: int,
+    entry_price: float,
+    stop_loss: float,
+    take_profit: float,
+    volume: float,
+    final_state: dict,
+):
+    """Save trade state for later reflection when trade closes."""
+    import json
+    from pathlib import Path
+    from datetime import datetime
+    
+    trades_dir = Path("pending_trades")
+    trades_dir.mkdir(exist_ok=True)
+    
+    trade_data = {
+        "ticker": ticker,
+        "signal": signal,
+        "order_id": order_id,
+        "entry_price": entry_price,
+        "stop_loss": stop_loss,
+        "take_profit": take_profit,
+        "volume": volume,
+        "opened_at": datetime.now().isoformat(),
+        "status": "pending",
+        "final_state": {
+            "company_of_interest": ticker,
+            "trade_date": final_state.get("trade_date", datetime.now().strftime("%Y-%m-%d")),
+            "curr_situation": final_state.get("curr_situation", ""),
+            "market_report": final_state.get("market_report", ""),
+            "sentiment_report": final_state.get("sentiment_report", ""),
+            "news_report": final_state.get("news_report", ""),
+            "fundamentals_report": final_state.get("fundamentals_report", "N/A"),
+            "investment_debate_state": final_state.get("investment_debate_state", {}),
+            "risk_debate_state": final_state.get("risk_debate_state", {}),
+            "investment_plan": final_state.get("investment_plan", ""),
+            "trader_investment_plan": final_state.get("trader_investment_plan", ""),
+            "final_trade_decision": final_state.get("final_trade_decision", ""),
+        },
+    }
+    
+    # Save to file
+    filename = trades_dir / f"trade_{ticker}_{order_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(trade_data, f, indent=2, default=str)
+    
+    console.print(f"\n[dim]Trade state saved to {filename}[/dim]")
+    console.print(f"[dim]Run 'python -m cli.main reflect' when trade closes to create memory.[/dim]")
 
 
 @app.command()
 def analyze():
     run_analysis()
+
+
+@app.command()
+def reflect():
+    """Process closed trades and create memories for learning."""
+    import json
+    from pathlib import Path
+    from tradingagents.graph.trading_graph import TradingAgentsGraph
+    from tradingagents.default_config import DEFAULT_CONFIG
+    
+    trades_dir = Path("pending_trades")
+    
+    if not trades_dir.exists():
+        console.print("[yellow]No pending trades directory found.[/yellow]")
+        return
+    
+    # Find all pending trade files
+    trade_files = list(trades_dir.glob("trade_*.json"))
+    
+    if not trade_files:
+        console.print("[yellow]No pending trades found.[/yellow]")
+        return
+    
+    console.print(f"\n[bold]Found {len(trade_files)} pending trade(s):[/bold]\n")
+    
+    for i, trade_file in enumerate(trade_files):
+        with open(trade_file, "r", encoding="utf-8") as f:
+            trade_data = json.load(f)
+        
+        console.print(f"[cyan]{i+1}. {trade_data['ticker']} {trade_data['signal']}[/cyan]")
+        console.print(f"   Entry: {trade_data['entry_price']} | SL: {trade_data['stop_loss']} | TP: {trade_data['take_profit']}")
+        console.print(f"   Opened: {trade_data['opened_at']}")
+        console.print(f"   Status: {trade_data['status']}")
+        console.print()
+    
+    # Ask which trade to process
+    trade_num = questionary.text(
+        "Enter trade number to process (or 'q' to quit):",
+        default="1",
+    ).ask()
+    
+    if trade_num.lower() == 'q':
+        return
+    
+    try:
+        idx = int(trade_num) - 1
+        trade_file = trade_files[idx]
+    except (ValueError, IndexError):
+        console.print("[red]Invalid trade number.[/red]")
+        return
+    
+    with open(trade_file, "r", encoding="utf-8") as f:
+        trade_data = json.load(f)
+    
+    console.print(f"\n[bold]Processing: {trade_data['ticker']} {trade_data['signal']}[/bold]")
+    console.print(f"Entry price: {trade_data['entry_price']}")
+    
+    # Get exit price from user
+    exit_price_str = questionary.text(
+        "Enter exit price:",
+    ).ask()
+    
+    try:
+        exit_price = float(exit_price_str)
+    except ValueError:
+        console.print("[red]Invalid price.[/red]")
+        return
+    
+    # Calculate returns
+    entry = trade_data['entry_price']
+    signal = trade_data['signal']
+    
+    if signal == "BUY":
+        returns = ((exit_price - entry) / entry) * 100
+    else:  # SELL (short)
+        returns = ((entry - exit_price) / entry) * 100
+    
+    console.print(f"\n[bold]Trade Result:[/bold]")
+    console.print(f"  Entry: {entry}")
+    console.print(f"  Exit: {exit_price}")
+    if returns >= 0:
+        console.print(f"  Returns: [green]+{returns:.2f}%[/green]")
+    else:
+        console.print(f"  Returns: [red]{returns:.2f}%[/red]")
+    
+    # Confirm reflection
+    confirm = questionary.confirm(
+        "Create memory from this trade?",
+        default=True,
+    ).ask()
+    
+    if not confirm:
+        console.print("[yellow]Reflection cancelled.[/yellow]")
+        return
+    
+    # Create graph with memory enabled
+    config = DEFAULT_CONFIG.copy()
+    config['use_memory'] = True
+    config['embedding_provider'] = 'local'
+    
+    console.print("\n[dim]Initializing memory system...[/dim]")
+    
+    try:
+        graph = TradingAgentsGraph(config=config, debug=False)
+        
+        # Set the curr_state from saved trade data
+        graph.curr_state = trade_data['final_state']
+        
+        console.print("[dim]Running reflection...[/dim]")
+        
+        # Run reflection
+        graph.reflect_and_remember(returns)
+        
+        console.print(f"\n[bold green]✅ Memory created successfully![/bold green]")
+        console.print(f"[dim]Lessons from this {trade_data['ticker']} {signal} trade have been stored.[/dim]")
+        
+        # Generate trade improvement suggestions
+        console.print("\n[dim]Analyzing trade for improvement suggestions...[/dim]")
+        suggestions = analyze_trade_improvements(trade_data, exit_price, returns)
+        if suggestions:
+            console.print(Panel(
+                suggestions,
+                title="💡 Trade Improvement Suggestions",
+                border_style="cyan",
+            ))
+        
+        # Update trade file status
+        trade_data['status'] = 'closed'
+        trade_data['exit_price'] = exit_price
+        trade_data['returns'] = returns
+        trade_data['reflected'] = True
+        
+        with open(trade_file, "w", encoding="utf-8") as f:
+            json.dump(trade_data, f, indent=2, default=str)
+        
+        # Ask if user wants to archive the trade
+        archive = questionary.confirm(
+            "Archive this trade file?",
+            default=True,
+        ).ask()
+        
+        if archive:
+            archive_dir = Path("archived_trades")
+            archive_dir.mkdir(exist_ok=True)
+            trade_file.rename(archive_dir / trade_file.name)
+            console.print(f"[dim]Trade archived to {archive_dir / trade_file.name}[/dim]")
+            
+    except Exception as e:
+        console.print(f"\n[bold red]❌ Error during reflection: {e}[/bold red]")
+
+
+def analyze_trade_improvements(trade_data: dict, exit_price: float, returns: float) -> str:
+    """Use LLM to analyze trade and suggest improvements."""
+    import os
+    from openai import OpenAI
+    
+    # Try xAI first, then OpenAI
+    if os.getenv("XAI_API_KEY"):
+        client = OpenAI(
+            api_key=os.getenv("XAI_API_KEY"),
+            base_url="https://api.x.ai/v1",
+        )
+        model = "grok-3-mini-fast"
+    elif os.getenv("OPENAI_API_KEY"):
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        model = "gpt-4o-mini"
+    else:
+        return "[dim]No API key available for trade analysis.[/dim]"
+    
+    entry = trade_data['entry_price']
+    sl = trade_data['stop_loss']
+    tp = trade_data['take_profit']
+    signal = trade_data['signal']
+    ticker = trade_data['ticker']
+    
+    # Calculate key metrics
+    sl_distance = abs(entry - sl)
+    tp_distance = abs(tp - entry)
+    risk_reward = tp_distance / sl_distance if sl_distance > 0 else 0
+    
+    # Determine what happened
+    if signal == "BUY":
+        hit_sl = exit_price <= sl
+        hit_tp = exit_price >= tp
+        max_favorable = tp - entry
+        actual_move = exit_price - entry
+    else:  # SELL
+        hit_sl = exit_price >= sl
+        hit_tp = exit_price <= tp
+        max_favorable = entry - tp
+        actual_move = entry - exit_price
+    
+    prompt = f"""Analyze this closed trade and provide specific, actionable improvement suggestions.
+
+TRADE DETAILS:
+- Symbol: {ticker}
+- Direction: {signal}
+- Entry Price: {entry}
+- Stop Loss: {sl} (distance: {sl_distance:.2f})
+- Take Profit: {tp} (distance: {tp_distance:.2f})
+- Risk/Reward Ratio: {risk_reward:.2f}
+- Exit Price: {exit_price}
+- Returns: {returns:+.2f}%
+- Hit Stop Loss: {hit_sl}
+- Hit Take Profit: {hit_tp}
+
+MARKET CONTEXT:
+{trade_data['final_state'].get('market_report', 'N/A')[:500]}
+
+ORIGINAL ANALYSIS:
+{trade_data['final_state'].get('final_trade_decision', 'N/A')[:500]}
+
+Based on this trade outcome, provide 3-5 specific improvement suggestions. Consider:
+1. Stop Loss placement - was it too tight/loose? Should trailing stop have been used?
+2. Take Profit placement - was target realistic? Should partial profits have been taken?
+3. Position sizing and risk management
+4. Entry timing - could a better entry have been achieved?
+5. Trade management - when should the trade have been manually adjusted?
+
+Be specific with numbers where possible (e.g., "A trailing stop of 50 pips would have locked in +2.1%").
+Keep response concise and actionable."""
+
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": "You are an expert trading coach analyzing completed trades to help improve future performance. Be specific and actionable."},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=800,
+            temperature=0.7,
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"[dim]Could not generate suggestions: {e}[/dim]"
+
+
+@app.command()
+def positions():
+    """Show open MT5 positions and pending orders with options to modify."""
+    from tradingagents.dataflows.mt5_data import (
+        get_open_positions,
+        get_pending_orders,
+        modify_position,
+        modify_order,
+        close_position,
+        cancel_order,
+        get_mt5_current_price,
+    )
+    
+    try:
+        console.print("\n[bold]Open Positions:[/bold]")
+        pos_list = get_open_positions()
+        if pos_list:
+            for i, p in enumerate(pos_list):
+                profit_color = "green" if p['profit'] >= 0 else "red"
+                console.print(f"  [cyan]{i+1}.[/cyan] [{profit_color}]{p['symbol']} {p['type']} {p['volume']} lots @ {p['price_open']}[/{profit_color}]")
+                console.print(f"      SL: {p['sl']} | TP: {p['tp']} | P/L: {p['profit']:.2f}")
+                console.print(f"      Ticket: {p['ticket']}")
+        else:
+            console.print("  [dim]No open positions[/dim]")
+        
+        console.print("\n[bold]Pending Orders:[/bold]")
+        order_list = get_pending_orders()
+        if order_list:
+            for i, o in enumerate(order_list):
+                console.print(f"  [cyan]{i+1}.[/cyan] {o['symbol']} {o['type']} {o['volume']} lots @ {o['price']}")
+                console.print(f"      SL: {o['sl']} | TP: {o['tp']}")
+                console.print(f"      Ticket: {o['ticket']}")
+        else:
+            console.print("  [dim]No pending orders[/dim]")
+        
+        # Offer actions if there are positions or orders
+        if not pos_list and not order_list:
+            return
+        
+        console.print("\n[bold]Actions:[/bold]")
+        action = questionary.select(
+            "What would you like to do?",
+            choices=[
+                "Modify position SL/TP",
+                "Close position",
+                "Modify pending order",
+                "Cancel pending order",
+                "Exit",
+            ],
+        ).ask()
+        
+        if action == "Exit" or action is None:
+            return
+        
+        if action == "Modify position SL/TP":
+            if not pos_list:
+                console.print("[yellow]No open positions to modify.[/yellow]")
+                return
+            
+            ticket_str = questionary.text(
+                "Enter position ticket number:",
+            ).ask()
+            
+            try:
+                ticket = int(ticket_str)
+            except ValueError:
+                console.print("[red]Invalid ticket number.[/red]")
+                return
+            
+            # Find the position
+            pos = next((p for p in pos_list if p['ticket'] == ticket), None)
+            if not pos:
+                console.print(f"[red]Position {ticket} not found.[/red]")
+                return
+            
+            # Get current price for reference
+            try:
+                price_info = get_mt5_current_price(pos['symbol'])
+                current_price = price_info['bid'] if pos['type'] == 'BUY' else price_info['ask']
+                console.print(f"\n[cyan]Current {pos['symbol']} price: {current_price}[/cyan]")
+            except:
+                pass
+            
+            console.print(f"Current SL: {pos['sl']} | Current TP: {pos['tp']}")
+            
+            sl_input = questionary.text(
+                f"New Stop Loss (blank to keep {pos['sl']}):",
+                default="",
+            ).ask()
+            
+            tp_input = questionary.text(
+                f"New Take Profit (blank to keep {pos['tp']}):",
+                default="",
+            ).ask()
+            
+            new_sl = float(sl_input) if sl_input else None
+            new_tp = float(tp_input) if tp_input else None
+            
+            if new_sl is None and new_tp is None:
+                console.print("[yellow]No changes made.[/yellow]")
+                return
+            
+            result = modify_position(ticket, sl=new_sl, tp=new_tp)
+            
+            if result.get("success"):
+                console.print(f"[bold green]✅ Position modified![/bold green]")
+                console.print(f"  New SL: {result.get('new_sl')}")
+                console.print(f"  New TP: {result.get('new_tp')}")
+            else:
+                console.print(f"[bold red]❌ Failed: {result.get('error')}[/bold red]")
+        
+        elif action == "Close position":
+            if not pos_list:
+                console.print("[yellow]No open positions to close.[/yellow]")
+                return
+            
+            ticket_str = questionary.text(
+                "Enter position ticket number to close:",
+            ).ask()
+            
+            try:
+                ticket = int(ticket_str)
+            except ValueError:
+                console.print("[red]Invalid ticket number.[/red]")
+                return
+            
+            confirm = questionary.confirm(
+                f"Close position {ticket}?",
+                default=False,
+            ).ask()
+            
+            if not confirm:
+                console.print("[yellow]Cancelled.[/yellow]")
+                return
+            
+            result = close_position(ticket)
+            
+            if result.get("success"):
+                console.print(f"[bold green]✅ Position closed! P/L: {result.get('profit')}[/bold green]")
+            else:
+                console.print(f"[bold red]❌ Failed: {result.get('error')}[/bold red]")
+        
+        elif action == "Modify pending order":
+            if not order_list:
+                console.print("[yellow]No pending orders to modify.[/yellow]")
+                return
+            
+            ticket_str = questionary.text(
+                "Enter order ticket number:",
+            ).ask()
+            
+            try:
+                ticket = int(ticket_str)
+            except ValueError:
+                console.print("[red]Invalid ticket number.[/red]")
+                return
+            
+            # Find the order
+            order = next((o for o in order_list if o['ticket'] == ticket), None)
+            if not order:
+                console.print(f"[red]Order {ticket} not found.[/red]")
+                return
+            
+            console.print(f"Current Price: {order['price']} | SL: {order['sl']} | TP: {order['tp']}")
+            
+            price_input = questionary.text(
+                f"New entry price (blank to keep {order['price']}):",
+                default="",
+            ).ask()
+            
+            sl_input = questionary.text(
+                f"New Stop Loss (blank to keep {order['sl']}):",
+                default="",
+            ).ask()
+            
+            tp_input = questionary.text(
+                f"New Take Profit (blank to keep {order['tp']}):",
+                default="",
+            ).ask()
+            
+            new_price = float(price_input) if price_input else None
+            new_sl = float(sl_input) if sl_input else None
+            new_tp = float(tp_input) if tp_input else None
+            
+            if new_price is None and new_sl is None and new_tp is None:
+                console.print("[yellow]No changes made.[/yellow]")
+                return
+            
+            result = modify_order(ticket, price=new_price, sl=new_sl, tp=new_tp)
+            
+            if result.get("success"):
+                console.print(f"[bold green]✅ Order modified![/bold green]")
+                console.print(f"  New Price: {result.get('new_price')}")
+                console.print(f"  New SL: {result.get('new_sl')}")
+                console.print(f"  New TP: {result.get('new_tp')}")
+            else:
+                console.print(f"[bold red]❌ Failed: {result.get('error')}[/bold red]")
+        
+        elif action == "Cancel pending order":
+            if not order_list:
+                console.print("[yellow]No pending orders to cancel.[/yellow]")
+                return
+            
+            ticket_str = questionary.text(
+                "Enter order ticket number to cancel:",
+            ).ask()
+            
+            try:
+                ticket = int(ticket_str)
+            except ValueError:
+                console.print("[red]Invalid ticket number.[/red]")
+                return
+            
+            confirm = questionary.confirm(
+                f"Cancel order {ticket}?",
+                default=False,
+            ).ask()
+            
+            if not confirm:
+                console.print("[yellow]Cancelled.[/yellow]")
+                return
+            
+            result = cancel_order(ticket)
+            
+            if result.get("success"):
+                console.print(f"[bold green]✅ Order cancelled![/bold green]")
+            else:
+                console.print(f"[bold red]❌ Failed: {result.get('error')}[/bold red]")
+            
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+
+
+@app.command()
+def review():
+    """Re-analyze open trades and suggest strategy updates based on current market conditions."""
+    import os
+    from datetime import datetime
+    from openai import OpenAI
+    from tradingagents.dataflows.mt5_data import (
+        get_open_positions,
+        get_mt5_current_price,
+        get_mt5_historical_data,
+    )
+    
+    try:
+        pos_list = get_open_positions()
+        
+        if not pos_list:
+            console.print("[yellow]No open positions to review.[/yellow]")
+            return
+        
+        console.print(f"\n[bold]Open Positions ({len(pos_list)}):[/bold]\n")
+        
+        for i, p in enumerate(pos_list):
+            profit_color = "green" if p['profit'] >= 0 else "red"
+            console.print(f"  [cyan]{i+1}.[/cyan] [{profit_color}]{p['symbol']} {p['type']} {p['volume']} lots @ {p['price_open']}[/{profit_color}]")
+            console.print(f"      SL: {p['sl']} | TP: {p['tp']} | P/L: {p['profit']:.2f}")
+            console.print(f"      Ticket: {p['ticket']}")
+        
+        # Select position to review
+        pos_num = questionary.text(
+            "\nEnter position number to review (or 'all' for all, 'q' to quit):",
+            default="1",
+        ).ask()
+        
+        if pos_num.lower() == 'q':
+            return
+        
+        if pos_num.lower() == 'all':
+            positions_to_review = pos_list
+        else:
+            try:
+                idx = int(pos_num) - 1
+                positions_to_review = [pos_list[idx]]
+            except (ValueError, IndexError):
+                console.print("[red]Invalid selection.[/red]")
+                return
+        
+        # Setup LLM client
+        if os.getenv("XAI_API_KEY"):
+            client = OpenAI(
+                api_key=os.getenv("XAI_API_KEY"),
+                base_url="https://api.x.ai/v1",
+            )
+            model = "grok-3-mini-fast"
+        elif os.getenv("OPENAI_API_KEY"):
+            client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            model = "gpt-4o-mini"
+        else:
+            console.print("[red]No API key available (XAI_API_KEY or OPENAI_API_KEY required).[/red]")
+            return
+        
+        for pos in positions_to_review:
+            console.print(f"\n[bold cyan]═══ Reviewing {pos['symbol']} {pos['type']} ═══[/bold cyan]")
+            
+            # Get current market data
+            try:
+                price_info = get_mt5_current_price(pos['symbol'])
+                current_price = price_info['bid'] if pos['type'] == 'SELL' else price_info['ask']
+                
+                # Get recent price history for context
+                today = datetime.now().strftime("%Y-%m-%d")
+                history = get_mt5_historical_data(pos['symbol'], today, lookback_days=5)
+                
+                # Calculate key metrics
+                entry = pos['price_open']
+                sl = pos['sl']
+                tp = pos['tp']
+                
+                if pos['type'] == 'BUY':
+                    current_pnl_pct = ((current_price - entry) / entry) * 100
+                    sl_distance = entry - sl
+                    tp_distance = tp - entry
+                    distance_to_sl = current_price - sl
+                    distance_to_tp = tp - current_price
+                else:  # SELL
+                    current_pnl_pct = ((entry - current_price) / entry) * 100
+                    sl_distance = sl - entry
+                    tp_distance = entry - tp
+                    distance_to_sl = sl - current_price
+                    distance_to_tp = current_price - tp
+                
+                risk_reward = tp_distance / sl_distance if sl_distance > 0 else 0
+                
+                # Get recent high/low for context
+                if history and 'data' in history:
+                    recent_high = max(d.get('high', 0) for d in history['data'][-20:]) if history['data'] else current_price
+                    recent_low = min(d.get('low', float('inf')) for d in history['data'][-20:]) if history['data'] else current_price
+                else:
+                    recent_high = current_price
+                    recent_low = current_price
+                
+            except Exception as e:
+                console.print(f"[red]Error getting market data: {e}[/red]")
+                continue
+            
+            console.print(f"\n[dim]Current Price: {current_price}[/dim]")
+            console.print(f"[dim]Entry: {entry} | P/L: {current_pnl_pct:+.2f}%[/dim]")
+            console.print(f"[dim]Distance to SL: {distance_to_sl:.2f} | Distance to TP: {distance_to_tp:.2f}[/dim]")
+            
+            console.print("\n[dim]Analyzing current market conditions...[/dim]")
+            
+            prompt = f"""Analyze this open trade and provide specific recommendations for managing it.
+
+POSITION DETAILS:
+- Symbol: {pos['symbol']}
+- Direction: {pos['type']}
+- Entry Price: {entry}
+- Current Price: {current_price}
+- Current P/L: {current_pnl_pct:+.2f}%
+- Unrealized Profit: ${pos['profit']:.2f}
+- Volume: {pos['volume']} lots
+
+CURRENT RISK MANAGEMENT:
+- Stop Loss: {sl} (distance from current: {distance_to_sl:.2f})
+- Take Profit: {tp} (distance from current: {distance_to_tp:.2f})
+- Risk/Reward Ratio: {risk_reward:.2f}
+
+RECENT PRICE ACTION:
+- 5-day High: {recent_high}
+- 5-day Low: {recent_low}
+- Current vs High: {((current_price - recent_high) / recent_high * 100):+.2f}%
+- Current vs Low: {((current_price - recent_low) / recent_low * 100):+.2f}%
+
+Based on the current market position and price action, provide:
+
+1. **HOLD / CLOSE / ADJUST** - Clear recommendation
+2. **Stop Loss Update** - Should SL be moved? To what level and why?
+3. **Take Profit Update** - Should TP be adjusted? To what level and why?
+4. **Risk Assessment** - Current risk level (Low/Medium/High) and reasoning
+5. **Key Levels to Watch** - Important price levels that would change the outlook
+
+Be specific with exact price levels. Consider:
+- Moving SL to breakeven if in profit
+- Trailing stop opportunities
+- Partial profit taking levels
+- Key support/resistance from recent price action
+
+Keep response concise and actionable."""
+
+            try:
+                response = client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {"role": "system", "content": "You are an expert trade manager analyzing open positions. Provide specific, actionable recommendations with exact price levels."},
+                        {"role": "user", "content": prompt},
+                    ],
+                    max_tokens=800,
+                    temperature=0.7,
+                )
+                
+                analysis = response.choices[0].message.content
+                
+                console.print(Panel(
+                    analysis,
+                    title=f"📊 Strategy Review: {pos['symbol']} {pos['type']}",
+                    border_style="cyan",
+                ))
+                
+            except Exception as e:
+                console.print(f"[red]Error analyzing position: {e}[/red]")
+                continue
+        
+        console.print("\n[dim]Use 'python -m cli.main positions' to modify SL/TP in MT5.[/dim]")
+            
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
 
 
 if __name__ == "__main__":

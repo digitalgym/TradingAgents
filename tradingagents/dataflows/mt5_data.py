@@ -239,3 +239,454 @@ def get_asset_type(symbol: str) -> str:
 def shutdown_mt5():
     """Shutdown MT5 connection."""
     mt5.shutdown()
+
+
+# =============================================================================
+# TRADE EXECUTION FUNCTIONS
+# =============================================================================
+
+def place_limit_order(
+    symbol: str,
+    order_type: str,  # "BUY_LIMIT" or "SELL_LIMIT"
+    volume: float,
+    price: float,
+    sl: float = None,
+    tp: float = None,
+    comment: str = "TradingAgents",
+    magic: int = 123456,
+    expiration: datetime = None,
+) -> dict:
+    """
+    Place a limit order in MT5.
+    
+    Args:
+        symbol: MT5 symbol (e.g., XAUUSD, XAGUSD)
+        order_type: "BUY_LIMIT" or "SELL_LIMIT"
+        volume: Lot size (e.g., 0.01, 0.1, 1.0)
+        price: Limit price for entry
+        sl: Stop loss price (optional)
+        tp: Take profit price (optional)
+        comment: Order comment
+        magic: Magic number for order identification
+        expiration: Order expiration datetime (optional)
+    
+    Returns:
+        dict with order result or error
+    """
+    _ensure_mt5_initialized()
+    
+    mt5_symbol = _resolve_symbol(symbol)
+    
+    # Ensure symbol is available
+    if not mt5.symbol_select(mt5_symbol, True):
+        return {"success": False, "error": f"Symbol '{mt5_symbol}' not found"}
+    
+    # Get symbol info for validation
+    symbol_info = mt5.symbol_info(mt5_symbol)
+    if symbol_info is None:
+        return {"success": False, "error": f"Could not get info for '{mt5_symbol}'"}
+    
+    # Validate volume
+    if volume < symbol_info.volume_min:
+        return {"success": False, "error": f"Volume {volume} below minimum {symbol_info.volume_min}"}
+    if volume > symbol_info.volume_max:
+        return {"success": False, "error": f"Volume {volume} above maximum {symbol_info.volume_max}"}
+    
+    # Round volume to step
+    volume = round(volume / symbol_info.volume_step) * symbol_info.volume_step
+    
+    # Determine order type
+    if order_type.upper() == "BUY_LIMIT":
+        mt5_order_type = mt5.ORDER_TYPE_BUY_LIMIT
+    elif order_type.upper() == "SELL_LIMIT":
+        mt5_order_type = mt5.ORDER_TYPE_SELL_LIMIT
+    elif order_type.upper() == "BUY":
+        mt5_order_type = mt5.ORDER_TYPE_BUY
+    elif order_type.upper() == "SELL":
+        mt5_order_type = mt5.ORDER_TYPE_SELL
+    else:
+        return {"success": False, "error": f"Invalid order type: {order_type}"}
+    
+    # Build request
+    request = {
+        "action": mt5.TRADE_ACTION_PENDING if "LIMIT" in order_type.upper() else mt5.TRADE_ACTION_DEAL,
+        "symbol": mt5_symbol,
+        "volume": volume,
+        "type": mt5_order_type,
+        "price": price,
+        "deviation": 20,
+        "magic": magic,
+        "comment": comment,
+        "type_time": mt5.ORDER_TIME_GTC,
+        "type_filling": mt5.ORDER_FILLING_IOC,
+    }
+    
+    if sl is not None:
+        request["sl"] = sl
+    if tp is not None:
+        request["tp"] = tp
+    if expiration is not None:
+        request["expiration"] = int(expiration.timestamp())
+        request["type_time"] = mt5.ORDER_TIME_SPECIFIED
+    
+    # Send order
+    result = mt5.order_send(request)
+    
+    if result is None:
+        error = mt5.last_error()
+        return {"success": False, "error": f"Order send failed: {error}"}
+    
+    if result.retcode != mt5.TRADE_RETCODE_DONE:
+        return {
+            "success": False,
+            "error": f"Order failed: {result.comment}",
+            "retcode": result.retcode,
+        }
+    
+    return {
+        "success": True,
+        "order_id": result.order,
+        "deal_id": result.deal,
+        "volume": result.volume,
+        "price": result.price,
+        "comment": result.comment,
+    }
+
+
+def place_market_order(
+    symbol: str,
+    order_type: str,  # "BUY" or "SELL"
+    volume: float,
+    sl: float = None,
+    tp: float = None,
+    comment: str = "TradingAgents",
+    magic: int = 123456,
+) -> dict:
+    """
+    Place a market order in MT5.
+    
+    Args:
+        symbol: MT5 symbol (e.g., XAUUSD, XAGUSD)
+        order_type: "BUY" or "SELL"
+        volume: Lot size
+        sl: Stop loss price (optional)
+        tp: Take profit price (optional)
+        comment: Order comment
+        magic: Magic number
+    
+    Returns:
+        dict with order result or error
+    """
+    _ensure_mt5_initialized()
+    
+    mt5_symbol = _resolve_symbol(symbol)
+    
+    # Get current price
+    tick = mt5.symbol_info_tick(mt5_symbol)
+    if tick is None:
+        return {"success": False, "error": f"Could not get price for '{mt5_symbol}'"}
+    
+    # Use ask for buy, bid for sell
+    price = tick.ask if order_type.upper() == "BUY" else tick.bid
+    
+    return place_limit_order(
+        symbol=symbol,
+        order_type=order_type,
+        volume=volume,
+        price=price,
+        sl=sl,
+        tp=tp,
+        comment=comment,
+        magic=magic,
+    )
+
+
+def execute_trade_signal(
+    symbol: str,
+    signal: str,  # "BUY", "SELL", "HOLD"
+    entry_price: float = None,
+    stop_loss: float = None,
+    take_profit: float = None,
+    volume: float = 0.01,
+    use_limit_order: bool = True,
+    comment: str = "TradingAgents",
+) -> dict:
+    """
+    Execute a trade based on the analysis signal.
+    
+    This is the main function to call after report generation.
+    
+    Args:
+        symbol: MT5 symbol (e.g., XAUUSD, XAGUSD)
+        signal: Trade signal from analysis ("BUY", "SELL", "HOLD")
+        entry_price: Entry price for limit order (uses current price if None)
+        stop_loss: Stop loss price
+        take_profit: Take profit price
+        volume: Lot size (default 0.01 = micro lot)
+        use_limit_order: If True, place limit order; if False, market order
+        comment: Order comment
+    
+    Returns:
+        dict with execution result
+    """
+    signal = signal.upper().strip()
+    
+    if signal == "HOLD" or signal not in ["BUY", "SELL"]:
+        return {
+            "success": True,
+            "action": "HOLD",
+            "message": f"No trade executed. Signal: {signal}",
+        }
+    
+    _ensure_mt5_initialized()
+    
+    mt5_symbol = _resolve_symbol(symbol)
+    
+    # Get current price if entry_price not specified
+    if entry_price is None:
+        tick = mt5.symbol_info_tick(mt5_symbol)
+        if tick is None:
+            return {"success": False, "error": f"Could not get price for '{mt5_symbol}'"}
+        entry_price = tick.ask if signal == "BUY" else tick.bid
+    
+    # Determine order type
+    if use_limit_order:
+        order_type = "BUY_LIMIT" if signal == "BUY" else "SELL_LIMIT"
+    else:
+        order_type = signal
+    
+    # Place the order
+    result = place_limit_order(
+        symbol=mt5_symbol,
+        order_type=order_type,
+        volume=volume,
+        price=entry_price,
+        sl=stop_loss,
+        tp=take_profit,
+        comment=comment,
+    )
+    
+    result["signal"] = signal
+    result["entry_price"] = entry_price
+    result["stop_loss"] = stop_loss
+    result["take_profit"] = take_profit
+    result["volume"] = volume
+    
+    return result
+
+
+def get_open_positions(symbol: str = None) -> list:
+    """Get all open positions, optionally filtered by symbol."""
+    _ensure_mt5_initialized()
+    
+    if symbol:
+        mt5_symbol = _resolve_symbol(symbol)
+        positions = mt5.positions_get(symbol=mt5_symbol)
+    else:
+        positions = mt5.positions_get()
+    
+    if positions is None:
+        return []
+    
+    return [
+        {
+            "ticket": p.ticket,
+            "symbol": p.symbol,
+            "type": "BUY" if p.type == 0 else "SELL",
+            "volume": p.volume,
+            "price_open": p.price_open,
+            "sl": p.sl,
+            "tp": p.tp,
+            "profit": p.profit,
+            "comment": p.comment,
+        }
+        for p in positions
+    ]
+
+
+def get_pending_orders(symbol: str = None) -> list:
+    """Get all pending orders, optionally filtered by symbol."""
+    _ensure_mt5_initialized()
+    
+    if symbol:
+        mt5_symbol = _resolve_symbol(symbol)
+        orders = mt5.orders_get(symbol=mt5_symbol)
+    else:
+        orders = mt5.orders_get()
+    
+    if orders is None:
+        return []
+    
+    order_types = {
+        2: "BUY_LIMIT",
+        3: "SELL_LIMIT",
+        4: "BUY_STOP",
+        5: "SELL_STOP",
+    }
+    
+    return [
+        {
+            "ticket": o.ticket,
+            "symbol": o.symbol,
+            "type": order_types.get(o.type, str(o.type)),
+            "volume": o.volume_current,
+            "price": o.price_open,
+            "sl": o.sl,
+            "tp": o.tp,
+            "comment": o.comment,
+        }
+        for o in orders
+    ]
+
+
+def cancel_order(ticket: int) -> dict:
+    """Cancel a pending order by ticket number."""
+    _ensure_mt5_initialized()
+    
+    request = {
+        "action": mt5.TRADE_ACTION_REMOVE,
+        "order": ticket,
+    }
+    
+    result = mt5.order_send(request)
+    
+    if result is None:
+        error = mt5.last_error()
+        return {"success": False, "error": f"Cancel failed: {error}"}
+    
+    if result.retcode != mt5.TRADE_RETCODE_DONE:
+        return {"success": False, "error": f"Cancel failed: {result.comment}"}
+    
+    return {"success": True, "ticket": ticket}
+
+
+def modify_position(ticket: int, sl: float = None, tp: float = None) -> dict:
+    """Modify stop loss and/or take profit of an open position."""
+    _ensure_mt5_initialized()
+    
+    # Get position info
+    position = mt5.positions_get(ticket=ticket)
+    if not position:
+        return {"success": False, "error": f"Position {ticket} not found"}
+    
+    position = position[0]
+    
+    # Use existing values if not specified
+    new_sl = sl if sl is not None else position.sl
+    new_tp = tp if tp is not None else position.tp
+    
+    request = {
+        "action": mt5.TRADE_ACTION_SLTP,
+        "symbol": position.symbol,
+        "position": ticket,
+        "sl": new_sl,
+        "tp": new_tp,
+    }
+    
+    result = mt5.order_send(request)
+    
+    if result is None:
+        error = mt5.last_error()
+        return {"success": False, "error": f"Modify failed: {error}"}
+    
+    if result.retcode != mt5.TRADE_RETCODE_DONE:
+        return {"success": False, "error": f"Modify failed: {result.comment}", "retcode": result.retcode}
+    
+    return {
+        "success": True,
+        "ticket": ticket,
+        "new_sl": new_sl,
+        "new_tp": new_tp,
+    }
+
+
+def modify_order(ticket: int, price: float = None, sl: float = None, tp: float = None) -> dict:
+    """Modify a pending order's price, stop loss, and/or take profit."""
+    _ensure_mt5_initialized()
+    
+    # Get order info
+    orders = mt5.orders_get(ticket=ticket)
+    if not orders:
+        return {"success": False, "error": f"Order {ticket} not found"}
+    
+    order = orders[0]
+    
+    # Use existing values if not specified
+    new_price = price if price is not None else order.price_open
+    new_sl = sl if sl is not None else order.sl
+    new_tp = tp if tp is not None else order.tp
+    
+    request = {
+        "action": mt5.TRADE_ACTION_MODIFY,
+        "order": ticket,
+        "price": new_price,
+        "sl": new_sl,
+        "tp": new_tp,
+    }
+    
+    result = mt5.order_send(request)
+    
+    if result is None:
+        error = mt5.last_error()
+        return {"success": False, "error": f"Modify failed: {error}"}
+    
+    if result.retcode != mt5.TRADE_RETCODE_DONE:
+        return {"success": False, "error": f"Modify failed: {result.comment}", "retcode": result.retcode}
+    
+    return {
+        "success": True,
+        "ticket": ticket,
+        "new_price": new_price,
+        "new_sl": new_sl,
+        "new_tp": new_tp,
+    }
+
+
+def close_position(ticket: int) -> dict:
+    """Close an open position by ticket number."""
+    _ensure_mt5_initialized()
+    
+    # Get position info
+    position = mt5.positions_get(ticket=ticket)
+    if not position:
+        return {"success": False, "error": f"Position {ticket} not found"}
+    
+    position = position[0]
+    
+    # Determine close type (opposite of position type)
+    close_type = mt5.ORDER_TYPE_SELL if position.type == 0 else mt5.ORDER_TYPE_BUY
+    
+    # Get current price
+    tick = mt5.symbol_info_tick(position.symbol)
+    if tick is None:
+        return {"success": False, "error": "Could not get price"}
+    
+    price = tick.bid if position.type == 0 else tick.ask
+    
+    request = {
+        "action": mt5.TRADE_ACTION_DEAL,
+        "symbol": position.symbol,
+        "volume": position.volume,
+        "type": close_type,
+        "position": ticket,
+        "price": price,
+        "deviation": 20,
+        "magic": 123456,
+        "comment": "TradingAgents close",
+        "type_filling": mt5.ORDER_FILLING_IOC,
+    }
+    
+    result = mt5.order_send(request)
+    
+    if result is None:
+        error = mt5.last_error()
+        return {"success": False, "error": f"Close failed: {error}"}
+    
+    if result.retcode != mt5.TRADE_RETCODE_DONE:
+        return {"success": False, "error": f"Close failed: {result.comment}"}
+    
+    return {
+        "success": True,
+        "ticket": ticket,
+        "profit": position.profit,
+    }
