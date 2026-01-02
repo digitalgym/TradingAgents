@@ -1,14 +1,19 @@
 import os
+from pathlib import Path
 import chromadb
 from chromadb.config import Settings
 from openai import OpenAI
 
+# Default persistent storage path
+MEMORY_DB_PATH = Path(__file__).parent.parent.parent.parent / "memory_db"
+
 
 class FinancialSituationMemory:
-    def __init__(self, name, config):
+    def __init__(self, name, config, persistent=True):
         self.llm_provider = config.get("llm_provider", "openai").lower()
         backend_url = config.get("backend_url", "https://api.openai.com/v1")
         embedding_provider = config.get("embedding_provider", "auto").lower()
+        self.name = name
         
         # Determine embedding provider
         # "auto" = use local for xAI/grok, OpenAI for others
@@ -36,8 +41,16 @@ class FinancialSituationMemory:
                 api_key=os.getenv("OPENAI_API_KEY")
             )
         
-        self.chroma_client = chromadb.Client(Settings(allow_reset=True))
-        self.situation_collection = self.chroma_client.create_collection(name=name)
+        # Use persistent storage if enabled
+        if persistent:
+            db_path = config.get("memory_db_path", MEMORY_DB_PATH)
+            Path(db_path).mkdir(parents=True, exist_ok=True)
+            self.chroma_client = chromadb.PersistentClient(path=str(db_path))
+        else:
+            self.chroma_client = chromadb.Client(Settings(allow_reset=True))
+        
+        # Get or create collection (persistent collections persist across restarts)
+        self.situation_collection = self.chroma_client.get_or_create_collection(name=name)
 
     def _get_local_model(self):
         """Lazy load the sentence-transformers model."""

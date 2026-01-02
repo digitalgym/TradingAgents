@@ -1172,14 +1172,15 @@ def run_analysis():
             if section in final_state:
                 message_buffer.update_report_section(section, final_state[section])
 
-        # Display the complete final report
-        display_complete_report(final_state)
-
+        # Final update before exiting live display
         update_display(layout)
-        
-        # Prompt for trade execution if commodity mode with MT5
-        if selections.get("asset_type") == "commodity" and selections.get("data_vendors", {}).get("core_stock_apis") == "mt5":
-            prompt_trade_execution(selections["ticker"], decision, final_state)
+    
+    # Display the complete final report OUTSIDE the Live context to prevent flickering
+    display_complete_report(final_state)
+    
+    # Prompt for trade execution if commodity mode with MT5
+    if selections.get("asset_type") == "commodity" and selections.get("data_vendors", {}).get("core_stock_apis") == "mt5":
+        prompt_trade_execution(selections["ticker"], decision, final_state)
 
 
 def prompt_trade_execution(ticker: str, signal: str, final_state: dict):
@@ -1189,6 +1190,7 @@ def prompt_trade_execution(ticker: str, signal: str, final_state: dict):
         execute_trade_signal,
         get_mt5_current_price,
         get_mt5_symbol_info,
+        get_open_positions,
     )
     
     console.print("\n")
@@ -1202,6 +1204,37 @@ def prompt_trade_execution(ticker: str, signal: str, final_state: dict):
     if signal == "HOLD":
         console.print("[yellow]Signal is HOLD - no trade to execute.[/yellow]")
         return
+    
+    # IMPORTANT: Check for open positions when SELL signal detected
+    if signal == "SELL":
+        try:
+            open_positions = get_open_positions()
+            # Check for any BUY positions (longs) that might need covering
+            long_positions = [p for p in open_positions if p['type'] == 'BUY']
+            
+            if long_positions:
+                console.print(Panel(
+                    "[bold yellow]⚠️ REMINDER: You have open LONG positions![/bold yellow]\n\n"
+                    "Before entering a SHORT, consider covering your longs to protect profits.\n\n"
+                    "[bold]Open Long Positions:[/bold]",
+                    title="🔔 Cover Longs Reminder",
+                    border_style="yellow",
+                ))
+                for p in long_positions:
+                    profit_color = "green" if p['profit'] >= 0 else "red"
+                    console.print(f"  [{profit_color}]{p['symbol']} BUY {p['volume']} lots @ {p['price_open']} | P/L: {p['profit']:.2f}[/{profit_color}]")
+                console.print()
+                
+                cover_first = questionary.confirm(
+                    "Would you like to close/reduce your longs first?",
+                    default=True,
+                ).ask()
+                
+                if cover_first:
+                    console.print("[cyan]Run 'python -m cli.main positions' to manage your positions.[/cyan]")
+                    return
+        except Exception as e:
+            pass  # Continue if we can't check positions
     
     # Ask user if they want to execute
     execute = questionary.confirm(
