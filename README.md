@@ -160,6 +160,7 @@ An interface will appear showing results as they load, letting you track the age
 | `python -m cli.main positions` | View/modify MT5 positions and orders |
 | `python -m cli.main review` | Re-analyze open trades and get strategy updates |
 | `python -m cli.main reflect` | Process closed trades and create memories |
+| `python -m cli.main memory-stats` | View memory statistics and run maintenance |
 
 ### CLI Commodity Trading
 
@@ -533,7 +534,52 @@ Trade Result:
 
 ## Memory System & Learning from Past Trades
 
-TradingAgents includes a memory system that learns from past trading decisions. When a trade completes, you can reflect on the outcome to store lessons for future analysis.
+TradingAgents includes a **tiered memory system** that learns from past trading decisions. When a trade completes, you can reflect on the outcome to store lessons for future analysis.
+
+### Tiered Memory System
+
+Memories are organized into three tiers based on quality and usage:
+
+| Tier | Description | Promotion Criteria |
+|------|-------------|--------------------|
+| **Short** | Recent memories (default) | New memories start here |
+| **Mid** | Notable lessons | Referenced 3+ times OR outcome quality > 70% |
+| **Long** | High-impact lessons | Confidence > 80% AND outcome quality > 80% |
+
+**Weighted Retrieval**: When retrieving memories, the system uses a composite score:
+```
+Score = similarity × tier_weight × confidence × recency_decay
+```
+
+This ensures high-confidence, frequently-used memories are prioritized while recent memories remain accessible.
+
+### Memory Statistics CLI
+
+View and manage your memory system:
+
+```bash
+# View memory statistics
+python -m cli.main memory-stats
+
+# Detailed stats with top memories
+python -m cli.main memory-stats --detailed
+
+# Run maintenance (prune low-quality, deduplicate, promote)
+python -m cli.main memory-stats --maintenance
+```
+
+Example output:
+```
+═══ Memory System Statistics ═══
+
+┌─────────────────────┬───────┬───────┬─────┬──────┬──────────┐
+│ Collection          │ Total │ Short │ Mid │ Long │ Avg Conf │
+├─────────────────────┼───────┼───────┼─────┼──────┼──────────┤
+│ bull_memory         │    12 │     8 │   3 │    1 │     0.65 │
+│ bear_memory         │    10 │     7 │   2 │    1 │     0.58 │
+│ prediction_accuracy │    25 │    15 │   8 │    2 │     0.72 │
+└─────────────────────┴───────┴───────┴─────┴──────┴──────────┘
+```
 
 ### Embedding Providers
 
@@ -586,10 +632,26 @@ complete_trade("XAUUSD_2025-12-26_143052", exit_price=2720.00)
 2. **Execution**: Trade is executed based on signal (BUY/SELL/HOLD)
 3. **Outcome**: When trade closes, you provide the actual returns/losses
 4. **Reflection**: LLM analyzes what went right/wrong, generates lessons
-5. **Storage**: Lessons are stored with situation embedding
-6. **Retrieval**: Future similar situations retrieve past lessons via embedding similarity
+5. **Confidence Scoring**: Lessons are scored based on prediction correctness and returns magnitude
+6. **Tier Assignment**: High-impact lessons are promoted to higher tiers
+7. **Storage**: Lessons are stored with situation embedding and metadata
+8. **Retrieval**: Future similar situations retrieve past lessons via weighted scoring
 
 The lessons are injected into agent prompts as "Learning from Past Mistakes" to improve future decisions.
+
+### Confidence Scoring
+
+Memories are assigned confidence scores based on trading outcomes:
+
+```python
+# Correct prediction with strong returns = high confidence
+confidence = 0.5 + (returns / 10)  # Capped at 1.0
+
+# Incorrect prediction = low confidence  
+confidence = 0.5 - (abs(returns) / 10)  # Minimum 0.2
+```
+
+This ensures lessons from successful trades are weighted more heavily in future decisions.
 
 ---
 

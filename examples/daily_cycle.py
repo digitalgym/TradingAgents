@@ -31,7 +31,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from tradingagents.graph.trading_graph import TradingAgentsGraph
-from tradingagents.agents.utils.memory import FinancialSituationMemory
+from tradingagents.agents.utils.memory import (
+    FinancialSituationMemory,
+    TIER_SHORT,
+    TIER_MID,
+    TIER_LONG
+)
 
 
 # =============================================================================
@@ -44,7 +49,7 @@ CYCLE_CONFIG = DEFAULT_CONFIG.copy()
 CYCLE_CONFIG.update({
     "data_vendors": {
         "core_stock_apis": "mt5",
-        "technical_indicators": "yfinance",
+        "technical_indicators": "mt5",  # Use MT5 for commodities (yfinance doesn't have XAUUSD)
         "fundamental_data": "openai",
         "news_data": "xai",
     },
@@ -333,6 +338,24 @@ LESSON: [Concise, actionable lesson for future predictions]
         return f"Prediction was {'correct' if evaluation['prediction_correct'] else 'incorrect'}. Price moved {evaluation['pct_change']:+.2f}%."
 
 
+def determine_tier_from_evaluation(evaluation: Dict[str, Any]) -> str:
+    """
+    Determine the appropriate memory tier based on the evaluation result.
+    
+    High-impact predictions (large moves, correct predictions) go to higher tiers.
+    """
+    abs_pnl = abs(evaluation.get('hypothetical_pnl', 0))
+    prediction_correct = evaluation.get('prediction_correct', False)
+    
+    # High-impact trades go to higher tiers
+    if abs_pnl >= 3.0 and prediction_correct:
+        return TIER_LONG  # Significant correct predictions
+    elif abs_pnl >= 1.5 or prediction_correct:
+        return TIER_MID   # Notable results
+    else:
+        return TIER_SHORT  # Standard results
+
+
 def store_lesson(
     prediction: Dict[str, Any],
     evaluation: Dict[str, Any],
@@ -340,7 +363,12 @@ def store_lesson(
     graph: TradingAgentsGraph,
     final_state: Dict[str, Any] = None
 ):
-    """Store the lesson in memory for future retrieval."""
+    """
+    Store the lesson in memory with confidence scoring.
+    
+    Uses the tiered memory system to store lessons with appropriate
+    confidence and tier based on the prediction outcome.
+    """
     # Create situation string from the original analysis
     situation = "\n\n".join([
         prediction["full_state_summary"].get("market_report", ""),
@@ -355,7 +383,7 @@ def store_lesson(
             graph.config
         )
     
-    # Store the lesson
+    # Store the lesson with confidence scoring
     recommendation = f"""
 PREDICTION EVALUATION ({evaluation['symbol']}):
 Signal: {prediction['signal']} | Expected: {prediction['expected_direction']} | Actual: {evaluation['actual_direction']}
@@ -364,11 +392,21 @@ Result: {'CORRECT' if evaluation['prediction_correct'] else 'INCORRECT'} | P&L: 
 {lesson}
 """
     
-    graph.prediction_memory.add_situations([(situation, recommendation)])
-    print(f"Lesson stored in prediction_accuracy memory")
+    # Determine tier based on evaluation quality
+    tier = determine_tier_from_evaluation(evaluation)
+    
+    # Add with confidence scoring based on returns and correctness
+    graph.prediction_memory.add_situations(
+        [(situation, recommendation)],
+        tier=tier,
+        returns=evaluation['hypothetical_pnl'],
+        prediction_correct=evaluation['prediction_correct']
+    )
+    print(f"Lesson stored in prediction_accuracy memory (tier: {tier})")
     
     # Also update the standard memories via reflection
     # This uses the existing reflection system with the hypothetical P&L
+    # The reflection system now also uses confidence scoring
     if final_state is not None:
         try:
             graph.curr_state = final_state

@@ -1,7 +1,9 @@
 # TradingAgents/graph/reflection.py
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from langchain_openai import ChatOpenAI
+
+from tradingagents.agents.utils.memory import TIER_SHORT, TIER_MID, TIER_LONG
 
 
 class Reflector:
@@ -70,52 +72,210 @@ Adhere strictly to these instructions, and ensure your output is detailed, accur
         result = self.quick_thinking_llm.invoke(messages).content
         return result
 
-    def reflect_bull_researcher(self, current_state, returns_losses, bull_memory):
-        """Reflect on bull researcher's analysis and update memory."""
+    def _determine_tier_from_returns(self, returns_losses: float) -> str:
+        """
+        Determine the appropriate memory tier based on returns magnitude.
+        
+        High-impact trades (large gains or losses) go to higher tiers.
+        """
+        abs_returns = abs(returns_losses)
+        if abs_returns >= 5.0:  # 5%+ moves are significant
+            return TIER_LONG
+        elif abs_returns >= 2.0:  # 2-5% moves are notable
+            return TIER_MID
+        else:
+            return TIER_SHORT
+    
+    def _was_prediction_correct(self, returns_losses: float, component_type: str, report: str) -> bool:
+        """
+        Determine if the prediction was correct based on returns.
+        
+        For BULL: positive returns = correct
+        For BEAR: negative returns = correct (they predicted decline)
+        For others: positive returns = correct
+        """
+        if component_type == "BEAR":
+            # Bear researcher is correct if price went down (negative returns on long)
+            # But if we're measuring from a short perspective, positive P&L = correct
+            return returns_losses > 0
+        else:
+            return returns_losses > 0
+
+    def reflect_bull_researcher(
+        self, 
+        current_state: Dict[str, Any], 
+        returns_losses: float, 
+        bull_memory,
+        prediction_correct: Optional[bool] = None
+    ):
+        """
+        Reflect on bull researcher's analysis and update memory with confidence scoring.
+        
+        Args:
+            current_state: The current trading state
+            returns_losses: The returns/losses from the trade
+            bull_memory: The bull researcher's memory instance
+            prediction_correct: Override for whether prediction was correct (optional)
+        """
         situation = self._extract_current_situation(current_state)
         bull_debate_history = current_state["investment_debate_state"]["bull_history"]
 
         result = self._reflect_on_component(
             "BULL", bull_debate_history, situation, returns_losses
         )
-        bull_memory.add_situations([(situation, result)])
+        
+        # Determine if prediction was correct
+        if prediction_correct is None:
+            prediction_correct = self._was_prediction_correct(returns_losses, "BULL", bull_debate_history)
+        
+        # Determine tier based on impact
+        tier = self._determine_tier_from_returns(returns_losses)
+        
+        # Add with confidence scoring
+        bull_memory.add_situations(
+            [(situation, result)],
+            tier=tier,
+            returns=returns_losses,
+            prediction_correct=prediction_correct
+        )
 
-    def reflect_bear_researcher(self, current_state, returns_losses, bear_memory):
-        """Reflect on bear researcher's analysis and update memory."""
+    def reflect_bear_researcher(
+        self, 
+        current_state: Dict[str, Any], 
+        returns_losses: float, 
+        bear_memory,
+        prediction_correct: Optional[bool] = None
+    ):
+        """
+        Reflect on bear researcher's analysis and update memory with confidence scoring.
+        
+        Args:
+            current_state: The current trading state
+            returns_losses: The returns/losses from the trade
+            bear_memory: The bear researcher's memory instance
+            prediction_correct: Override for whether prediction was correct (optional)
+        """
         situation = self._extract_current_situation(current_state)
         bear_debate_history = current_state["investment_debate_state"]["bear_history"]
 
         result = self._reflect_on_component(
             "BEAR", bear_debate_history, situation, returns_losses
         )
-        bear_memory.add_situations([(situation, result)])
+        
+        # For bear researcher, correct prediction means price went down
+        if prediction_correct is None:
+            prediction_correct = self._was_prediction_correct(returns_losses, "BEAR", bear_debate_history)
+        
+        tier = self._determine_tier_from_returns(returns_losses)
+        
+        bear_memory.add_situations(
+            [(situation, result)],
+            tier=tier,
+            returns=returns_losses,
+            prediction_correct=prediction_correct
+        )
 
-    def reflect_trader(self, current_state, returns_losses, trader_memory):
-        """Reflect on trader's decision and update memory."""
+    def reflect_trader(
+        self, 
+        current_state: Dict[str, Any], 
+        returns_losses: float, 
+        trader_memory,
+        prediction_correct: Optional[bool] = None
+    ):
+        """
+        Reflect on trader's decision and update memory with confidence scoring.
+        
+        Args:
+            current_state: The current trading state
+            returns_losses: The returns/losses from the trade
+            trader_memory: The trader's memory instance
+            prediction_correct: Override for whether prediction was correct (optional)
+        """
         situation = self._extract_current_situation(current_state)
         trader_decision = current_state["trader_investment_plan"]
 
         result = self._reflect_on_component(
             "TRADER", trader_decision, situation, returns_losses
         )
-        trader_memory.add_situations([(situation, result)])
+        
+        if prediction_correct is None:
+            prediction_correct = returns_losses > 0
+        
+        tier = self._determine_tier_from_returns(returns_losses)
+        
+        trader_memory.add_situations(
+            [(situation, result)],
+            tier=tier,
+            returns=returns_losses,
+            prediction_correct=prediction_correct
+        )
 
-    def reflect_invest_judge(self, current_state, returns_losses, invest_judge_memory):
-        """Reflect on investment judge's decision and update memory."""
+    def reflect_invest_judge(
+        self, 
+        current_state: Dict[str, Any], 
+        returns_losses: float, 
+        invest_judge_memory,
+        prediction_correct: Optional[bool] = None
+    ):
+        """
+        Reflect on investment judge's decision and update memory with confidence scoring.
+        
+        Args:
+            current_state: The current trading state
+            returns_losses: The returns/losses from the trade
+            invest_judge_memory: The investment judge's memory instance
+            prediction_correct: Override for whether prediction was correct (optional)
+        """
         situation = self._extract_current_situation(current_state)
         judge_decision = current_state["investment_debate_state"]["judge_decision"]
 
         result = self._reflect_on_component(
             "INVEST JUDGE", judge_decision, situation, returns_losses
         )
-        invest_judge_memory.add_situations([(situation, result)])
+        
+        if prediction_correct is None:
+            prediction_correct = returns_losses > 0
+        
+        tier = self._determine_tier_from_returns(returns_losses)
+        
+        invest_judge_memory.add_situations(
+            [(situation, result)],
+            tier=tier,
+            returns=returns_losses,
+            prediction_correct=prediction_correct
+        )
 
-    def reflect_risk_manager(self, current_state, returns_losses, risk_manager_memory):
-        """Reflect on risk manager's decision and update memory."""
+    def reflect_risk_manager(
+        self, 
+        current_state: Dict[str, Any], 
+        returns_losses: float, 
+        risk_manager_memory,
+        prediction_correct: Optional[bool] = None
+    ):
+        """
+        Reflect on risk manager's decision and update memory with confidence scoring.
+        
+        Args:
+            current_state: The current trading state
+            returns_losses: The returns/losses from the trade
+            risk_manager_memory: The risk manager's memory instance
+            prediction_correct: Override for whether prediction was correct (optional)
+        """
         situation = self._extract_current_situation(current_state)
         judge_decision = current_state["risk_debate_state"]["judge_decision"]
 
         result = self._reflect_on_component(
             "RISK JUDGE", judge_decision, situation, returns_losses
         )
-        risk_manager_memory.add_situations([(situation, result)])
+        
+        if prediction_correct is None:
+            prediction_correct = returns_losses > 0
+        
+        tier = self._determine_tier_from_returns(returns_losses)
+        
+        risk_manager_memory.add_situations(
+            [(situation, result)],
+            tier=tier,
+            returns=returns_losses,
+            prediction_correct=prediction_correct
+        )

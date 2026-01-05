@@ -44,7 +44,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from langchain_openai import ChatOpenAI
-from tradingagents.agents.utils.memory import FinancialSituationMemory
+from tradingagents.agents.utils.memory import (
+    FinancialSituationMemory, 
+    TIER_SHORT, 
+    TIER_MID, 
+    TIER_LONG
+)
 from tradingagents.default_config import DEFAULT_CONFIG
 
 
@@ -441,11 +446,33 @@ Format: LESSON: [your lesson]
         return f"Prediction was {'correct' if result.prediction_correct else 'incorrect'}. Price moved {result.pct_change:+.2f}%."
 
 
+def determine_tier_from_result(result: BacktestResult) -> str:
+    """
+    Determine the appropriate memory tier based on the backtest result.
+    
+    High-impact results (large moves, correct predictions) go to higher tiers.
+    """
+    abs_pnl = abs(result.hypothetical_pnl)
+    
+    # High-impact trades go to higher tiers
+    if abs_pnl >= 3.0 and result.prediction_correct:
+        return TIER_LONG  # Significant correct predictions
+    elif abs_pnl >= 1.5 or result.prediction_correct:
+        return TIER_MID   # Notable results
+    else:
+        return TIER_SHORT  # Standard results
+
+
 def store_lesson_in_memory(
     result: BacktestResult,
     memory: FinancialSituationMemory
 ):
-    """Store the lesson in memory for future retrieval."""
+    """
+    Store the lesson in memory with confidence scoring.
+    
+    Uses the tiered memory system to store lessons with appropriate
+    confidence and tier based on the prediction outcome.
+    """
     # Create situation string from technical state
     tech = result.technical_state
     if tech:
@@ -453,7 +480,7 @@ def store_lesson_in_memory(
     else:
         situation = f"Price: {result.price_at_analysis}, Signal: {result.signal}"
     
-    # Store lesson
+    # Store lesson with confidence scoring
     recommendation = f"""
 BACKTEST EVALUATION ({result.date}):
 Signal: {result.signal} | Expected: {result.expected_direction} | Actual: {result.actual_direction}
@@ -462,7 +489,16 @@ Result: {'CORRECT' if result.prediction_correct else 'INCORRECT'} | P&L: {result
 {result.lesson}
 """
     
-    memory.add_situations([(situation, recommendation)])
+    # Determine tier based on result quality
+    tier = determine_tier_from_result(result)
+    
+    # Add with confidence scoring based on returns and correctness
+    memory.add_situations(
+        [(situation, recommendation)],
+        tier=tier,
+        returns=result.hypothetical_pnl,
+        prediction_correct=result.prediction_correct
+    )
 
 
 # =============================================================================

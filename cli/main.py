@@ -2057,5 +2057,172 @@ Keep response concise and actionable."""
         console.print(f"[red]Error: {e}[/red]")
 
 
+@app.command()
+def memory_stats(
+    collection: Optional[str] = typer.Option(
+        None, "--collection", "-c",
+        help="Specific collection to show stats for (default: all)"
+    ),
+    detailed: bool = typer.Option(
+        False, "--detailed", "-d",
+        help="Show detailed statistics including top memories"
+    ),
+    maintenance: bool = typer.Option(
+        False, "--maintenance", "-m",
+        help="Run maintenance tasks (prune, dedupe, promote)"
+    ),
+):
+    """
+    Display memory system statistics and optionally run maintenance.
+    
+    Shows tier distribution, confidence scores, and memory health metrics.
+    """
+    from tradingagents.agents.utils.memory import (
+        FinancialSituationMemory, 
+        TIER_SHORT, TIER_MID, TIER_LONG
+    )
+    from tradingagents.agents.utils.memory_maintenance import (
+        MemoryMaintenance,
+        run_maintenance_on_all_collections
+    )
+    from tradingagents.default_config import DEFAULT_CONFIG
+    
+    config = DEFAULT_CONFIG.copy()
+    config["embedding_provider"] = "local"
+    
+    collection_names = [
+        "bull_memory",
+        "bear_memory",
+        "trader_memory",
+        "invest_judge_memory",
+        "risk_manager_memory",
+        "prediction_accuracy",
+        "technical_backtest",
+    ]
+    
+    if collection:
+        collection_names = [collection]
+    
+    if maintenance:
+        console.print("\n[bold cyan]Running Memory Maintenance...[/bold cyan]\n")
+        
+        with console.status("[bold green]Processing..."):
+            results = run_maintenance_on_all_collections(config)
+        
+        for name, result in results.items():
+            if "error" in result:
+                console.print(f"[red]✗ {name}: {result['error']}[/red]")
+            else:
+                promo = result.get("promotion", {})
+                dedupe = result.get("deduplication", {})
+                prune = result.get("pruning", {})
+                
+                console.print(f"\n[bold green]✓ {name}[/bold green]")
+                console.print(f"  Promoted: {promo.get('promoted_to_mid', 0)} to mid, {promo.get('promoted_to_long', 0)} to long")
+                console.print(f"  Deduplicated: {dedupe.get('merged', 0)} duplicates merged")
+                console.print(f"  Pruned: {prune.get('pruned', 0)} low-quality memories")
+        
+        console.print("\n[bold]Maintenance complete![/bold]\n")
+        return
+    
+    # Display stats
+    console.print("\n[bold cyan]═══ Memory System Statistics ═══[/bold cyan]\n")
+    
+    total_memories = 0
+    all_stats = {}
+    
+    for name in collection_names:
+        try:
+            memory = FinancialSituationMemory(name, config)
+            maint = MemoryMaintenance(memory)
+            
+            if detailed:
+                stats = maint.get_detailed_stats()
+            else:
+                stats = memory.get_memory_stats()
+            
+            all_stats[name] = stats
+            total_memories += stats.get("total", 0)
+            
+        except Exception as e:
+            all_stats[name] = {"error": str(e)}
+    
+    # Create summary table
+    table = Table(title="Memory Collections", box=box.ROUNDED)
+    table.add_column("Collection", style="cyan")
+    table.add_column("Total", justify="right")
+    table.add_column("Short", justify="right", style="yellow")
+    table.add_column("Mid", justify="right", style="blue")
+    table.add_column("Long", justify="right", style="green")
+    table.add_column("Avg Conf", justify="right")
+    
+    for name, stats in all_stats.items():
+        if "error" in stats:
+            table.add_row(name, "[red]Error[/red]", "-", "-", "-", "-")
+        else:
+            tiers = stats.get("by_tier", {})
+            avg_conf = stats.get("avg_confidence", 0)
+            table.add_row(
+                name,
+                str(stats.get("total", 0)),
+                str(tiers.get(TIER_SHORT, 0)),
+                str(tiers.get(TIER_MID, 0)),
+                str(tiers.get(TIER_LONG, 0)),
+                f"{avg_conf:.2f}" if avg_conf else "-"
+            )
+    
+    console.print(table)
+    console.print(f"\n[bold]Total memories across all collections: {total_memories}[/bold]\n")
+    
+    if detailed:
+        # Show detailed stats for each collection
+        for name, stats in all_stats.items():
+            if "error" in stats or stats.get("total", 0) == 0:
+                continue
+            
+            console.print(f"\n[bold cyan]─── {name} Details ───[/bold cyan]")
+            
+            # Confidence stats
+            conf = stats.get("confidence", {})
+            console.print(f"  Confidence: min={conf.get('min', 0):.2f}, max={conf.get('max', 0):.2f}, avg={conf.get('avg', 0):.2f}")
+            
+            # Outcome quality stats
+            oq = stats.get("outcome_quality", {})
+            console.print(f"  Outcome Quality: min={oq.get('min', 0):.2f}, max={oq.get('max', 0):.2f}, avg={oq.get('avg', 0):.2f}")
+            
+            # Age stats
+            age = stats.get("age_days", {})
+            console.print(f"  Age (days): min={age.get('min', 0)}, max={age.get('max', 0)}, avg={age.get('avg', 0):.1f}")
+            
+            # Reference counts
+            refs = stats.get("reference_counts", {})
+            console.print(f"  References: total={refs.get('total', 0)}, max={refs.get('max', 0)}, avg={refs.get('avg', 0):.1f}")
+            
+            # Prediction accuracy
+            pred = stats.get("prediction_accuracy", {})
+            correct = pred.get("correct", 0)
+            incorrect = pred.get("incorrect", 0)
+            total_pred = correct + incorrect
+            if total_pred > 0:
+                accuracy = (correct / total_pred) * 100
+                console.print(f"  Prediction Accuracy: {accuracy:.1f}% ({correct}/{total_pred})")
+            
+            # Show top memories
+            try:
+                memory = FinancialSituationMemory(name, config)
+                maint = MemoryMaintenance(memory)
+                top = maint.get_top_memories(n=3, sort_by="reference_count")
+                
+                if top:
+                    console.print(f"\n  [dim]Top 3 Most Referenced:[/dim]")
+                    for i, mem in enumerate(top, 1):
+                        console.print(f"    {i}. refs={mem['reference_count']}, conf={mem['confidence']:.2f}, tier={mem['tier']}")
+                        console.print(f"       [dim]{mem['document'][:80]}...[/dim]")
+            except Exception:
+                pass
+    
+    console.print("\n[dim]Use --detailed for more info, --maintenance to run cleanup[/dim]")
+
+
 if __name__ == "__main__":
     app()
