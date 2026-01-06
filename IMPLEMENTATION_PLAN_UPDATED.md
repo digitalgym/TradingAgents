@@ -244,18 +244,47 @@ python add_trading_memory.py
 
 ---
 
-### ❌ Not Yet Implemented
+### ✅ Recently Implemented
 
 #### 9. **Quantitative Risk Metrics**
 
-**Status:** ❌ NOT STARTED  
-**Priority:** HIGH (Next Phase)
+**Status:** ✅ COMPLETE (January 6, 2026)  
+**Priority:** HIGH
 
-No Sharpe ratio, VaR, max drawdown calculations in live system
+**Implemented:**
+- `tradingagents/risk/metrics.py` - RiskMetrics class with:
+  - Sharpe ratio, Sortino ratio, Calmar ratio
+  - Max drawdown (value and percentage)
+  - Value at Risk (VaR) at 95% and 99% confidence
+  - Conditional VaR (Expected Shortfall)
+  - Win rate, profit factor, avg win/loss
+  - Annualized volatility
+- `tradingagents/risk/portfolio.py` - Portfolio tracking with equity curve
+- Integrated into `examples/backtest_training.py` - Risk metrics in final report
+- CLI command: `python -m cli.main risk-metrics`
 
 ---
 
-#### 10. **Dynamic Stop-Loss (ATR-based)**
+#### 10. **Position Sizing (Kelly Criterion)**
+
+**Status:** ✅ COMPLETE (January 6, 2026)  
+**Priority:** HIGH
+
+**Implemented:**
+- `tradingagents/risk/position_sizing.py` - PositionSizer class with:
+  - Kelly criterion (optimal bet fraction)
+  - Half-Kelly (conservative default)
+  - Fixed fractional sizing
+  - Volatility-based sizing (ATR)
+  - MT5 lot conversion
+- Integrated into `examples/daily_cycle.py` - Position sizing with predictions
+- CLI command: `python -m cli.main position-size -e <entry> -sl <stop> -d <direction>`
+
+---
+
+### ❌ Not Yet Implemented
+
+#### 11. **Dynamic Stop-Loss (ATR-based)**
 
 **Status:** ❌ NOT STARTED  
 **Priority:** MEDIUM
@@ -438,9 +467,17 @@ MT5 integration uses fixed SL/TP, no trailing stops
 
 ---
 
-### Phase 2: Performance & Risk (Weeks 3-5)
+### Phase 2: Performance & Risk (Weeks 3-5) ✅ COMPLETE
 
 **Goal:** ~~Reduce latency and~~ Implement quantitative risk management
+
+**Status:** ✅ COMPLETE (January 6, 2026)
+
+**Achievements:**
+- ✅ 2.1 Parallel Execution - Evaluated, not beneficial (kept sequential)
+- ✅ 2.2 Quantitative Risk Metrics - Sharpe, Sortino, VaR, max drawdown, Calmar
+- ✅ 2.3 Position Sizing - Kelly criterion, half-Kelly, fixed fractional
+- ⏳ 2.4 Dynamic Stop-Loss - ATR-based SL implemented, trailing stops pending
 
 #### 2.1 Parallelize Analyst Execution
 
@@ -484,13 +521,22 @@ Keep sequential execution on `main` branch. Parallel implementation preserved fo
 
 ---
 
-#### 2.2 Quantitative Risk Metrics
+#### 2.2 Quantitative Risk Metrics ✅ COMPLETE
 
 **Priority:** HIGH | **Complexity:** MEDIUM | **Impact:** HIGH
 
+**Status:** ✅ COMPLETE (January 6, 2026)
+
 **Objective:** Implement objective risk measurement and portfolio constraints.
 
-**Implementation Steps:**
+**Implemented:**
+- `tradingagents/risk/metrics.py` - RiskMetrics class with all metrics
+- `tradingagents/risk/portfolio.py` - Portfolio tracking with equity curve
+- `tradingagents/risk/__init__.py` - Module exports
+- Integrated into `examples/backtest_training.py` - Risk metrics in final stats and JSON output
+- CLI command: `python -m cli.main risk-metrics` - View backtest risk metrics
+
+**Implementation Steps (Reference):**
 
 1. **Create Risk Metrics Module** (`tradingagents/risk/metrics.py`)
 
@@ -656,9 +702,42 @@ Keep sequential execution on `main` branch. Parallel implementation preserved fo
 
 ---
 
-#### 2.3 Dynamic Stop-Loss with ATR
+#### 2.3 Position Sizing (Kelly Criterion) ✅ COMPLETE
+
+**Priority:** HIGH | **Complexity:** MEDIUM | **Impact:** HIGH
+
+**Status:** ✅ COMPLETE (January 6, 2026)
+
+**Objective:** Optimal position sizing based on historical performance.
+
+**Implemented:**
+- `tradingagents/risk/position_sizing.py` - PositionSizer class with:
+  - Kelly criterion (optimal bet fraction)
+  - Half-Kelly (conservative default - 50% of Kelly)
+  - Fixed fractional sizing (risk fixed % per trade)
+  - Volatility-based sizing (ATR-adjusted)
+  - MT5 lot conversion
+- Integrated into `examples/daily_cycle.py` - Position sizing with each prediction
+- CLI command: `python -m cli.main position-size -e <entry> -sl <stop> -d <direction>`
+
+**Usage:**
+```bash
+# Calculate position size for a trade
+python -m cli.main position-size --entry 2650 --stop 2630 --direction BUY
+
+# With custom parameters
+python -m cli.main position-size -e 2650 -sl 2630 -d BUY -b 50000 -r 0.01 -c 0.8
+```
+
+**Estimated Effort:** ~~3-4 days~~ COMPLETE
+
+---
+
+#### 2.4 Dynamic Stop-Loss with ATR
 
 **Priority:** MEDIUM | **Complexity:** MEDIUM | **Impact:** MEDIUM
+
+**Status:** ⏳ PARTIAL (ATR-based SL in position sizing, trailing stops not yet implemented)
 
 **Objective:** Adaptive risk management that adjusts to market volatility.
 

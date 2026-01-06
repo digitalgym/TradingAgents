@@ -1,23 +1,11 @@
 from typing import Annotated
 
 # Import from vendor-specific modules
-from .local import get_YFin_data, get_finnhub_news, get_finnhub_company_insider_sentiment, get_finnhub_company_insider_transactions, get_simfin_balance_sheet, get_simfin_cashflow, get_simfin_income_statements, get_reddit_global_news, get_reddit_company_news
-from .y_finance import get_YFin_data_online, get_stock_stats_indicators_window, get_balance_sheet as get_yfinance_balance_sheet, get_cashflow as get_yfinance_cashflow, get_income_statement as get_yfinance_income_statement, get_insider_transactions as get_yfinance_insider_transactions
+from .local import get_finnhub_news, get_finnhub_company_insider_sentiment, get_finnhub_company_insider_transactions, get_reddit_global_news, get_reddit_company_news
 from .google import get_google_news, get_google_global_news
 from .openai import get_stock_news_openai, get_global_news_openai, get_fundamentals_openai
 from .xai import get_xai_news, get_xai_global_news, get_x_sentiment, get_x_news
-from .alpha_vantage import (
-    get_stock as get_alpha_vantage_stock,
-    get_indicator as get_alpha_vantage_indicator,
-    get_fundamentals as get_alpha_vantage_fundamentals,
-    get_balance_sheet as get_alpha_vantage_balance_sheet,
-    get_cashflow as get_alpha_vantage_cashflow,
-    get_income_statement as get_alpha_vantage_income_statement,
-    get_insider_transactions as get_alpha_vantage_insider_transactions,
-    get_news as get_alpha_vantage_news
-)
-from .alpha_vantage_common import AlphaVantageRateLimitError
-from .mt5_data import get_mt5_data, get_asset_type
+from .mt5_data import get_mt5_data, get_asset_type, get_mt5_indicator
 
 # Configuration and routing logic
 from .config import get_config
@@ -37,12 +25,9 @@ TOOLS_CATEGORIES = {
         ]
     },
     "fundamental_data": {
-        "description": "Company fundamentals",
+        "description": "Fundamental analysis (macro factors for commodities)",
         "tools": [
-            "get_fundamentals",
-            "get_balance_sheet",
-            "get_cashflow",
-            "get_income_statement"
+            "get_fundamentals"
         ]
     },
     "news_data": {
@@ -58,7 +43,6 @@ TOOLS_CATEGORIES = {
 
 VENDOR_LIST = [
     "local",
-    "yfinance",
     "openai",
     "google",
     "mt5",
@@ -66,62 +50,39 @@ VENDOR_LIST = [
 ]
 
 # Mapping of methods to their vendor-specific implementations
+# Simplified for MT5-based commodity trading (removed Alpha Vantage, yfinance)
 VENDOR_METHODS = {
-    # core_stock_apis
+    # core_stock_apis - MT5 only for commodities
     "get_stock_data": {
-        "alpha_vantage": get_alpha_vantage_stock,
-        "yfinance": get_YFin_data_online,
-        "local": get_YFin_data,
         "mt5": get_mt5_data,
     },
-    # technical_indicators
+    # technical_indicators - MT5 calculates locally from OHLCV
     "get_indicators": {
-        "alpha_vantage": get_alpha_vantage_indicator,
-        "yfinance": get_stock_stats_indicators_window,
-        "local": get_stock_stats_indicators_window
+        "mt5": get_mt5_indicator,
     },
-    # fundamental_data
+    # fundamental_data - OpenAI for commodities (no balance sheets for gold)
     "get_fundamentals": {
-        "alpha_vantage": get_alpha_vantage_fundamentals,
         "openai": get_fundamentals_openai,
-    },
-    "get_balance_sheet": {
-        "alpha_vantage": get_alpha_vantage_balance_sheet,
-        "yfinance": get_yfinance_balance_sheet,
-        "local": get_simfin_balance_sheet,
-    },
-    "get_cashflow": {
-        "alpha_vantage": get_alpha_vantage_cashflow,
-        "yfinance": get_yfinance_cashflow,
-        "local": get_simfin_cashflow,
-    },
-    "get_income_statement": {
-        "alpha_vantage": get_alpha_vantage_income_statement,
-        "yfinance": get_yfinance_income_statement,
-        "local": get_simfin_income_statements,
     },
     # news_data
     "get_news": {
-        "alpha_vantage": get_alpha_vantage_news,
+        "xai": get_xai_news,
         "openai": get_stock_news_openai,
         "google": get_google_news,
-        "xai": get_xai_news,
         "x": get_x_news,
         "local": [get_finnhub_news, get_reddit_company_news, get_google_news],
     },
     "get_global_news": {
+        "xai": get_xai_global_news,
         "google": get_google_global_news,
         "openai": get_global_news_openai,
-        "xai": get_xai_global_news,
         "local": get_reddit_global_news
     },
     "get_insider_sentiment": {
-        "local": get_finnhub_company_insider_sentiment,
         "xai": get_x_sentiment,
+        "local": get_finnhub_company_insider_sentiment,
     },
     "get_insider_transactions": {
-        "alpha_vantage": get_alpha_vantage_insider_transactions,
-        "yfinance": get_yfinance_insider_transactions,
         "local": get_finnhub_company_insider_transactions,
     },
 }
@@ -213,12 +174,6 @@ def route_to_vendor(method: str, *args, **kwargs):
                 vendor_results.append(result)
                 print(f"SUCCESS: {impl_func.__name__} from vendor '{vendor_name}' completed successfully")
                     
-            except AlphaVantageRateLimitError as e:
-                if vendor == "alpha_vantage":
-                    print(f"RATE_LIMIT: Alpha Vantage rate limit exceeded, falling back to next available vendor")
-                    print(f"DEBUG: Rate limit details: {e}")
-                # Continue to next vendor for fallback
-                continue
             except Exception as e:
                 # Log error but continue with other implementations
                 print(f"FAILED: {impl_func.__name__} from vendor '{vendor_name}' failed: {e}")

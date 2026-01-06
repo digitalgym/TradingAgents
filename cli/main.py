@@ -2224,5 +2224,348 @@ def memory_stats(
     console.print("\n[dim]Use --detailed for more info, --maintenance to run cleanup[/dim]")
 
 
+@app.command()
+def risk_metrics(
+    backtest_file: Optional[str] = typer.Option(
+        None, "--file", "-f",
+        help="Specific backtest results file to analyze"
+    ),
+    latest: bool = typer.Option(
+        True, "--latest/--all", "-l/-a",
+        help="Show only latest backtest (default) or all"
+    ),
+    symbol: Optional[str] = typer.Option(
+        None, "--symbol", "-s",
+        help="Filter by symbol (e.g., XAUUSD)"
+    ),
+):
+    """
+    Display risk metrics from backtest results.
+    
+    Shows Sharpe ratio, Sortino ratio, max drawdown, VaR, and other
+    quantitative risk metrics from historical backtesting.
+    """
+    import json
+    from pathlib import Path
+    from tradingagents.risk import RiskMetrics
+    
+    backtest_dir = Path(__file__).parent.parent / "examples" / "backtest_results"
+    
+    if not backtest_dir.exists():
+        console.print("[yellow]No backtest results found.[/yellow]")
+        console.print("[dim]Run 'python examples/backtest_training.py' to generate backtest data.[/dim]")
+        return
+    
+    # Find backtest files
+    if backtest_file:
+        files = [Path(backtest_file)]
+    else:
+        pattern = f"{symbol}_*.json" if symbol else "*.json"
+        files = sorted(backtest_dir.glob(pattern), key=lambda x: x.stat().st_mtime, reverse=True)
+    
+    if not files:
+        console.print(f"[yellow]No backtest files found{f' for {symbol}' if symbol else ''}.[/yellow]")
+        return
+    
+    if latest and len(files) > 1:
+        files = [files[0]]
+    
+    console.print("\n[bold cyan]═══ Risk Metrics Analysis ═══[/bold cyan]\n")
+    
+    for filepath in files:
+        try:
+            with open(filepath, 'r') as f:
+                data = json.load(f)
+            
+            symbol_name = data.get("symbol", "Unknown")
+            timestamp = data.get("timestamp", "Unknown")
+            stats = data.get("stats", {})
+            risk = data.get("risk_metrics", {})
+            
+            console.print(f"[bold]{symbol_name}[/bold] - {timestamp}")
+            console.print(f"[dim]{filepath.name}[/dim]\n")
+            
+            # Basic stats
+            table = Table(box=box.SIMPLE)
+            table.add_column("Metric", style="cyan")
+            table.add_column("Value", justify="right")
+            
+            table.add_row("Total Trades", str(stats.get("total_predictions", 0)))
+            table.add_row("Accuracy", f"{stats.get('accuracy', 0):.1f}%")
+            table.add_row("Total P&L", f"{stats.get('total_hypothetical_pnl', 0):+.2f}%")
+            table.add_row("Avg P&L/Trade", f"{stats.get('avg_pnl', 0):+.2f}%")
+            
+            if stats.get("final_equity"):
+                table.add_row("Final Equity", f"${stats.get('final_equity', 100000):,.2f}")
+            
+            console.print(table)
+            
+            if risk:
+                console.print("\n[bold]Risk Metrics:[/bold]")
+                
+                risk_table = Table(box=box.SIMPLE)
+                risk_table.add_column("Metric", style="cyan")
+                risk_table.add_column("Value", justify="right")
+                risk_table.add_column("Rating", justify="center")
+                
+                # Sharpe Ratio
+                sharpe = risk.get("sharpe_ratio", 0)
+                sharpe_rating = "[green]Excellent[/green]" if sharpe > 2 else "[yellow]Good[/yellow]" if sharpe > 1 else "[red]Poor[/red]"
+                risk_table.add_row("Sharpe Ratio", f"{sharpe:.3f}", sharpe_rating)
+                
+                # Sortino Ratio
+                sortino = risk.get("sortino_ratio", 0)
+                sortino_rating = "[green]Excellent[/green]" if sortino > 2 else "[yellow]Good[/yellow]" if sortino > 1 else "[red]Poor[/red]"
+                risk_table.add_row("Sortino Ratio", f"{sortino:.3f}", sortino_rating)
+                
+                # Calmar Ratio
+                calmar = risk.get("calmar_ratio", 0)
+                calmar_rating = "[green]Excellent[/green]" if calmar > 3 else "[yellow]Good[/yellow]" if calmar > 1 else "[red]Poor[/red]"
+                risk_table.add_row("Calmar Ratio", f"{calmar:.3f}", calmar_rating)
+                
+                # Max Drawdown
+                max_dd = risk.get("max_drawdown_pct", 0)
+                dd_rating = "[green]Low Risk[/green]" if abs(max_dd) < 10 else "[yellow]Moderate[/yellow]" if abs(max_dd) < 20 else "[red]High Risk[/red]"
+                risk_table.add_row("Max Drawdown", f"{max_dd:.2f}%", dd_rating)
+                
+                # VaR
+                var_95 = risk.get("var_95", 0) * 100
+                var_rating = "[green]Low[/green]" if var_95 < 2 else "[yellow]Moderate[/yellow]" if var_95 < 5 else "[red]High[/red]"
+                risk_table.add_row("VaR (95%)", f"{var_95:.2f}%", var_rating)
+                
+                # Win Rate
+                win_rate = risk.get("win_rate", 0)
+                win_rating = "[green]Strong[/green]" if win_rate > 60 else "[yellow]Average[/yellow]" if win_rate > 50 else "[red]Weak[/red]"
+                risk_table.add_row("Win Rate", f"{win_rate:.1f}%", win_rating)
+                
+                # Profit Factor
+                pf = risk.get("profit_factor", 0)
+                pf_rating = "[green]Profitable[/green]" if pf > 1.5 else "[yellow]Marginal[/yellow]" if pf > 1 else "[red]Losing[/red]"
+                risk_table.add_row("Profit Factor", f"{pf:.3f}", pf_rating)
+                
+                # Volatility
+                vol = risk.get("volatility", 0) * 100
+                risk_table.add_row("Volatility (Ann.)", f"{vol:.2f}%", "")
+                
+                console.print(risk_table)
+            else:
+                console.print("[dim]No risk metrics available (older backtest format)[/dim]")
+            
+            console.print("\n" + "─" * 50 + "\n")
+            
+        except Exception as e:
+            console.print(f"[red]Error reading {filepath}: {e}[/red]")
+    
+    console.print("[dim]Run 'python examples/backtest_training.py' to generate new backtest data with risk metrics.[/dim]")
+
+
+@app.command()
+def position_size(
+    symbol: str = typer.Option(
+        "XAUUSD", "--symbol", "-s",
+        help="Trading symbol"
+    ),
+    entry: float = typer.Option(
+        ..., "--entry", "-e",
+        help="Entry price"
+    ),
+    stop_loss: float = typer.Option(
+        ..., "--stop", "-sl",
+        help="Stop loss price"
+    ),
+    direction: str = typer.Option(
+        "BUY", "--direction", "-d",
+        help="Trade direction: BUY or SELL"
+    ),
+    balance: float = typer.Option(
+        100000, "--balance", "-b",
+        help="Account balance"
+    ),
+    risk_pct: float = typer.Option(
+        0.02, "--risk", "-r",
+        help="Max risk per trade (0.02 = 2%)"
+    ),
+    confidence: float = typer.Option(
+        1.0, "--confidence", "-c",
+        help="Trade confidence (0-1), reduces size if < 1"
+    ),
+    use_history: bool = typer.Option(
+        True, "--history/--no-history",
+        help="Use backtest history for Kelly sizing"
+    ),
+):
+    """
+    Calculate optimal position size for a trade.
+    
+    Uses Kelly criterion if backtest history available, otherwise fixed fractional.
+    
+    Example:
+        python -m cli.main position-size -e 2650 -sl 2630 -d BUY
+    """
+    import json
+    from pathlib import Path
+    from tradingagents.risk import (
+        PositionSizer, 
+        calculate_kelly_from_history,
+        recommend_position_size
+    )
+    
+    # Validate direction
+    direction = direction.upper()
+    if direction not in ["BUY", "SELL"]:
+        console.print("[red]Direction must be BUY or SELL[/red]")
+        return
+    
+    # Validate stop loss
+    if direction == "BUY" and stop_loss >= entry:
+        console.print("[red]Stop loss must be below entry for BUY[/red]")
+        return
+    if direction == "SELL" and stop_loss <= entry:
+        console.print("[red]Stop loss must be above entry for SELL[/red]")
+        return
+    
+    console.print(f"\n[bold cyan]═══ Position Size Calculator ═══[/bold cyan]\n")
+    
+    # Try to load trade history from backtest results
+    trade_history = None
+    if use_history:
+        backtest_dir = Path(__file__).parent.parent / "examples" / "backtest_results"
+        if backtest_dir.exists():
+            files = sorted(
+                backtest_dir.glob(f"{symbol}_*.json"),
+                key=lambda x: x.stat().st_mtime,
+                reverse=True
+            )
+            if files:
+                try:
+                    with open(files[0], 'r') as f:
+                        data = json.load(f)
+                    # Extract trade returns from results
+                    results = data.get("results", [])
+                    if results:
+                        trade_history = [r["hypothetical_pnl"] / 100 for r in results]
+                        console.print(f"[dim]Using {len(trade_history)} trades from {files[0].name}[/dim]\n")
+                except Exception:
+                    pass
+    
+    # Calculate Kelly parameters if history available
+    kelly_info = None
+    if trade_history and len(trade_history) >= 10:
+        win_rate, avg_win, avg_loss, kelly = calculate_kelly_from_history(trade_history)
+        kelly_info = {
+            "win_rate": win_rate,
+            "avg_win": avg_win,
+            "avg_loss": avg_loss,
+            "kelly_fraction": kelly
+        }
+    
+    # Create sizer and calculate
+    sizer = PositionSizer(
+        account_balance=balance,
+        max_risk_per_trade=risk_pct
+    )
+    
+    if kelly_info and kelly_info["kelly_fraction"] > 0.05:
+        # Use Kelly if we have a meaningful edge
+        result = sizer.kelly_size(
+            win_rate=kelly_info["win_rate"],
+            avg_win=kelly_info["avg_win"],
+            avg_loss=kelly_info["avg_loss"],
+            entry_price=entry,
+            stop_loss=stop_loss,
+            confidence=confidence
+        )
+    else:
+        # Fall back to fixed fractional
+        if kelly_info and kelly_info["kelly_fraction"] <= 0.05:
+            console.print("[yellow]Kelly suggests no edge - using fixed fractional instead[/yellow]\n")
+        result = sizer.fixed_fractional_size(
+            entry_price=entry,
+            stop_loss=stop_loss,
+            risk_percent=risk_pct,
+            confidence=confidence
+        )
+    
+    # Display input parameters
+    table = Table(title="Trade Parameters", box=box.SIMPLE)
+    table.add_column("Parameter", style="cyan")
+    table.add_column("Value", justify="right")
+    
+    table.add_row("Symbol", symbol)
+    table.add_row("Direction", f"[green]{direction}[/green]" if direction == "BUY" else f"[red]{direction}[/red]")
+    table.add_row("Entry Price", f"${entry:,.2f}")
+    table.add_row("Stop Loss", f"${stop_loss:,.2f}")
+    table.add_row("Risk per Unit", f"${abs(entry - stop_loss):,.2f}")
+    table.add_row("Account Balance", f"${balance:,.2f}")
+    table.add_row("Max Risk %", f"{risk_pct*100:.1f}%")
+    if confidence < 1.0:
+        table.add_row("Confidence", f"{confidence*100:.0f}%")
+    
+    console.print(table)
+    
+    # Display Kelly info if available
+    if kelly_info:
+        console.print("\n[bold]Historical Performance (Kelly Input):[/bold]")
+        kelly_table = Table(box=box.SIMPLE)
+        kelly_table.add_column("Metric", style="cyan")
+        kelly_table.add_column("Value", justify="right")
+        
+        kelly_table.add_row("Win Rate", f"{kelly_info['win_rate']*100:.1f}%")
+        kelly_table.add_row("Avg Win", f"{kelly_info['avg_win']*100:.2f}%")
+        kelly_table.add_row("Avg Loss", f"{kelly_info['avg_loss']*100:.2f}%")
+        kelly_table.add_row("Raw Kelly %", f"{kelly_info['kelly_fraction']*100:.1f}%")
+        kelly_table.add_row("Half-Kelly %", f"{kelly_info['kelly_fraction']*50:.1f}%")
+        
+        console.print(kelly_table)
+    
+    # Display recommendation
+    console.print("\n[bold green]═══ RECOMMENDATION ═══[/bold green]\n")
+    
+    rec_table = Table(box=box.ROUNDED)
+    rec_table.add_column("", style="bold")
+    rec_table.add_column("Value", justify="right", style="green")
+    
+    rec_table.add_row("Method", result.method.replace("_", " ").title())
+    rec_table.add_row("Position Size", f"{result.recommended_size:.4f} units")
+    rec_table.add_row("Position Value", f"${result.position_value:,.2f}")
+    rec_table.add_row("Risk Amount", f"${result.risk_amount:,.2f}")
+    rec_table.add_row("Risk %", f"{result.risk_percent*100:.2f}%")
+    
+    # Calculate lots for MT5
+    lots = sizer.calculate_lots(result.recommended_size, contract_size=100)
+    rec_table.add_row("MT5 Lots", f"{lots:.2f}")
+    
+    # Calculate take profit (2:1 risk/reward)
+    risk_distance = abs(entry - stop_loss)
+    if direction == "BUY":
+        tp_2r = entry + (risk_distance * 2)
+        tp_3r = entry + (risk_distance * 3)
+    else:
+        tp_2r = entry - (risk_distance * 2)
+        tp_3r = entry - (risk_distance * 3)
+    
+    rec_table.add_row("Take Profit (2R)", f"${tp_2r:,.2f}")
+    rec_table.add_row("Take Profit (3R)", f"${tp_3r:,.2f}")
+    
+    console.print(rec_table)
+    
+    # Risk assessment
+    console.print("\n[bold]Risk Assessment:[/bold]")
+    if result.risk_percent <= 0.01:
+        console.print("  [green]✓ Conservative position size (≤1% risk)[/green]")
+    elif result.risk_percent <= 0.02:
+        console.print("  [yellow]● Moderate position size (1-2% risk)[/yellow]")
+    else:
+        console.print("  [red]⚠ Aggressive position size (>2% risk)[/red]")
+    
+    if kelly_info and kelly_info["kelly_fraction"] < 0.1:
+        console.print("  [yellow]⚠ Low Kelly fraction suggests marginal edge[/yellow]")
+    
+    if confidence < 0.7:
+        console.print("  [yellow]● Low confidence - consider smaller size or skip[/yellow]")
+    
+    console.print("")
+
+
 if __name__ == "__main__":
     app()

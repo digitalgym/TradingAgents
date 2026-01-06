@@ -37,6 +37,7 @@ from tradingagents.agents.utils.memory import (
     TIER_MID,
     TIER_LONG
 )
+from tradingagents.risk import PositionSizer, calculate_kelly_from_history
 
 
 # =============================================================================
@@ -545,7 +546,157 @@ class DailyAnalysisCycle:
             final_state, signal, current_price, 
             evaluation_hours=self.evaluation_hours
         )
+        
+        # Add position sizing recommendation if signal is BUY or SELL
+        if signal.upper() in ["BUY", "SELL"] and current_price > 0:
+            position_rec = self._calculate_position_size(signal, current_price)
+            if position_rec:
+                prediction["position_sizing"] = position_rec
+                print(f"\n--- Position Sizing ---")
+                print(f"Recommended Size: {position_rec['recommended_size']:.4f} units")
+                print(f"MT5 Lots: {position_rec['mt5_lots']:.2f}")
+                print(f"Risk Amount: ${position_rec['risk_amount']:.2f}")
+                print(f"Risk %: {position_rec['risk_percent']*100:.2f}%")
+        
         save_prediction(self.symbol, prediction, final_state)
+    
+    def _calculate_position_size(
+        self, 
+        signal: str, 
+        current_price: float,
+        account_balance: float = 100000,
+        atr_multiplier: float = 2.0
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Calculate position size based on Kelly criterion and ATR-based stop loss.
+        
+        Uses backtest history for Kelly parameters if available.
+        """
+        try:
+            # Get ATR for stop loss calculation
+            from tradingagents.dataflows.mt5_data import get_mt5_data
+            
+            # Fetch recent data for ATR
+            end_date = datetime.now().strftime("%Y-%m-%d")
+            start_date = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+            
+            df = get_mt5_data(self.symbol, start_date, end_date, timeframe="H4")
+            
+            if df is None or len(df) < 14:
+                print("Warning: Insufficient data for ATR calculation")
+                return None
+            
+            # Calculate ATR
+            high = df['High'].values
+            low = df['Low'].values
+            close = df['Close'].values
+            
+            tr = []
+            for i in range(1, len(df)):
+                tr.append(max(
+                    high[i] - low[i],
+                    abs(high[i] - close[i-1]),
+                    abs(low[i] - close[i-1])
+                ))
+            atr = sum(tr[-14:]) / 14  # 14-period ATR
+            
+            # Calculate stop loss based on ATR
+            if signal.upper() == "BUY":
+                stop_loss = current_price - (atr * atr_multiplier)
+            else:
+                stop_loss = current_price + (atr * atr_multiplier)
+            
+            # Load trade history for Kelly calculation
+            trade_history = self._load_trade_history()
+            
+            # Create position sizer
+            sizer = PositionSizer(
+                account_balance=account_balance,
+                max_risk_per_trade=0.02,
+                kelly_fraction=0.5  # Half-Kelly for safety
+            )
+            
+            # Calculate position size
+            if trade_history and len(trade_history) >= 10:
+                win_rate, avg_win, avg_loss, kelly = calculate_kelly_from_history(trade_history)
+                
+                if kelly > 0.05:  # Only use Kelly if meaningful edge
+                    result = sizer.kelly_size(
+                        win_rate=win_rate,
+                        avg_win=avg_win,
+                        avg_loss=avg_loss,
+                        entry_price=current_price,
+                        stop_loss=stop_loss
+                    )
+                else:
+                    result = sizer.fixed_fractional_size(
+                        entry_price=current_price,
+                        stop_loss=stop_loss
+                    )
+            else:
+                result = sizer.fixed_fractional_size(
+                    entry_price=current_price,
+                    stop_loss=stop_loss
+                )
+            
+            # Calculate MT5 lots
+            mt5_lots = sizer.calculate_lots(result.recommended_size, contract_size=100)
+            
+            # Calculate take profit levels
+            risk_distance = abs(current_price - stop_loss)
+            if signal.upper() == "BUY":
+                tp_2r = current_price + (risk_distance * 2)
+                tp_3r = current_price + (risk_distance * 3)
+            else:
+                tp_2r = current_price - (risk_distance * 2)
+                tp_3r = current_price - (risk_distance * 3)
+            
+            return {
+                "method": result.method,
+                "recommended_size": result.recommended_size,
+                "mt5_lots": mt5_lots,
+                "position_value": result.position_value,
+                "risk_amount": result.risk_amount,
+                "risk_percent": result.risk_percent,
+                "entry_price": current_price,
+                "stop_loss": stop_loss,
+                "take_profit_2r": tp_2r,
+                "take_profit_3r": tp_3r,
+                "atr": atr,
+                "kelly_fraction": result.kelly_fraction,
+            }
+            
+        except Exception as e:
+            print(f"Warning: Position sizing calculation failed: {e}")
+            return None
+    
+    def _load_trade_history(self) -> Optional[list]:
+        """Load trade history from backtest results for Kelly calculation."""
+        try:
+            backtest_dir = Path(__file__).parent / "backtest_results"
+            if not backtest_dir.exists():
+                return None
+            
+            files = sorted(
+                backtest_dir.glob(f"{self.symbol}_*.json"),
+                key=lambda x: x.stat().st_mtime,
+                reverse=True
+            )
+            
+            if not files:
+                return None
+            
+            import json
+            with open(files[0], 'r') as f:
+                data = json.load(f)
+            
+            results = data.get("results", [])
+            if results:
+                return [r["hypothetical_pnl"] / 100 for r in results]
+            
+            return None
+        except Exception:
+            return None
 
 
 def get_last_run_state(symbol: str) -> Optional[Dict[str, Any]]:

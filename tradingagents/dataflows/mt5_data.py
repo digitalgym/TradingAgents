@@ -241,6 +241,277 @@ def shutdown_mt5():
     mt5.shutdown()
 
 
+def get_mt5_indicator(
+    symbol: Annotated[str, "MT5 symbol or alias"],
+    indicator: Annotated[str, "Indicator name: rsi, macd, bbands, sma, ema, atr, adx, stoch"],
+    start_date: Annotated[str, "Start date in yyyy-mm-dd format"],
+    end_date: Annotated[str, "End date in yyyy-mm-dd format"],
+    period: int = 14,
+    timeframe: str = "D1",
+) -> str:
+    """
+    Calculate technical indicators from MT5 OHLCV data.
+    
+    Supported indicators:
+    - rsi: Relative Strength Index
+    - macd: MACD (12, 26, 9)
+    - bbands: Bollinger Bands (20, 2)
+    - sma: Simple Moving Average
+    - ema: Exponential Moving Average
+    - atr: Average True Range
+    - adx: Average Directional Index
+    - stoch: Stochastic Oscillator
+    - close_200_sma: 200-period SMA of close
+    
+    Returns:
+        String with indicator values
+    """
+    import numpy as np
+    
+    _ensure_mt5_initialized()
+    
+    mt5_symbol = _resolve_symbol(symbol)
+    
+    # Parse dates - get extra data for indicator warmup
+    end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+    start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+    
+    # Get extra bars for indicator calculation warmup
+    # For 200 SMA on daily, need 200+ trading days (~300 calendar days)
+    warmup_days = max(400, period * 3)  # Enough for 200 SMA with buffer
+    from datetime import timedelta
+    warmup_start = start_dt - timedelta(days=warmup_days)
+    
+    tf = TIMEFRAMES.get(timeframe.upper(), mt5.TIMEFRAME_D1)
+    
+    if not mt5.symbol_select(mt5_symbol, True):
+        return f"Symbol '{mt5_symbol}' not found"
+    
+    rates = mt5.copy_rates_range(mt5_symbol, tf, warmup_start, end_dt)
+    
+    if rates is None or len(rates) == 0:
+        return f"No data for {mt5_symbol}"
+    
+    df = pd.DataFrame(rates)
+    df['time'] = pd.to_datetime(df['time'], unit='s')
+    
+    close = df['close'].values
+    high = df['high'].values
+    low = df['low'].values
+    open_price = df['open'].values
+    
+    indicator = indicator.lower().replace("-", "_")
+    result_lines = []
+    
+    # Calculate requested indicator
+    if indicator == "rsi":
+        rsi = _calculate_rsi(close, period)
+        result_lines.append(f"RSI({period}): {rsi[-1]:.2f}")
+        result_lines.append(f"RSI Previous: {rsi[-2]:.2f}" if len(rsi) > 1 else "")
+        
+    elif indicator == "macd":
+        macd_line, signal_line, histogram = _calculate_macd(close)
+        result_lines.append(f"MACD Line: {macd_line[-1]:.4f}")
+        result_lines.append(f"Signal Line: {signal_line[-1]:.4f}")
+        result_lines.append(f"Histogram: {histogram[-1]:.4f}")
+        
+    elif indicator == "bbands":
+        upper, middle, lower = _calculate_bbands(close, 20, 2)
+        result_lines.append(f"Upper Band: {upper[-1]:.5f}")
+        result_lines.append(f"Middle Band: {middle[-1]:.5f}")
+        result_lines.append(f"Lower Band: {lower[-1]:.5f}")
+        result_lines.append(f"Current Price: {close[-1]:.5f}")
+        
+    elif indicator == "sma" or indicator == "close_sma":
+        sma = _calculate_sma(close, period)
+        result_lines.append(f"SMA({period}): {sma[-1]:.5f}")
+        result_lines.append(f"Price: {close[-1]:.5f}")
+        result_lines.append(f"Price vs SMA: {'Above' if close[-1] > sma[-1] else 'Below'}")
+        
+    elif indicator == "close_200_sma":
+        sma = _calculate_sma(close, 200)
+        result_lines.append(f"SMA(200): {sma[-1]:.5f}")
+        result_lines.append(f"Price: {close[-1]:.5f}")
+        result_lines.append(f"Price vs SMA200: {'Above' if close[-1] > sma[-1] else 'Below'}")
+        
+    elif indicator == "ema":
+        ema = _calculate_ema(close, period)
+        result_lines.append(f"EMA({period}): {ema[-1]:.5f}")
+        
+    elif indicator == "atr":
+        atr = _calculate_atr(high, low, close, period)
+        result_lines.append(f"ATR({period}): {atr[-1]:.5f}")
+        result_lines.append(f"ATR as % of price: {(atr[-1]/close[-1])*100:.2f}%")
+        
+    elif indicator == "adx":
+        adx, plus_di, minus_di = _calculate_adx(high, low, close, period)
+        result_lines.append(f"ADX({period}): {adx[-1]:.2f}")
+        result_lines.append(f"+DI: {plus_di[-1]:.2f}")
+        result_lines.append(f"-DI: {minus_di[-1]:.2f}")
+        trend = "Strong" if adx[-1] > 25 else "Weak"
+        result_lines.append(f"Trend Strength: {trend}")
+        
+    elif indicator == "stoch":
+        k, d = _calculate_stochastic(high, low, close, period)
+        result_lines.append(f"Stoch %K: {k[-1]:.2f}")
+        result_lines.append(f"Stoch %D: {d[-1]:.2f}")
+        
+    else:
+        return f"Unknown indicator: {indicator}. Supported: rsi, macd, bbands, sma, ema, atr, adx, stoch, close_200_sma"
+    
+    # Add metadata
+    header = f"# {indicator.upper()} for {mt5_symbol}\n"
+    header += f"# Period: {period}, Timeframe: {timeframe}\n"
+    header += f"# Calculated from MT5 data on {datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n"
+    
+    return header + "\n".join(result_lines)
+
+
+def _calculate_rsi(close: 'np.ndarray', period: int = 14) -> 'np.ndarray':
+    """Calculate RSI."""
+    import numpy as np
+    deltas = np.diff(close)
+    gains = np.where(deltas > 0, deltas, 0)
+    losses = np.where(deltas < 0, -deltas, 0)
+    
+    avg_gain = np.zeros(len(close))
+    avg_loss = np.zeros(len(close))
+    
+    # Initial SMA
+    avg_gain[period] = np.mean(gains[:period])
+    avg_loss[period] = np.mean(losses[:period])
+    
+    # Smoothed averages
+    for i in range(period + 1, len(close)):
+        avg_gain[i] = (avg_gain[i-1] * (period - 1) + gains[i-1]) / period
+        avg_loss[i] = (avg_loss[i-1] * (period - 1) + losses[i-1]) / period
+    
+    rs = np.where(avg_loss != 0, avg_gain / avg_loss, 0)
+    rsi = 100 - (100 / (1 + rs))
+    return rsi
+
+
+def _calculate_macd(close: 'np.ndarray', fast: int = 12, slow: int = 26, signal: int = 9) -> tuple:
+    """Calculate MACD."""
+    ema_fast = _calculate_ema(close, fast)
+    ema_slow = _calculate_ema(close, slow)
+    macd_line = ema_fast - ema_slow
+    signal_line = _calculate_ema(macd_line, signal)
+    histogram = macd_line - signal_line
+    return macd_line, signal_line, histogram
+
+
+def _calculate_bbands(close: 'np.ndarray', period: int = 20, std_dev: float = 2.0) -> tuple:
+    """Calculate Bollinger Bands."""
+    import numpy as np
+    middle = _calculate_sma(close, period)
+    std = np.zeros(len(close))
+    for i in range(period - 1, len(close)):
+        std[i] = np.std(close[i-period+1:i+1])
+    upper = middle + (std * std_dev)
+    lower = middle - (std * std_dev)
+    return upper, middle, lower
+
+
+def _calculate_sma(data: 'np.ndarray', period: int) -> 'np.ndarray':
+    """Calculate Simple Moving Average."""
+    import numpy as np
+    sma = np.zeros(len(data))
+    for i in range(period - 1, len(data)):
+        sma[i] = np.mean(data[i-period+1:i+1])
+    return sma
+
+
+def _calculate_ema(data: 'np.ndarray', period: int) -> 'np.ndarray':
+    """Calculate Exponential Moving Average."""
+    import numpy as np
+    ema = np.zeros(len(data))
+    multiplier = 2 / (period + 1)
+    ema[period-1] = np.mean(data[:period])
+    for i in range(period, len(data)):
+        ema[i] = (data[i] - ema[i-1]) * multiplier + ema[i-1]
+    return ema
+
+
+def _calculate_atr(high: 'np.ndarray', low: 'np.ndarray', close: 'np.ndarray', period: int = 14) -> 'np.ndarray':
+    """Calculate Average True Range."""
+    import numpy as np
+    tr = np.zeros(len(close))
+    tr[0] = high[0] - low[0]
+    for i in range(1, len(close)):
+        tr[i] = max(
+            high[i] - low[i],
+            abs(high[i] - close[i-1]),
+            abs(low[i] - close[i-1])
+        )
+    atr = np.zeros(len(close))
+    atr[period-1] = np.mean(tr[:period])
+    for i in range(period, len(close)):
+        atr[i] = (atr[i-1] * (period - 1) + tr[i]) / period
+    return atr
+
+
+def _calculate_adx(high: 'np.ndarray', low: 'np.ndarray', close: 'np.ndarray', period: int = 14) -> tuple:
+    """Calculate ADX, +DI, -DI."""
+    import numpy as np
+    
+    plus_dm = np.zeros(len(close))
+    minus_dm = np.zeros(len(close))
+    
+    for i in range(1, len(close)):
+        up_move = high[i] - high[i-1]
+        down_move = low[i-1] - low[i]
+        
+        if up_move > down_move and up_move > 0:
+            plus_dm[i] = up_move
+        if down_move > up_move and down_move > 0:
+            minus_dm[i] = down_move
+    
+    atr = _calculate_atr(high, low, close, period)
+    
+    plus_di = np.zeros(len(close))
+    minus_di = np.zeros(len(close))
+    
+    # Smooth DM
+    smoothed_plus_dm = _calculate_ema(plus_dm, period)
+    smoothed_minus_dm = _calculate_ema(minus_dm, period)
+    
+    # Calculate DI
+    for i in range(period, len(close)):
+        if atr[i] != 0:
+            plus_di[i] = (smoothed_plus_dm[i] / atr[i]) * 100
+            minus_di[i] = (smoothed_minus_dm[i] / atr[i]) * 100
+    
+    # Calculate DX and ADX
+    dx = np.zeros(len(close))
+    for i in range(period, len(close)):
+        di_sum = plus_di[i] + minus_di[i]
+        if di_sum != 0:
+            dx[i] = abs(plus_di[i] - minus_di[i]) / di_sum * 100
+    
+    adx = _calculate_ema(dx, period)
+    
+    return adx, plus_di, minus_di
+
+
+def _calculate_stochastic(high: 'np.ndarray', low: 'np.ndarray', close: 'np.ndarray', period: int = 14) -> tuple:
+    """Calculate Stochastic Oscillator."""
+    import numpy as np
+    
+    k = np.zeros(len(close))
+    
+    for i in range(period - 1, len(close)):
+        highest_high = np.max(high[i-period+1:i+1])
+        lowest_low = np.min(low[i-period+1:i+1])
+        
+        if highest_high != lowest_low:
+            k[i] = ((close[i] - lowest_low) / (highest_high - lowest_low)) * 100
+    
+    d = _calculate_sma(k, 3)
+    
+    return k, d
+
+
 # =============================================================================
 # TRADE EXECUTION FUNCTIONS
 # =============================================================================

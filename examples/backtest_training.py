@@ -51,6 +51,7 @@ from tradingagents.agents.utils.memory import (
     TIER_LONG
 )
 from tradingagents.default_config import DEFAULT_CONFIG
+from tradingagents.risk import RiskMetrics, Portfolio
 
 
 # =============================================================================
@@ -216,6 +217,8 @@ class BacktestStats:
     hold_signals: int = 0
     total_hypothetical_pnl: float = 0.0
     results: List[BacktestResult] = field(default_factory=list)
+    equity_curve: List[float] = field(default_factory=lambda: [100000.0])
+    trade_returns: List[float] = field(default_factory=list)
     
     @property
     def accuracy(self) -> float:
@@ -228,6 +231,22 @@ class BacktestStats:
         if self.total_predictions == 0:
             return 0.0
         return self.total_hypothetical_pnl / self.total_predictions
+    
+    def get_risk_metrics(self) -> Optional[Dict]:
+        """Calculate risk metrics from backtest results."""
+        if len(self.trade_returns) < 2:
+            return None
+        
+        returns = np.array(self.trade_returns)
+        equity = np.array(self.equity_curve)
+        
+        report = RiskMetrics.calculate_all(
+            returns=returns,
+            equity_curve=equity,
+            trade_returns=returns,
+            periods_per_year=120  # ~120 trades per year at 3-day intervals
+        )
+        return report.to_dict()
 
 
 # =============================================================================
@@ -679,6 +698,15 @@ class TechnicalBacktester:
             self.stats.hold_signals += 1
         
         self.stats.total_hypothetical_pnl += result.hypothetical_pnl
+        
+        # Track for risk metrics
+        trade_return = result.hypothetical_pnl / 100  # Convert percentage to decimal
+        self.stats.trade_returns.append(trade_return)
+        
+        # Update equity curve (compound returns)
+        last_equity = self.stats.equity_curve[-1]
+        new_equity = last_equity * (1 + trade_return)
+        self.stats.equity_curve.append(new_equity)
     
     def _print_result(self, result: BacktestResult):
         """Print single result."""
@@ -705,6 +733,21 @@ class TechnicalBacktester:
         print(f"Hypothetical Performance:")
         print(f"  Total P&L: {self.stats.total_hypothetical_pnl:+.2f}%")
         print(f"  Avg P&L per trade: {self.stats.avg_pnl:+.2f}%")
+        
+        # Risk Metrics
+        risk_metrics = self.stats.get_risk_metrics()
+        if risk_metrics:
+            print(f"")
+            print(f"Risk Metrics:")
+            print(f"  Sharpe Ratio:    {risk_metrics['sharpe_ratio']:>8.3f}")
+            print(f"  Sortino Ratio:   {risk_metrics['sortino_ratio']:>8.3f}")
+            print(f"  Calmar Ratio:    {risk_metrics['calmar_ratio']:>8.3f}")
+            print(f"  Max Drawdown:    {risk_metrics['max_drawdown_pct']:>7.2f}%")
+            print(f"  VaR (95%):       {risk_metrics['var_95']*100:>7.2f}%")
+            print(f"  Win Rate:        {risk_metrics['win_rate']:>7.2f}%")
+            print(f"  Profit Factor:   {risk_metrics['profit_factor']:>8.3f}")
+            print(f"  Final Equity:    ${self.stats.equity_curve[-1]:>10,.2f}")
+        
         print(f"{'='*70}\n")
     
     def _save_results(self):
@@ -714,6 +757,8 @@ class TechnicalBacktester:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{self.symbol}_technical_backtest_{timestamp}.json"
         filepath = BACKTEST_DIR / filename
+        
+        risk_metrics = self.stats.get_risk_metrics()
         
         data = {
             "symbol": self.symbol,
@@ -729,7 +774,10 @@ class TechnicalBacktester:
                 "hold_signals": self.stats.hold_signals,
                 "total_hypothetical_pnl": self.stats.total_hypothetical_pnl,
                 "avg_pnl": self.stats.avg_pnl,
+                "final_equity": self.stats.equity_curve[-1],
             },
+            "risk_metrics": risk_metrics,
+            "equity_curve": self.stats.equity_curve,
             "results": [
                 {
                     "date": r.date,

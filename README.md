@@ -114,11 +114,10 @@ pip install -r requirements.txt
 
 ### Required APIs
 
-You will need the OpenAI API for all the agents, and [Alpha Vantage API](https://www.alphavantage.co/support/#api-key) for fundamental and news data (default configuration).
+For **commodity trading** (Gold, Silver, etc.) with MT5 and xAI:
 
 ```bash
-export OPENAI_API_KEY=$YOUR_OPENAI_API_KEY
-export ALPHA_VANTAGE_API_KEY=$YOUR_ALPHA_VANTAGE_API_KEY
+export XAI_API_KEY=$YOUR_XAI_API_KEY
 ```
 
 Alternatively, you can create a `.env` file in the project root with your API keys (see `.env.example` for reference):
@@ -127,7 +126,10 @@ cp .env.example .env
 # Edit .env with your actual API keys
 ```
 
-**Note:** We are happy to partner with Alpha Vantage to provide robust API support for TradingAgents. You can get a free AlphaVantage API [here](https://www.alphavantage.co/support/#api-key), TradingAgents-sourced requests also have increased rate limits to 60 requests per minute with no daily limits. Typically the quota is sufficient for performing complex tasks with TradingAgents thanks to Alpha Vantage’s open-source support program. If you prefer to use OpenAI for these data sources instead, you can modify the data vendor settings in `tradingagents/default_config.py`.
+**Requirements:**
+- **MetaTrader 5** terminal installed and logged in to your broker
+- **xAI API key** for Grok LLM, news (web search), and X sentiment analysis
+- `pip install MetaTrader5`
 
 ### CLI Usage
 
@@ -161,6 +163,8 @@ An interface will appear showing results as they load, letting you track the age
 | `python -m cli.main review` | Re-analyze open trades and get strategy updates |
 | `python -m cli.main reflect` | Process closed trades and create memories |
 | `python -m cli.main memory-stats` | View memory statistics and run maintenance |
+| `python -m cli.main risk-metrics` | View risk metrics from backtest results |
+| `python -m cli.main position-size` | Calculate optimal position size (Kelly criterion) |
 
 ### CLI Commodity Trading
 
@@ -186,7 +190,7 @@ When commodity mode is selected:
 
 ### Implementation Details
 
-We built TradingAgents with LangGraph to ensure flexibility and modularity. We utilize `o1-preview` and `gpt-4o` as our deep thinking and fast thinking LLMs for our experiments. However, for testing purposes, we recommend you use `o4-mini` and `gpt-4.1-mini` to save on costs as our framework makes **lots of** API calls.
+We built TradingAgents with LangGraph to ensure flexibility and modularity. For commodity trading, we use **xAI Grok** models with **MT5** for price data and technical indicators. All indicators (RSI, MACD, Bollinger Bands, ATR, etc.) are calculated locally from MT5 OHLCV data.
 
 ### Python Usage
 
@@ -209,29 +213,32 @@ You can also adjust the default configuration to set your own choice of LLMs, de
 from tradingagents.graph.trading_graph import TradingAgentsGraph
 from tradingagents.default_config import DEFAULT_CONFIG
 
-# Create a custom config
+# Create a custom config for commodity trading
 config = DEFAULT_CONFIG.copy()
-config["deep_think_llm"] = "gpt-4.1-nano"  # Use a different model
-config["quick_think_llm"] = "gpt-4.1-nano"  # Use a different model
-config["max_debate_rounds"] = 1  # Increase debate rounds
-
-# Configure data vendors (default uses yfinance and Alpha Vantage)
-config["data_vendors"] = {
-    "core_stock_apis": "yfinance",           # Options: yfinance, alpha_vantage, local
-    "technical_indicators": "yfinance",      # Options: yfinance, alpha_vantage, local
-    "fundamental_data": "alpha_vantage",     # Options: openai, alpha_vantage, local
-    "news_data": "alpha_vantage",            # Options: openai, alpha_vantage, google, local
-}
+config.update({
+    "llm_provider": "xai",
+    "deep_think_llm": "grok-3-fast",
+    "quick_think_llm": "grok-3-fast",
+    "max_debate_rounds": 1,
+    "data_vendors": {
+        "core_stock_apis": "mt5",           # MT5 for OHLCV data
+        "technical_indicators": "mt5",      # MT5 calculates indicators locally
+        "fundamental_data": "openai",       # OpenAI for macro analysis
+        "news_data": "xai",                 # xAI for real-time news
+    },
+    "tool_vendors": {
+        "get_insider_sentiment": "xai",     # X/Twitter sentiment
+    },
+    "asset_type": "commodity",
+})
 
 # Initialize with custom config
 ta = TradingAgentsGraph(debug=True, config=config)
 
-# forward propagate
-_, decision = ta.propagate("NVDA", "2024-05-10")
+# Analyze Gold
+_, decision = ta.propagate("XAUUSD", "2025-12-26")
 print(decision)
 ```
-
-> The default configuration uses yfinance for stock price and technical data, and Alpha Vantage for fundamental and news data. For production use or if you encounter rate limits, consider upgrading to [Alpha Vantage Premium](https://www.alphavantage.co/premium/) for more stable and reliable data access. For offline experimentation, there's a local data vendor option that uses our **Tauric TradingDB**, a curated dataset for backtesting, though this is still in development. We're currently refining this dataset and plan to release it soon alongside our upcoming projects. Stay tuned!
 
 You can view the full list of configurations in `tradingagents/default_config.py`.
 
@@ -657,20 +664,37 @@ This ensures lessons from successful trades are weighted more heavily in future 
 
 ## Data Vendors
 
-TradingAgents supports multiple data vendors for different data types:
+TradingAgents is optimized for **MT5 commodity trading**:
 
-| Category | Vendors | Description |
-|----------|---------|-------------|
-| `core_stock_apis` | yfinance, alpha_vantage, local, **mt5** | OHLCV price data |
-| `technical_indicators` | yfinance, alpha_vantage, local | Technical indicators (RSI, MACD, etc.) |
-| `fundamental_data` | alpha_vantage, openai, local | Company financials |
-| `news_data` | alpha_vantage, google, openai, **xai**, local | Market news |
-| `get_insider_sentiment` | local, **xai** | Sentiment analysis (xAI uses X/Twitter) |
+| Category | Vendor | Description |
+|----------|--------|-------------|
+| `core_stock_apis` | **mt5** | OHLCV price data from MetaTrader 5 |
+| `technical_indicators` | **mt5** | RSI, MACD, Bollinger Bands, ATR, SMA, EMA, ADX, Stochastic (calculated locally) |
+| `fundamental_data` | **openai** | Macro analysis for commodities |
+| `news_data` | **xai** | Real-time news via Grok web search |
+| `get_insider_sentiment` | **xai** | X/Twitter sentiment analysis |
+
+### Supported MT5 Indicators
+
+All indicators are calculated locally from MT5 OHLCV data - no external API calls:
+
+| Indicator | Description |
+|-----------|-------------|
+| `rsi` | Relative Strength Index (14-period default) |
+| `macd` | MACD (12, 26, 9) with signal line and histogram |
+| `bbands` | Bollinger Bands (20-period, 2 std dev) |
+| `sma` / `close_200_sma` | Simple Moving Average |
+| `ema` | Exponential Moving Average |
+| `atr` | Average True Range (for volatility/stop loss) |
+| `adx` | Average Directional Index with +DI/-DI |
+| `stoch` | Stochastic Oscillator (%K, %D) |
 
 Configure in your config:
 ```python
 config["data_vendors"] = {
     "core_stock_apis": "mt5",
+    "technical_indicators": "mt5",
+    "fundamental_data": "openai",
     "news_data": "xai",
 }
 config["tool_vendors"] = {
