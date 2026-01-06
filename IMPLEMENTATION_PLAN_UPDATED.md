@@ -1,8 +1,8 @@
 # TradingAgents System Improvement Implementation Plan (UPDATED)
 
-**Version:** 2.0  
+**Version:** 2.1  
 **Date:** January 6, 2026  
-**Status:** In Progress - Phase 1B Complete, Phase 2.1 Evaluated
+**Status:** In Progress - Phase 1B Complete, Phase 2 Complete, Trade Decision Tracking Complete
 
 ---
 
@@ -14,14 +14,20 @@ This document provides an **updated** implementation plan for the TradingAgents 
 ✅ **Backtesting framework** for technical analysis training  
 ✅ **Daily evaluation cycle** with prediction tracking  
 ✅ **Trade reflection and learning** via CLI commands  
-✅ **Position management** and review capabilities
+✅ **Position management** and review capabilities  
+✅ **Quantitative risk metrics** (Sharpe, Sortino, VaR, max drawdown)  
+✅ **Position sizing** (Kelly criterion, half-Kelly, fixed fractional)  
+✅ **Trade decision tracking** with outcome assessment  
+✅ **Auto-reflect** for automatic closed trade processing
 
 **Remaining Focus Areas:**
 
 - ~~Parallelization of analyst execution~~ (evaluated - no benefit, see findings)
 - ~~Tiered memory with confidence scoring~~ ✅ COMPLETE
-- Quantitative risk metrics
-- Dynamic stop-loss implementation
+- ~~Quantitative risk metrics~~ ✅ COMPLETE
+- ~~Position sizing~~ ✅ COMPLETE
+- ~~Trade decision tracking~~ ✅ COMPLETE
+- Dynamic stop-loss implementation (trailing stops)
 - Portfolio-level optimization
 
 **Expected Outcomes:**
@@ -192,7 +198,116 @@ python add_trading_memory.py
 
 ### ✅ Recently Completed Features
 
-#### 7. **Memory System Enhancement**
+#### 7. **Trade Decision Tracking System**
+
+**Status:** ✅ COMPLETE (January 6, 2026)  
+**Implementation:** `tradingagents/trade_decisions.py`, `cli/main.py`
+
+**Features:**
+
+- Decision storage with rationale, entry price, SL/TP, MT5 ticket
+- Automatic decision creation on trade execution and review acceptance
+- Decision lifecycle: active → closed (with outcome)
+- Statistics tracking: win rate, P&L, best/worst decisions
+- MT5 integration: auto-fetch exit price from closed orders
+
+**CLI Commands:**
+
+```bash
+# List active decisions
+python -m cli.main decisions list
+
+# Close a decision with exit price
+python -m cli.main decisions close XAUUSD_20260106_120000 --exit 2700.00
+
+# View decision statistics
+python -m cli.main decisions stats
+
+# Cancel a decision
+python -m cli.main decisions cancel XAUUSD_20260106_120000
+```
+
+**Decision Types:**
+- **OPEN**: New position based on analysis (BUY/SELL)
+- **ADJUST**: Modify existing position (change SL/TP)
+- **CLOSE**: Close existing position
+- **HOLD**: Keep current position unchanged
+
+**Impact:** Enables systematic tracking and assessment of trading decisions
+
+---
+
+#### 8. **Auto-Reflect Command**
+
+**Status:** ✅ COMPLETE (January 6, 2026)  
+**Implementation:** `cli/main.py`
+
+**Features:**
+
+- Automatically scans all active decisions with MT5 tickets
+- Checks MT5 history for closed positions
+- Auto-fetches exit price and profit from MT5
+- Closes decisions and calculates returns
+- Creates memories for learning (if context available)
+
+**Usage:**
+
+```bash
+python -m cli.main auto-reflect
+```
+
+**Workflow:**
+1. Get all active decisions
+2. For each decision with MT5 ticket:
+   - Query MT5 history for closed deal
+   - If found: extract exit price, profit, close time
+   - Calculate returns
+   - Close decision with outcome
+   - Create memory for learning
+
+**Impact:** Prevents user laziness, ensures all closed trades are reflected on
+
+---
+
+#### 9. **Enhanced Review Command**
+
+**Status:** ✅ COMPLETE (January 6, 2026)  
+**Implementation:** `cli/main.py`
+
+**Features:**
+
+- Parses suggested SL/TP values from AI analysis
+- Offers multiple options for setting SL/TP:
+  - Use suggested values
+  - Enter manual values
+  - Mix: choose for each
+  - Skip SL/TP update
+- Applies changes directly to MT5 position
+- Stores decision with rationale for tracking
+
+**Impact:** Streamlined workflow from review to action with decision tracking
+
+---
+
+#### 10. **MT5 AutoTrading Check**
+
+**Status:** ✅ COMPLETE (January 6, 2026)  
+**Implementation:** `tradingagents/dataflows/mt5_data.py`, `cli/main.py`
+
+**Features:**
+
+- `check_mt5_autotrading()` function checks:
+  - MT5 connection status
+  - AutoTrading enabled in terminal
+  - Account trading permissions
+- CLI callback runs on every command
+- Warns if AutoTrading is disabled
+
+**Impact:** Prevents failed trade modifications due to disabled AutoTrading
+
+---
+
+#### 11. **Memory System Enhancement**
 
 **Status:** ✅ COMPLETE (Phase 1B)
 
@@ -477,7 +592,7 @@ MT5 integration uses fixed SL/TP, no trailing stops
 - ✅ 2.1 Parallel Execution - Evaluated, not beneficial (kept sequential)
 - ✅ 2.2 Quantitative Risk Metrics - Sharpe, Sortino, VaR, max drawdown, Calmar
 - ✅ 2.3 Position Sizing - Kelly criterion, half-Kelly, fixed fractional
-- ⏳ 2.4 Dynamic Stop-Loss - ATR-based SL implemented, trailing stops pending
+- ✅ 2.4 Dynamic Stop-Loss - ATR-based SL, trailing stops, breakeven stops
 
 #### 2.1 Parallelize Analyst Execution
 
@@ -737,7 +852,7 @@ python -m cli.main position-size -e 2650 -sl 2630 -d BUY -b 50000 -r 0.01 -c 0.8
 
 **Priority:** MEDIUM | **Complexity:** MEDIUM | **Impact:** MEDIUM
 
-**Status:** ⏳ PARTIAL (ATR-based SL in position sizing, trailing stops not yet implemented)
+**Status:** ✅ COMPLETE (January 6, 2026)
 
 **Objective:** Adaptive risk management that adjusts to market volatility.
 

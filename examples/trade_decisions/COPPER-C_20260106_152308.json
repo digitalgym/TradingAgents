@@ -1,0 +1,22 @@
+{
+  "decision_id": "COPPER-C_20260106_152308",
+  "symbol": "COPPER-C",
+  "decision_type": "HOLD",
+  "action": "HOLD",
+  "rationale": "Below is my analysis and actionable recommendations for your open BUY position on COPPER-C. I'll address each required point based on the provided details, focusing on the current profit, lack of stop loss (SL) and take profit (TP), and recent price action. Since SL and TP are not set, this introduces significant risk, and I prioritize protecting profits.\n\n### 1. **HOLD / CLOSE / ADJUST**: HOLD and ADJUST\nRecommendation: HOLD the position as it's in a modest profit (+1.03%), but immediately ADJU",
+  "source": "review",
+  "entry_price": 5.9315,
+  "stop_loss": 5.9315,
+  "take_profit": 6.0,
+  "volume": 0.1,
+  "mt5_ticket": 7934235,
+  "created_at": "2026-01-06T15:23:08.143089",
+  "status": "closed",
+  "exit_price": 5.9949,
+  "exit_date": "2026-01-06T20:58:44.975199",
+  "pnl": -0.6340000000000058,
+  "pnl_percent": 0,
+  "outcome_notes": "Auto-reflected: +1.07% returns, $235.52 profit",
+  "was_correct": false,
+  "has_context": false
+}

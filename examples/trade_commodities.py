@@ -164,10 +164,10 @@ from tradingagents.default_config import DEFAULT_CONFIG
 
 COMMODITY_CONFIG = DEFAULT_CONFIG.copy()
 COMMODITY_CONFIG.update({
-    # Use MT5 for price data
+    # Use MT5 for price data and indicators
     "data_vendors": {
         "core_stock_apis": "mt5",           # Use MT5 for OHLCV data
-        "technical_indicators": "yfinance",  # yfinance works for indicators
+        "technical_indicators": "mt5",       # MT5 calculates indicators locally
         "fundamental_data": "openai",        # Not used for commodities
         "news_data": "xai",                  # xAI Grok web search for news
     },

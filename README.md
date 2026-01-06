@@ -162,9 +162,14 @@ An interface will appear showing results as they load, letting you track the age
 | `python -m cli.main positions` | View/modify MT5 positions and orders |
 | `python -m cli.main review` | Re-analyze open trades and get strategy updates |
 | `python -m cli.main reflect` | Process closed trades and create memories |
+| `python -m cli.main auto-reflect` | Automatically process all closed MT5 trades |
+| `python -m cli.main decisions` | Manage trade decisions (list, close, stats, cancel) |
 | `python -m cli.main memory-stats` | View memory statistics and run maintenance |
 | `python -m cli.main risk-metrics` | View risk metrics from backtest results |
 | `python -m cli.main position-size` | Calculate optimal position size (Kelly criterion) |
+| `python -m cli.main trailing-stops` | Monitor and update ATR-based trailing stops |
+
+**Note:** The CLI automatically checks MT5 AutoTrading status on startup and warns if disabled.
 
 ### CLI Commodity Trading
 
@@ -468,6 +473,236 @@ positions = get_open_positions()
 
 ---
 
+## Trade Decision Tracking
+
+TradingAgents tracks your trading decisions from analysis through to outcome, enabling systematic learning and performance assessment.
+
+### Decision Tracking Workflow
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Analyze   │────▶│   Execute   │────▶│   Review    │────▶│   Reflect   │
+│  (report)   │     │  (MT5 order)│     │  (adjust)   │     │  (learning) │
+└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
+       │                   │                   │                   │
+       ▼                   ▼                   ▼                   ▼
+   Decision            Decision            Decision            Decision
+    stored              linked              updated              closed
+```
+
+### Storing Decisions
+
+Decisions are automatically stored when you:
+1. **Execute a trade** from analysis - stores signal, rationale, entry price, SL/TP
+2. **Act on review recommendations** - stores adjustment rationale and new SL/TP
+
+When acting on a review recommendation, you can choose how to set SL/TP:
+- **Use suggested values** - applies values parsed from the AI analysis
+- **Enter manual values** - type your own SL and TP
+- **Mix: choose for each** - pick suggested or manual for each value
+- **Skip SL/TP update** - just store the decision
+
+### Managing Decisions
+
+```bash
+# List active decisions
+python -m cli.main decisions list
+
+# Close a decision with exit price
+python -m cli.main decisions close XAUUSD_20260106_120000 --exit 2700.00
+
+# View decision statistics
+python -m cli.main decisions stats
+python -m cli.main decisions stats --symbol XAUUSD
+
+# Cancel a decision
+python -m cli.main decisions cancel XAUUSD_20260106_120000
+```
+
+### Auto-Reflect: Automatic Trade Processing
+
+The `auto-reflect` command automatically processes all closed MT5 trades:
+
+```bash
+python -m cli.main auto-reflect
+```
+
+This command:
+1. Scans all active decisions with MT5 tickets
+2. Checks MT5 history for closed positions
+3. Auto-fetches exit price and profit from MT5
+4. Closes decisions and calculates returns
+5. Creates memories for learning
+
+Example output:
+```
+🔄 Auto-Reflect: Processing closed trades...
+
+Found 3 active decision(s). Checking MT5 for closed trades...
+
+✓ COPPER-C_20260106_152308
+  Symbol: COPPER-C
+  Entry: 5.9315 → Exit: 5.9949
+  Profit: $235.52
+  Returns: +1.07%
+  ✓ Decision closed
+
+Summary:
+  Decisions processed: 3
+  Memories created: 2
+  Still open: 0
+```
+
+**Tip:** Run `auto-reflect` periodically to ensure all closed trades are processed without manual intervention.
+
+---
+
+## Dynamic Stop-Loss & Trailing Stops
+
+TradingAgents includes ATR-based dynamic stop-loss management to adapt to market volatility.
+
+### Trailing Stops Command
+
+Monitor and update trailing stops on all open positions:
+
+```bash
+python -m cli.main trailing-stops
+```
+
+This command:
+1. Scans all open MT5 positions
+2. Calculates ATR (14-period) for each symbol
+3. Suggests trailing stop updates based on:
+   - **Breakeven**: Move SL to entry + buffer when in profit
+   - **Trailing**: Trail SL at 1.5x ATR from current price
+4. Offers to apply updates (all, individually, or skip)
+
+Example output:
+```
+🔄 Trailing Stop Analysis (2 positions)
+
+XAUUSD BUY (Ticket: 123456)
+  Entry: 2650.00 | Current: 2680.00 | P/L: +1.13%
+  Current SL: 2630.00 | ATR: 15.50
+  → Trailing SL available: 2656.75
+
+XAGUSD BUY (Ticket: 123457)
+  Entry: 30.50 | Current: 31.20 | P/L: +2.30%
+  Current SL: 29.80 | ATR: 0.45
+  → Breakeven SL available: 30.55
+
+═══ 2 Update(s) Available ═══
+
+? Apply updates? Apply all
+✓ XAUUSD: SL updated to 2656.75
+✓ XAGUSD: SL updated to 30.55
+```
+
+### ATR-Based Stop Calculation
+
+The `DynamicStopLoss` class calculates stops based on market volatility:
+
+```python
+from tradingagents.risk import DynamicStopLoss, get_atr_for_symbol
+
+# Get current ATR for a symbol
+atr = get_atr_for_symbol("XAUUSD", period=14)
+
+# Calculate dynamic SL/TP
+dsl = DynamicStopLoss(
+    atr_multiplier=2.0,      # Initial SL at 2x ATR
+    trailing_multiplier=1.5,  # Trail at 1.5x ATR
+    risk_reward_ratio=2.0,    # TP at 2:1 R:R
+)
+
+levels = dsl.calculate_levels(
+    entry_price=2650.00,
+    atr=atr,
+    direction="BUY",
+)
+print(f"SL: {levels.stop_loss}, TP: {levels.take_profit}")
+
+# Get trailing stop suggestion
+new_sl, should_update = dsl.calculate_trailing_stop(
+    current_price=2680.00,
+    current_sl=2630.00,
+    atr=atr,
+    direction="BUY",
+)
+```
+
+### Review Command Integration
+
+The `review` command now includes ATR-based analysis:
+
+```bash
+python -m cli.main review
+```
+
+When reviewing positions, you'll see:
+- Current ATR value
+- ATR-based stop distance (2x ATR)
+- Suggested breakeven SL
+- Suggested trailing SL
+- System recommendation
+
+This information is also passed to the LLM for more informed recommendations.
+
+### Dynamic SL in Order Placement
+
+When placing a new order after analysis, you can choose ATR-based stops:
+
+```
+Current XAUUSD price: 2680.00
+
+ATR (14): 15.5000 | ATR-based SL: 2649.00 | ATR-based TP: 2711.00
+
+? Stop Loss method:
+  > ATR-based (2x ATR): 2649.00
+    ATR with custom multiplier
+    Enter manual price
+
+? Take Profit method:
+  > ATR-based (2:1 R:R): 2711.00
+    Custom risk:reward ratio
+    Enter manual price
+```
+
+**Stop Loss Options:**
+- **ATR-based (2x ATR)**: Default volatility-adjusted stop
+- **ATR with custom multiplier**: Specify your own multiplier (e.g., 1.5x, 2.5x, 3x ATR)
+- **Manual price**: Enter exact price level
+
+**Take Profit Options:**
+- **ATR-based (2:1 R:R)**: Default 2:1 risk-reward ratio
+- **Custom risk:reward ratio**: Specify your own ratio (e.g., 1.5:1, 3:1)
+- **Manual price**: Enter exact price level
+
+### Dynamic SL in Position Modification
+
+When modifying an existing position via `positions` command:
+
+```
+Current XAUUSD price: 2695.00
+Entry: 2680.00 | Current SL: 2660.00 | Current TP: 2720.00
+ATR (14): 15.5000
+
+? Stop Loss update:
+  > Keep current
+    Trailing (1.5x ATR): 2671.75
+    Breakeven: 2681.55
+    ATR with custom multiplier
+    Enter manual price
+```
+
+**Available Options (when in profit):**
+- **Trailing (1.5x ATR)**: Trail SL at 1.5x ATR below current price
+- **Breakeven**: Move SL to entry + small buffer
+- **ATR with custom multiplier**: Specify distance from current price
+- **Custom risk:reward ratio**: Set TP based on new SL position
+
+---
+
 ## Trade Reflection & Learning
 
 When trades close, TradingAgents learns from the outcome to improve future decisions.
@@ -479,8 +714,8 @@ python -m cli.main reflect
 ```
 
 This command:
-1. Lists all pending trades (saved when you executed via CLI)
-2. You enter the exit price
+1. Lists all pending trades and active decisions
+2. Auto-fetches exit price from MT5 (if position is closed)
 3. Calculates returns (handles long/short correctly)
 4. Creates memory for future learning
 5. **Generates improvement suggestions** using LLM analysis

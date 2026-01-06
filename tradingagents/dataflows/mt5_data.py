@@ -43,6 +43,58 @@ def _ensure_mt5_initialized() -> bool:
     return True
 
 
+def check_mt5_autotrading() -> dict:
+    """
+    Check if MT5 AutoTrading is enabled.
+    
+    Returns:
+        dict with keys:
+        - connected: bool - whether MT5 is connected
+        - autotrading_enabled: bool - whether AutoTrading is enabled
+        - trade_allowed: bool - whether trading is allowed for the account
+        - message: str - human-readable status message
+    """
+    result = {
+        "connected": False,
+        "autotrading_enabled": False,
+        "trade_allowed": False,
+        "message": "",
+    }
+    
+    try:
+        if not mt5.initialize():
+            result["message"] = "MT5 not connected - please open MetaTrader 5"
+            return result
+        
+        result["connected"] = True
+        
+        terminal_info = mt5.terminal_info()
+        if terminal_info is None:
+            result["message"] = "Could not get MT5 terminal info"
+            return result
+        
+        # Check if AutoTrading is enabled in the terminal
+        result["autotrading_enabled"] = terminal_info.trade_allowed
+        
+        # Check account trading permissions
+        account_info = mt5.account_info()
+        if account_info:
+            result["trade_allowed"] = account_info.trade_allowed
+        
+        if not result["autotrading_enabled"]:
+            result["message"] = "⚠️ AutoTrading DISABLED - Click the 'AutoTrading' button in MT5 toolbar to enable"
+        elif not result["trade_allowed"]:
+            result["message"] = "⚠️ Trading not allowed for this account"
+        else:
+            result["message"] = "✓ AutoTrading enabled"
+        
+        return result
+        
+    except Exception as e:
+        result["message"] = f"Error checking MT5 status: {e}"
+        return result
+
+
 def _resolve_symbol(symbol: str) -> str:
     """Resolve symbol aliases to actual MT5 symbols."""
     return COMMODITY_ALIASES.get(symbol.lower(), symbol.upper())
@@ -244,8 +296,8 @@ def shutdown_mt5():
 def get_mt5_indicator(
     symbol: Annotated[str, "MT5 symbol or alias"],
     indicator: Annotated[str, "Indicator name: rsi, macd, bbands, sma, ema, atr, adx, stoch"],
-    start_date: Annotated[str, "Start date in yyyy-mm-dd format"],
-    end_date: Annotated[str, "End date in yyyy-mm-dd format"],
+    curr_date: Annotated[str, "Current date in yyyy-mm-dd format"],
+    look_back_days: int = 30,
     period: int = 14,
     timeframe: str = "D1",
 ) -> str:
@@ -267,19 +319,23 @@ def get_mt5_indicator(
         String with indicator values
     """
     import numpy as np
+    from datetime import timedelta
     
     _ensure_mt5_initialized()
     
     mt5_symbol = _resolve_symbol(symbol)
     
-    # Parse dates - get extra data for indicator warmup
-    end_dt = datetime.strptime(end_date, "%Y-%m-%d")
-    start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+    # Handle curr_date - convert to string if needed
+    if isinstance(curr_date, int):
+        curr_date = str(curr_date)
+    
+    # Parse end date (curr_date) and calculate start date from look_back_days
+    end_dt = datetime.strptime(curr_date, "%Y-%m-%d")
+    start_dt = end_dt - timedelta(days=look_back_days)
     
     # Get extra bars for indicator calculation warmup
     # For 200 SMA on daily, need 200+ trading days (~300 calendar days)
     warmup_days = max(400, period * 3)  # Enough for 200 SMA with buffer
-    from datetime import timedelta
     warmup_start = start_dt - timedelta(days=warmup_days)
     
     tf = TIMEFRAMES.get(timeframe.upper(), mt5.TIMEFRAME_D1)
@@ -911,6 +967,99 @@ def modify_order(ticket: int, price: float = None, sl: float = None, tp: float =
         "new_sl": new_sl,
         "new_tp": new_tp,
     }
+
+
+def get_closed_deal_by_ticket(ticket: int, days_back: int = 30) -> dict:
+    """
+    Get closed deal info from MT5 history by position ticket.
+    
+    Args:
+        ticket: The position ticket number
+        days_back: How many days back to search in history
+        
+    Returns:
+        dict with deal info including exit price, or None if not found
+    """
+    from datetime import timedelta
+    
+    _ensure_mt5_initialized()
+    
+    # Get deals from history
+    from_date = datetime.now() - timedelta(days=days_back)
+    to_date = datetime.now() + timedelta(days=1)
+    
+    deals = mt5.history_deals_get(from_date, to_date)
+    
+    if deals is None or len(deals) == 0:
+        return None
+    
+    # Find deals matching this position ticket
+    # Look for the closing deal (entry=1 means out/close)
+    for deal in deals:
+        if deal.position_id == ticket and deal.entry == 1:  # entry=1 means closing deal
+            return {
+                "ticket": deal.ticket,
+                "position_id": deal.position_id,
+                "symbol": deal.symbol,
+                "type": "BUY" if deal.type == 0 else "SELL",
+                "volume": deal.volume,
+                "price": deal.price,  # This is the exit price
+                "profit": deal.profit,
+                "commission": deal.commission,
+                "swap": deal.swap,
+                "time": datetime.fromtimestamp(deal.time).strftime('%Y-%m-%d %H:%M:%S'),
+            }
+    
+    return None
+
+
+def get_history_deals(symbol: str = None, days_back: int = 30) -> list:
+    """
+    Get closed deals from MT5 history.
+    
+    Args:
+        symbol: Filter by symbol (optional)
+        days_back: How many days back to search
+        
+    Returns:
+        List of closed deals
+    """
+    from datetime import timedelta
+    
+    _ensure_mt5_initialized()
+    
+    from_date = datetime.now() - timedelta(days=days_back)
+    to_date = datetime.now() + timedelta(days=1)
+    
+    if symbol:
+        mt5_symbol = _resolve_symbol(symbol)
+        deals = mt5.history_deals_get(from_date, to_date, symbol=mt5_symbol)
+    else:
+        deals = mt5.history_deals_get(from_date, to_date)
+    
+    if deals is None:
+        return []
+    
+    result = []
+    for deal in deals:
+        # entry: 0=in (open), 1=out (close), 2=reverse
+        entry_type = {0: "OPEN", 1: "CLOSE", 2: "REVERSE"}.get(deal.entry, str(deal.entry))
+        
+        result.append({
+            "ticket": deal.ticket,
+            "position_id": deal.position_id,
+            "symbol": deal.symbol,
+            "type": "BUY" if deal.type == 0 else "SELL",
+            "entry": entry_type,
+            "volume": deal.volume,
+            "price": deal.price,
+            "profit": deal.profit,
+            "commission": deal.commission,
+            "swap": deal.swap,
+            "time": datetime.fromtimestamp(deal.time).strftime('%Y-%m-%d %H:%M:%S'),
+        })
+    
+    return result
 
 
 def close_position(ticket: int) -> dict:

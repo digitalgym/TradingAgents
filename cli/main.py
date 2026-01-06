@@ -42,6 +42,25 @@ app = typer.Typer(
 )
 
 
+@app.callback()
+def main_callback():
+    """Check MT5 connection and AutoTrading status on startup."""
+    try:
+        from tradingagents.dataflows.mt5_data import check_mt5_autotrading
+        
+        status = check_mt5_autotrading()
+        
+        if not status["connected"]:
+            console.print(f"[yellow]{status['message']}[/yellow]")
+        elif not status["autotrading_enabled"]:
+            console.print(f"[bold yellow]{status['message']}[/bold yellow]")
+        # Don't print anything if all is OK - keep output clean
+        
+    except Exception as e:
+        # Don't block CLI if MT5 check fails
+        pass
+
+
 # Create a deque to store recent messages with a maximum length
 class MessageBuffer:
     def __init__(self, max_length=100):
@@ -1273,26 +1292,82 @@ def prompt_trade_execution(ticker: str, signal: str, final_state: dict):
         ).ask()
         entry_price = float(entry_input) if entry_input else current_price
         
-        # Stop Loss
-        if signal == "BUY":
-            default_sl = round(entry_price * 0.98, symbol_info["digits"])  # 2% below
-            default_tp = round(entry_price * 1.04, symbol_info["digits"])  # 4% above
+        # Stop Loss - offer dynamic ATR-based option
+        from tradingagents.risk.stop_loss import DynamicStopLoss, get_atr_for_symbol
+        
+        atr = get_atr_for_symbol(ticker, period=14)
+        dsl = DynamicStopLoss(atr_multiplier=2.0, trailing_multiplier=1.5, risk_reward_ratio=2.0)
+        
+        # Calculate ATR-based defaults
+        if atr > 0:
+            atr_levels = dsl.calculate_levels(entry_price, atr, signal)
+            default_sl = round(atr_levels.stop_loss, symbol_info["digits"])
+            default_tp = round(atr_levels.take_profit, symbol_info["digits"])
+            console.print(f"\n[cyan]ATR (14): {atr:.4f} | ATR-based SL: {default_sl} | ATR-based TP: {default_tp}[/cyan]")
         else:
-            default_sl = round(entry_price * 1.02, symbol_info["digits"])  # 2% above
-            default_tp = round(entry_price * 0.96, symbol_info["digits"])  # 4% below
+            # Fallback to percentage-based
+            if signal == "BUY":
+                default_sl = round(entry_price * 0.98, symbol_info["digits"])  # 2% below
+                default_tp = round(entry_price * 1.04, symbol_info["digits"])  # 4% above
+            else:
+                default_sl = round(entry_price * 1.02, symbol_info["digits"])  # 2% above
+                default_tp = round(entry_price * 0.96, symbol_info["digits"])  # 4% below
         
-        sl_input = questionary.text(
-            f"Stop Loss price (default: {default_sl}):",
-            default=str(default_sl),
+        # SL input method
+        sl_method = questionary.select(
+            "Stop Loss method:",
+            choices=[
+                f"ATR-based (2x ATR): {default_sl}" if atr > 0 else f"Default (2%): {default_sl}",
+                "ATR with custom multiplier",
+                "Enter manual price",
+            ],
         ).ask()
-        stop_loss = float(sl_input) if sl_input else default_sl
         
-        # Take Profit
-        tp_input = questionary.text(
-            f"Take Profit price (default: {default_tp}):",
-            default=str(default_tp),
+        if "custom multiplier" in sl_method:
+            atr_mult = questionary.text(
+                "ATR multiplier for SL (e.g., 1.5, 2.0, 2.5):",
+                default="2.0",
+            ).ask()
+            atr_mult = float(atr_mult)
+            custom_dsl = DynamicStopLoss(atr_multiplier=atr_mult, risk_reward_ratio=2.0)
+            custom_levels = custom_dsl.calculate_levels(entry_price, atr, signal)
+            stop_loss = round(custom_levels.stop_loss, symbol_info["digits"])
+            console.print(f"[cyan]SL set to {stop_loss} ({atr_mult}x ATR)[/cyan]")
+        elif "manual" in sl_method.lower():
+            sl_input = questionary.text(
+                f"Stop Loss price:",
+                default=str(default_sl),
+            ).ask()
+            stop_loss = float(sl_input) if sl_input else default_sl
+        else:
+            stop_loss = default_sl
+        
+        # TP input method
+        tp_method = questionary.select(
+            "Take Profit method:",
+            choices=[
+                f"ATR-based (2:1 R:R): {default_tp}" if atr > 0 else f"Default (4%): {default_tp}",
+                "Custom risk:reward ratio",
+                "Enter manual price",
+            ],
         ).ask()
-        take_profit = float(tp_input) if tp_input else default_tp
+        
+        if "custom risk:reward" in tp_method.lower():
+            rr_ratio = questionary.text(
+                "Risk:Reward ratio (e.g., 1.5, 2.0, 3.0):",
+                default="2.0",
+            ).ask()
+            rr_ratio = float(rr_ratio)
+            take_profit = round(dsl.calculate_initial_tp(entry_price, stop_loss, signal, rr_ratio), symbol_info["digits"])
+            console.print(f"[cyan]TP set to {take_profit} ({rr_ratio}:1 R:R)[/cyan]")
+        elif "manual" in tp_method.lower():
+            tp_input = questionary.text(
+                f"Take Profit price:",
+                default=str(default_tp),
+            ).ask()
+            take_profit = float(tp_input) if tp_input else default_tp
+        else:
+            take_profit = default_tp
         
         # Order type
         use_limit = questionary.confirm(
@@ -1367,9 +1442,37 @@ def save_trade_state(
     import json
     from pathlib import Path
     from datetime import datetime
+    from tradingagents.trade_decisions import store_decision, link_decision_to_ticket
     
     trades_dir = Path("pending_trades")
     trades_dir.mkdir(exist_ok=True)
+    
+    # Extract rationale from final decision
+    rationale = final_state.get("final_trade_decision", "")[:500]
+    if not rationale:
+        rationale = f"{signal} signal from TradingAgents analysis"
+    
+    # Store decision for tracking
+    decision_id = store_decision(
+        symbol=ticker,
+        decision_type="OPEN",
+        action=signal,
+        rationale=rationale,
+        source="analysis",
+        entry_price=entry_price,
+        stop_loss=stop_loss,
+        take_profit=take_profit,
+        volume=volume,
+        mt5_ticket=order_id,
+        analysis_context={
+            "company_of_interest": ticker,
+            "trade_date": final_state.get("trade_date", datetime.now().strftime("%Y-%m-%d")),
+            "market_report": final_state.get("market_report", ""),
+            "sentiment_report": final_state.get("sentiment_report", ""),
+            "news_report": final_state.get("news_report", ""),
+            "final_trade_decision": final_state.get("final_trade_decision", ""),
+        },
+    )
     
     trade_data = {
         "ticker": ticker,
@@ -1381,6 +1484,7 @@ def save_trade_state(
         "volume": volume,
         "opened_at": datetime.now().isoformat(),
         "status": "pending",
+        "decision_id": decision_id,  # Link to decision tracking
         "final_state": {
             "company_of_interest": ticker,
             "trade_date": final_state.get("trade_date", datetime.now().strftime("%Y-%m-%d")),
@@ -1403,6 +1507,8 @@ def save_trade_state(
         json.dump(trade_data, f, indent=2, default=str)
     
     console.print(f"\n[dim]Trade state saved to {filename}[/dim]")
+    console.print(f"[dim]Decision ID: {decision_id}[/dim]")
+    console.print(f"[dim]Close with: python -m cli.main decisions close {decision_id} --exit <price>[/dim]")
     console.print(f"[dim]Run 'python -m cli.main reflect' when trade closes to create memory.[/dim]")
 
 
@@ -1416,33 +1522,71 @@ def analyze():
 def reflect():
     """Process closed trades and create memories for learning."""
     import json
+    import questionary
     from pathlib import Path
     from tradingagents.graph.trading_graph import TradingAgentsGraph
     from tradingagents.default_config import DEFAULT_CONFIG
+    from tradingagents.trade_decisions import (
+        list_active_decisions,
+        close_decision,
+        load_decision_context,
+    )
     
+    # Check both old pending_trades and new decision tracking system
     trades_dir = Path("pending_trades")
+    old_trade_files = list(trades_dir.glob("trade_*.json")) if trades_dir.exists() else []
     
-    if not trades_dir.exists():
-        console.print("[yellow]No pending trades directory found.[/yellow]")
+    # Get active decisions from new system
+    active_decisions = list_active_decisions()
+    
+    if not old_trade_files and not active_decisions:
+        console.print("[yellow]No pending trades or active decisions found.[/yellow]")
+        console.print("[dim]Trades are stored when you execute from analysis or act on review recommendations.[/dim]")
         return
     
-    # Find all pending trade files
-    trade_files = list(trades_dir.glob("trade_*.json"))
+    # Combine both sources
+    all_trades = []
     
-    if not trade_files:
-        console.print("[yellow]No pending trades found.[/yellow]")
-        return
-    
-    console.print(f"\n[bold]Found {len(trade_files)} pending trade(s):[/bold]\n")
-    
-    for i, trade_file in enumerate(trade_files):
+    # Add old-style trades
+    for trade_file in old_trade_files:
         with open(trade_file, "r", encoding="utf-8") as f:
             trade_data = json.load(f)
-        
-        console.print(f"[cyan]{i+1}. {trade_data['ticker']} {trade_data['signal']}[/cyan]")
-        console.print(f"   Entry: {trade_data['entry_price']} | SL: {trade_data['stop_loss']} | TP: {trade_data['take_profit']}")
-        console.print(f"   Opened: {trade_data['opened_at']}")
-        console.print(f"   Status: {trade_data['status']}")
+        all_trades.append({
+            "source": "pending_trades",
+            "file": trade_file,
+            "data": trade_data,
+            "display": f"{trade_data['ticker']} {trade_data['signal']} @ {trade_data['entry_price']}",
+            "entry": trade_data['entry_price'],
+            "signal": trade_data['signal'],
+            "ticker": trade_data['ticker'],
+        })
+    
+    # Add new-style decisions
+    for decision in active_decisions:
+        all_trades.append({
+            "source": "decisions",
+            "decision_id": decision["decision_id"],
+            "data": decision,
+            "display": f"{decision['symbol']} {decision['action']} @ {decision.get('entry_price', 'N/A')}",
+            "entry": decision.get("entry_price"),
+            "signal": decision.get("action"),
+            "ticker": decision["symbol"],
+        })
+    
+    console.print(f"\n[bold]Found {len(all_trades)} trade(s) to reflect on:[/bold]\n")
+    
+    for i, trade in enumerate(all_trades):
+        source_label = "[dim](legacy)[/dim]" if trade["source"] == "pending_trades" else "[cyan](decision)[/cyan]"
+        console.print(f"[cyan]{i+1}.[/cyan] {trade['display']} {source_label}")
+        if trade["source"] == "decisions":
+            d = trade["data"]
+            console.print(f"   SL: {d.get('stop_loss', 'N/A')} | TP: {d.get('take_profit', 'N/A')}")
+            console.print(f"   Created: {d['created_at']}")
+            console.print(f"   Rationale: [dim]{d.get('rationale', '')[:80]}...[/dim]")
+        else:
+            d = trade["data"]
+            console.print(f"   SL: {d['stop_loss']} | TP: {d['take_profit']}")
+            console.print(f"   Opened: {d['opened_at']}")
         console.print()
     
     # Ask which trade to process
@@ -1456,36 +1600,79 @@ def reflect():
     
     try:
         idx = int(trade_num) - 1
-        trade_file = trade_files[idx]
+        selected_trade = all_trades[idx]
     except (ValueError, IndexError):
         console.print("[red]Invalid trade number.[/red]")
         return
     
-    with open(trade_file, "r", encoding="utf-8") as f:
-        trade_data = json.load(f)
+    console.print(f"\n[bold]Processing: {selected_trade['display']}[/bold]")
     
-    console.print(f"\n[bold]Processing: {trade_data['ticker']} {trade_data['signal']}[/bold]")
-    console.print(f"Entry price: {trade_data['entry_price']}")
+    entry = selected_trade["entry"]
+    if entry is None:
+        entry_str = questionary.text("Entry price not recorded. Enter entry price:").ask()
+        try:
+            entry = float(entry_str)
+        except ValueError:
+            console.print("[red]Invalid price.[/red]")
+            return
     
-    # Get exit price from user
-    exit_price_str = questionary.text(
-        "Enter exit price:",
-    ).ask()
+    console.print(f"Entry price: {entry}")
     
-    try:
-        exit_price = float(exit_price_str)
-    except ValueError:
-        console.print("[red]Invalid price.[/red]")
-        return
+    # Try to get exit price from MT5 if we have a ticket
+    exit_price = None
+    mt5_ticket = selected_trade["data"].get("mt5_ticket")
+    
+    if mt5_ticket:
+        try:
+            from tradingagents.dataflows.mt5_data import get_closed_deal_by_ticket
+            
+            console.print(f"[dim]Checking MT5 history for ticket {mt5_ticket}...[/dim]")
+            closed_deal = get_closed_deal_by_ticket(mt5_ticket)
+            
+            if closed_deal:
+                exit_price = closed_deal["price"]
+                profit = closed_deal.get("profit", 0)
+                close_time = closed_deal.get("time", "")
+                
+                console.print(f"[green]✓ Found closed deal in MT5:[/green]")
+                console.print(f"  Exit Price: {exit_price}")
+                console.print(f"  Profit: ${profit:.2f}")
+                console.print(f"  Closed: {close_time}")
+                
+                use_mt5_price = questionary.confirm(
+                    f"Use MT5 exit price ({exit_price})?",
+                    default=True,
+                ).ask()
+                
+                if not use_mt5_price:
+                    exit_price = None  # Will prompt for manual entry
+            else:
+                console.print("[yellow]Position not found in MT5 closed history (may still be open)[/yellow]")
+        except Exception as e:
+            console.print(f"[yellow]Could not fetch from MT5: {e}[/yellow]")
+    
+    # Get exit price from user if not from MT5
+    if exit_price is None:
+        exit_price_str = questionary.text(
+            "Enter exit price:",
+        ).ask()
+        
+        try:
+            exit_price = float(exit_price_str)
+        except ValueError:
+            console.print("[red]Invalid price.[/red]")
+            return
     
     # Calculate returns
-    entry = trade_data['entry_price']
-    signal = trade_data['signal']
+    signal = selected_trade["signal"]
     
-    if signal == "BUY":
+    if signal and signal.upper() in ["BUY", "LONG"]:
         returns = ((exit_price - entry) / entry) * 100
-    else:  # SELL (short)
+    elif signal and signal.upper() in ["SELL", "SHORT"]:
         returns = ((entry - exit_price) / entry) * 100
+    else:
+        # For HOLD/ADJUST decisions, calculate based on position direction
+        returns = ((exit_price - entry) / entry) * 100
     
     console.print(f"\n[bold]Trade Result:[/bold]")
     console.print(f"  Entry: {entry}")
@@ -1505,38 +1692,77 @@ def reflect():
         console.print("[yellow]Reflection cancelled.[/yellow]")
         return
     
-    # Create graph with memory enabled
-    config = DEFAULT_CONFIG.copy()
-    config['use_memory'] = True
-    config['embedding_provider'] = 'local'
+    # Close the decision in the tracking system
+    if selected_trade["source"] == "decisions":
+        close_decision(
+            selected_trade["decision_id"],
+            exit_price,
+            outcome_notes=f"Reflected with {returns:+.2f}% returns",
+        )
+        console.print(f"[green]✓ Decision closed: {selected_trade['decision_id']}[/green]")
     
-    console.print("\n[dim]Initializing memory system...[/dim]")
+    # Check if we have context for memory creation
+    trade_data = selected_trade["data"]
+    has_context = False
     
-    try:
-        graph = TradingAgentsGraph(config=config, debug=False)
+    if selected_trade["source"] == "decisions":
+        # Try to load context from decision
+        context = load_decision_context(selected_trade["decision_id"])
+        if context:
+            has_context = True
+            final_state = context
+        else:
+            final_state = {
+                "company_of_interest": selected_trade["ticker"],
+                "trade_date": trade_data.get("created_at", ""),
+                "final_trade_decision": trade_data.get("rationale", ""),
+            }
+    else:
+        # Legacy pending_trades format
+        final_state = trade_data.get('final_state', {})
+        has_context = bool(final_state)
+    
+    if has_context:
+        # Create graph with memory enabled
+        config = DEFAULT_CONFIG.copy()
+        config['use_memory'] = True
+        config['embedding_provider'] = 'local'
         
-        # Set the curr_state from saved trade data
-        graph.curr_state = trade_data['final_state']
+        console.print("\n[dim]Initializing memory system...[/dim]")
         
-        console.print("[dim]Running reflection...[/dim]")
-        
-        # Run reflection
-        graph.reflect_and_remember(returns)
-        
-        console.print(f"\n[bold green]✅ Memory created successfully![/bold green]")
-        console.print(f"[dim]Lessons from this {trade_data['ticker']} {signal} trade have been stored.[/dim]")
-        
-        # Generate trade improvement suggestions
-        console.print("\n[dim]Analyzing trade for improvement suggestions...[/dim]")
-        suggestions = analyze_trade_improvements(trade_data, exit_price, returns)
-        if suggestions:
-            console.print(Panel(
-                suggestions,
-                title="💡 Trade Improvement Suggestions",
-                border_style="cyan",
-            ))
-        
-        # Update trade file status
+        try:
+            graph = TradingAgentsGraph(config=config, debug=False)
+            
+            # Set the curr_state from saved trade data
+            graph.curr_state = final_state
+            
+            console.print("[dim]Running reflection...[/dim]")
+            
+            # Run reflection
+            graph.reflect_and_remember(returns)
+            
+            console.print(f"\n[bold green]✅ Memory created successfully![/bold green]")
+            console.print(f"[dim]Lessons from this {selected_trade['ticker']} {signal} trade have been stored.[/dim]")
+            
+        except Exception as e:
+            console.print(f"\n[bold red]❌ Error during reflection: {e}[/bold red]")
+    else:
+        console.print("[yellow]No analysis context available for memory creation.[/yellow]")
+        console.print("[dim]Decision outcome has been recorded for statistics.[/dim]")
+    
+    # Generate trade improvement suggestions
+    console.print("\n[dim]Analyzing trade for improvement suggestions...[/dim]")
+    suggestions = analyze_trade_improvements(trade_data, exit_price, returns)
+    if suggestions:
+        console.print(Panel(
+            suggestions,
+            title="💡 Trade Improvement Suggestions",
+            border_style="cyan",
+        ))
+    
+    # Handle legacy pending_trades file
+    if selected_trade["source"] == "pending_trades":
+        trade_file = selected_trade["file"]
         trade_data['status'] = 'closed'
         trade_data['exit_price'] = exit_price
         trade_data['returns'] = returns
@@ -1556,9 +1782,139 @@ def reflect():
             archive_dir.mkdir(exist_ok=True)
             trade_file.rename(archive_dir / trade_file.name)
             console.print(f"[dim]Trade archived to {archive_dir / trade_file.name}[/dim]")
+
+
+@app.command()
+def auto_reflect():
+    """Automatically process all closed MT5 orders that have active decisions."""
+    from tradingagents.trade_decisions import (
+        list_active_decisions,
+        close_decision,
+        load_decision_context,
+    )
+    from tradingagents.dataflows.mt5_data import get_closed_deal_by_ticket
+    from tradingagents.graph.trading_graph import TradingAgentsGraph
+    from tradingagents.default_config import DEFAULT_CONFIG
+    
+    console.print("\n[bold]🔄 Auto-Reflect: Processing closed trades...[/bold]\n")
+    
+    # Get all active decisions
+    active_decisions = list_active_decisions()
+    
+    if not active_decisions:
+        console.print("[yellow]No active decisions to process.[/yellow]")
+        return
+    
+    console.print(f"Found {len(active_decisions)} active decision(s). Checking MT5 for closed trades...\n")
+    
+    closed_count = 0
+    reflected_count = 0
+    
+    for decision in active_decisions:
+        mt5_ticket = decision.get("mt5_ticket")
+        decision_id = decision["decision_id"]
+        symbol = decision["symbol"]
+        entry = decision.get("entry_price")
+        
+        if not mt5_ticket:
+            console.print(f"[dim]⏭ {decision_id}: No MT5 ticket, skipping[/dim]")
+            continue
+        
+        # Check if this position is closed in MT5
+        try:
+            closed_deal = get_closed_deal_by_ticket(mt5_ticket)
             
-    except Exception as e:
-        console.print(f"\n[bold red]❌ Error during reflection: {e}[/bold red]")
+            if not closed_deal:
+                console.print(f"[dim]⏳ {decision_id}: Position still open[/dim]")
+                continue
+            
+            # Found a closed deal!
+            exit_price = closed_deal["price"]
+            profit = closed_deal.get("profit", 0)
+            close_time = closed_deal.get("time", "")
+            
+            console.print(f"\n[green]✓ {decision_id}[/green]")
+            console.print(f"  Symbol: {symbol}")
+            console.print(f"  Entry: {entry} → Exit: {exit_price}")
+            console.print(f"  Profit: ${profit:.2f}")
+            console.print(f"  Closed: {close_time}")
+            
+            # Calculate returns
+            action = decision.get("action", "").upper()
+            if entry and entry > 0:
+                if action in ["BUY", "LONG"]:
+                    returns = ((exit_price - entry) / entry) * 100
+                elif action in ["SELL", "SHORT"]:
+                    returns = ((entry - exit_price) / entry) * 100
+                else:
+                    # For HOLD/ADJUST, assume long position
+                    returns = ((exit_price - entry) / entry) * 100
+            else:
+                returns = 0
+            
+            if returns >= 0:
+                console.print(f"  Returns: [green]+{returns:.2f}%[/green]")
+            else:
+                console.print(f"  Returns: [red]{returns:.2f}%[/red]")
+            
+            # Close the decision
+            close_decision(
+                decision_id,
+                exit_price,
+                outcome_notes=f"Auto-reflected: {returns:+.2f}% returns, ${profit:.2f} profit",
+            )
+            closed_count += 1
+            
+            # Try to create memory if we have context
+            context = load_decision_context(decision_id)
+            if context:
+                try:
+                    config = DEFAULT_CONFIG.copy()
+                    config['use_memory'] = True
+                    config['embedding_provider'] = 'local'
+                    
+                    graph = TradingAgentsGraph(config=config, debug=False)
+                    graph.curr_state = context
+                    graph.reflect_and_remember(returns)
+                    
+                    console.print(f"  [green]✓ Memory created[/green]")
+                    reflected_count += 1
+                except Exception as e:
+                    console.print(f"  [yellow]Memory creation failed: {e}[/yellow]")
+            else:
+                # Create basic memory from decision rationale
+                try:
+                    config = DEFAULT_CONFIG.copy()
+                    config['use_memory'] = True
+                    config['embedding_provider'] = 'local'
+                    
+                    graph = TradingAgentsGraph(config=config, debug=False)
+                    graph.curr_state = {
+                        "company_of_interest": symbol,
+                        "trade_date": decision.get("created_at", ""),
+                        "final_trade_decision": decision.get("rationale", ""),
+                    }
+                    graph.reflect_and_remember(returns)
+                    
+                    console.print(f"  [green]✓ Memory created (from rationale)[/green]")
+                    reflected_count += 1
+                except Exception as e:
+                    console.print(f"  [dim]No memory created: {e}[/dim]")
+            
+        except Exception as e:
+            console.print(f"[red]✗ {decision_id}: Error - {e}[/red]")
+            continue
+    
+    # Summary
+    console.print(f"\n[bold]Summary:[/bold]")
+    console.print(f"  Decisions processed: {closed_count}")
+    console.print(f"  Memories created: {reflected_count}")
+    console.print(f"  Still open: {len(active_decisions) - closed_count}")
+    
+    if closed_count > 0:
+        console.print(f"\n[green]✓ Auto-reflection complete![/green]")
+    else:
+        console.print(f"\n[dim]No closed trades to process.[/dim]")
 
 
 def analyze_trade_improvements(trade_data: dict, exit_price: float, returns: float) -> str:
@@ -1650,6 +2006,7 @@ Keep response concise and actionable."""
 @app.command()
 def positions():
     """Show open MT5 positions and pending orders with options to modify."""
+    import questionary
     from tradingagents.dataflows.mt5_data import (
         get_open_positions,
         get_pending_orders,
@@ -1723,27 +2080,108 @@ def positions():
                 return
             
             # Get current price for reference
+            current_price = None
             try:
                 price_info = get_mt5_current_price(pos['symbol'])
-                current_price = price_info['bid'] if pos['type'] == 'BUY' else price_info['ask']
+                current_price = price_info['bid'] if pos['type'] == 'SELL' else price_info['ask']
                 console.print(f"\n[cyan]Current {pos['symbol']} price: {current_price}[/cyan]")
             except:
                 pass
             
-            console.print(f"Current SL: {pos['sl']} | Current TP: {pos['tp']}")
+            console.print(f"Entry: {pos['price_open']} | Current SL: {pos['sl']} | Current TP: {pos['tp']}")
             
-            sl_input = questionary.text(
-                f"New Stop Loss (blank to keep {pos['sl']}):",
-                default="",
+            # Get ATR for dynamic SL options
+            from tradingagents.risk.stop_loss import DynamicStopLoss, get_atr_for_symbol
+            
+            atr = get_atr_for_symbol(pos['symbol'], period=14)
+            dsl = DynamicStopLoss(atr_multiplier=2.0, trailing_multiplier=1.5, risk_reward_ratio=2.0)
+            
+            new_sl = None
+            new_tp = None
+            
+            # SL modification options
+            sl_choices = ["Keep current", "Enter manual price"]
+            
+            if atr > 0 and current_price:
+                # Calculate dynamic SL suggestions
+                suggestions = dsl.suggest_stop_adjustment(
+                    entry_price=pos['price_open'],
+                    current_price=current_price,
+                    current_sl=pos['sl'],
+                    current_tp=pos['tp'],
+                    atr=atr,
+                    direction=pos['type'],
+                )
+                
+                console.print(f"[cyan]ATR (14): {atr:.4f}[/cyan]")
+                
+                if suggestions.get('breakeven'):
+                    be_sl = suggestions['breakeven']['new_sl']
+                    sl_choices.insert(1, f"Breakeven: {be_sl}")
+                
+                if suggestions.get('trailing'):
+                    trail_sl = suggestions['trailing']['new_sl']
+                    sl_choices.insert(1, f"Trailing (1.5x ATR): {trail_sl}")
+                
+                # ATR-based options
+                sl_choices.insert(1, "ATR with custom multiplier")
+            
+            sl_method = questionary.select(
+                "Stop Loss update:",
+                choices=sl_choices,
             ).ask()
             
-            tp_input = questionary.text(
-                f"New Take Profit (blank to keep {pos['tp']}):",
-                default="",
+            if sl_method == "Keep current":
+                new_sl = None
+            elif "Breakeven" in sl_method:
+                new_sl = float(sl_method.split(": ")[1])
+            elif "Trailing" in sl_method:
+                new_sl = float(sl_method.split(": ")[1])
+            elif "custom multiplier" in sl_method:
+                atr_mult = questionary.text(
+                    "ATR multiplier for SL (e.g., 1.0, 1.5, 2.0):",
+                    default="1.5",
+                ).ask()
+                atr_mult = float(atr_mult)
+                # Calculate trailing from current price
+                if pos['type'] in ["BUY", "LONG"]:
+                    new_sl = round(current_price - (atr * atr_mult), 5)
+                else:
+                    new_sl = round(current_price + (atr * atr_mult), 5)
+                console.print(f"[cyan]SL set to {new_sl} ({atr_mult}x ATR from current price)[/cyan]")
+            elif sl_method == "Enter manual price":
+                sl_input = questionary.text(
+                    f"New Stop Loss (blank to keep {pos['sl']}):",
+                    default="",
+                ).ask()
+                new_sl = float(sl_input) if sl_input else None
+            
+            # TP modification
+            tp_method = questionary.select(
+                "Take Profit update:",
+                choices=[
+                    "Keep current",
+                    "Custom risk:reward ratio" if new_sl else "Enter manual price",
+                    "Enter manual price",
+                ],
             ).ask()
             
-            new_sl = float(sl_input) if sl_input else None
-            new_tp = float(tp_input) if tp_input else None
+            if tp_method == "Keep current":
+                new_tp = None
+            elif "risk:reward" in tp_method.lower() and new_sl:
+                rr_ratio = questionary.text(
+                    "Risk:Reward ratio (e.g., 1.5, 2.0, 3.0):",
+                    default="2.0",
+                ).ask()
+                rr_ratio = float(rr_ratio)
+                new_tp = round(dsl.calculate_initial_tp(pos['price_open'], new_sl, pos['type'], rr_ratio), 5)
+                console.print(f"[cyan]TP set to {new_tp} ({rr_ratio}:1 R:R)[/cyan]")
+            else:
+                tp_input = questionary.text(
+                    f"New Take Profit (blank to keep {pos['tp']}):",
+                    default="",
+                ).ask()
+                new_tp = float(tp_input) if tp_input else None
             
             if new_sl is None and new_tp is None:
                 console.print("[yellow]No changes made.[/yellow]")
@@ -1884,13 +2322,15 @@ def positions():
 def review():
     """Re-analyze open trades and suggest strategy updates based on current market conditions."""
     import os
+    import questionary
     from datetime import datetime
     from openai import OpenAI
     from tradingagents.dataflows.mt5_data import (
         get_open_positions,
         get_mt5_current_price,
-        get_mt5_historical_data,
+        get_mt5_data,
     )
+    from tradingagents.risk.stop_loss import DynamicStopLoss, get_atr_for_symbol
     
     try:
         pos_list = get_open_positions()
@@ -1949,8 +2389,25 @@ def review():
                 current_price = price_info['bid'] if pos['type'] == 'SELL' else price_info['ask']
                 
                 # Get recent price history for context
-                today = datetime.now().strftime("%Y-%m-%d")
-                history = get_mt5_historical_data(pos['symbol'], today, lookback_days=5)
+                from datetime import timedelta
+                import csv
+                import io
+                today = datetime.now()
+                start_date = (today - timedelta(days=10)).strftime("%Y-%m-%d")
+                end_date = today.strftime("%Y-%m-%d")
+                history_csv = get_mt5_data(pos['symbol'], start_date, end_date)
+                
+                # Parse CSV to get high/low
+                recent_high = current_price
+                recent_low = current_price
+                if history_csv and not history_csv.startswith("Error"):
+                    lines = [l for l in history_csv.split('\n') if l and not l.startswith('#')]
+                    if len(lines) > 1:
+                        reader = csv.DictReader(io.StringIO('\n'.join(lines)))
+                        rows = list(reader)
+                        if rows:
+                            recent_high = max(float(r.get('high', current_price)) for r in rows)
+                            recent_low = min(float(r.get('low', current_price)) for r in rows)
                 
                 # Calculate key metrics
                 entry = pos['price_open']
@@ -1959,26 +2416,18 @@ def review():
                 
                 if pos['type'] == 'BUY':
                     current_pnl_pct = ((current_price - entry) / entry) * 100
-                    sl_distance = entry - sl
-                    tp_distance = tp - entry
-                    distance_to_sl = current_price - sl
-                    distance_to_tp = tp - current_price
+                    sl_distance = entry - sl if sl > 0 else 0
+                    tp_distance = tp - entry if tp > 0 else 0
+                    distance_to_sl = current_price - sl if sl > 0 else 0
+                    distance_to_tp = tp - current_price if tp > 0 else 0
                 else:  # SELL
                     current_pnl_pct = ((entry - current_price) / entry) * 100
-                    sl_distance = sl - entry
-                    tp_distance = entry - tp
-                    distance_to_sl = sl - current_price
-                    distance_to_tp = current_price - tp
+                    sl_distance = sl - entry if sl > 0 else 0
+                    tp_distance = entry - tp if tp > 0 else 0
+                    distance_to_sl = sl - current_price if sl > 0 else 0
+                    distance_to_tp = current_price - tp if tp > 0 else 0
                 
                 risk_reward = tp_distance / sl_distance if sl_distance > 0 else 0
-                
-                # Get recent high/low for context
-                if history and 'data' in history:
-                    recent_high = max(d.get('high', 0) for d in history['data'][-20:]) if history['data'] else current_price
-                    recent_low = min(d.get('low', float('inf')) for d in history['data'][-20:]) if history['data'] else current_price
-                else:
-                    recent_high = current_price
-                    recent_low = current_price
                 
             except Exception as e:
                 console.print(f"[red]Error getting market data: {e}[/red]")
@@ -1987,6 +2436,43 @@ def review():
             console.print(f"\n[dim]Current Price: {current_price}[/dim]")
             console.print(f"[dim]Entry: {entry} | P/L: {current_pnl_pct:+.2f}%[/dim]")
             console.print(f"[dim]Distance to SL: {distance_to_sl:.2f} | Distance to TP: {distance_to_tp:.2f}[/dim]")
+            
+            # Get ATR and calculate dynamic stop suggestions
+            atr = get_atr_for_symbol(pos['symbol'], period=14)
+            dsl = DynamicStopLoss(atr_multiplier=2.0, trailing_multiplier=1.5)
+            
+            atr_suggestions = ""
+            if atr > 0:
+                suggestions = dsl.suggest_stop_adjustment(
+                    entry_price=entry,
+                    current_price=current_price,
+                    current_sl=sl,
+                    current_tp=tp,
+                    atr=atr,
+                    direction=pos['type'],
+                )
+                
+                console.print(f"\n[bold cyan]📈 ATR-Based Analysis (ATR: {atr:.4f}):[/bold cyan]")
+                console.print(f"  [dim]Recommendation: {suggestions['recommendation']}[/dim]")
+                
+                if suggestions.get('breakeven'):
+                    be = suggestions['breakeven']
+                    console.print(f"  [green]Breakeven SL: {be['new_sl']}[/green]")
+                
+                if suggestions.get('trailing'):
+                    trail = suggestions['trailing']
+                    console.print(f"  [yellow]Trailing SL: {trail['new_sl']} (1.5x ATR from price)[/yellow]")
+                
+                # Build ATR context for LLM prompt
+                atr_suggestions = f"""
+ATR-BASED ANALYSIS:
+- Current ATR (14-period): {atr:.4f}
+- ATR-based Stop Distance: {atr * 2:.4f} (2x ATR)
+- ATR-based Trailing Distance: {atr * 1.5:.4f} (1.5x ATR)
+- Suggested Breakeven SL: {suggestions.get('breakeven', {}).get('new_sl', 'N/A')}
+- Suggested Trailing SL: {suggestions.get('trailing', {}).get('new_sl', 'N/A')}
+- System Recommendation: {suggestions['recommendation']}
+"""
             
             console.print("\n[dim]Analyzing current market conditions...[/dim]")
             
@@ -2011,7 +2497,7 @@ RECENT PRICE ACTION:
 - 5-day Low: {recent_low}
 - Current vs High: {((current_price - recent_high) / recent_high * 100):+.2f}%
 - Current vs Low: {((current_price - recent_low) / recent_low * 100):+.2f}%
-
+{atr_suggestions}
 Based on the current market position and price action, provide:
 
 1. **HOLD / CLOSE / ADJUST** - Clear recommendation
@@ -2046,6 +2532,193 @@ Keep response concise and actionable."""
                     title=f"📊 Strategy Review: {pos['symbol']} {pos['type']}",
                     border_style="cyan",
                 ))
+                
+                # Ask if user wants to act on this recommendation
+                act_on_review = questionary.confirm(
+                    "Act on this recommendation? (stores decision for tracking)",
+                    default=False,
+                ).ask()
+                
+                if act_on_review:
+                    import re
+                    from tradingagents.trade_decisions import store_decision
+                    from tradingagents.dataflows.mt5_data import modify_position
+                    
+                    # Determine action type from analysis
+                    analysis_upper = analysis.upper()
+                    if "CLOSE" in analysis_upper[:100]:
+                        action = "CLOSE"
+                        decision_type = "CLOSE"
+                    elif "ADJUST" in analysis_upper[:100]:
+                        action = "ADJUST"
+                        decision_type = "ADJUST"
+                    else:
+                        action = "HOLD"
+                        decision_type = "HOLD"
+                    
+                    # Try to extract suggested SL/TP values from analysis
+                    suggested_sl = None
+                    suggested_tp = None
+                    
+                    # Look for SL patterns like "SL to 5.9315" or "Stop Loss at 5.9315"
+                    sl_patterns = [
+                        r'(?:SL|stop\s*loss|move\s*sl)\s*(?:to|at|:)?\s*\*?\*?(\d+\.?\d*)',
+                        r'breakeven\s*(?:at|:)?\s*\*?\*?(\d+\.?\d*)',
+                    ]
+                    for pattern in sl_patterns:
+                        match = re.search(pattern, analysis, re.IGNORECASE)
+                        if match:
+                            try:
+                                suggested_sl = float(match.group(1))
+                                break
+                            except ValueError:
+                                pass
+                    
+                    # Look for TP patterns like "TP at 6.0500" or "Take Profit at 6.0500"
+                    tp_patterns = [
+                        r'(?:TP|take\s*profit|target)\s*(?:to|at|:)?\s*\*?\*?(\d+\.?\d*)',
+                    ]
+                    for pattern in tp_patterns:
+                        match = re.search(pattern, analysis, re.IGNORECASE)
+                        if match:
+                            try:
+                                suggested_tp = float(match.group(1))
+                                break
+                            except ValueError:
+                                pass
+                    
+                    # Show current and suggested values
+                    console.print(f"\n[bold]Current Position:[/bold]")
+                    console.print(f"  Entry: {entry} | Current SL: {sl} | Current TP: {tp}")
+                    
+                    if suggested_sl or suggested_tp:
+                        console.print(f"\n[bold cyan]Suggested Values from Analysis:[/bold cyan]")
+                        if suggested_sl:
+                            console.print(f"  Stop Loss: {suggested_sl}")
+                        if suggested_tp:
+                            console.print(f"  Take Profit: {suggested_tp}")
+                    
+                    # Ask how to set values
+                    value_choice = questionary.select(
+                        "How would you like to set SL/TP?",
+                        choices=[
+                            "Use suggested values" if (suggested_sl or suggested_tp) else "Skip (no suggested values found)",
+                            "Enter manual values",
+                            "Mix: choose for each",
+                            "Skip SL/TP update",
+                        ],
+                    ).ask()
+                    
+                    new_sl = sl
+                    new_tp = tp
+                    
+                    if value_choice == "Use suggested values" and (suggested_sl or suggested_tp):
+                        new_sl = suggested_sl if suggested_sl else sl
+                        new_tp = suggested_tp if suggested_tp else tp
+                    
+                    elif value_choice == "Enter manual values":
+                        sl_input = questionary.text(
+                            f"Stop Loss (current: {sl}, blank to keep):",
+                            default="",
+                        ).ask()
+                        if sl_input:
+                            try:
+                                new_sl = float(sl_input)
+                            except ValueError:
+                                console.print("[yellow]Invalid SL, keeping current[/yellow]")
+                        
+                        tp_input = questionary.text(
+                            f"Take Profit (current: {tp}, blank to keep):",
+                            default="",
+                        ).ask()
+                        if tp_input:
+                            try:
+                                new_tp = float(tp_input)
+                            except ValueError:
+                                console.print("[yellow]Invalid TP, keeping current[/yellow]")
+                    
+                    elif value_choice == "Mix: choose for each":
+                        # Stop Loss
+                        sl_choices = ["Keep current"]
+                        if suggested_sl:
+                            sl_choices.append(f"Use suggested: {suggested_sl}")
+                        sl_choices.append("Enter manual")
+                        
+                        sl_choice = questionary.select(
+                            f"Stop Loss (current: {sl}):",
+                            choices=sl_choices,
+                        ).ask()
+                        
+                        if "suggested" in sl_choice.lower():
+                            new_sl = suggested_sl
+                        elif sl_choice == "Enter manual":
+                            sl_input = questionary.text("Enter Stop Loss:").ask()
+                            try:
+                                new_sl = float(sl_input)
+                            except ValueError:
+                                console.print("[yellow]Invalid, keeping current[/yellow]")
+                        
+                        # Take Profit
+                        tp_choices = ["Keep current"]
+                        if suggested_tp:
+                            tp_choices.append(f"Use suggested: {suggested_tp}")
+                        tp_choices.append("Enter manual")
+                        
+                        tp_choice = questionary.select(
+                            f"Take Profit (current: {tp}):",
+                            choices=tp_choices,
+                        ).ask()
+                        
+                        if "suggested" in tp_choice.lower():
+                            new_tp = suggested_tp
+                        elif tp_choice == "Enter manual":
+                            tp_input = questionary.text("Enter Take Profit:").ask()
+                            try:
+                                new_tp = float(tp_input)
+                            except ValueError:
+                                console.print("[yellow]Invalid, keeping current[/yellow]")
+                    
+                    # Apply changes to MT5 if SL/TP changed
+                    if new_sl != sl or new_tp != tp:
+                        console.print(f"\n[bold]New Values:[/bold]")
+                        console.print(f"  SL: {sl} → {new_sl}")
+                        console.print(f"  TP: {tp} → {new_tp}")
+                        
+                        apply_to_mt5 = questionary.confirm(
+                            "Apply these changes to MT5 position?",
+                            default=True,
+                        ).ask()
+                        
+                        if apply_to_mt5:
+                            try:
+                                result = modify_position(
+                                    ticket=pos['ticket'],
+                                    sl=new_sl,
+                                    tp=new_tp,
+                                )
+                                if result.get("success"):
+                                    console.print(f"[green]✓ Position modified in MT5[/green]")
+                                else:
+                                    console.print(f"[red]✗ MT5 error: {result.get('error')}[/red]")
+                            except Exception as e:
+                                console.print(f"[red]✗ Error modifying position: {e}[/red]")
+                    
+                    # Store decision
+                    decision_id = store_decision(
+                        symbol=pos['symbol'],
+                        decision_type=decision_type,
+                        action=action,
+                        rationale=analysis[:500],
+                        source="review",
+                        entry_price=entry,
+                        stop_loss=new_sl,
+                        take_profit=new_tp,
+                        mt5_ticket=pos['ticket'],
+                        volume=pos['volume'],
+                    )
+                    
+                    console.print(f"\n[green]✓ Decision stored: {decision_id}[/green]")
+                    console.print(f"[dim]Close with: python -m cli.main decisions close {decision_id} --exit <price>[/dim]")
                 
             except Exception as e:
                 console.print(f"[red]Error analyzing position: {e}[/red]")
@@ -2565,6 +3238,264 @@ def position_size(
         console.print("  [yellow]● Low confidence - consider smaller size or skip[/yellow]")
     
     console.print("")
+
+
+@app.command()
+def trailing_stops():
+    """Monitor and update trailing stops on open positions based on ATR."""
+    import questionary
+    from tradingagents.dataflows.mt5_data import (
+        get_open_positions,
+        get_mt5_current_price,
+        modify_position,
+    )
+    from tradingagents.risk.stop_loss import DynamicStopLoss, get_atr_for_symbol
+    
+    try:
+        pos_list = get_open_positions()
+        
+        if not pos_list:
+            console.print("[yellow]No open positions to monitor.[/yellow]")
+            return
+        
+        console.print(f"\n[bold]🔄 Trailing Stop Analysis ({len(pos_list)} positions)[/bold]\n")
+        
+        dsl = DynamicStopLoss(atr_multiplier=2.0, trailing_multiplier=1.5)
+        updates_available = []
+        
+        for pos in pos_list:
+            symbol = pos['symbol']
+            entry = pos['price_open']
+            current_sl = pos['sl']
+            current_tp = pos['tp']
+            direction = pos['type']
+            ticket = pos['ticket']
+            
+            # Get current price
+            try:
+                price_info = get_mt5_current_price(symbol)
+                current_price = price_info['bid'] if direction == 'SELL' else price_info['ask']
+            except Exception as e:
+                console.print(f"[red]Error getting price for {symbol}: {e}[/red]")
+                continue
+            
+            # Get ATR
+            atr = get_atr_for_symbol(symbol, period=14)
+            if atr <= 0:
+                console.print(f"[dim]{symbol}: Could not get ATR, skipping[/dim]")
+                continue
+            
+            # Calculate suggestions
+            suggestions = dsl.suggest_stop_adjustment(
+                entry_price=entry,
+                current_price=current_price,
+                current_sl=current_sl,
+                current_tp=current_tp,
+                atr=atr,
+                direction=direction,
+            )
+            
+            pnl_pct = suggestions['pnl_percent']
+            pnl_color = "green" if pnl_pct >= 0 else "red"
+            
+            console.print(f"[bold]{symbol} {direction}[/bold] (Ticket: {ticket})")
+            console.print(f"  Entry: {entry} | Current: {current_price} | P/L: [{pnl_color}]{pnl_pct:+.2f}%[/{pnl_color}]")
+            console.print(f"  Current SL: {current_sl} | ATR: {atr:.4f}")
+            
+            # Check for updates
+            new_sl = None
+            update_reason = ""
+            
+            if suggestions.get('breakeven') and current_sl == 0:
+                be = suggestions['breakeven']
+                new_sl = be['new_sl']
+                update_reason = "Move to breakeven"
+                console.print(f"  [green]→ Breakeven SL available: {new_sl}[/green]")
+            elif suggestions.get('trailing'):
+                trail = suggestions['trailing']
+                new_sl = trail['new_sl']
+                update_reason = f"Trail SL (1.5x ATR)"
+                console.print(f"  [yellow]→ Trailing SL available: {new_sl}[/yellow]")
+            else:
+                console.print(f"  [dim]→ No update needed[/dim]")
+            
+            if new_sl:
+                updates_available.append({
+                    'ticket': ticket,
+                    'symbol': symbol,
+                    'direction': direction,
+                    'current_sl': current_sl,
+                    'new_sl': new_sl,
+                    'reason': update_reason,
+                })
+            
+            console.print()
+        
+        # Offer to apply updates
+        if updates_available:
+            console.print(f"\n[bold cyan]═══ {len(updates_available)} Update(s) Available ═══[/bold cyan]\n")
+            
+            for i, upd in enumerate(updates_available):
+                console.print(f"  {i+1}. {upd['symbol']} {upd['direction']}: SL {upd['current_sl']} → {upd['new_sl']} ({upd['reason']})")
+            
+            apply_choice = questionary.select(
+                "\nApply updates?",
+                choices=[
+                    "Apply all",
+                    "Select individually",
+                    "Skip all",
+                ],
+            ).ask()
+            
+            if apply_choice == "Apply all":
+                for upd in updates_available:
+                    result = modify_position(upd['ticket'], sl=upd['new_sl'])
+                    if result.get("success"):
+                        console.print(f"[green]✓ {upd['symbol']}: SL updated to {upd['new_sl']}[/green]")
+                    else:
+                        console.print(f"[red]✗ {upd['symbol']}: {result.get('error')}[/red]")
+            
+            elif apply_choice == "Select individually":
+                for upd in updates_available:
+                    apply = questionary.confirm(
+                        f"Update {upd['symbol']} SL to {upd['new_sl']}?",
+                        default=True,
+                    ).ask()
+                    
+                    if apply:
+                        result = modify_position(upd['ticket'], sl=upd['new_sl'])
+                        if result.get("success"):
+                            console.print(f"[green]✓ Updated[/green]")
+                        else:
+                            console.print(f"[red]✗ {result.get('error')}[/red]")
+            else:
+                console.print("[dim]No updates applied.[/dim]")
+        else:
+            console.print("[dim]No trailing stop updates available.[/dim]")
+            
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+
+
+@app.command()
+def decisions(
+    action: str = typer.Argument("list", help="Action: list, close, stats, cancel"),
+    decision_id: Optional[str] = typer.Argument(None, help="Decision ID for close/cancel"),
+    exit_price: Optional[float] = typer.Option(None, "--exit", "-e", help="Exit price for closing"),
+    symbol: Optional[str] = typer.Option(None, "--symbol", "-s", help="Filter by symbol"),
+):
+    """
+    Manage trade decisions and track outcomes.
+    
+    Actions:
+    - list: Show active decisions
+    - close: Close a decision with exit price
+    - stats: Show decision statistics
+    - cancel: Cancel an active decision
+    
+    Examples:
+        python -m cli.main decisions list
+        python -m cli.main decisions close XAUUSD_20260106_120000 --exit 4500.00
+        python -m cli.main decisions stats --symbol XAUUSD
+    """
+    from tradingagents.trade_decisions import (
+        list_active_decisions,
+        list_closed_decisions,
+        close_decision,
+        cancel_decision,
+        get_decision_stats,
+        load_decision,
+    )
+    
+    if action == "list":
+        active = list_active_decisions(symbol)
+        
+        if not active:
+            console.print("[dim]No active decisions.[/dim]")
+            return
+        
+        console.print(f"\n[bold]Active Decisions ({len(active)}):[/bold]\n")
+        
+        for d in active:
+            console.print(f"[cyan]{d['decision_id']}[/cyan]")
+            console.print(f"  {d['symbol']} {d['action']} @ {d.get('entry_price', 'market')}")
+            console.print(f"  Type: {d['decision_type']} | Source: {d['source']}")
+            console.print(f"  SL: {d.get('stop_loss', 'N/A')} | TP: {d.get('take_profit', 'N/A')}")
+            console.print(f"  Created: {d['created_at']}")
+            if d.get('mt5_ticket'):
+                console.print(f"  MT5 Ticket: {d['mt5_ticket']}")
+            console.print(f"  [dim]{d['rationale'][:100]}...[/dim]\n")
+    
+    elif action == "close":
+        if not decision_id:
+            console.print("[red]Please provide a decision ID to close.[/red]")
+            return
+        if exit_price is None:
+            import questionary
+            exit_str = questionary.text("Enter exit price:").ask()
+            try:
+                exit_price = float(exit_str)
+            except ValueError:
+                console.print("[red]Invalid exit price.[/red]")
+                return
+        
+        try:
+            result = close_decision(decision_id, exit_price)
+            pnl_color = "green" if result.get("pnl_percent", 0) >= 0 else "red"
+            console.print(f"\n[{pnl_color}]P&L: {result.get('pnl_percent', 0):+.2f}%[/{pnl_color}]")
+        except FileNotFoundError:
+            console.print(f"[red]Decision not found: {decision_id}[/red]")
+    
+    elif action == "cancel":
+        if not decision_id:
+            console.print("[red]Please provide a decision ID to cancel.[/red]")
+            return
+        
+        import questionary
+        reason = questionary.text("Reason for cancellation:").ask()
+        cancel_decision(decision_id, reason or "")
+    
+    elif action == "stats":
+        stats = get_decision_stats(symbol)
+        
+        console.print(f"\n[bold cyan]═══ Decision Statistics{f' ({symbol})' if symbol else ''} ═══[/bold cyan]\n")
+        
+        if stats["total_decisions"] == 0:
+            console.print("[dim]No closed decisions yet.[/dim]")
+            return
+        
+        table = Table(box=box.ROUNDED)
+        table.add_column("Metric", style="cyan")
+        table.add_column("Value", justify="right")
+        
+        table.add_row("Total Decisions", str(stats["total_decisions"]))
+        table.add_row("Correct Decisions", str(stats["correct_decisions"]))
+        
+        rate = stats["correct_rate"] * 100
+        rate_color = "green" if rate >= 50 else "red"
+        table.add_row("Correct Rate", f"[{rate_color}]{rate:.1f}%[/{rate_color}]")
+        
+        avg_pnl = stats["avg_pnl_percent"]
+        pnl_color = "green" if avg_pnl >= 0 else "red"
+        table.add_row("Avg P&L %", f"[{pnl_color}]{avg_pnl:+.2f}%[/{pnl_color}]")
+        
+        total_pnl = stats["total_pnl"]
+        total_color = "green" if total_pnl >= 0 else "red"
+        table.add_row("Total P&L", f"[{total_color}]${total_pnl:+.2f}[/{total_color}]")
+        
+        console.print(table)
+        
+        if stats.get("best_decision"):
+            best = stats["best_decision"]
+            console.print(f"\n[green]Best: {best['decision_id']} ({best['pnl_percent']:+.2f}%)[/green]")
+        
+        if stats.get("worst_decision"):
+            worst = stats["worst_decision"]
+            console.print(f"[red]Worst: {worst['decision_id']} ({worst['pnl_percent']:+.2f}%)[/red]")
+    
+    else:
+        console.print(f"[red]Unknown action: {action}[/red]")
+        console.print("[dim]Valid actions: list, close, stats, cancel[/dim]")
 
 
 if __name__ == "__main__":
