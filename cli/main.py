@@ -2464,14 +2464,16 @@ def review():
                     console.print(f"  [yellow]Trailing SL: {trail['new_sl']} (1.5x ATR from price)[/yellow]")
                 
                 # Build ATR context for LLM prompt
+                breakeven_sl = suggestions.get('breakeven')
+                trailing_sl = suggestions.get('trailing')
                 atr_suggestions = f"""
 ATR-BASED ANALYSIS:
 - Current ATR (14-period): {atr:.4f}
 - ATR-based Stop Distance: {atr * 2:.4f} (2x ATR)
 - ATR-based Trailing Distance: {atr * 1.5:.4f} (1.5x ATR)
-- Suggested Breakeven SL: {suggestions.get('breakeven', {}).get('new_sl', 'N/A')}
-- Suggested Trailing SL: {suggestions.get('trailing', {}).get('new_sl', 'N/A')}
-- System Recommendation: {suggestions['recommendation']}
+- Suggested Breakeven SL: {breakeven_sl['new_sl'] if breakeven_sl else 'N/A'}
+- Suggested Trailing SL: {trailing_sl['new_sl'] if trailing_sl else 'N/A'}
+- System Recommendation: {suggestions.get('recommendation', 'N/A')}
 """
             
             console.print("\n[dim]Analyzing current market conditions...[/dim]")
@@ -2527,6 +2529,10 @@ Keep response concise and actionable."""
                 
                 analysis = response.choices[0].message.content
                 
+                if not analysis:
+                    console.print("[yellow]No analysis returned from LLM[/yellow]")
+                    continue
+                
                 console.print(Panel(
                     analysis,
                     title=f"📊 Strategy Review: {pos['symbol']} {pos['type']}",
@@ -2539,76 +2545,83 @@ Keep response concise and actionable."""
                     default=False,
                 ).ask()
                 
-                if act_on_review:
-                    import re
-                    from tradingagents.trade_decisions import store_decision
-                    from tradingagents.dataflows.mt5_data import modify_position
-                    
-                    # Determine action type from analysis
-                    analysis_upper = analysis.upper()
-                    if "CLOSE" in analysis_upper[:100]:
-                        action = "CLOSE"
-                        decision_type = "CLOSE"
-                    elif "ADJUST" in analysis_upper[:100]:
-                        action = "ADJUST"
-                        decision_type = "ADJUST"
-                    else:
-                        action = "HOLD"
-                        decision_type = "HOLD"
-                    
-                    # Try to extract suggested SL/TP values from analysis
-                    suggested_sl = None
-                    suggested_tp = None
-                    
-                    # Look for SL patterns like "SL to 5.9315" or "Stop Loss at 5.9315"
-                    sl_patterns = [
-                        r'(?:SL|stop\s*loss|move\s*sl)\s*(?:to|at|:)?\s*\*?\*?(\d+\.?\d*)',
-                        r'breakeven\s*(?:at|:)?\s*\*?\*?(\d+\.?\d*)',
-                    ]
-                    for pattern in sl_patterns:
-                        match = re.search(pattern, analysis, re.IGNORECASE)
-                        if match:
-                            try:
-                                suggested_sl = float(match.group(1))
-                                break
-                            except ValueError:
-                                pass
-                    
-                    # Look for TP patterns like "TP at 6.0500" or "Take Profit at 6.0500"
-                    tp_patterns = [
-                        r'(?:TP|take\s*profit|target)\s*(?:to|at|:)?\s*\*?\*?(\d+\.?\d*)',
-                    ]
-                    for pattern in tp_patterns:
-                        match = re.search(pattern, analysis, re.IGNORECASE)
-                        if match:
-                            try:
-                                suggested_tp = float(match.group(1))
-                                break
-                            except ValueError:
-                                pass
-                    
-                    # Show current and suggested values
-                    console.print(f"\n[bold]Current Position:[/bold]")
-                    console.print(f"  Entry: {entry} | Current SL: {sl} | Current TP: {tp}")
-                    
-                    if suggested_sl or suggested_tp:
-                        console.print(f"\n[bold cyan]Suggested Values from Analysis:[/bold cyan]")
-                        if suggested_sl:
-                            console.print(f"  Stop Loss: {suggested_sl}")
-                        if suggested_tp:
-                            console.print(f"  Take Profit: {suggested_tp}")
-                    
-                    # Ask how to set values
-                    value_choice = questionary.select(
-                        "How would you like to set SL/TP?",
-                        choices=[
-                            "Use suggested values" if (suggested_sl or suggested_tp) else "Skip (no suggested values found)",
-                            "Enter manual values",
-                            "Mix: choose for each",
-                            "Skip SL/TP update",
-                        ],
-                    ).ask()
-                    
+                if not act_on_review:
+                    continue
+                
+                # act_on_review is True at this point
+                import re
+                from tradingagents.trade_decisions import store_decision
+                from tradingagents.dataflows.mt5_data import modify_position
+                
+                # Determine action type from analysis
+                analysis_upper = analysis.upper()
+                if "CLOSE" in analysis_upper[:100]:
+                    action = "CLOSE"
+                    decision_type = "CLOSE"
+                elif "ADJUST" in analysis_upper[:100]:
+                    action = "ADJUST"
+                    decision_type = "ADJUST"
+                else:
+                    action = "HOLD"
+                    decision_type = "HOLD"
+                
+                # Try to extract suggested SL/TP values from analysis
+                suggested_sl = None
+                suggested_tp = None
+                
+                # Look for SL patterns like "SL to 5.9315" or "Stop Loss at 5.9315"
+                sl_patterns = [
+                    r'(?:SL|stop\s*loss|move\s*sl)\s*(?:to|at|:)?\s*\*?\*?(\d+\.?\d*)',
+                    r'breakeven\s*(?:at|:)?\s*\*?\*?(\d+\.?\d*)',
+                ]
+                for pattern in sl_patterns:
+                    match = re.search(pattern, analysis, re.IGNORECASE)
+                    if match:
+                        try:
+                            suggested_sl = float(match.group(1))
+                            break
+                        except ValueError:
+                            pass
+                
+                # Look for TP patterns like "TP at 6.0500" or "Take Profit at 6.0500"
+                tp_patterns = [
+                    r'(?:TP|take\s*profit|target)\s*(?:to|at|:)?\s*\*?\*?(\d+\.?\d*)',
+                ]
+                for pattern in tp_patterns:
+                    match = re.search(pattern, analysis, re.IGNORECASE)
+                    if match:
+                        try:
+                            suggested_tp = float(match.group(1))
+                            break
+                        except ValueError:
+                            pass
+                
+                # Show current and suggested values
+                console.print(f"\n[bold]Current Position:[/bold]")
+                console.print(f"  Entry: {entry} | Current SL: {sl} | Current TP: {tp}")
+                
+                if suggested_sl or suggested_tp:
+                    console.print(f"\n[bold cyan]Suggested Values from Analysis:[/bold cyan]")
+                    if suggested_sl:
+                        console.print(f"  Stop Loss: {suggested_sl}")
+                    if suggested_tp:
+                        console.print(f"  Take Profit: {suggested_tp}")
+                
+                # Ask how to set values
+                value_choice = questionary.select(
+                    "How would you like to set SL/TP?",
+                    choices=[
+                        "Use suggested values" if (suggested_sl or suggested_tp) else "Skip (no suggested values found)",
+                        "Enter manual values",
+                        "Mix: choose for each",
+                        "Skip SL/TP update",
+                    ],
+                ).ask()
+                
+                if not value_choice or value_choice == "Skip SL/TP update":
+                    new_sl = sl
+                    new_tp = tp
+                else:
                     new_sl = sl
                     new_tp = tp
                     
@@ -2649,14 +2662,15 @@ Keep response concise and actionable."""
                             choices=sl_choices,
                         ).ask()
                         
-                        if "suggested" in sl_choice.lower():
+                        if sl_choice and "suggested" in sl_choice.lower():
                             new_sl = suggested_sl
                         elif sl_choice == "Enter manual":
                             sl_input = questionary.text("Enter Stop Loss:").ask()
-                            try:
-                                new_sl = float(sl_input)
-                            except ValueError:
-                                console.print("[yellow]Invalid, keeping current[/yellow]")
+                            if sl_input:
+                                try:
+                                    new_sl = float(sl_input)
+                                except ValueError:
+                                    console.print("[yellow]Invalid, keeping current[/yellow]")
                         
                         # Take Profit
                         tp_choices = ["Keep current"]
@@ -2669,56 +2683,59 @@ Keep response concise and actionable."""
                             choices=tp_choices,
                         ).ask()
                         
-                        if "suggested" in tp_choice.lower():
+                        if tp_choice and "suggested" in tp_choice.lower():
                             new_tp = suggested_tp
                         elif tp_choice == "Enter manual":
                             tp_input = questionary.text("Enter Take Profit:").ask()
-                            try:
-                                new_tp = float(tp_input)
-                            except ValueError:
-                                console.print("[yellow]Invalid, keeping current[/yellow]")
+                            if tp_input:
+                                try:
+                                    new_tp = float(tp_input)
+                                except ValueError:
+                                    console.print("[yellow]Invalid, keeping current[/yellow]")
+                
+                # Apply changes to MT5 if SL/TP changed
+                if new_sl != sl or new_tp != tp:
+                    console.print(f"\n[bold]New Values:[/bold]")
+                    console.print(f"  SL: {sl} → {new_sl}")
+                    console.print(f"  TP: {tp} → {new_tp}")
                     
-                    # Apply changes to MT5 if SL/TP changed
-                    if new_sl != sl or new_tp != tp:
-                        console.print(f"\n[bold]New Values:[/bold]")
-                        console.print(f"  SL: {sl} → {new_sl}")
-                        console.print(f"  TP: {tp} → {new_tp}")
-                        
-                        apply_to_mt5 = questionary.confirm(
-                            "Apply these changes to MT5 position?",
-                            default=True,
-                        ).ask()
-                        
-                        if apply_to_mt5:
-                            try:
-                                result = modify_position(
-                                    ticket=pos['ticket'],
-                                    sl=new_sl,
-                                    tp=new_tp,
-                                )
-                                if result.get("success"):
-                                    console.print(f"[green]✓ Position modified in MT5[/green]")
-                                else:
-                                    console.print(f"[red]✗ MT5 error: {result.get('error')}[/red]")
-                            except Exception as e:
-                                console.print(f"[red]✗ Error modifying position: {e}[/red]")
+                    apply_to_mt5 = questionary.confirm(
+                        "Apply these changes to MT5 position?",
+                        default=True,
+                    ).ask()
                     
-                    # Store decision
-                    decision_id = store_decision(
-                        symbol=pos['symbol'],
-                        decision_type=decision_type,
-                        action=action,
-                        rationale=analysis[:500],
-                        source="review",
-                        entry_price=entry,
-                        stop_loss=new_sl,
-                        take_profit=new_tp,
-                        mt5_ticket=pos['ticket'],
-                        volume=pos['volume'],
-                    )
-                    
-                    console.print(f"\n[green]✓ Decision stored: {decision_id}[/green]")
-                    console.print(f"[dim]Close with: python -m cli.main decisions close {decision_id} --exit <price>[/dim]")
+                    if apply_to_mt5:
+                        try:
+                            result = modify_position(
+                                ticket=pos['ticket'],
+                                sl=new_sl,
+                                tp=new_tp,
+                            )
+                            if result and result.get("success"):
+                                console.print(f"[green]✓ Position modified in MT5[/green]")
+                            elif result:
+                                console.print(f"[red]✗ MT5 error: {result.get('error')}[/red]")
+                            else:
+                                console.print(f"[red]✗ MT5 returned no result[/red]")
+                        except Exception as e:
+                            console.print(f"[red]✗ Error modifying position: {e}[/red]")
+                
+                # Store decision
+                decision_id = store_decision(
+                    symbol=pos['symbol'],
+                    decision_type=decision_type,
+                    action=action,
+                    rationale=analysis[:500],
+                    source="review",
+                    entry_price=entry,
+                    stop_loss=new_sl,
+                    take_profit=new_tp,
+                    mt5_ticket=pos['ticket'],
+                    volume=pos['volume'],
+                )
+                
+                console.print(f"\n[green]✓ Decision stored: {decision_id}[/green]")
+                console.print(f"[dim]Close with: python -m cli.main decisions close {decision_id} --exit <price>[/dim]")
                 
             except Exception as e:
                 console.print(f"[red]Error analyzing position: {e}[/red]")
@@ -2895,6 +2912,357 @@ def memory_stats(
                 pass
     
     console.print("\n[dim]Use --detailed for more info, --maintenance to run cleanup[/dim]")
+    console.print("[dim]Use 'python -m cli.main memories' to view memory contents[/dim]")
+
+
+@app.command()
+def memories(
+    collection: Optional[str] = typer.Option(
+        None, "--collection", "-c",
+        help="Collection to view (bull_memory, bear_memory, trader_memory, etc.)"
+    ),
+    query: Optional[str] = typer.Option(
+        None, "--query", "-q",
+        help="Search query to find relevant memories"
+    ),
+    tier: Optional[str] = typer.Option(
+        None, "--tier", "-t",
+        help="Filter by tier: short, mid, long"
+    ),
+    limit: int = typer.Option(
+        10, "--limit", "-n",
+        help="Number of memories to display"
+    ),
+    symbol: Optional[str] = typer.Option(
+        None, "--symbol", "-s",
+        help="Filter by symbol (e.g., XAUUSD)"
+    ),
+):
+    """
+    View and search memories in the system.
+    
+    Examples:
+        python -m cli.main memories
+        python -m cli.main memories -c bull_memory
+        python -m cli.main memories -q "gold price support"
+        python -m cli.main memories -t long -n 5
+        python -m cli.main memories -s XAUUSD
+    """
+    from tradingagents.agents.utils.memory import (
+        FinancialSituationMemory, 
+        TIER_SHORT, TIER_MID, TIER_LONG
+    )
+    from tradingagents.default_config import DEFAULT_CONFIG
+    from datetime import datetime
+    
+    config = DEFAULT_CONFIG.copy()
+    config["embedding_provider"] = "local"
+    
+    tier_map = {
+        "short": TIER_SHORT,
+        "mid": TIER_MID,
+        "long": TIER_LONG,
+    }
+    
+    collection_names = [
+        "bull_memory",
+        "bear_memory",
+        "trader_memory",
+        "invest_judge_memory",
+        "risk_manager_memory",
+        "prediction_accuracy",
+    ]
+    
+    if collection:
+        if collection not in collection_names:
+            console.print(f"[red]Unknown collection: {collection}[/red]")
+            console.print(f"[dim]Available: {', '.join(collection_names)}[/dim]")
+            return
+        collection_names = [collection]
+    
+    console.print("\n[bold cyan]═══ Memory Viewer ═══[/bold cyan]\n")
+    
+    if query:
+        console.print(f"[dim]Search query: '{query}'[/dim]")
+    if tier:
+        console.print(f"[dim]Tier filter: {tier}[/dim]")
+    if symbol:
+        console.print(f"[dim]Symbol filter: {symbol}[/dim]")
+    
+    total_shown = 0
+    
+    for coll_name in collection_names:
+        try:
+            memory = FinancialSituationMemory(coll_name, config)
+            
+            # Get memories
+            coll = memory.situation_collection
+            
+            if query:
+                # Search by query using get_memories
+                results = memory.get_memories(query, n_matches=limit)
+                memories_data = []
+                
+                for result in results:
+                    memories_data.append({
+                        "document": result.get("document", ""),
+                        "metadata": result.get("metadata", {})
+                    })
+            else:
+                # Get all memories from collection
+                all_data = coll.get(include=["documents", "metadatas"])
+                
+                memories_data = []
+                docs = all_data.get("documents", [])
+                metas = all_data.get("metadatas", [])
+                
+                for i, doc in enumerate(docs):
+                    meta = metas[i] if i < len(metas) else {}
+                    memories_data.append({
+                        "document": doc,
+                        "metadata": meta
+                    })
+            
+            # Apply filters
+            filtered = []
+            for mem in memories_data:
+                meta = mem.get("metadata", {})
+                
+                # Tier filter
+                if tier and tier in tier_map:
+                    mem_tier = meta.get("tier", TIER_SHORT)
+                    if mem_tier != tier_map[tier]:
+                        continue
+                
+                # Symbol filter
+                if symbol:
+                    mem_symbol = meta.get("symbol", "")
+                    doc_text = mem.get("document", "")
+                    if symbol.upper() not in mem_symbol.upper() and symbol.upper() not in doc_text.upper():
+                        continue
+                
+                filtered.append(mem)
+            
+            if not filtered:
+                continue
+            
+            # Limit results
+            filtered = filtered[:limit]
+            
+            # Display
+            console.print(f"\n[bold green]━━━ {coll_name} ({len(filtered)} memories) ━━━[/bold green]\n")
+            
+            for i, mem in enumerate(filtered, 1):
+                meta = mem.get("metadata", {})
+                doc = mem.get("document", "")
+                
+                # Format metadata
+                conf = meta.get("confidence", 0)
+                mem_tier = meta.get("tier", "short")
+                tier_label = {TIER_SHORT: "short", TIER_MID: "mid", TIER_LONG: "long"}.get(mem_tier, mem_tier)
+                refs = meta.get("reference_count", 0)
+                created = meta.get("created_at", "")
+                outcome = meta.get("outcome_quality", 0)
+                mem_symbol = meta.get("symbol", "")
+                
+                # Tier color
+                tier_color = {"short": "yellow", "mid": "blue", "long": "green"}.get(tier_label, "white")
+                
+                # Header
+                console.print(f"[bold]{i}.[/bold] [{tier_color}][{tier_label.upper()}][/{tier_color}] ", end="")
+                if mem_symbol:
+                    console.print(f"[cyan]{mem_symbol}[/cyan] ", end="")
+                console.print(f"[dim]conf={conf:.2f} refs={refs}[/dim]")
+                
+                # Date
+                if created:
+                    try:
+                        dt = datetime.fromisoformat(created.replace("Z", "+00:00"))
+                        console.print(f"   [dim]{dt.strftime('%Y-%m-%d %H:%M')}[/dim]")
+                    except:
+                        pass
+                
+                # Content - wrap long text
+                content_lines = doc.split('\n')
+                for line in content_lines[:5]:  # Show first 5 lines
+                    if line.strip():
+                        # Truncate very long lines
+                        if len(line) > 100:
+                            line = line[:100] + "..."
+                        console.print(f"   {line}")
+                
+                if len(content_lines) > 5:
+                    console.print(f"   [dim]... ({len(content_lines) - 5} more lines)[/dim]")
+                
+                console.print()
+                total_shown += 1
+                
+        except Exception as e:
+            console.print(f"[red]Error reading {coll_name}: {e}[/red]")
+    
+    if total_shown == 0:
+        console.print("[yellow]No memories found matching your criteria.[/yellow]")
+    else:
+        console.print(f"[dim]Showing {total_shown} memories[/dim]")
+    
+    console.print("\n[dim]Options: -c <collection> -q <search> -t <tier> -n <limit> -s <symbol>[/dim]")
+    console.print("[dim]Use 'python -m cli.main memory-delete' to remove memories[/dim]")
+
+
+@app.command()
+def memory_delete(
+    collection: str = typer.Option(
+        ..., "--collection", "-c",
+        help="Collection to delete from (required)"
+    ),
+    pattern: Optional[str] = typer.Option(
+        None, "--pattern", "-p",
+        help="Delete memories containing this text pattern"
+    ),
+    low_confidence: bool = typer.Option(
+        False, "--low-confidence",
+        help="Delete memories with confidence < 0.3"
+    ),
+    errors: bool = typer.Option(
+        False, "--errors",
+        help="Delete memories containing error messages (API limits, N/A, etc.)"
+    ),
+    all_memories: bool = typer.Option(
+        False, "--all",
+        help="Delete ALL memories in collection (use with caution!)"
+    ),
+    dry_run: bool = typer.Option(
+        True, "--dry-run/--execute", "-d/-x",
+        help="Preview deletions without executing (default: dry-run)"
+    ),
+):
+    """
+    Delete memories from a collection.
+    
+    Examples:
+        python -m cli.main memory-delete -c bull_memory --errors -d     # Preview error deletions
+        python -m cli.main memory-delete -c bull_memory --errors -x     # Execute error deletions
+        python -m cli.main memory-delete -c bull_memory -p "Alpha Vantage" -x
+        python -m cli.main memory-delete -c bull_memory --low-confidence -x
+        python -m cli.main memory-delete -c prediction_accuracy --all -x
+    """
+    import questionary
+    from tradingagents.agents.utils.memory import FinancialSituationMemory
+    from tradingagents.default_config import DEFAULT_CONFIG
+    
+    config = DEFAULT_CONFIG.copy()
+    config["embedding_provider"] = "local"
+    
+    valid_collections = [
+        "bull_memory", "bear_memory", "trader_memory",
+        "invest_judge_memory", "risk_manager_memory",
+        "prediction_accuracy", "technical_backtest",
+    ]
+    
+    if collection not in valid_collections:
+        console.print(f"[red]Unknown collection: {collection}[/red]")
+        console.print(f"[dim]Available: {', '.join(valid_collections)}[/dim]")
+        return
+    
+    # Error patterns to match
+    error_patterns = [
+        "Alpha Vantage API rate limit",
+        "N/A: Not a trading day",
+        "I apologize for the inconvenience",
+        "API rate limit has been exceeded",
+        "Error fetching",
+        "Failed to retrieve",
+        "Unable to retrieve",
+    ]
+    
+    try:
+        memory = FinancialSituationMemory(collection, config)
+        coll = memory.situation_collection
+        
+        # Get all memories
+        all_data = coll.get(include=["documents", "metadatas"])
+        docs = all_data.get("documents", [])
+        metas = all_data.get("metadatas", [])
+        ids = all_data.get("ids", [])
+        
+        if not docs:
+            console.print(f"[yellow]No memories in {collection}[/yellow]")
+            return
+        
+        # Find memories to delete
+        to_delete = []
+        
+        for i, (doc, meta, mem_id) in enumerate(zip(docs, metas, ids)):
+            should_delete = False
+            reason = ""
+            
+            if all_memories:
+                should_delete = True
+                reason = "all memories"
+            elif errors:
+                for err_pattern in error_patterns:
+                    if err_pattern.lower() in doc.lower():
+                        should_delete = True
+                        reason = f"contains '{err_pattern}'"
+                        break
+            elif low_confidence:
+                conf = meta.get("confidence", 1.0)
+                if conf < 0.3:
+                    should_delete = True
+                    reason = f"low confidence ({conf:.2f})"
+            elif pattern:
+                if pattern.lower() in doc.lower():
+                    should_delete = True
+                    reason = f"matches pattern '{pattern}'"
+            
+            if should_delete:
+                to_delete.append({
+                    "id": mem_id,
+                    "doc": doc[:100] + "..." if len(doc) > 100 else doc,
+                    "reason": reason,
+                    "confidence": meta.get("confidence", 0),
+                    "tier": meta.get("tier", "short"),
+                })
+        
+        if not to_delete:
+            console.print(f"[green]No memories match deletion criteria in {collection}[/green]")
+            return
+        
+        # Display what will be deleted
+        console.print(f"\n[bold cyan]═══ Memory Deletion {'Preview' if dry_run else 'Execution'} ═══[/bold cyan]\n")
+        console.print(f"Collection: [cyan]{collection}[/cyan]")
+        console.print(f"Memories to delete: [yellow]{len(to_delete)}[/yellow] / {len(docs)}\n")
+        
+        for i, mem in enumerate(to_delete[:10], 1):  # Show first 10
+            console.print(f"[red]{i}.[/red] [{mem['tier']}] conf={mem['confidence']:.2f}")
+            console.print(f"   Reason: {mem['reason']}")
+            console.print(f"   [dim]{mem['doc']}[/dim]\n")
+        
+        if len(to_delete) > 10:
+            console.print(f"[dim]... and {len(to_delete) - 10} more[/dim]\n")
+        
+        if dry_run:
+            console.print("[yellow]DRY RUN - No changes made[/yellow]")
+            console.print("[dim]Use -x or --execute to actually delete[/dim]")
+        else:
+            # Confirm deletion
+            confirm = questionary.confirm(
+                f"Delete {len(to_delete)} memories from {collection}?",
+                default=False,
+            ).ask()
+            
+            if not confirm:
+                console.print("[yellow]Cancelled[/yellow]")
+                return
+            
+            # Delete memories
+            ids_to_delete = [m["id"] for m in to_delete]
+            coll.delete(ids=ids_to_delete)
+            
+            console.print(f"[bold green]✓ Deleted {len(to_delete)} memories from {collection}[/bold green]")
+            
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
 
 
 @app.command()

@@ -575,21 +575,42 @@ class DailyAnalysisCycle:
         try:
             # Get ATR for stop loss calculation
             from tradingagents.dataflows.mt5_data import get_mt5_data
+            import pandas as pd
+            import io
             
             # Fetch recent data for ATR
             end_date = datetime.now().strftime("%Y-%m-%d")
             start_date = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
             
-            df = get_mt5_data(self.symbol, start_date, end_date, timeframe="H4")
+            csv_data = get_mt5_data(self.symbol, start_date, end_date, timeframe="H4")
+            
+            if csv_data is None or isinstance(csv_data, str) and csv_data.startswith("Error"):
+                print("Warning: Failed to get MT5 data for ATR calculation")
+                return None
+            
+            # Parse CSV string to DataFrame
+            if isinstance(csv_data, str):
+                # Filter out comment lines starting with #
+                lines = [l for l in csv_data.split('\n') if l and not l.startswith('#')]
+                if len(lines) < 2:
+                    print("Warning: Insufficient data for ATR calculation")
+                    return None
+                df = pd.read_csv(io.StringIO('\n'.join(lines)))
+            else:
+                df = csv_data
             
             if df is None or len(df) < 14:
                 print("Warning: Insufficient data for ATR calculation")
                 return None
             
-            # Calculate ATR
-            high = df['High'].values
-            low = df['Low'].values
-            close = df['Close'].values
+            # Calculate ATR - handle column name variations
+            high_col = 'high' if 'high' in df.columns else 'High'
+            low_col = 'low' if 'low' in df.columns else 'Low'
+            close_col = 'close' if 'close' in df.columns else 'Close'
+            
+            high = df[high_col].values
+            low = df[low_col].values
+            close = df[close_col].values
             
             tr = []
             for i in range(1, len(df)):
