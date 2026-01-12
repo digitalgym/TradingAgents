@@ -95,7 +95,8 @@ class FinancialSituationMemory:
         confidence: float = 0.5,
         outcome_quality: float = 0.5,
         prediction_correct: bool = None,
-        returns: float = None
+        returns: float = None,
+        regime: Optional[Dict[str, str]] = None
     ):
         """
         Add financial situations and their corresponding advice with tier and confidence metadata.
@@ -107,6 +108,7 @@ class FinancialSituationMemory:
             outcome_quality: Quality of the outcome 0.0-1.0 (default: 0.5)
             prediction_correct: Whether the prediction was correct (optional)
             returns: The returns/P&L from this prediction (optional, used to calculate confidence)
+            regime: Optional regime dict (e.g., {"market_regime": "trending-up", "volatility_regime": "high"})
         """
         # Calculate confidence from returns if provided
         if returns is not None and prediction_correct is not None:
@@ -127,7 +129,7 @@ class FinancialSituationMemory:
             advice.append(recommendation)
             ids.append(str(offset + i))
             embeddings.append(self.get_embedding(situation))
-            metadatas.append({
+            metadata_dict = {
                 "recommendation": recommendation,
                 "tier": tier,
                 "confidence": confidence,
@@ -135,7 +137,15 @@ class FinancialSituationMemory:
                 "timestamp": timestamp,
                 "reference_count": 0,
                 "prediction_correct": str(prediction_correct) if prediction_correct is not None else "unknown",
-            })
+            }
+            
+            # Add regime metadata if provided
+            if regime:
+                metadata_dict["market_regime"] = regime.get("market_regime")
+                metadata_dict["volatility_regime"] = regime.get("volatility_regime")
+                metadata_dict["expansion_regime"] = regime.get("expansion_regime")
+            
+            metadatas.append(metadata_dict)
 
         self.situation_collection.add(
             documents=situations,
@@ -191,7 +201,8 @@ class FinancialSituationMemory:
         n_matches: int = 5,
         tier_weights: Dict[str, float] = None,
         min_confidence: float = 0.0,
-        recency_half_life_days: float = 30.0
+        recency_half_life_days: float = 30.0,
+        regime_filter: Optional[Dict[str, str]] = None
     ) -> List[Dict[str, Any]]:
         """
         Find matching recommendations with weighted scoring.
@@ -204,6 +215,8 @@ class FinancialSituationMemory:
             tier_weights: Custom tier weights dict (default: {"short": 0.5, "mid": 0.3, "long": 0.2})
             min_confidence: Minimum confidence threshold (default: 0.0)
             recency_half_life_days: Half-life for recency decay in days (default: 30)
+            regime_filter: Optional regime filter dict (e.g., {"market_regime": "trending-up", "volatility_regime": "high"})
+                          Only return memories from similar regimes
             
         Returns:
             List of matched results sorted by composite score
@@ -232,6 +245,12 @@ class FinancialSituationMemory:
         for i in range(len(results["documents"][0])):
             metadata = results["metadatas"][0][i]
             similarity = 1 - results["distances"][0][i]
+            
+            # Apply regime filter if specified
+            if regime_filter:
+                regime_match = self._check_regime_match(metadata, regime_filter)
+                if not regime_match:
+                    continue
             
             # Get confidence (handle legacy memories without confidence)
             confidence = metadata.get("confidence", 0.5)
@@ -269,6 +288,9 @@ class FinancialSituationMemory:
                 "outcome_quality": metadata.get("outcome_quality", 0.5),
                 "reference_count": metadata.get("reference_count", 0),
                 "id": results["ids"][0][i] if results.get("ids") else str(i),
+                "market_regime": metadata.get("market_regime"),
+                "volatility_regime": metadata.get("volatility_regime"),
+                "expansion_regime": metadata.get("expansion_regime"),
             })
         
         # Sort by composite score (highest first)
@@ -303,6 +325,30 @@ class FinancialSituationMemory:
                     )
             except Exception:
                 pass  # Silently ignore update failures
+    
+    def _check_regime_match(self, metadata: Dict[str, Any], regime_filter: Dict[str, str]) -> bool:
+        """
+        Check if memory's regime matches the filter criteria.
+        
+        Args:
+            metadata: Memory metadata containing regime fields
+            regime_filter: Dict with regime criteria (e.g., {"market_regime": "trending-up"})
+        
+        Returns:
+            True if regime matches (or no regime data in memory), False otherwise
+        """
+        for regime_key, regime_value in regime_filter.items():
+            memory_regime = metadata.get(regime_key)
+            
+            # If memory has no regime data (legacy), include it
+            if memory_regime is None:
+                continue
+            
+            # If regime doesn't match, exclude this memory
+            if memory_regime != regime_value:
+                return False
+        
+        return True
     
     def _check_tier_promotion(self, memory_id: str, metadata: Dict[str, Any]):
         """

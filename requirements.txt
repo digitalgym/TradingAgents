@@ -25,3 +25,4 @@ questionary
 langchain_anthropic
 langchain-google-genai
 schedule>=1.2.0
+sentence-transformers

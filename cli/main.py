@@ -32,6 +32,13 @@ from cli.utils import (
     select_shallow_thinking_agent, select_deep_thinking_agent, select_llm_provider,
     select_asset_type, select_data_vendor, select_sentiment_source
 )
+from cli.learning_commands import (
+    learning_status_command,
+    update_patterns_command,
+    risk_status_command,
+    regime_command,
+    similar_trades_command
+)
 
 console = Console()
 
@@ -3743,6 +3750,73 @@ def trailing_stops():
             
     except Exception as e:
         console.print(f"[red]Error: {e}[/red]")
+
+
+@app.command(name="learning-status")
+def learning_status():
+    """Display continuous learning system status."""
+    learning_status_command()
+
+
+@app.command(name="update-patterns")
+def update_patterns():
+    """Run pattern analysis and update agent weights."""
+    update_patterns_command()
+
+
+@app.command(name="risk-status")
+def risk_status():
+    """View detailed risk guardrails status."""
+    risk_status_command()
+
+
+@app.command()
+def regime(
+    symbol: str = typer.Option("XAUUSD", "--symbol", "-s", help="Symbol to analyze"),
+    days: int = typer.Option(100, "--days", "-d", help="Days of historical data")
+):
+    """Detect current market regime for a symbol."""
+    regime_command(symbol, days)
+
+
+@app.command(name="similar-trades")
+def similar_trades(
+    symbol: str = typer.Option("XAUUSD", "--symbol", "-s", help="Symbol"),
+    direction: str = typer.Option("BUY", "--direction", "-d", help="Direction (BUY/SELL)"),
+    setup: Optional[str] = typer.Option(None, "--setup", help="Setup type"),
+    regime_filter: Optional[str] = typer.Option(None, "--regime", help="Market regime"),
+    n: int = typer.Option(5, "--limit", "-n", help="Number of results")
+):
+    """Find similar historical trades."""
+    similar_trades_command(symbol, direction, setup, regime_filter, n)
+
+
+@app.command(name="analyze-metals")
+def analyze_metals(
+    date: Optional[str] = typer.Option(None, "--date", "-d", help="Analysis date (YYYY-MM-DD)"),
+    setup: Optional[str] = typer.Option("breaker-block", "--setup", "-s", help="Setup type")
+):
+    """Analyze all precious metals (Gold, Silver, Copper, Platinum) and rank by opportunity."""
+    import sys
+    from pathlib import Path
+    
+    # Add examples directory to path
+    sys.path.insert(0, str(Path(__file__).parent.parent / "examples"))
+    
+    try:
+        from analyze_precious_metals import analyze_all_commodities
+        
+        console.print("\n[bold cyan]Precious Metals Analysis[/bold cyan]\n")
+        
+        # Run the analysis
+        results = analyze_all_commodities(trade_date=date, setup_type=setup)
+        
+        console.print("\n[green]✅ Analysis complete![/green]")
+        
+    except ImportError as e:
+        console.print(f"[red]Error: Could not import analysis module: {e}[/red]")
+    except Exception as e:
+        console.print(f"[red]Error during analysis: {e}[/red]")
 
 
 @app.command()
