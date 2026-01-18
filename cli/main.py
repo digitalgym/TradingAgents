@@ -1,5 +1,7 @@
 from typing import Optional
 import datetime
+import logging
+import sys
 import typer
 from pathlib import Path
 from functools import wraps
@@ -8,6 +10,24 @@ from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
+
+# Setup logging
+logging.basicConfig(
+    level=logging.WARNING,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler()]
+)
+
+# Reduce noise from third-party libraries
+logging.getLogger("openai").setLevel(logging.WARNING)
+logging.getLogger("openai._base_client").setLevel(logging.WARNING)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+logging.getLogger("xai").setLevel(logging.WARNING)
+logging.getLogger("grok").setLevel(logging.WARNING)
+logging.getLogger("markdown_it").setLevel(logging.WARNING)
+logging.getLogger("asyncio").setLevel(logging.WARNING)
+logging.getLogger("chromadb").setLevel(logging.WARNING)
 from rich.panel import Panel
 from rich.spinner import Spinner
 from rich.live import Live
@@ -31,6 +51,24 @@ from cli.utils import (
     get_ticker, get_analysis_date, select_analysts, select_research_depth,
     select_shallow_thinking_agent, select_deep_thinking_agent, select_llm_provider,
     select_asset_type, select_data_vendor, select_sentiment_source
+)
+from cli.learning_commands import (
+    learning_status_command,
+    update_patterns_command,
+    risk_status_command,
+    regime_command,
+    similar_trades_command
+)
+from cli.execution_commands import (
+    execute_plan_command,
+    monitor_plan_command,
+    review_plan_command
+)
+from cli.review_batch_command import batch_review_command
+from cli.smc_commands import (
+    smc_analyze_command,
+    smc_levels_command,
+    smc_validate_command
 )
 
 console = Console()
@@ -936,10 +974,47 @@ def run_analysis():
         )
         update_display(layout, spinner_text)
 
+        # Run SMC analysis if commodity mode with MT5
+        smc_analysis = None
+        if selections.get("asset_type") == "commodity" and selections.get("data_vendors", {}).get("core_stock_apis") == "mt5":
+            try:
+                from tradingagents.dataflows.smc_utils import (
+                    analyze_multi_timeframe_smc,
+                    format_smc_for_prompt,
+                    get_htf_bias_alignment
+                )
+                
+                message_buffer.add_message("System", "Running Smart Money Concepts analysis...")
+                update_display(layout)
+                
+                smc_analysis = analyze_multi_timeframe_smc(
+                    symbol=selections["ticker"],
+                    timeframes=['1H', '4H', 'D1']
+                )
+                
+                if smc_analysis:
+                    alignment = get_htf_bias_alignment(smc_analysis)
+                    message_buffer.add_message(
+                        "System",
+                        f"SMC Analysis: {alignment['message']} - {len([a for a in smc_analysis.values() if a['order_blocks']['unmitigated'] > 0])} TFs with unmitigated OBs"
+                    )
+                    update_display(layout)
+            except Exception as e:
+                message_buffer.add_message("System", f"SMC analysis skipped: {str(e)}")
+                update_display(layout)
+
         # Initialize state and get graph args
         init_agent_state = graph.propagator.create_initial_state(
             selections["ticker"], selections["analysis_date"]
         )
+        
+        # Add SMC context to initial state if available
+        if smc_analysis:
+            from tradingagents.dataflows.smc_utils import format_smc_for_prompt
+            smc_context_str = format_smc_for_prompt(smc_analysis, selections["ticker"])
+            init_agent_state["smc_context"] = smc_context_str
+            init_agent_state["smc_analysis"] = smc_analysis
+        
         args = graph.propagator.get_graph_args()
 
         # Stream the analysis
@@ -1197,12 +1272,70 @@ def run_analysis():
     # Display the complete final report OUTSIDE the Live context to prevent flickering
     display_complete_report(final_state)
     
+    # Display SMC validation if available
+    if smc_analysis and decision in ["BUY", "SELL"]:
+        display_smc_validation(selections["ticker"], decision, final_state, smc_analysis)
+    
     # Prompt for trade execution if commodity mode with MT5
     if selections.get("asset_type") == "commodity" and selections.get("data_vendors", {}).get("core_stock_apis") == "mt5":
-        prompt_trade_execution(selections["ticker"], decision, final_state)
+        prompt_trade_execution(selections["ticker"], decision, final_state, smc_analysis)
 
 
-def prompt_trade_execution(ticker: str, signal: str, final_state: dict):
+def display_smc_validation(ticker: str, signal: str, final_state: dict, smc_analysis: dict):
+    """Display SMC validation of the trade plan."""
+    from tradingagents.dataflows.smc_utils import (
+        validate_trade_against_smc,
+        suggest_smc_stop_loss,
+        suggest_smc_take_profits
+    )
+    
+    # Use D1 timeframe for validation
+    d1_analysis = smc_analysis.get('D1')
+    if not d1_analysis:
+        return
+    
+    # Extract plan details from final state
+    entry_price = d1_analysis['current_price']
+    
+    # Try to extract stop/tp from final decision
+    # This is a simple extraction - you may need to adjust based on your format
+    final_decision = final_state.get('final_trade_decision', '')
+    
+    console.print("\n")
+    console.print(Panel(
+        "[bold cyan]Smart Money Concepts Validation[/bold cyan]",
+        border_style="cyan"
+    ))
+    
+    # Show SMC-suggested levels
+    stop_suggestion = suggest_smc_stop_loss(
+        smc_analysis=d1_analysis,
+        direction=signal,
+        entry_price=entry_price,
+        max_distance_pct=3.0
+    )
+    
+    tp_suggestions = suggest_smc_take_profits(
+        smc_analysis=d1_analysis,
+        direction=signal,
+        entry_price=entry_price,
+        num_targets=3
+    )
+    
+    if stop_suggestion:
+        console.print(f"\n[bold yellow]SMC-Suggested Stop Loss:[/bold yellow]")
+        console.print(f"  ${stop_suggestion['price']:.2f} (below {stop_suggestion['source']} at ${stop_suggestion['zone_bottom']:.2f})")
+        console.print(f"  Distance: {stop_suggestion['distance_pct']:.2f}% | Strength: {stop_suggestion['strength']:.0%}")
+    
+    if tp_suggestions:
+        console.print(f"\n[bold yellow]SMC-Suggested Take Profits:[/bold yellow]")
+        for tp in tp_suggestions:
+            console.print(f"  TP{tp['number']}: ${tp['price']:.2f} (+{tp['distance_pct']:.1f}%) at {tp['source']} zone")
+    
+    console.print()
+
+
+def prompt_trade_execution(ticker: str, signal: str, final_state: dict, smc_analysis: dict = None):
     """Prompt user to execute the trade via MT5."""
     import questionary
     from tradingagents.dataflows.mt5_data import (
@@ -1375,6 +1508,32 @@ def prompt_trade_execution(ticker: str, signal: str, final_state: dict):
             default=True,
         ).ask()
         
+        # Validate and normalize prices before showing summary
+        tick_size = symbol_info.get('trade_tick_size', 0.01)
+        digits = symbol_info.get('digits', 2)
+        
+        # Normalize all prices to tick size
+        entry_price = round(entry_price / tick_size) * tick_size
+        stop_loss = round(stop_loss / tick_size) * tick_size
+        take_profit = round(take_profit / tick_size) * tick_size
+        
+        # Format to correct decimal places
+        entry_price = round(entry_price, digits)
+        stop_loss = round(stop_loss, digits)
+        take_profit = round(take_profit, digits)
+        
+        # Validate limit order price against current market
+        price_warning = None
+        if use_limit:
+            if signal == "BUY" and entry_price >= current_price:
+                adjusted_entry = current_price - (tick_size * 5)
+                price_warning = f"⚠️  BUY_LIMIT price must be below current ask ({current_price}). Adjusted to {adjusted_entry:.{digits}f}"
+                entry_price = round(adjusted_entry, digits)
+            elif signal == "SELL" and entry_price <= current_price:
+                adjusted_entry = current_price + (tick_size * 5)
+                price_warning = f"⚠️  SELL_LIMIT price must be above current bid ({current_price}). Adjusted to {adjusted_entry:.{digits}f}"
+                entry_price = round(adjusted_entry, digits)
+        
         # Confirm
         console.print("\n[bold]Order Summary:[/bold]")
         console.print(f"  Symbol: {ticker}")
@@ -1383,6 +1542,9 @@ def prompt_trade_execution(ticker: str, signal: str, final_state: dict):
         console.print(f"  Entry: {entry_price}")
         console.print(f"  Stop Loss: {stop_loss}")
         console.print(f"  Take Profit: {take_profit}")
+        
+        if price_warning:
+            console.print(f"\n[yellow]{price_warning}[/yellow]")
         
         confirm = questionary.confirm(
             "Confirm and place order?",
@@ -1516,6 +1678,12 @@ def save_trade_state(
 def analyze():
     """Run trading analysis."""
     run_analysis()
+
+
+@app.command(name="batch-review")
+def batch_review():
+    """Review all unreviewed trades grouped by symbol (avoids re-reviews)."""  
+    batch_review_command()
 
 
 @app.command()
@@ -3743,6 +3911,134 @@ def trailing_stops():
             
     except Exception as e:
         console.print(f"[red]Error: {e}[/red]")
+
+
+@app.command(name="learning-status")
+def learning_status():
+    """Display continuous learning system status."""
+    learning_status_command()
+
+
+@app.command(name="update-patterns")
+def update_patterns():
+    """Run pattern analysis and update agent weights."""
+    update_patterns_command()
+
+
+@app.command(name="risk-status")
+def risk_status():
+    """View detailed risk guardrails status."""
+    risk_status_command()
+
+
+@app.command()
+def regime(
+    symbol: str = typer.Option("XAUUSD", "--symbol", "-s", help="Symbol to analyze"),
+    days: int = typer.Option(100, "--days", "-d", help="Days of historical data")
+):
+    """Detect current market regime for a symbol."""
+    regime_command(symbol, days)
+
+
+@app.command(name="similar-trades")
+def similar_trades(
+    symbol: str = typer.Option("XAUUSD", "--symbol", "-s", help="Symbol"),
+    direction: str = typer.Option("BUY", "--direction", "-d", help="Direction (BUY/SELL)"),
+    setup: Optional[str] = typer.Option(None, "--setup", help="Setup type"),
+    regime_filter: Optional[str] = typer.Option(None, "--regime", help="Market regime"),
+    n: int = typer.Option(5, "--limit", "-n", help="Number of results")
+):
+    """Find similar historical trades."""
+    similar_trades_command(symbol, direction, setup, regime_filter, n)
+
+
+@app.command(name="execute-plan")
+def execute_plan(
+    plan_file: str = typer.Argument(..., help="Path to file containing trading plan"),
+    symbol: Optional[str] = typer.Option(None, "--symbol", "-s", help="Symbol override"),
+    dry_run: bool = typer.Option(True, "--dry-run/--live", help="Dry run mode (no real orders)")
+):
+    """Parse and execute a trading plan with intelligent order management."""
+    execute_plan_command(plan_file, symbol, dry_run)
+
+
+@app.command(name="monitor-plan")
+def monitor_plan(
+    plan_id: str = typer.Argument(..., help="Plan ID to monitor")
+):
+    """Monitor active staged entry plan."""
+    monitor_plan_command(plan_id)
+
+
+@app.command(name="review-plan")
+def review_plan(
+    plan_id: str = typer.Argument(..., help="Plan ID to review"),
+    current_price: Optional[float] = typer.Option(None, "--price", "-p", help="Current price")
+):
+    """Review plan and get adjustment recommendations."""
+    review_plan_command(plan_id, current_price)
+
+
+@app.command(name="smc")
+def smc(
+    symbol: str = typer.Argument(..., help="Trading symbol"),
+    timeframes: str = typer.Option("1H,4H,D1", "--timeframes", "-t", help="Comma-separated timeframes")
+):
+    """Analyze smart money concepts (order blocks, FVGs, BOS, CHOC)."""
+    smc_analyze_command(symbol, timeframes)
+
+
+@app.command(name="smc-levels")
+def smc_levels(
+    symbol: str = typer.Argument(..., help="Trading symbol"),
+    direction: str = typer.Option("BUY", "--direction", "-d", help="Trade direction"),
+    entry: Optional[float] = typer.Option(None, "--entry", "-e", help="Entry price")
+):
+    """Get SMC-based stop loss and take profit suggestions."""
+    smc_levels_command(symbol, direction, entry)
+
+
+@app.command(name="smc-validate")
+def smc_validate(
+    symbol: str = typer.Argument(..., help="Trading symbol"),
+    direction: str = typer.Option(..., "--direction", "-d", help="Trade direction"),
+    entry: float = typer.Option(..., "--entry", "-e", help="Entry price"),
+    stop: float = typer.Option(..., "--stop", "-s", help="Stop loss price"),
+    target: float = typer.Option(..., "--target", "-t", help="Take profit price")
+):
+    """Validate trade plan against SMC levels."""
+    smc_validate_command(symbol, direction, entry, stop, target)
+
+
+@app.command(name="analyze-metals")
+def analyze_metals(
+    date: Optional[str] = typer.Option(None, "--date", "-d", help="Analysis date (YYYY-MM-DD)"),
+    setup: Optional[str] = typer.Option("breaker-block", "--setup", "-s", help="Setup type")
+):
+    """Analyze all precious metals (Gold, Silver, Copper, Platinum) and rank by opportunity."""
+    import importlib.util
+    from pathlib import Path
+
+    # Load module from examples directory
+    examples_path = Path(__file__).parent.parent / "examples" / "analyze_precious_metals.py"
+
+    try:
+        spec = importlib.util.spec_from_file_location("analyze_precious_metals", examples_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        analyze_all_commodities = module.analyze_all_commodities
+        
+        console.print("\n[bold cyan]Precious Metals Analysis[/bold cyan]\n")
+        
+        # Run the analysis
+        results = analyze_all_commodities(trade_date=date, setup_type=setup)
+        
+        console.print("\n[green]✅ Analysis complete![/green]")
+        
+    except ImportError as e:
+        console.print(f"[red]Error: Could not import analysis module: {e}[/red]")
+    except Exception as e:
+        console.print(f"[red]Error during analysis: {e}[/red]")
 
 
 @app.command()

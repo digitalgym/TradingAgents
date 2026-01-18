@@ -198,16 +198,16 @@ COMMODITY_CONFIG.update({
 def analyze_commodity(symbol: str, trade_date: str, entry_price: float = None, save_for_reflection: bool = False):
     """
     Analyze a commodity using TradingAgents.
-    
+
     Args:
         symbol: Commodity symbol (XAUUSD, XAGUSD, XPTUSD, COPPER-C) or alias (gold, silver, etc.)
         trade_date: Date to analyze in YYYY-MM-DD format
         entry_price: Optional entry price if you're going to execute the trade
         save_for_reflection: If True, saves final_state for later reflection
-        
+
     Returns:
         final_state, signal, trade_id (if save_for_reflection=True)
-        
+
     WORKFLOW:
         1. Run analysis: final_state, signal, trade_id = analyze_commodity("XAUUSD", "2025-12-26", entry_price=2650.00, save_for_reflection=True)
         2. Execute trade based on signal
@@ -217,18 +217,43 @@ def analyze_commodity(symbol: str, trade_date: str, entry_price: float = None, s
     print(f"\n{'='*60}")
     print(f"Analyzing {symbol} for {trade_date}")
     print(f"{'='*60}\n")
-    
+
     # Create the trading graph with commodity config
     # Note: fundamentals analyst is auto-excluded for commodities
     graph = TradingAgentsGraph(
         config=COMMODITY_CONFIG,
         debug=True,  # Set to False for less verbose output
     )
-    
+
     print(f"Selected analysts: {graph.selected_analysts}")
-    
-    # Run analysis
-    final_state, signal = graph.propagate(symbol, trade_date)
+
+    # Run SMC analysis for commodities with MT5
+    smc_analysis = None
+    smc_context = None
+    if COMMODITY_CONFIG.get("data_vendors", {}).get("core_stock_apis") == "mt5":
+        try:
+            from tradingagents.dataflows.smc_utils import (
+                analyze_multi_timeframe_smc,
+                format_smc_for_prompt,
+                get_htf_bias_alignment
+            )
+
+            print("Running Smart Money Concepts analysis...")
+            smc_analysis = analyze_multi_timeframe_smc(
+                symbol=symbol,
+                timeframes=['1H', '4H', 'D1']
+            )
+
+            if smc_analysis:
+                alignment = get_htf_bias_alignment(smc_analysis)
+                print(f"SMC Analysis: {alignment['message']}")
+                print(f"  - Timeframes with unmitigated OBs: {len([a for a in smc_analysis.values() if a['order_blocks']['unmitigated'] > 0])}")
+                smc_context = format_smc_for_prompt(smc_analysis, symbol)
+        except Exception as e:
+            print(f"SMC analysis skipped: {e}")
+
+    # Run analysis with SMC context
+    final_state, signal = graph.propagate(symbol, trade_date, smc_context=smc_context)
     
     # Print results
     print(f"\n{'='*60}")
@@ -251,8 +276,286 @@ def analyze_commodity(symbol: str, trade_date: str, entry_price: float = None, s
         trade_id = save_trade_state(symbol, trade_date, final_state, signal, entry_price)
     
     if save_for_reflection:
-        return final_state, signal, trade_id
-    return final_state, signal
+        return final_state, signal, trade_id, smc_analysis
+    return final_state, signal, smc_analysis
+
+
+def display_smc_levels(symbol: str, signal: str, smc_analysis: dict):
+    """Display SMC-suggested stop loss and take profit levels."""
+    if not smc_analysis or signal == "HOLD":
+        return None, None
+
+    from tradingagents.dataflows.smc_utils import (
+        suggest_smc_stop_loss,
+        suggest_smc_take_profits
+    )
+
+    # Use D1 timeframe for levels
+    d1_analysis = smc_analysis.get('D1')
+    if not d1_analysis:
+        print("No D1 SMC data available for level suggestions")
+        return None, None
+
+    current_price = d1_analysis['current_price']
+
+    print(f"\n{'='*60}")
+    print("SMC-BASED TRADE LEVELS")
+    print(f"{'='*60}")
+    print(f"Current Price: ${current_price:.2f}")
+    print(f"Signal: {signal}")
+
+    # Get SMC stop loss suggestion
+    stop_suggestion = suggest_smc_stop_loss(
+        smc_analysis=d1_analysis,
+        direction=signal,
+        entry_price=current_price,
+        max_distance_pct=3.0
+    )
+
+    if stop_suggestion:
+        print(f"\n--- SMC Stop Loss ---")
+        print(f"  Price: ${stop_suggestion['price']:.2f}")
+        print(f"  Zone: ${stop_suggestion['zone_bottom']:.2f} - ${stop_suggestion['zone_top']:.2f}")
+        print(f"  Source: {stop_suggestion['source']}")
+        print(f"  Strength: {stop_suggestion['strength']:.2f}")
+        print(f"  Distance: {stop_suggestion['distance_pct']:.2f}%")
+        print(f"  Reason: {stop_suggestion['reason']}")
+    else:
+        print("\n--- SMC Stop Loss ---")
+        print("  No suitable SMC zone found for stop loss")
+
+    # Get SMC take profit suggestions
+    tp_suggestions = suggest_smc_take_profits(
+        smc_analysis=d1_analysis,
+        direction=signal,
+        entry_price=current_price,
+        num_targets=3
+    )
+
+    if tp_suggestions:
+        print(f"\n--- SMC Take Profit Targets ---")
+        for i, tp in enumerate(tp_suggestions, 1):
+            print(f"  TP{i}: ${tp['price']:.2f} ({tp['source']}) | +{tp['distance_pct']:.2f}%")
+    else:
+        print("\n--- SMC Take Profit Targets ---")
+        print("  No suitable SMC zones found for take profits")
+
+    return stop_suggestion, tp_suggestions
+
+
+def prompt_trade_execution(symbol: str, signal: str, smc_analysis: dict = None, final_state: dict = None):
+    """
+    Prompt user to execute the trade via MT5 with SMC-based levels.
+
+    Args:
+        symbol: Trading symbol (e.g., XAUUSD)
+        signal: Trade signal (BUY, SELL, HOLD)
+        smc_analysis: SMC analysis dict with timeframe data
+        final_state: Final state from analysis for reflection
+    """
+    if signal == "HOLD":
+        print("\n[HOLD] No trade to execute.")
+        return
+
+    from tradingagents.dataflows.mt5_data import (
+        execute_trade_signal,
+        get_mt5_current_price,
+        get_mt5_symbol_info,
+        get_open_positions,
+    )
+    from tradingagents.dataflows.smc_utils import (
+        suggest_smc_stop_loss,
+        suggest_smc_take_profits
+    )
+
+    print(f"\n{'='*60}")
+    print(f"TRADE EXECUTION: {signal} {symbol}")
+    print(f"{'='*60}")
+
+    # Check for open positions when SELL signal
+    if signal == "SELL":
+        try:
+            open_positions = get_open_positions()
+            long_positions = [p for p in open_positions if p['type'] == 'BUY' and symbol in p['symbol']]
+
+            if long_positions:
+                print("\n⚠️  WARNING: You have open LONG positions!")
+                print("Consider closing them before entering a SHORT:")
+                for p in long_positions:
+                    profit_sign = "+" if p['profit'] >= 0 else ""
+                    print(f"  {p['symbol']} BUY {p['volume']} lots @ {p['price_open']} | P/L: {profit_sign}{p['profit']:.2f}")
+
+                response = input("\nContinue with SELL order? (y/N): ").strip().lower()
+                if response != 'y':
+                    print("Trade execution cancelled.")
+                    return
+        except Exception as e:
+            pass  # Continue if we can't check positions
+
+    # Get current price and symbol info
+    try:
+        price_info = get_mt5_current_price(symbol)
+        symbol_info = get_mt5_symbol_info(symbol)
+    except Exception as e:
+        print(f"Error getting MT5 data: {e}")
+        return
+
+    current_price = price_info["ask"] if signal == "BUY" else price_info["bid"]
+    digits = symbol_info.get("digits", 2)
+
+    print(f"\nCurrent Price: ${current_price:.{digits}f}")
+    print(f"Spread: {symbol_info['spread']} | Min lot: {symbol_info['volume_min']}")
+
+    # Get SMC-based levels
+    smc_sl = None
+    smc_tp = None
+
+    if smc_analysis:
+        d1_analysis = smc_analysis.get('D1')
+        if d1_analysis:
+            smc_sl = suggest_smc_stop_loss(
+                smc_analysis=d1_analysis,
+                direction=signal,
+                entry_price=current_price,
+                max_distance_pct=3.0
+            )
+            smc_tps = suggest_smc_take_profits(
+                smc_analysis=d1_analysis,
+                direction=signal,
+                entry_price=current_price,
+                num_targets=3
+            )
+            if smc_tps:
+                smc_tp = smc_tps[0]  # Use first TP target
+
+    # Calculate fallback ATR-based levels
+    from tradingagents.risk.stop_loss import DynamicStopLoss, get_atr_for_symbol
+
+    atr = get_atr_for_symbol(symbol, period=14)
+    dsl = DynamicStopLoss(atr_multiplier=2.0, trailing_multiplier=1.5, risk_reward_ratio=2.0)
+
+    if atr > 0:
+        atr_levels = dsl.calculate_levels(current_price, atr, signal)
+        atr_sl = round(atr_levels.stop_loss, digits)
+        atr_tp = round(atr_levels.take_profit, digits)
+    else:
+        # Percentage fallback
+        if signal == "BUY":
+            atr_sl = round(current_price * 0.98, digits)
+            atr_tp = round(current_price * 1.04, digits)
+        else:
+            atr_sl = round(current_price * 1.02, digits)
+            atr_tp = round(current_price * 0.96, digits)
+
+    # Display level options
+    print("\n--- Stop Loss Options ---")
+    if smc_sl:
+        print(f"  1. SMC-based: ${smc_sl['price']:.{digits}f} ({smc_sl['reason']})")
+    print(f"  2. ATR-based (2x): ${atr_sl:.{digits}f}")
+    print(f"  3. Manual entry")
+
+    sl_choice = input("\nSelect SL option (1/2/3) [1 if SMC available, else 2]: ").strip()
+
+    if sl_choice == "1" and smc_sl:
+        stop_loss = round(smc_sl['price'], digits)
+        print(f"  ✓ Using SMC stop loss: ${stop_loss:.{digits}f}")
+    elif sl_choice == "3":
+        sl_input = input(f"  Enter stop loss price: ").strip()
+        stop_loss = float(sl_input) if sl_input else atr_sl
+    else:
+        stop_loss = atr_sl
+        print(f"  ✓ Using ATR stop loss: ${stop_loss:.{digits}f}")
+
+    print("\n--- Take Profit Options ---")
+    if smc_tp:
+        print(f"  1. SMC-based: ${smc_tp['price']:.{digits}f} ({smc_tp['source']} zone)")
+    print(f"  2. ATR-based (2:1 R:R): ${atr_tp:.{digits}f}")
+    print(f"  3. Manual entry")
+
+    tp_choice = input("\nSelect TP option (1/2/3) [1 if SMC available, else 2]: ").strip()
+
+    if tp_choice == "1" and smc_tp:
+        take_profit = round(smc_tp['price'], digits)
+        print(f"  ✓ Using SMC take profit: ${take_profit:.{digits}f}")
+    elif tp_choice == "3":
+        tp_input = input(f"  Enter take profit price: ").strip()
+        take_profit = float(tp_input) if tp_input else atr_tp
+    else:
+        take_profit = atr_tp
+        print(f"  ✓ Using ATR take profit: ${take_profit:.{digits}f}")
+
+    # Get lot size
+    volume_input = input(f"\nLot size (min: {symbol_info['volume_min']}) [0.01]: ").strip()
+    volume = float(volume_input) if volume_input else 0.01
+
+    # Order type
+    order_type = input("Order type - (M)arket or (L)imit? [M]: ").strip().upper()
+    use_limit = order_type == "L"
+
+    if use_limit:
+        entry_input = input(f"Entry price [current: {current_price}]: ").strip()
+        entry_price = float(entry_input) if entry_input else current_price
+    else:
+        entry_price = current_price
+
+    # Normalize prices to tick size
+    tick_size = symbol_info.get('trade_tick_size', 0.01)
+    entry_price = round(round(entry_price / tick_size) * tick_size, digits)
+    stop_loss = round(round(stop_loss / tick_size) * tick_size, digits)
+    take_profit = round(round(take_profit / tick_size) * tick_size, digits)
+
+    # Order summary
+    print(f"\n{'='*60}")
+    print("ORDER SUMMARY")
+    print(f"{'='*60}")
+    print(f"  Symbol:      {symbol}")
+    print(f"  Type:        {signal} {'LIMIT' if use_limit else 'MARKET'}")
+    print(f"  Volume:      {volume} lots")
+    print(f"  Entry:       ${entry_price:.{digits}f}")
+    print(f"  Stop Loss:   ${stop_loss:.{digits}f}")
+    print(f"  Take Profit: ${take_profit:.{digits}f}")
+
+    # Calculate risk/reward
+    if signal == "BUY":
+        risk = entry_price - stop_loss
+        reward = take_profit - entry_price
+    else:
+        risk = stop_loss - entry_price
+        reward = entry_price - take_profit
+
+    if risk > 0:
+        rr_ratio = reward / risk
+        print(f"  Risk:Reward: 1:{rr_ratio:.2f}")
+
+    # Confirm
+    confirm = input("\nConfirm and place order? (y/N): ").strip().lower()
+
+    if confirm != 'y':
+        print("Order cancelled.")
+        return
+
+    # Execute the trade
+    try:
+        result = execute_trade_signal(
+            symbol=symbol,
+            signal=signal,
+            entry_price=entry_price,
+            stop_loss=stop_loss,
+            take_profit=take_profit,
+            volume=volume,
+            use_limit_order=use_limit,
+            comment=f"TradingAgents SMC {signal}",
+        )
+
+        if result.get("success"):
+            print(f"\n✅ Order placed successfully!")
+            print(f"  Order ID: {result.get('order_id')}")
+            print(f"  Price: {result.get('price')}")
+        else:
+            print(f"\n❌ Order failed: {result.get('error', 'Unknown error')}")
+
+    except Exception as e:
+        print(f"\n❌ Error executing trade: {e}")
 
 
 def reflect_on_trade(graph, final_state, returns_losses: float):
@@ -399,14 +702,24 @@ def main():
     
     symbol = "XAGUSD"  # Silver
     trade_date = "2025-12-26"  # Recent trading date
-    
+
     try:
-        final_state, signal = analyze_commodity(symbol, trade_date)
+        final_state, signal, smc_analysis = analyze_commodity(symbol, trade_date)
         print(f"\n✅ Analysis complete! Signal: {signal}")
-        
+
+        # Display SMC levels if available
+        if smc_analysis and signal != "HOLD":
+            display_smc_levels(symbol, signal, smc_analysis)
+
+        # Prompt for trade execution
+        if signal in ["BUY", "SELL"]:
+            execute = input("\nWould you like to execute this trade? (y/N): ").strip().lower()
+            if execute == 'y':
+                prompt_trade_execution(symbol, signal, smc_analysis, final_state)
+
         # Uncomment to demonstrate the full trade lifecycle with reflection:
         # simulate_trade_lifecycle()
-        
+
     except Exception as e:
         print(f"\n❌ Error during analysis: {e}")
         import traceback

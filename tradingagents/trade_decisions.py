@@ -23,6 +23,7 @@ import pickle
 from datetime import datetime
 from typing import Dict, Any, Optional, List
 from pathlib import Path
+import numpy as np
 
 
 # Directory for storing decisions
@@ -82,6 +83,18 @@ def store_decision(
         "mt5_ticket": mt5_ticket,
         "created_at": timestamp.isoformat(),
         "status": "active",  # active, closed, cancelled
+        
+        # Setup classification
+        "setup_type": None,  # "breaker-block", "FVG", "liquidity-sweep", "trend-continuation"
+        "higher_tf_bias": None,  # "bullish", "bearish", "neutral" from H4/D1
+        "confluence_score": None,  # 0-10 based on number of confirming factors
+        "confluence_factors": [],  # ["support-zone", "fib-618", "ema-bounce", "rsi-divergence"]
+        
+        # Market context
+        "volatility_regime": None,  # "low", "normal", "high", "extreme"
+        "market_regime": None,  # "trending-up", "trending-down", "ranging", "expansion"
+        "session": None,  # "asian", "london", "ny", "overlap"
+        
         # Outcome fields (filled when closed)
         "exit_price": None,
         "exit_date": None,
@@ -89,6 +102,17 @@ def store_decision(
         "pnl_percent": None,
         "outcome_notes": None,
         "was_correct": None,  # True if decision led to profit or avoided loss
+        
+        # Exit analysis (filled when closed)
+        "exit_reason": None,  # "tp-hit", "sl-hit", "manual", "trailing-stop", "time-exit"
+        "rr_planned": None,  # Planned risk-reward ratio
+        "rr_realized": None,  # Actual risk-reward achieved
+        
+        # Learning signals (filled when closed)
+        "reward_signal": None,  # Calculated reward for RL
+        "sharpe_contribution": None,  # Impact on portfolio Sharpe
+        "drawdown_impact": None,  # Contribution to drawdown
+        "pattern_tags": [],  # Auto-generated tags for pattern clustering
     }
     
     # Store analysis context separately (can be large)
@@ -142,6 +166,8 @@ def close_decision(
     exit_price: float,
     outcome_notes: str = "",
     was_correct: Optional[bool] = None,
+    exit_reason: Optional[str] = None,
+    calculate_reward: bool = True,
 ) -> Dict[str, Any]:
     """
     Close a decision and record the outcome.
@@ -184,6 +210,63 @@ def close_decision(
     if was_correct is None:
         was_correct = pnl_percent > 0
     
+    # Calculate realized RR if we have stop loss
+    rr_realized = None
+    if decision.get("stop_loss") and entry_price:
+        from tradingagents.learning.reward import RewardCalculator
+        direction = "BUY" if action in ["BUY", "LONG"] else "SELL"
+        rr_realized = RewardCalculator.calculate_realized_rr(
+            entry_price, exit_price, decision["stop_loss"], direction
+        )
+    
+    # Calculate planned RR if we have SL and TP
+    rr_planned = None
+    if decision.get("stop_loss") and decision.get("take_profit") and entry_price:
+        if action in ["BUY", "LONG"]:
+            risk = abs(entry_price - decision["stop_loss"])
+            reward = abs(decision["take_profit"] - entry_price)
+        else:
+            risk = abs(decision["stop_loss"] - entry_price)
+            reward = abs(entry_price - decision["take_profit"])
+        rr_planned = reward / risk if risk > 0 else None
+    
+    # Calculate reward signal if enabled
+    reward_signal = None
+    sharpe_contribution = None
+    drawdown_impact = None
+    
+    if calculate_reward and rr_realized is not None:
+        try:
+            from tradingagents.learning.portfolio_state import PortfolioStateTracker
+            from tradingagents.learning.reward import RewardCalculator
+            
+            # Load portfolio state
+            portfolio = PortfolioStateTracker.load_state()
+            
+            # Calculate reward components
+            reward_components = RewardCalculator.calculate_all_components(
+                entry_price=entry_price,
+                exit_price=exit_price,
+                stop_loss=decision["stop_loss"],
+                direction="BUY" if action in ["BUY", "LONG"] else "SELL",
+                trade_pnl=pnl,
+                portfolio_returns=portfolio.returns[-50:] if len(portfolio.returns) > 0 else [],
+                equity_curve=portfolio.equity_curve,
+                peak_equity=portfolio.peak_equity,
+                position_size_pct=0.01  # Default 1% risk
+            )
+            
+            reward_signal = reward_components["reward"]
+            sharpe_contribution = reward_components["sharpe_contribution"]
+            drawdown_impact = reward_components["drawdown_impact"]
+            
+            # Update portfolio state
+            portfolio.update(pnl, win=was_correct)
+            portfolio.save_state()
+            
+        except Exception as e:
+            print(f"⚠️ Could not calculate reward signal: {e}")
+    
     # Update decision
     decision["exit_price"] = exit_price
     decision["exit_date"] = datetime.now().isoformat()
@@ -192,6 +275,12 @@ def close_decision(
     decision["outcome_notes"] = outcome_notes
     decision["was_correct"] = was_correct
     decision["status"] = "closed"
+    decision["exit_reason"] = exit_reason
+    decision["rr_planned"] = rr_planned
+    decision["rr_realized"] = rr_realized
+    decision["reward_signal"] = reward_signal
+    decision["sharpe_contribution"] = sharpe_contribution
+    decision["drawdown_impact"] = drawdown_impact
     
     # Save updated decision
     decision_file = os.path.join(DECISIONS_DIR, f"{decision_id}.json")
@@ -201,6 +290,10 @@ def close_decision(
     print(f"✅ Decision closed: {decision_id}")
     print(f"   Entry: {entry_price} → Exit: {exit_price}")
     print(f"   P&L: {pnl_percent:+.2f}% ({'✓ Correct' if was_correct else '✗ Incorrect'})")
+    if rr_realized is not None:
+        print(f"   Risk-Reward: {rr_realized:+.2f}R (planned: {rr_planned:.2f}R)" if rr_planned else f"   Risk-Reward: {rr_realized:+.2f}R")
+    if reward_signal is not None:
+        print(f"   Reward Signal: {reward_signal:+.2f}")
     
     return decision
 
@@ -305,6 +398,91 @@ def find_decision_by_ticket(mt5_ticket: int) -> Optional[Dict[str, Any]]:
                 continue
     
     return None
+
+
+def mark_decision_reviewed(decision_id: str):
+    """Mark a decision as reviewed."""
+    decision = load_decision(decision_id)
+    decision["reviewed"] = True
+    decision["reviewed_at"] = datetime.now().isoformat()
+    
+    decision_file = os.path.join(DECISIONS_DIR, f"{decision_id}.json")
+    with open(decision_file, "w") as f:
+        json.dump(decision, f, indent=2, default=str)
+
+
+def list_unreviewed_decisions(symbol: Optional[str] = None) -> List[Dict[str, Any]]:
+    """List closed decisions that haven't been reviewed yet."""
+    if not os.path.exists(DECISIONS_DIR):
+        return []
+    
+    decisions = []
+    for f in os.listdir(DECISIONS_DIR):
+        if f.endswith(".json"):
+            decision_id = f.replace(".json", "")
+            try:
+                decision = load_decision(decision_id)
+                if decision["status"] == "closed" and not decision.get("reviewed", False):
+                    if symbol is None or decision["symbol"] == symbol:
+                        decisions.append(decision)
+            except Exception:
+                continue
+    
+    return sorted(decisions, key=lambda d: d.get("exit_date", ""), reverse=True)
+
+
+def group_decisions_by_symbol(decisions: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
+    """Group decisions by symbol."""
+    grouped = {}
+    for decision in decisions:
+        symbol = decision["symbol"]
+        if symbol not in grouped:
+            grouped[symbol] = []
+        grouped[symbol].append(decision)
+    return grouped
+
+
+def set_decision_regime(decision_id: str, regime: Dict[str, str]):
+    """
+    Set regime context for a decision.
+    
+    Args:
+        decision_id: The decision to update
+        regime: Regime dict with market_regime, volatility_regime, expansion_regime
+    """
+    decision = load_decision(decision_id)
+    
+    decision["market_regime"] = regime.get("market_regime")
+    decision["volatility_regime"] = regime.get("volatility_regime")
+    decision["expansion_regime"] = regime.get("expansion_regime")
+    
+    decision_file = os.path.join(DECISIONS_DIR, f"{decision_id}.json")
+    with open(decision_file, "w") as f:
+        json.dump(decision, f, indent=2, default=str)
+
+
+def populate_regime_from_prices(
+    decision_id: str,
+    high: np.ndarray,
+    low: np.ndarray,
+    close: np.ndarray
+):
+    """
+    Detect and populate regime context from price data.
+    
+    Args:
+        decision_id: The decision to update
+        high: High prices
+        low: Low prices
+        close: Close prices
+    """
+    from tradingagents.indicators.regime import RegimeDetector
+    
+    detector = RegimeDetector()
+    regime = detector.get_full_regime(high, low, close)
+    set_decision_regime(decision_id, regime)
+    
+    print(f"📊 Regime detected: {regime['market_regime']} / {regime['volatility_regime']}")
 
 
 def cancel_decision(decision_id: str, reason: str = ""):

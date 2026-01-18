@@ -622,6 +622,36 @@ def place_limit_order(
     # Round volume to step
     volume = round(volume / symbol_info.volume_step) * symbol_info.volume_step
     
+    # Normalize price to tick size
+    if symbol_info.trade_tick_size > 0:
+        price = round(price / symbol_info.trade_tick_size) * symbol_info.trade_tick_size
+    
+    # Normalize SL and TP to tick size
+    if sl is not None and symbol_info.trade_tick_size > 0:
+        sl = round(sl / symbol_info.trade_tick_size) * symbol_info.trade_tick_size
+    if tp is not None and symbol_info.trade_tick_size > 0:
+        tp = round(tp / symbol_info.trade_tick_size) * symbol_info.trade_tick_size
+    
+    # Validate price against current market for limit orders
+    if "LIMIT" in order_type.upper():
+        tick = mt5.symbol_info_tick(mt5_symbol)
+        if tick is None:
+            return {"success": False, "error": f"Could not get current price for '{mt5_symbol}'"}
+        
+        # For BUY_LIMIT, price must be below current ask
+        if order_type.upper() == "BUY_LIMIT":
+            if price >= tick.ask:
+                # Adjust price to be below ask
+                price = tick.ask - (symbol_info.trade_tick_size * 5)  # 5 ticks below
+                if price < 0:
+                    return {"success": False, "error": f"Cannot place BUY_LIMIT at {price} - price too low"}
+        
+        # For SELL_LIMIT, price must be above current bid
+        elif order_type.upper() == "SELL_LIMIT":
+            if price <= tick.bid:
+                # Adjust price to be above bid
+                price = tick.bid + (symbol_info.trade_tick_size * 5)  # 5 ticks above
+    
     # Determine order type
     if order_type.upper() == "BUY_LIMIT":
         mt5_order_type = mt5.ORDER_TYPE_BUY_LIMIT
@@ -664,10 +694,24 @@ def place_limit_order(
         return {"success": False, "error": f"Order send failed: {error}"}
     
     if result.retcode != mt5.TRADE_RETCODE_DONE:
+        # Get more detailed error info
+        error_msg = result.comment if result.comment else "Unknown error"
+        retcode_desc = {
+            mt5.TRADE_RETCODE_INVALID_PRICE: "Invalid price",
+            mt5.TRADE_RETCODE_INVALID_STOPS: "Invalid stop loss or take profit",
+            mt5.TRADE_RETCODE_INVALID_VOLUME: "Invalid volume",
+            mt5.TRADE_RETCODE_PRICE_OFF: "Price off (too far from market)",
+            mt5.TRADE_RETCODE_PRICE_CHANGED: "Price changed",
+            mt5.TRADE_RETCODE_NO_MONEY: "Not enough money",
+            mt5.TRADE_RETCODE_MARKET_CLOSED: "Market closed",
+            mt5.TRADE_RETCODE_INVALID_FILL: "Invalid order filling type",
+        }.get(result.retcode, error_msg)
+        
         return {
             "success": False,
-            "error": f"Order failed: {result.comment}",
+            "error": f"Order failed: {retcode_desc}",
             "retcode": result.retcode,
+            "details": error_msg,
         }
     
     return {

@@ -18,5 +18,7 @@
   "pnl_percent": 0,
   "outcome_notes": "Auto-reflected: +1.07% returns, $235.52 profit",
   "was_correct": false,
-  "has_context": false
+  "has_context": false,
+  "reviewed": true,
+  "reviewed_at": "2026-01-15T07:58:06.477593"
 }

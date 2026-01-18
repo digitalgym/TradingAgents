@@ -11,6 +11,9 @@ def create_trader(llm, memory):
         sentiment_report = state["sentiment_report"]
         news_report = state["news_report"]
         fundamentals_report = state["fundamentals_report"]
+        
+        # Get SMC context if available
+        smc_context = state.get("smc_context") or ""
 
         curr_situation = f"{market_research_report}\n\n{sentiment_report}\n\n{news_report}\n\n{fundamentals_report}"
         
@@ -27,10 +30,17 @@ def create_trader(llm, memory):
             "content": f"Based on a comprehensive analysis by a team of analysts, here is an investment plan tailored for {company_name}. This plan incorporates insights from current technical market trends, macroeconomic indicators, and social media sentiment. Use this plan as a foundation for evaluating your next trading decision.\n\nProposed Investment Plan: {investment_plan}\n\nLeverage these insights to make an informed and strategic decision.",
         }
 
+        # Build system prompt with SMC context if available
+        system_prompt = f"""You are a trading agent analyzing market data to make investment decisions. Based on your analysis, provide a specific recommendation to buy, sell, or hold. End with a firm decision and always conclude your response with 'FINAL TRANSACTION PROPOSAL: **BUY/HOLD/SELL**' to confirm your recommendation. Do not forget to utilize lessons from past decisions to learn from your mistakes. Here is some reflections from similar situatiosn you traded in and the lessons learned: {past_memory_str}"""
+        
+        # Add SMC context if available
+        if smc_context:
+            system_prompt += f"\n\n{smc_context}\n\nIMPORTANT: When suggesting entry, stop loss, and take profit levels, align them with the Smart Money Concepts zones shown above. Place stops BELOW support zones (for buys) or ABOVE resistance zones (for sells) to avoid premature stop-outs. Target take profits AT resistance zones (for buys) or support zones (for sells) where institutional orders are likely to be filled."
+        
         messages = [
             {
                 "role": "system",
-                "content": f"""You are a trading agent analyzing market data to make investment decisions. Based on your analysis, provide a specific recommendation to buy, sell, or hold. End with a firm decision and always conclude your response with 'FINAL TRANSACTION PROPOSAL: **BUY/HOLD/SELL**' to confirm your recommendation. Do not forget to utilize lessons from past decisions to learn from your mistakes. Here is some reflections from similar situatiosn you traded in and the lessons learned: {past_memory_str}""",
+                "content": system_prompt,
             },
             context,
         ]
