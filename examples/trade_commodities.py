@@ -23,7 +23,7 @@ import os
 import sys
 import json
 import pickle
-from datetime import datetime
+from datetime import datetime, timedelta
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dotenv import load_dotenv
@@ -280,65 +280,193 @@ def analyze_commodity(symbol: str, trade_date: str, entry_price: float = None, s
     return final_state, signal, smc_analysis
 
 
-def display_smc_levels(symbol: str, signal: str, smc_analysis: dict):
+def display_smc_levels(symbol: str, signal: str, smc_analysis: dict, trade_date: str):
     """Display SMC-suggested stop loss and take profit levels."""
     if not smc_analysis or signal == "HOLD":
         return None, None
 
     from tradingagents.dataflows.smc_utils import (
         suggest_smc_stop_loss,
-        suggest_smc_take_profits
+        suggest_smc_take_profits,
+        suggest_smc_entry_strategy
     )
+    from tradingagents.dataflows.interface import route_to_vendor
 
-    # Use D1 timeframe for levels
-    d1_analysis = smc_analysis.get('D1')
-    if not d1_analysis:
-        print("No D1 SMC data available for level suggestions")
+    # Use full multi-timeframe analysis directly
+    if not smc_analysis:
+        print("No SMC data available for level suggestions")
         return None, None
 
-    current_price = d1_analysis['current_price']
+    # Get current price from any available timeframe (prefer 1H)
+    current_price = None
+    for tf in ['1H', '4H', 'H4', 'D1']:
+        if tf in smc_analysis and 'current_price' in smc_analysis[tf]:
+            current_price = smc_analysis[tf]['current_price']
+            break
+
+    if not current_price:
+        print("Could not determine current price from SMC data")
+        return None, None
 
     print(f"\n{'='*60}")
-    print("SMC-BASED TRADE LEVELS")
+    print("SMC-BASED TRADE LEVELS (Multi-Timeframe Confluence)")
     print(f"{'='*60}")
     print(f"Current Price: ${current_price:.2f}")
     print(f"Signal: {signal}")
+    print(f"Available timeframes: {list(smc_analysis.keys())}")
 
-    # Get SMC stop loss suggestion
-    stop_suggestion = suggest_smc_stop_loss(
-        smc_analysis=d1_analysis,
+    # Get entry strategy suggestion
+    entry_strategy = suggest_smc_entry_strategy(
+        smc_analysis=smc_analysis,
         direction=signal,
-        entry_price=current_price,
-        max_distance_pct=3.0
+        current_price=current_price,
+        primary_timeframe='1H'
     )
 
-    if stop_suggestion:
-        print(f"\n--- SMC Stop Loss ---")
-        print(f"  Price: ${stop_suggestion['price']:.2f}")
-        print(f"  Zone: ${stop_suggestion['zone_bottom']:.2f} - ${stop_suggestion['zone_top']:.2f}")
-        print(f"  Source: {stop_suggestion['source']}")
-        print(f"  Strength: {stop_suggestion['strength']:.2f}")
-        print(f"  Distance: {stop_suggestion['distance_pct']:.2f}%")
-        print(f"  Reason: {stop_suggestion['reason']}")
-    else:
-        print("\n--- SMC Stop Loss ---")
-        print("  No suitable SMC zone found for stop loss")
+    print(f"\n{'='*60}")
+    print("ENTRY STRATEGY")
+    print(f"{'='*60}")
 
-    # Get SMC take profit suggestions
-    tp_suggestions = suggest_smc_take_profits(
-        smc_analysis=d1_analysis,
+    # Display Market Entry option
+    print(f"\n[OPTION 1: MARKET ORDER]")
+    print(f"  Entry Price: ${entry_strategy['market_entry']['price']:.2f}")
+    print(f"  Type: {entry_strategy['market_entry']['type']}")
+    print(f"  Pros: Immediate execution, no risk of missing the trade")
+    print(f"  Cons: Entering away from optimal SMC zone, higher risk")
+
+    # Display Limit Entry option
+    print(f"\n[OPTION 2: LIMIT ORDER AT ORDER BLOCK]")
+    if entry_strategy['limit_entry'] and 'price' in entry_strategy['limit_entry']:
+        limit_entry = entry_strategy['limit_entry']
+        print(f"  Entry Price: ${limit_entry['price']:.2f}")
+        print(f"  Entry Zone: ${limit_entry['zone_bottom']:.2f} - ${limit_entry['zone_top']:.2f}")
+        print(f"  Type: {limit_entry['type']}")
+        print(f"  Confluence: {limit_entry['confluence_score']:.1f} ({', '.join(limit_entry['aligned_timeframes'])})")
+        print(f"  Pros: Better risk/reward, entering at institutional zone")
+        print(f"  Cons: Price may not return to zone, could miss the trade")
+        print(f"  Reason: {limit_entry['reason']}")
+    else:
+        print(f"  {entry_strategy['limit_entry']['reason']}")
+
+    # Display Recommendation
+    print(f"\n[RECOMMENDATION: {entry_strategy['recommendation']}]")
+    if 'recommendation_reason' in entry_strategy:
+        print(f"  {entry_strategy['recommendation_reason']}")
+        if entry_strategy['distance_to_zone_pct'] is not None:
+            print(f"  Distance to optimal zone: {entry_strategy['distance_to_zone_pct']:.2f}%")
+
+    print(f"\n{'='*60}")
+
+    # Get ATR for stop loss fallback
+    atr_data = route_to_vendor("get_indicators", symbol, "atr", trade_date, 14)
+    atr_value = None
+    if "ATR(14):" in atr_data:
+        try:
+            atr_value = float(atr_data.split("ATR(14):")[1].split()[0])
+            print(f"ATR(14): {atr_value:.2f}")
+        except:
+            pass
+
+    # Determine which entry price to use for SL/TP calculations
+    # If limit entry is available and recommended, show both perspectives
+    show_limit_levels = (entry_strategy['limit_entry'] and
+                        'price' in entry_strategy['limit_entry'] and
+                        entry_strategy['recommendation'] in ['LIMIT', 'LIMIT_OR_MARKET'])
+
+    # Get SMC stop loss suggestion with multi-timeframe confluence (for market entry)
+    stop_suggestion_market = suggest_smc_stop_loss(
+        smc_analysis=smc_analysis,
+        direction=signal,
+        entry_price=current_price,
+        atr=atr_value,
+        atr_multiplier=2.0,
+        primary_timeframe='1H'
+    )
+
+    print(f"\n{'='*60}")
+    print("RISK MANAGEMENT LEVELS")
+    print(f"{'='*60}")
+
+    # Show Stop Loss for Market Entry
+    print(f"\n--- Stop Loss (if entering at MARKET: ${current_price:.2f}) ---")
+    if stop_suggestion_market:
+        print(f"  SL Price: ${stop_suggestion_market['price']:.2f}")
+        print(f"  Zone: ${stop_suggestion_market['zone_bottom']:.2f} - ${stop_suggestion_market['zone_top']:.2f}")
+        print(f"  Risk: ${abs(current_price - stop_suggestion_market['price']):.2f} ({stop_suggestion_market['distance_pct']:.2f}%)")
+        if 'confluence_score' in stop_suggestion_market and stop_suggestion_market['confluence_score'] > 1.0:
+            print(f"  Confluence: {stop_suggestion_market['confluence_score']:.1f} ({', '.join(stop_suggestion_market['aligned_timeframes'])})")
+    else:
+        print(f"  Could not calculate stop loss")
+
+    # Show Stop Loss for Limit Entry (if applicable)
+    if show_limit_levels:
+        limit_entry_price = entry_strategy['limit_entry']['price']
+        stop_suggestion_limit = suggest_smc_stop_loss(
+            smc_analysis=smc_analysis,
+            direction=signal,
+            entry_price=limit_entry_price,
+            atr=atr_value,
+            atr_multiplier=2.0,
+            primary_timeframe='1H'
+        )
+
+        print(f"\n--- Stop Loss (if entering at LIMIT: ${limit_entry_price:.2f}) ---")
+        if stop_suggestion_limit:
+            print(f"  SL Price: ${stop_suggestion_limit['price']:.2f}")
+            print(f"  Zone: ${stop_suggestion_limit['zone_bottom']:.2f} - ${stop_suggestion_limit['zone_top']:.2f}")
+            print(f"  Risk: ${abs(limit_entry_price - stop_suggestion_limit['price']):.2f} ({stop_suggestion_limit['distance_pct']:.2f}%)")
+            if 'confluence_score' in stop_suggestion_limit and stop_suggestion_limit['confluence_score'] > 1.0:
+                print(f"  Confluence: {stop_suggestion_limit['confluence_score']:.1f} ({', '.join(stop_suggestion_limit['aligned_timeframes'])})")
+
+            # Show risk comparison
+            market_risk = abs(current_price - stop_suggestion_market['price']) if stop_suggestion_market else 0
+            limit_risk = abs(limit_entry_price - stop_suggestion_limit['price'])
+            if market_risk > 0:
+                risk_reduction = ((market_risk - limit_risk) / market_risk * 100)
+                print(f"  Risk Reduction: {risk_reduction:.1f}% vs market entry")
+
+    # Get SMC take profit suggestions (for market entry)
+    first_tf_data = smc_analysis.get('1H') or smc_analysis.get('4H') or smc_analysis.get('D1')
+    tp_suggestions_market = suggest_smc_take_profits(
+        smc_analysis=first_tf_data if first_tf_data else {},
         direction=signal,
         entry_price=current_price,
         num_targets=3
     )
 
-    if tp_suggestions:
-        print(f"\n--- SMC Take Profit Targets ---")
-        for i, tp in enumerate(tp_suggestions, 1):
+    print(f"\n--- Take Profit Targets (if entering at MARKET: ${current_price:.2f}) ---")
+    if tp_suggestions_market:
+        for i, tp in enumerate(tp_suggestions_market, 1):
             print(f"  TP{i}: ${tp['price']:.2f} ({tp['source']}) | +{tp['distance_pct']:.2f}%")
     else:
-        print("\n--- SMC Take Profit Targets ---")
         print("  No suitable SMC zones found for take profits")
+
+    # Show TP for Limit Entry (if applicable)
+    if show_limit_levels:
+        limit_entry_price = entry_strategy['limit_entry']['price']
+        tp_suggestions_limit = suggest_smc_take_profits(
+            smc_analysis=first_tf_data if first_tf_data else {},
+            direction=signal,
+            entry_price=limit_entry_price,
+            num_targets=3
+        )
+
+        print(f"\n--- Take Profit Targets (if entering at LIMIT: ${limit_entry_price:.2f}) ---")
+        if tp_suggestions_limit:
+            for i, tp in enumerate(tp_suggestions_limit, 1):
+                print(f"  TP{i}: ${tp['price']:.2f} ({tp['source']}) | +{tp['distance_pct']:.2f}%")
+
+                # Show reward comparison
+                if i <= len(tp_suggestions_market):
+                    market_reward = abs(tp_suggestions_market[i-1]['price'] - current_price)
+                    limit_reward = abs(tp['price'] - limit_entry_price)
+                    reward_increase = ((limit_reward - market_reward) / market_reward * 100) if market_reward > 0 else 0
+                    if reward_increase > 0:
+                        print(f"       Reward Increase: +{reward_increase:.1f}% vs market entry")
+
+    # Store the suggestions for later use
+    stop_suggestion = stop_suggestion_market
+    tp_suggestions = tp_suggestions_market
 
     return stop_suggestion, tp_suggestions
 
@@ -701,15 +829,27 @@ def main():
     # Or use aliases: gold, silver, platinum, copper
     
     symbol = "XAGUSD"  # Silver
-    trade_date = "2025-12-26"  # Recent trading date
+
+    # Get most recent trading day (Friday if weekend)
+    today = datetime.now()
+    weekday = today.weekday()  # Monday=0, Sunday=6
+
+    if weekday == 5:  # Saturday
+        trade_date = (today - timedelta(days=1)).strftime("%Y-%m-%d")  # Friday
+    elif weekday == 6:  # Sunday
+        trade_date = (today - timedelta(days=2)).strftime("%Y-%m-%d")  # Friday
+    else:  # Monday-Friday
+        trade_date = today.strftime("%Y-%m-%d")
+
+    print(f"Using trade date: {trade_date}")
 
     try:
         final_state, signal, smc_analysis = analyze_commodity(symbol, trade_date)
-        print(f"\n✅ Analysis complete! Signal: {signal}")
+        print(f"\n[OK] Analysis complete! Signal: {signal}")
 
         # Display SMC levels if available
         if smc_analysis and signal != "HOLD":
-            display_smc_levels(symbol, signal, smc_analysis)
+            display_smc_levels(symbol, signal, smc_analysis, trade_date)
 
         # Prompt for trade execution
         if signal in ["BUY", "SELL"]:
@@ -721,7 +861,7 @@ def main():
         # simulate_trade_lifecycle()
 
     except Exception as e:
-        print(f"\n❌ Error during analysis: {e}")
+        print(f"\n[ERROR] Error during analysis: {e}")
         import traceback
         traceback.print_exc()
 

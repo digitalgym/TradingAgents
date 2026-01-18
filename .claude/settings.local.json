@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/Scripts/python.exe -m pytest tests/test_smc_integration.py -v)",
+      "Bash(.venv/Scripts/python.exe:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(python examples/trade_commodities.py:*)"
+    ]
+  }
+}

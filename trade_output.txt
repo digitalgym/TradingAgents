@@ -1,0 +1,24 @@
+Traceback (most recent call last):
+  File "D:\Documents\TradingAgents\examples\trade_commodities.py", line 745, in main
+    final_state, signal, smc_analysis = analyze_commodity(symbol, trade_date)
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\examples\trade_commodities.py", line 256, in analyze_commodity
+    final_state, signal = graph.propagate(symbol, trade_date, smc_context=smc_context)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\graph\trading_graph.py", line 213, in propagate
+    chunk["messages"][-1].pretty_print()
+  File "D:\Documents\TradingAgents\run_trade_quiet.py", line 16, in quiet_pretty_print
+    original_pretty_print(**kwargs)
+TypeError: BaseMessage.pretty_print() missing 1 required positional argument: 'self'
+Using trade date: 2026-01-16
+
+============================================================
+Analyzing XAGUSD for 2026-01-16
+============================================================
+
+Selected analysts: ['market', 'social', 'news']
+Running Smart Money Concepts analysis...
+SMC Analysis: 2/3 timeframes bullish
+  - Timeframes with unmitigated OBs: 0
+
+[ERROR] Error during analysis: BaseMessage.pretty_print() missing 1 required positional argument: 'self'

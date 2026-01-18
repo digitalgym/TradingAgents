@@ -131,78 +131,277 @@ def get_key_smc_levels(
     return levels
 
 
+def calculate_ob_confluence(
+    order_blocks: List,
+    all_timeframes_data: Dict[str, Any],
+    direction: str,
+    entry_price: float,
+    price_tolerance_pct: Dict[str, float] = None
+) -> List[Dict[str, Any]]:
+    """
+    Calculate confluence scores for order blocks across timeframes.
+
+    Args:
+        order_blocks: Order blocks from primary timeframe (1H)
+        all_timeframes_data: Full SMC analysis with all timeframes
+        direction: 'BUY' or 'SELL'
+        entry_price: Entry price for distance calculation
+        price_tolerance_pct: Price tolerance for alignment detection
+
+    Returns:
+        List of dicts with:
+        - ob: The order block object
+        - score: Confluence score (1.0 to 2.0)
+        - aligned_timeframes: List of timeframes where OB appears
+        - distance: Distance from entry price
+    """
+    if price_tolerance_pct is None:
+        price_tolerance_pct = {'4H': 5.0, 'D1': 10.0}
+
+    scored_obs = []
+
+    for ob in order_blocks:
+        score = 1.0  # Base score for appearing in primary timeframe (1H)
+        aligned_tfs = ['1H']
+        ob_mid = (ob.top + ob.bottom) / 2
+
+        # Check for alignment in 4H
+        if '4H' in all_timeframes_data:
+            htf_obs = all_timeframes_data['4H'].get('order_blocks', {}).get(
+                'bullish' if direction == 'BUY' else 'bearish', []
+            )
+            for htf_ob in htf_obs:
+                htf_mid = (htf_ob.top + htf_ob.bottom) / 2
+                price_diff_pct = abs(htf_mid - ob_mid) / ob_mid * 100
+
+                if price_diff_pct <= price_tolerance_pct['4H']:
+                    score += 0.5
+                    aligned_tfs.append('4H')
+                    break  # Only count once per timeframe
+
+        # Check for alignment in D1
+        if 'D1' in all_timeframes_data:
+            htf_obs = all_timeframes_data['D1'].get('order_blocks', {}).get(
+                'bullish' if direction == 'BUY' else 'bearish', []
+            )
+            for htf_ob in htf_obs:
+                htf_mid = (htf_ob.top + htf_ob.bottom) / 2
+                price_diff_pct = abs(htf_mid - ob_mid) / ob_mid * 100
+
+                if price_diff_pct <= price_tolerance_pct['D1']:
+                    score += 0.5
+                    aligned_tfs.append('D1')
+                    break
+
+        # Calculate distance from entry
+        if direction == 'BUY':
+            distance = entry_price - ob.top
+        else:  # SELL
+            distance = ob.bottom - entry_price
+
+        scored_obs.append({
+            'ob': ob,
+            'score': score,
+            'aligned_timeframes': aligned_tfs,
+            'distance': distance
+        })
+
+    return scored_obs
+
+
 def suggest_smc_stop_loss(
     smc_analysis: Dict[str, Any],
     direction: str,
     entry_price: float,
-    max_distance_pct: float = 3.0
+    atr: Optional[float] = None,
+    atr_multiplier: float = 2.0,
+    primary_timeframe: str = '1H'
 ) -> Optional[Dict[str, Any]]:
     """
-    Suggest stop loss based on SMC levels.
-    
+    Suggest stop loss using multi-timeframe confluence.
+
+    Strategy:
+    1. Get 1H order blocks (user's preferred timeframe)
+    2. Score them by alignment with 4H and D1
+    3. Select best (highest score, then closest)
+    4. Fallback to any HTF OBs if no 1H OBs
+    5. Final fallback to ATR
+
     Args:
-        smc_analysis: SMC analysis from analyze_full_smc
+        smc_analysis: Multi-timeframe SMC analysis (dict with all TFs)
         direction: 'BUY' or 'SELL'
         entry_price: Planned entry price
-        max_distance_pct: Maximum stop distance as % of entry
-    
+        atr: ATR value for fallback stop loss
+        atr_multiplier: Multiplier for ATR-based stop
+        primary_timeframe: Primary timeframe for OBs (default: '1H')
+
     Returns:
         dict with stop loss suggestion or None
     """
     if direction == 'BUY':
-        # For buys, look for support below entry
-        support_zones = smc_analysis['zones']['support']
-        
-        # Find nearest support below entry
-        valid_supports = [
-            z for z in support_zones
-            if z['top'] < entry_price and
-            ((entry_price - z['bottom']) / entry_price * 100) <= max_distance_pct
-        ]
-        
-        if valid_supports:
-            # Use strongest support
-            best_support = max(valid_supports, key=lambda z: z['strength'])
-            
-            # Place stop just below the zone
-            stop_price = best_support['bottom'] * 0.998  # 0.2% below zone
-            
+        # 1. PRIMARY: 1H order blocks with multi-timeframe confluence
+        if primary_timeframe in smc_analysis:
+            primary_tf_data = smc_analysis[primary_timeframe]
+            order_blocks = primary_tf_data.get('order_blocks', {}).get('bullish', [])
+            valid_obs = [ob for ob in order_blocks if ob.top < entry_price]
+
+            if valid_obs:
+                # Score by confluence with higher timeframes
+                scored_obs = calculate_ob_confluence(
+                    order_blocks=valid_obs,
+                    all_timeframes_data=smc_analysis,
+                    direction='BUY',
+                    entry_price=entry_price
+                )
+
+                # Sort by: 1) score (desc), 2) distance (asc)
+                scored_obs.sort(key=lambda x: (-x['score'], x['distance']))
+                best_ob_data = scored_obs[0]
+                best_ob = best_ob_data['ob']
+
+                stop_price = best_ob.bottom * 0.998
+                distance_pct = ((entry_price - stop_price) / entry_price * 100)
+
+                return {
+                    'price': stop_price,
+                    'zone_top': best_ob.top,
+                    'zone_bottom': best_ob.bottom,
+                    'source': f"1H Bullish OB (Confluence: {best_ob_data['score']:.1f})",
+                    'strength': best_ob.strength if hasattr(best_ob, 'strength') else 0.8,
+                    'confluence_score': best_ob_data['score'],
+                    'aligned_timeframes': best_ob_data['aligned_timeframes'],
+                    'distance_pct': distance_pct,
+                    'reason': f"Below 1H bullish OB at ${best_ob.bottom:.2f} (aligned: {', '.join(best_ob_data['aligned_timeframes'])})"
+                }
+
+        # 2. FALLBACK: Check HTF order blocks (4H, D1) if no 1H OBs found
+        for tf in ['4H', 'D1']:
+            if tf not in smc_analysis:
+                continue
+
+            tf_data = smc_analysis[tf]
+            order_blocks = tf_data.get('order_blocks', {}).get('bullish', [])
+            valid_obs = [ob for ob in order_blocks if ob.top < entry_price]
+
+            if valid_obs:
+                closest_ob = min(valid_obs, key=lambda ob: entry_price - ob.top)
+                stop_price = closest_ob.bottom * 0.998
+                distance_pct = ((entry_price - stop_price) / entry_price * 100)
+
+                return {
+                    'price': stop_price,
+                    'zone_top': closest_ob.top,
+                    'zone_bottom': closest_ob.bottom,
+                    'source': f'{tf} Bullish OB (fallback)',
+                    'strength': closest_ob.strength if hasattr(closest_ob, 'strength') else 0.8,
+                    'confluence_score': 1.0,
+                    'aligned_timeframes': [tf],
+                    'distance_pct': distance_pct,
+                    'reason': f"Below {tf} bullish Order Block at ${closest_ob.bottom:.2f}"
+                }
+
+        # 3. FINAL FALLBACK: ATR-based stop loss
+        if atr:
+            stop_price = entry_price - (atr * atr_multiplier)
+            distance_pct = ((entry_price - stop_price) / entry_price * 100)
+
             return {
                 'price': stop_price,
-                'zone_top': best_support['top'],
-                'zone_bottom': best_support['bottom'],
-                'source': best_support['type'],
-                'strength': best_support['strength'],
-                'distance_pct': ((entry_price - stop_price) / entry_price * 100),
-                'reason': f"Below {best_support['type']} zone at ${best_support['bottom']:.2f}"
+                'zone_top': entry_price,
+                'zone_bottom': stop_price,
+                'source': f'ATR({atr_multiplier}x)',
+                'strength': 0.5,
+                'confluence_score': 0.0,
+                'aligned_timeframes': [],
+                'distance_pct': distance_pct,
+                'reason': f"ATR-based stop: {atr_multiplier}x ATR below entry"
             }
-    
-    else:  # SELL
-        # For sells, look for resistance above entry
-        resistance_zones = smc_analysis['zones']['resistance']
-        
-        valid_resistances = [
-            z for z in resistance_zones
-            if z['bottom'] > entry_price and
-            ((z['top'] - entry_price) / entry_price * 100) <= max_distance_pct
-        ]
-        
-        if valid_resistances:
-            best_resistance = max(valid_resistances, key=lambda z: z['strength'])
-            
-            # Place stop just above the zone
-            stop_price = best_resistance['top'] * 1.002  # 0.2% above zone
-            
+
+        # Only return None if absolutely no data available
+        return None
+
+    elif direction == 'SELL':
+        # 1. PRIMARY: 1H order blocks with multi-timeframe confluence
+        if primary_timeframe in smc_analysis:
+            primary_tf_data = smc_analysis[primary_timeframe]
+            order_blocks = primary_tf_data.get('order_blocks', {}).get('bearish', [])
+            valid_obs = [ob for ob in order_blocks if ob.bottom > entry_price]
+
+            if valid_obs:
+                # Score by confluence with higher timeframes
+                scored_obs = calculate_ob_confluence(
+                    order_blocks=valid_obs,
+                    all_timeframes_data=smc_analysis,
+                    direction='SELL',
+                    entry_price=entry_price
+                )
+
+                # Sort by: 1) score (desc), 2) distance (asc)
+                scored_obs.sort(key=lambda x: (-x['score'], x['distance']))
+                best_ob_data = scored_obs[0]
+                best_ob = best_ob_data['ob']
+
+                stop_price = best_ob.top * 1.002
+                distance_pct = ((stop_price - entry_price) / entry_price * 100)
+
+                return {
+                    'price': stop_price,
+                    'zone_top': best_ob.top,
+                    'zone_bottom': best_ob.bottom,
+                    'source': f"1H Bearish OB (Confluence: {best_ob_data['score']:.1f})",
+                    'strength': best_ob.strength if hasattr(best_ob, 'strength') else 0.8,
+                    'confluence_score': best_ob_data['score'],
+                    'aligned_timeframes': best_ob_data['aligned_timeframes'],
+                    'distance_pct': distance_pct,
+                    'reason': f"Above 1H bearish OB at ${best_ob.top:.2f} (aligned: {', '.join(best_ob_data['aligned_timeframes'])})"
+                }
+
+        # 2. FALLBACK: Check HTF order blocks (4H, D1) if no 1H OBs found
+        for tf in ['4H', 'D1']:
+            if tf not in smc_analysis:
+                continue
+
+            tf_data = smc_analysis[tf]
+            order_blocks = tf_data.get('order_blocks', {}).get('bearish', [])
+            valid_obs = [ob for ob in order_blocks if ob.bottom > entry_price]
+
+            if valid_obs:
+                closest_ob = min(valid_obs, key=lambda ob: ob.bottom - entry_price)
+                stop_price = closest_ob.top * 1.002
+                distance_pct = ((stop_price - entry_price) / entry_price * 100)
+
+                return {
+                    'price': stop_price,
+                    'zone_top': closest_ob.top,
+                    'zone_bottom': closest_ob.bottom,
+                    'source': f'{tf} Bearish OB (fallback)',
+                    'strength': closest_ob.strength if hasattr(closest_ob, 'strength') else 0.8,
+                    'confluence_score': 1.0,
+                    'aligned_timeframes': [tf],
+                    'distance_pct': distance_pct,
+                    'reason': f"Above {tf} bearish Order Block at ${closest_ob.top:.2f}"
+                }
+
+        # 3. FINAL FALLBACK: ATR-based stop loss (handles ATH scenario)
+        if atr:
+            stop_price = entry_price + (atr * atr_multiplier)
+            distance_pct = ((stop_price - entry_price) / entry_price * 100)
+
             return {
                 'price': stop_price,
-                'zone_top': best_resistance['top'],
-                'zone_bottom': best_resistance['bottom'],
-                'source': best_resistance['type'],
-                'strength': best_resistance['strength'],
-                'distance_pct': ((stop_price - entry_price) / entry_price * 100),
-                'reason': f"Above {best_resistance['type']} zone at ${best_resistance['top']:.2f}"
+                'zone_top': stop_price,
+                'zone_bottom': entry_price,
+                'source': f'ATR({atr_multiplier}x)',
+                'strength': 0.5,
+                'confluence_score': 0.0,
+                'aligned_timeframes': [],
+                'distance_pct': distance_pct,
+                'reason': f"ATR-based stop: {atr_multiplier}x ATR above entry (ATH scenario)"
             }
-    
+
+        # Only return None if absolutely no data available
+        return None
+
     return None
 
 
@@ -228,22 +427,22 @@ def suggest_smc_take_profits(
     
     if direction == 'BUY':
         # For buys, look for resistance above entry
-        resistance_zones = smc_analysis['zones']['resistance']
-        
+        resistance_zones = smc_analysis.get('zones', {}).get('resistance', [])
+
         valid_resistances = [
             z for z in resistance_zones
             if z['bottom'] > entry_price
         ]
-        
+
         # Sort by distance from entry
         valid_resistances.sort(key=lambda z: z['bottom'] - entry_price)
-        
+
         for i, zone in enumerate(valid_resistances[:num_targets], 1):
             # Target the bottom of resistance zone (conservative)
             target_price = zone['bottom']
-            
+
             distance_pct = ((target_price - entry_price) / entry_price * 100)
-            
+
             targets.append({
                 'number': i,
                 'price': target_price,
@@ -254,25 +453,44 @@ def suggest_smc_take_profits(
                 'distance_pct': distance_pct,
                 'reason': f"At {zone['type']} zone ${zone['bottom']:.2f}-${zone['top']:.2f}"
             })
+
+        # Fallback: Use FVGs if not enough zones
+        if len(targets) < num_targets:
+            fvgs = smc_analysis.get('fair_value_gaps', {}).get('bearish', [])
+            valid_fvgs = [fvg for fvg in fvgs if fvg.bottom > entry_price]
+            valid_fvgs.sort(key=lambda fvg: fvg.bottom - entry_price)
+
+            for fvg in valid_fvgs[:num_targets - len(targets)]:
+                distance_pct = ((fvg.bottom - entry_price) / entry_price * 100)
+                targets.append({
+                    'number': len(targets) + 1,
+                    'price': fvg.bottom,
+                    'zone_top': fvg.top,
+                    'zone_bottom': fvg.bottom,
+                    'source': 'Bearish FVG',
+                    'strength': 0.7,
+                    'distance_pct': distance_pct,
+                    'reason': f"At Bearish FVG ${fvg.bottom:.2f}-${fvg.top:.2f}"
+                })
     
     else:  # SELL
         # For sells, look for support below entry
-        support_zones = smc_analysis['zones']['support']
-        
+        support_zones = smc_analysis.get('zones', {}).get('support', [])
+
         valid_supports = [
             z for z in support_zones
             if z['top'] < entry_price
         ]
-        
+
         # Sort by distance from entry
         valid_supports.sort(key=lambda z: entry_price - z['top'], reverse=False)
-        
+
         for i, zone in enumerate(valid_supports[:num_targets], 1):
             # Target the top of support zone (conservative)
             target_price = zone['top']
-            
+
             distance_pct = ((entry_price - target_price) / entry_price * 100)
-            
+
             targets.append({
                 'number': i,
                 'price': target_price,
@@ -283,8 +501,220 @@ def suggest_smc_take_profits(
                 'distance_pct': distance_pct,
                 'reason': f"At {zone['type']} zone ${zone['bottom']:.2f}-${zone['top']:.2f}"
             })
-    
+
+        # Fallback: Use FVGs if not enough zones
+        if len(targets) < num_targets:
+            fvgs = smc_analysis.get('fair_value_gaps', {}).get('bullish', [])
+            valid_fvgs = [fvg for fvg in fvgs if fvg.top < entry_price]
+            valid_fvgs.sort(key=lambda fvg: entry_price - fvg.top)
+
+            for fvg in valid_fvgs[:num_targets - len(targets)]:
+                distance_pct = ((entry_price - fvg.top) / entry_price * 100)
+                targets.append({
+                    'number': len(targets) + 1,
+                    'price': fvg.top,
+                    'zone_top': fvg.top,
+                    'zone_bottom': fvg.bottom,
+                    'source': 'Bullish FVG',
+                    'strength': 0.7,
+                    'distance_pct': distance_pct,
+                    'reason': f"At Bullish FVG ${fvg.bottom:.2f}-${fvg.top:.2f}"
+                })
+
     return targets
+
+
+def suggest_smc_entry_strategy(
+    smc_analysis: Dict[str, Any],
+    direction: str,
+    current_price: float,
+    primary_timeframe: str = '1H'
+) -> Dict[str, Any]:
+    """
+    Suggest optimal entry strategy based on SMC principles.
+
+    Returns both market entry and limit order entry at order blocks,
+    with guidance on which strategy to use based on current price position.
+
+    Args:
+        smc_analysis: Multi-timeframe SMC analysis
+        direction: 'BUY' or 'SELL'
+        current_price: Current market price
+        primary_timeframe: Preferred timeframe for order blocks (default: '1H')
+
+    Returns:
+        Dict with:
+        - market_entry: Dict with market order details
+        - limit_entry: Dict with limit order details at order block
+        - recommendation: Which strategy to use
+        - distance_to_zone: Distance from current price to optimal entry zone
+    """
+    result = {
+        'market_entry': {
+            'price': current_price,
+            'type': 'MARKET',
+            'reason': 'Immediate execution at current market price'
+        },
+        'limit_entry': None,
+        'recommendation': None,
+        'distance_to_zone_pct': None
+    }
+
+    # Get primary timeframe data
+    if primary_timeframe not in smc_analysis:
+        result['recommendation'] = 'MARKET'
+        result['limit_entry'] = {'reason': f'No {primary_timeframe} data available'}
+        return result
+
+    primary_tf_data = smc_analysis[primary_timeframe]
+
+    if direction == 'BUY':
+        # Find bullish order blocks below current price
+        order_blocks = primary_tf_data.get('order_blocks', {}).get('bullish', [])
+        valid_obs = [ob for ob in order_blocks if ob.top < current_price]
+
+        if not valid_obs:
+            result['recommendation'] = 'MARKET'
+            result['limit_entry'] = {'reason': 'No bullish order blocks below current price - enter at market'}
+            return result
+
+        # Find closest order block
+        closest_ob = min(valid_obs, key=lambda ob: current_price - ob.top)
+
+        # Calculate distance
+        distance_pct = ((current_price - closest_ob.top) / current_price * 100)
+        result['distance_to_zone_pct'] = distance_pct
+
+        # Suggest limit entry in the order block zone
+        # Entry at top of OB (best price in zone)
+        limit_price = closest_ob.top
+
+        # Check if aligned with higher timeframes
+        confluence_score = 1.0
+        aligned_tfs = [primary_timeframe]
+
+        ob_mid = (closest_ob.top + closest_ob.bottom) / 2
+
+        # Check 4H alignment
+        if '4H' in smc_analysis:
+            htf_obs = smc_analysis['4H'].get('order_blocks', {}).get('bullish', [])
+            for htf_ob in htf_obs:
+                htf_mid = (htf_ob.top + htf_ob.bottom) / 2
+                price_diff_pct = abs(htf_mid - ob_mid) / ob_mid * 100
+                if price_diff_pct <= 5.0:
+                    confluence_score += 0.5
+                    aligned_tfs.append('4H')
+                    break
+
+        # Check D1 alignment
+        if 'D1' in smc_analysis:
+            htf_obs = smc_analysis['D1'].get('order_blocks', {}).get('bullish', [])
+            for htf_ob in htf_obs:
+                htf_mid = (htf_ob.top + htf_ob.bottom) / 2
+                price_diff_pct = abs(htf_mid - ob_mid) / ob_mid * 100
+                if price_diff_pct <= 10.0:
+                    confluence_score += 0.5
+                    aligned_tfs.append('D1')
+                    break
+
+        result['limit_entry'] = {
+            'price': limit_price,
+            'zone_top': closest_ob.top,
+            'zone_bottom': closest_ob.bottom,
+            'type': 'BUY_LIMIT',
+            'confluence_score': confluence_score,
+            'aligned_timeframes': aligned_tfs,
+            'reason': f"Wait for pullback to {primary_timeframe} bullish OB at ${closest_ob.bottom:.2f}-${closest_ob.top:.2f}"
+        }
+
+        # Recommendation logic
+        if distance_pct < 0.5:
+            # Very close to order block (< 0.5%)
+            result['recommendation'] = 'MARKET'
+            result['recommendation_reason'] = f"Price is already at the order block (only {distance_pct:.2f}% away) - enter now"
+        elif distance_pct < 2.0:
+            # Close to order block (0.5-2%)
+            result['recommendation'] = 'LIMIT_OR_MARKET'
+            result['recommendation_reason'] = f"Price is near the order block ({distance_pct:.2f}% away) - either strategy works"
+        else:
+            # Far from order block (>2%)
+            result['recommendation'] = 'LIMIT'
+            result['recommendation_reason'] = f"Price is {distance_pct:.2f}% above optimal entry - wait for pullback to order block"
+
+    elif direction == 'SELL':
+        # Find bearish order blocks above current price
+        order_blocks = primary_tf_data.get('order_blocks', {}).get('bearish', [])
+        valid_obs = [ob for ob in order_blocks if ob.bottom > current_price]
+
+        if not valid_obs:
+            result['recommendation'] = 'MARKET'
+            result['limit_entry'] = {'reason': 'No bearish order blocks above current price - enter at market'}
+            return result
+
+        # Find closest order block
+        closest_ob = min(valid_obs, key=lambda ob: ob.bottom - current_price)
+
+        # Calculate distance
+        distance_pct = ((closest_ob.bottom - current_price) / current_price * 100)
+        result['distance_to_zone_pct'] = distance_pct
+
+        # Suggest limit entry in the order block zone
+        # Entry at bottom of OB (best price in zone)
+        limit_price = closest_ob.bottom
+
+        # Check if aligned with higher timeframes
+        confluence_score = 1.0
+        aligned_tfs = [primary_timeframe]
+
+        ob_mid = (closest_ob.top + closest_ob.bottom) / 2
+
+        # Check 4H alignment
+        if '4H' in smc_analysis:
+            htf_obs = smc_analysis['4H'].get('order_blocks', {}).get('bearish', [])
+            for htf_ob in htf_obs:
+                htf_mid = (htf_ob.top + htf_ob.bottom) / 2
+                price_diff_pct = abs(htf_mid - ob_mid) / ob_mid * 100
+                if price_diff_pct <= 5.0:
+                    confluence_score += 0.5
+                    aligned_tfs.append('4H')
+                    break
+
+        # Check D1 alignment
+        if 'D1' in smc_analysis:
+            htf_obs = smc_analysis['D1'].get('order_blocks', {}).get('bearish', [])
+            for htf_ob in htf_obs:
+                htf_mid = (htf_ob.top + htf_ob.bottom) / 2
+                price_diff_pct = abs(htf_mid - ob_mid) / ob_mid * 100
+                if price_diff_pct <= 10.0:
+                    confluence_score += 0.5
+                    aligned_tfs.append('D1')
+                    break
+
+        result['limit_entry'] = {
+            'price': limit_price,
+            'zone_top': closest_ob.top,
+            'zone_bottom': closest_ob.bottom,
+            'type': 'SELL_LIMIT',
+            'confluence_score': confluence_score,
+            'aligned_timeframes': aligned_tfs,
+            'reason': f"Wait for rally to {primary_timeframe} bearish OB at ${closest_ob.bottom:.2f}-${closest_ob.top:.2f}"
+        }
+
+        # Recommendation logic
+        if distance_pct < 0.5:
+            # Very close to order block (< 0.5%)
+            result['recommendation'] = 'MARKET'
+            result['recommendation_reason'] = f"Price is already at the order block (only {distance_pct:.2f}% away) - enter now"
+        elif distance_pct < 2.0:
+            # Close to order block (0.5-2%)
+            result['recommendation'] = 'LIMIT_OR_MARKET'
+            result['recommendation_reason'] = f"Price is near the order block ({distance_pct:.2f}% away) - either strategy works"
+        else:
+            # Far from order block (>2%)
+            result['recommendation'] = 'LIMIT'
+            result['recommendation_reason'] = f"Price is {distance_pct:.2f}% below optimal entry - wait for rally to order block"
+
+    return result
 
 
 def format_smc_for_prompt(

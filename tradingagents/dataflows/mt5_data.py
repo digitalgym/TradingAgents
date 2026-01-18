@@ -303,7 +303,7 @@ def get_mt5_indicator(
 ) -> str:
     """
     Calculate technical indicators from MT5 OHLCV data.
-    
+
     Supported indicators:
     - rsi: Relative Strength Index
     - macd: MACD (12, 26, 9)
@@ -314,7 +314,10 @@ def get_mt5_indicator(
     - adx: Average Directional Index
     - stoch: Stochastic Oscillator
     - close_200_sma: 200-period SMA of close
-    
+    - close_50_sma: 50-period SMA of close
+    - close_10_ema: 10-period EMA of close
+    - vwma: Volume Weighted Moving Average
+
     Returns:
         String with indicator values
     """
@@ -389,7 +392,19 @@ def get_mt5_indicator(
         result_lines.append(f"SMA(200): {sma[-1]:.5f}")
         result_lines.append(f"Price: {close[-1]:.5f}")
         result_lines.append(f"Price vs SMA200: {'Above' if close[-1] > sma[-1] else 'Below'}")
-        
+
+    elif indicator == "close_50_sma":
+        sma = _calculate_sma(close, 50)
+        result_lines.append(f"SMA(50): {sma[-1]:.5f}")
+        result_lines.append(f"Price: {close[-1]:.5f}")
+        result_lines.append(f"Price vs SMA50: {'Above' if close[-1] > sma[-1] else 'Below'}")
+
+    elif indicator == "close_10_ema":
+        ema = _calculate_ema(close, 10)
+        result_lines.append(f"EMA(10): {ema[-1]:.5f}")
+        result_lines.append(f"Price: {close[-1]:.5f}")
+        result_lines.append(f"Price vs EMA10: {'Above' if close[-1] > ema[-1] else 'Below'}")
+
     elif indicator == "ema":
         ema = _calculate_ema(close, period)
         result_lines.append(f"EMA({period}): {ema[-1]:.5f}")
@@ -411,9 +426,16 @@ def get_mt5_indicator(
         k, d = _calculate_stochastic(high, low, close, period)
         result_lines.append(f"Stoch %K: {k[-1]:.2f}")
         result_lines.append(f"Stoch %D: {d[-1]:.2f}")
-        
+
+    elif indicator == "vwma":
+        volume = df['tick_volume'].values
+        vwma = _calculate_vwma(close, volume, period)
+        result_lines.append(f"VWMA({period}): {vwma[-1]:.5f}")
+        result_lines.append(f"Price: {close[-1]:.5f}")
+        result_lines.append(f"Price vs VWMA: {'Above' if close[-1] > vwma[-1] else 'Below'}")
+
     else:
-        return f"Unknown indicator: {indicator}. Supported: rsi, macd, bbands, sma, ema, atr, adx, stoch, close_200_sma"
+        return f"Unknown indicator: {indicator}. Supported: rsi, macd, bbands, sma, ema, atr, adx, stoch, close_200_sma, close_50_sma, close_10_ema, vwma"
     
     # Add metadata
     header = f"# {indicator.upper()} for {mt5_symbol}\n"
@@ -553,19 +575,31 @@ def _calculate_adx(high: 'np.ndarray', low: 'np.ndarray', close: 'np.ndarray', p
 def _calculate_stochastic(high: 'np.ndarray', low: 'np.ndarray', close: 'np.ndarray', period: int = 14) -> tuple:
     """Calculate Stochastic Oscillator."""
     import numpy as np
-    
+
     k = np.zeros(len(close))
-    
+
     for i in range(period - 1, len(close)):
         highest_high = np.max(high[i-period+1:i+1])
         lowest_low = np.min(low[i-period+1:i+1])
-        
+
         if highest_high != lowest_low:
             k[i] = ((close[i] - lowest_low) / (highest_high - lowest_low)) * 100
-    
+
     d = _calculate_sma(k, 3)
-    
+
     return k, d
+
+
+def _calculate_vwma(close: 'np.ndarray', volume: 'np.ndarray', period: int) -> 'np.ndarray':
+    """Calculate Volume Weighted Moving Average."""
+    import numpy as np
+    vwma = np.zeros(len(close))
+    for i in range(period - 1, len(close)):
+        price_volume = close[i-period+1:i+1] * volume[i-period+1:i+1]
+        total_volume = np.sum(volume[i-period+1:i+1])
+        if total_volume > 0:
+            vwma[i] = np.sum(price_volume) / total_volume
+    return vwma
 
 
 # =============================================================================
