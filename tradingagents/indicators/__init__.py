@@ -6,7 +6,9 @@ Components:
 """
 
 from .regime import RegimeDetector
+from .smart_money import SmartMoneyAnalyzer
 
 __all__ = [
     "RegimeDetector",
+    "SmartMoneyAnalyzer",
 ]

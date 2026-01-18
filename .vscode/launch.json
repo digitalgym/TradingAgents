@@ -1,0 +1,41 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "CLI: Run",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "cli.main",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false
+    },
+    {
+      "name": "CLI: Analyze",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "cli.main",
+      "args": ["analyze"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false
+    },
+    {
+      "name": "CLI: Custom Command",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "cli.main",
+      "args": ["${input:cliCommand}"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false
+    }
+  ],
+  "inputs": [
+    {
+      "id": "cliCommand",
+      "type": "promptString",
+      "description": "Enter CLI command and arguments (e.g., analyze --ticker AAPL)"
+    }
+  ]
+}

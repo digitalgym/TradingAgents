@@ -74,3 +74,7 @@ class AgentState(MessagesState):
         RiskDebateState, "Current state of the debate on evaluating risk"
     ]
     final_trade_decision: Annotated[str, "Final decision made by the Risk Analysts"]
+    
+    # smart money concepts analysis (optional - only for commodity/MT5)
+    smc_context: Annotated[Optional[str], "Formatted SMC analysis for prompts"]
+    smc_analysis: Annotated[Optional[dict], "Raw SMC analysis data"]

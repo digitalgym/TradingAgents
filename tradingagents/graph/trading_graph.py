@@ -181,8 +181,14 @@ class TradingAgentsGraph:
             ),
         }
 
-    def propagate(self, company_name, trade_date):
-        """Run the trading agents graph for a company on a specific date."""
+    def propagate(self, company_name, trade_date, smc_context: str = None):
+        """Run the trading agents graph for a company on a specific date.
+
+        Args:
+            company_name: Ticker symbol or company name
+            trade_date: Date to analyze
+            smc_context: Optional formatted SMC analysis string to inject into agent prompts
+        """
 
         self.ticker = company_name
 
@@ -190,6 +196,11 @@ class TradingAgentsGraph:
         init_agent_state = self.propagator.create_initial_state(
             company_name, trade_date
         )
+
+        # Add SMC context to state if provided
+        if smc_context:
+            init_agent_state["smc_context"] = smc_context
+
         args = self.propagator.get_graph_args()
 
         if self.debug:

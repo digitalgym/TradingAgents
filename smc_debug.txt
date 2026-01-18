@@ -1,0 +1,7 @@
+SMC Analysis Debug
+==================
+smc_analysis is None: False
+smc_analysis type: <class 'dict'>
+smc_analysis is None or empty!
+Asset type: commodity
+Data vendor: mt5

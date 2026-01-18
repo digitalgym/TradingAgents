@@ -400,6 +400,48 @@ def find_decision_by_ticket(mt5_ticket: int) -> Optional[Dict[str, Any]]:
     return None
 
 
+def mark_decision_reviewed(decision_id: str):
+    """Mark a decision as reviewed."""
+    decision = load_decision(decision_id)
+    decision["reviewed"] = True
+    decision["reviewed_at"] = datetime.now().isoformat()
+    
+    decision_file = os.path.join(DECISIONS_DIR, f"{decision_id}.json")
+    with open(decision_file, "w") as f:
+        json.dump(decision, f, indent=2, default=str)
+
+
+def list_unreviewed_decisions(symbol: Optional[str] = None) -> List[Dict[str, Any]]:
+    """List closed decisions that haven't been reviewed yet."""
+    if not os.path.exists(DECISIONS_DIR):
+        return []
+    
+    decisions = []
+    for f in os.listdir(DECISIONS_DIR):
+        if f.endswith(".json"):
+            decision_id = f.replace(".json", "")
+            try:
+                decision = load_decision(decision_id)
+                if decision["status"] == "closed" and not decision.get("reviewed", False):
+                    if symbol is None or decision["symbol"] == symbol:
+                        decisions.append(decision)
+            except Exception:
+                continue
+    
+    return sorted(decisions, key=lambda d: d.get("exit_date", ""), reverse=True)
+
+
+def group_decisions_by_symbol(decisions: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
+    """Group decisions by symbol."""
+    grouped = {}
+    for decision in decisions:
+        symbol = decision["symbol"]
+        if symbol not in grouped:
+            grouped[symbol] = []
+        grouped[symbol].append(decision)
+    return grouped
+
+
 def set_decision_regime(decision_id: str, regime: Dict[str, str]):
     """
     Set regime context for a decision.
