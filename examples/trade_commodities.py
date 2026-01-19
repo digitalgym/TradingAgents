@@ -471,6 +471,149 @@ def display_smc_levels(symbol: str, signal: str, smc_analysis: dict, trade_date:
     return stop_suggestion, tp_suggestions
 
 
+def display_comprehensive_smc_plan(symbol: str, signal: str, smc_analysis: dict, trade_date: str):
+    """
+    Display comprehensive multi-scenario SMC trading plan.
+
+    Analyzes current price position relative to SMC zones and generates:
+    - Position analysis (at resistance, at support, or in between)
+    - Order block strength assessments (retests, confluence, breakout probability)
+    - Primary setup based on current position
+    - Alternative setup for opposite scenario
+    - Clear recommendation with confidence level
+    """
+    if not smc_analysis or signal == "HOLD":
+        return None
+
+    from tradingagents.dataflows.smc_utils import generate_smc_trading_plan
+    from tradingagents.dataflows.interface import route_to_vendor
+
+    # Get current price
+    current_price = None
+    for tf in ['1H', '4H', 'H4', 'D1']:
+        if tf in smc_analysis and 'current_price' in smc_analysis[tf]:
+            current_price = smc_analysis[tf]['current_price']
+            break
+
+    if not current_price:
+        print("Could not determine current price from SMC data")
+        return None
+
+    # Get ATR
+    atr_data = route_to_vendor("get_indicators", symbol, "atr", trade_date, 14)
+    atr_value = None
+    if "ATR(14):" in atr_data:
+        try:
+            atr_value = float(atr_data.split("ATR(14):")[1].split()[0])
+        except:
+            pass
+
+    # Generate comprehensive plan
+    plan = generate_smc_trading_plan(
+        smc_analysis=smc_analysis,
+        current_price=current_price,
+        overall_bias=signal,
+        primary_timeframe='1H',
+        atr=atr_value
+    )
+
+    if 'error' in plan:
+        print(f"\nError generating trading plan: {plan['error']}")
+        return None
+
+    print(f"\n{'='*70}")
+    print("COMPREHENSIVE SMC TRADING PLAN")
+    print(f"{'='*70}")
+
+    # Position Analysis
+    pos = plan['position_analysis']
+    print(f"\n[POSITION ANALYSIS]")
+    print(f"Current Price: ${pos['current_price']:.2f}")
+
+    if pos['at_resistance']:
+        print(f"Position: AT RESISTANCE")
+    elif pos['at_support']:
+        print(f"Position: AT SUPPORT")
+    else:
+        print(f"Position: BETWEEN ZONES")
+
+    # Show nearest resistance
+    if pos['nearest_resistance']:
+        res = pos['nearest_resistance']
+        print(f"\nNearest Resistance OB: ${res['price_range'][0]:.2f} - ${res['price_range'][1]:.2f}")
+        print(f"  Distance: {res['distance_pct']:.2f}% away")
+        if res['assessment']:
+            assess = res['assessment']
+            print(f"  Strength: {assess['strength_score']}/10 ({assess['strength_category']})")
+            print(f"  {assess['assessment']}")
+            print(f"  Hold Probability: {assess['hold_probability']:.0%} | Breakout Probability: {assess['breakout_probability']:.0%}")
+
+    # Show nearest support
+    if pos['nearest_support']:
+        sup = pos['nearest_support']
+        print(f"\nNearest Support OB: ${sup['price_range'][0]:.2f} - ${sup['price_range'][1]:.2f}")
+        print(f"  Distance: {sup['distance_pct']:.2f}% away")
+        if sup['assessment']:
+            assess = sup['assessment']
+            print(f"  Strength: {assess['strength_score']}/10 ({assess['strength_category']})")
+            print(f"  {assess['assessment']}")
+            print(f"  Hold Probability: {assess['hold_probability']:.0%} | Breakout Probability: {assess['breakout_probability']:.0%}")
+
+    # Recommendation
+    rec = plan['recommendation']
+    print(f"\n{'='*70}")
+    print(f"[RECOMMENDATION: {rec['action']}] - Confidence: {rec['confidence']}")
+    print(f"{'='*70}")
+    print(f"{rec['reason']}")
+    if rec.get('alternative'):
+        print(f"\nAlternative: {rec['alternative']}")
+
+    # Primary Setup
+    if plan['primary_setup']:
+        setup = plan['primary_setup']
+        print(f"\n{'='*70}")
+        print(f"[PRIMARY SETUP: {setup['direction']}]")
+        print(f"{'='*70}")
+        print(f"Entry: ${setup['entry_price']:.2f} ({setup['entry_type']})")
+        if setup['entry_zone']:
+            print(f"Entry Zone: ${setup['entry_zone'][0]:.2f} - ${setup['entry_zone'][1]:.2f}")
+        print(f"Stop Loss: ${setup['stop_loss']:.2f} ({setup['stop_loss_reason']})")
+        print(f"Take Profit 1: ${setup['take_profit_1']:.2f}")
+        print(f"Take Profit 2: ${setup['take_profit_2']:.2f}")
+        print(f"TP Reason: {setup['tp_reason']}")
+        print(f"\nRisk/Reward:")
+        print(f"  Risk: {setup['risk_pct']:.2f}%")
+        print(f"  Reward (TP1): {setup['reward_pct_tp1']:.2f}%")
+        print(f"  Reward (TP2): {setup['reward_pct_tp2']:.2f}%")
+        print(f"  R:R Ratio (TP1): 1:{(setup['reward_pct_tp1']/setup['risk_pct']):.2f}")
+        print(f"  R:R Ratio (TP2): 1:{(setup['reward_pct_tp2']/setup['risk_pct']):.2f}")
+        print(f"\nRationale: {setup['rationale']}")
+
+    # Alternative Setup
+    if plan['alternative_setup']:
+        setup = plan['alternative_setup']
+        print(f"\n{'='*70}")
+        print(f"[ALTERNATIVE SETUP: {setup['direction']}]")
+        print(f"{'='*70}")
+        print(f"Trigger: {setup.get('trigger_condition', 'After primary setup closes')}")
+        print(f"Entry: ${setup['entry_price']:.2f} ({setup['entry_type']})")
+        if setup['entry_zone']:
+            print(f"Entry Zone: ${setup['entry_zone'][0]:.2f} - ${setup['entry_zone'][1]:.2f}")
+        print(f"Stop Loss: ${setup['stop_loss']:.2f}")
+        print(f"Take Profit 1: ${setup['take_profit_1']:.2f}")
+        print(f"Take Profit 2: ${setup['take_profit_2']:.2f}")
+        print(f"\nRisk/Reward:")
+        print(f"  Risk: {setup['risk_pct']:.2f}%")
+        print(f"  Reward (TP1): {setup['reward_pct_tp1']:.2f}%")
+        print(f"  Reward (TP2): {setup['reward_pct_tp2']:.2f}%")
+        print(f"  R:R Ratio (TP1): 1:{(setup['reward_pct_tp1']/setup['risk_pct']):.2f}")
+        print(f"\nRationale: {setup['rationale']}")
+
+    print(f"\n{'='*70}\n")
+
+    return plan
+
+
 def prompt_trade_execution(symbol: str, signal: str, smc_analysis: dict = None, final_state: dict = None):
     """
     Prompt user to execute the trade via MT5 with SMC-based levels.
@@ -765,7 +908,11 @@ def simulate_trade_lifecycle():
     final_state, signal = graph.propagate(symbol, trade_date)
     
     print(f"\n   Signal: {signal}")
-    print(f"   Decision: {final_state.get('final_trade_decision', 'N/A')[:200]}...")
+    decision = final_state.get('final_trade_decision', 'N/A')
+    if decision and decision != 'N/A':
+        print(f"   Decision: {decision[:200]}...")
+    else:
+        print(f"   Decision: N/A")
     
     # =========================================================================
     # STEP 2: Execute trade (simulated)
@@ -850,6 +997,9 @@ def main():
         # Display SMC levels if available
         if smc_analysis and signal != "HOLD":
             display_smc_levels(symbol, signal, smc_analysis, trade_date)
+
+            # Display comprehensive multi-scenario SMC trading plan
+            display_comprehensive_smc_plan(symbol, signal, smc_analysis, trade_date)
 
         # Prompt for trade execution
         if signal in ["BUY", "SELL"]:

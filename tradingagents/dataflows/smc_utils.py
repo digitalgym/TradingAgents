@@ -895,3 +895,562 @@ def validate_trade_against_smc(
         'suggestions': suggestions,
         'score': max(0, 100 - (len(issues) * 20))
     }
+
+
+def assess_order_block_strength(
+    order_block: Any,
+    smc_analysis: Dict[str, Any],
+    direction: str,
+    primary_timeframe: str = '1H'
+) -> Dict[str, Any]:
+    """
+    Assess the strength of an order block based on multiple factors.
+
+    Args:
+        order_block: Order block object to assess
+        smc_analysis: Full multi-timeframe SMC analysis
+        direction: 'BUY' or 'SELL'
+        primary_timeframe: Primary timeframe for the order block
+
+    Returns:
+        dict with strength assessment:
+        - strength_score: 0.0-10.0 (10 = strongest)
+        - retests: Number of times price returned to zone
+        - confluence_score: Multi-timeframe alignment (1.0-2.0)
+        - aligned_timeframes: List of timeframes confirming this OB
+        - volume_profile: 'high', 'medium', 'low'
+        - breakout_probability: 0.0-1.0 (probability zone breaks)
+        - hold_probability: 0.0-1.0 (probability zone holds)
+        - assessment: Text description
+    """
+    # Base strength from order block object
+    base_strength = order_block.strength if hasattr(order_block, 'strength') else 0.5
+
+    # Count retests (touches after formation)
+    retests = order_block.retests if hasattr(order_block, 'retests') else 0
+
+    # Calculate multi-timeframe confluence
+    ob_mid = (order_block.top + order_block.bottom) / 2
+    confluence_score = 1.0
+    aligned_tfs = [primary_timeframe]
+
+    # Check alignment with higher timeframes
+    price_tolerance_pct = {'4H': 5.0, 'D1': 10.0}
+
+    for tf in ['4H', 'D1']:
+        if tf == primary_timeframe or tf not in smc_analysis:
+            continue
+
+        tf_data = smc_analysis[tf]
+        htf_obs = tf_data.get('order_blocks', {}).get(
+            'bullish' if direction == 'BUY' else 'bearish', []
+        )
+
+        for htf_ob in htf_obs:
+            htf_mid = (htf_ob.top + htf_ob.bottom) / 2
+            price_diff_pct = abs(htf_mid - ob_mid) / ob_mid * 100
+
+            if price_diff_pct <= price_tolerance_pct.get(tf, 5.0):
+                confluence_score += 0.5
+                aligned_tfs.append(tf)
+                break
+
+    # Volume assessment
+    volume_profile = 'medium'
+    if hasattr(order_block, 'volume_ratio'):
+        if order_block.volume_ratio > 1.5:
+            volume_profile = 'high'
+        elif order_block.volume_ratio < 0.8:
+            volume_profile = 'low'
+
+    # Calculate strength score (0-10)
+    strength_score = 0.0
+
+    # Base strength (0-3 points)
+    strength_score += base_strength * 3
+
+    # Retests (0-3 points) - more retests = stronger zone
+    # But diminishing returns after 3 retests
+    if retests >= 3:
+        strength_score += 3.0
+    elif retests == 2:
+        strength_score += 2.5
+    elif retests == 1:
+        strength_score += 1.5
+
+    # Multi-timeframe confluence (0-3 points)
+    if confluence_score >= 2.0:  # Triple alignment
+        strength_score += 3.0
+    elif confluence_score >= 1.5:  # Double alignment
+        strength_score += 2.0
+    else:  # Single timeframe
+        strength_score += 1.0
+
+    # Volume profile (0-1 point)
+    if volume_profile == 'high':
+        strength_score += 1.0
+    elif volume_profile == 'medium':
+        strength_score += 0.5
+
+    # Cap at 10
+    strength_score = min(10.0, strength_score)
+
+    # Calculate breakout/hold probability
+    # Strong zones (>7.0) are likely to hold (80%+)
+    # Weak zones (<4.0) are likely to break (60%+)
+    # Retests reduce hold probability (zone getting weaker)
+
+    if strength_score >= 7.0:
+        base_hold_prob = 0.85
+    elif strength_score >= 5.0:
+        base_hold_prob = 0.65
+    elif strength_score >= 3.0:
+        base_hold_prob = 0.50
+    else:
+        base_hold_prob = 0.35
+
+    # Each retest reduces hold probability by 5%
+    retest_penalty = min(retests * 0.05, 0.20)
+    hold_probability = max(0.2, base_hold_prob - retest_penalty)
+    breakout_probability = 1.0 - hold_probability
+
+    # Generate assessment text
+    if strength_score >= 7.5:
+        strength_desc = "VERY STRONG"
+    elif strength_score >= 6.0:
+        strength_desc = "STRONG"
+    elif strength_score >= 4.0:
+        strength_desc = "MODERATE"
+    elif strength_score >= 2.0:
+        strength_desc = "WEAK"
+    else:
+        strength_desc = "VERY WEAK"
+
+    retest_desc = f"{retests} retest{'s' if retests != 1 else ''}"
+    confluence_desc = f"{confluence_score:.1f}x confluence ({', '.join(aligned_tfs)})"
+
+    assessment = f"{strength_desc} order block | {retest_desc} | {confluence_desc} | {volume_profile} volume"
+
+    return {
+        'strength_score': round(strength_score, 1),
+        'retests': retests,
+        'confluence_score': confluence_score,
+        'aligned_timeframes': aligned_tfs,
+        'volume_profile': volume_profile,
+        'breakout_probability': round(breakout_probability, 2),
+        'hold_probability': round(hold_probability, 2),
+        'assessment': assessment,
+        'strength_category': strength_desc
+    }
+
+
+def generate_smc_trading_plan(
+    smc_analysis: Dict[str, Any],
+    current_price: float,
+    overall_bias: str,
+    primary_timeframe: str = '1H',
+    atr: Optional[float] = None
+) -> Dict[str, Any]:
+    """
+    Generate comprehensive multi-scenario SMC trading plan.
+
+    Analyzes current price position relative to SMC zones and generates
+    appropriate setups:
+    - At resistance: SHORT setup + conditional LONG re-entry
+    - At support: LONG setup + conditional SHORT re-entry
+    - Between zones: PRIMARY setup based on bias + alternative scenario
+
+    Args:
+        smc_analysis: Full multi-timeframe SMC analysis
+        current_price: Current market price
+        overall_bias: Overall market bias ('BUY' or 'SELL')
+        primary_timeframe: Primary timeframe (default: '1H')
+        atr: ATR value for risk management
+
+    Returns:
+        dict with:
+        - position_analysis: Where price is relative to SMC zones
+        - primary_setup: Main trading setup (SHORT at resistance or LONG at support)
+        - alternative_setup: Conditional setup for opposite direction
+        - order_block_assessments: Strength analysis of relevant OBs
+        - recommendation: Overall trading recommendation
+    """
+    if primary_timeframe not in smc_analysis:
+        return {
+            'error': f'No {primary_timeframe} data available',
+            'position_analysis': None,
+            'primary_setup': None,
+            'alternative_setup': None
+        }
+
+    primary_tf_data = smc_analysis[primary_timeframe]
+
+    # Get order blocks
+    bullish_obs = primary_tf_data.get('order_blocks', {}).get('bullish', [])
+    bearish_obs = primary_tf_data.get('order_blocks', {}).get('bearish', [])
+
+    # Find nearest order blocks above and below current price
+    nearest_resistance_ob = None
+    nearest_support_ob = None
+
+    resistances_above = [ob for ob in bearish_obs if ob.bottom > current_price]
+    supports_below = [ob for ob in bullish_obs if ob.top < current_price]
+
+    if resistances_above:
+        nearest_resistance_ob = min(resistances_above, key=lambda ob: ob.bottom - current_price)
+
+    if supports_below:
+        nearest_support_ob = max(supports_below, key=lambda ob: ob.top)
+
+    # Determine price position
+    at_resistance = False
+    at_support = False
+    in_between = True
+
+    if nearest_resistance_ob:
+        distance_to_resistance_pct = ((nearest_resistance_ob.bottom - current_price) / current_price * 100)
+        if distance_to_resistance_pct < 0.5 or (current_price >= nearest_resistance_ob.bottom and current_price <= nearest_resistance_ob.top):
+            at_resistance = True
+            in_between = False
+
+    if nearest_support_ob:
+        distance_to_support_pct = ((current_price - nearest_support_ob.top) / current_price * 100)
+        if distance_to_support_pct < 0.5 or (current_price >= nearest_support_ob.bottom and current_price <= nearest_support_ob.top):
+            at_support = True
+            in_between = False
+
+    # Assess order block strengths
+    resistance_assessment = None
+    support_assessment = None
+
+    if nearest_resistance_ob:
+        resistance_assessment = assess_order_block_strength(
+            nearest_resistance_ob,
+            smc_analysis,
+            'SELL',
+            primary_timeframe
+        )
+
+    if nearest_support_ob:
+        support_assessment = assess_order_block_strength(
+            nearest_support_ob,
+            smc_analysis,
+            'BUY',
+            primary_timeframe
+        )
+
+    # Generate position analysis
+    position_analysis = {
+        'current_price': current_price,
+        'at_resistance': at_resistance,
+        'at_support': at_support,
+        'in_between': in_between,
+        'nearest_resistance': {
+            'price_range': (nearest_resistance_ob.bottom, nearest_resistance_ob.top) if nearest_resistance_ob else None,
+            'distance_pct': distance_to_resistance_pct if nearest_resistance_ob else None,
+            'assessment': resistance_assessment
+        } if nearest_resistance_ob else None,
+        'nearest_support': {
+            'price_range': (nearest_support_ob.bottom, nearest_support_ob.top) if nearest_support_ob else None,
+            'distance_pct': distance_to_support_pct if nearest_support_ob else None,
+            'assessment': support_assessment
+        } if nearest_support_ob else None
+    }
+
+    # Generate primary setup based on position
+    primary_setup = None
+    alternative_setup = None
+    recommendation = None
+
+    if at_resistance:
+        # Price at resistance - PRIMARY: SHORT setup
+        primary_setup = _generate_short_setup(
+            current_price,
+            nearest_resistance_ob,
+            resistance_assessment,
+            nearest_support_ob,
+            smc_analysis,
+            primary_timeframe,
+            atr
+        )
+
+        # ALTERNATIVE: LONG re-entry after pullback
+        if nearest_support_ob:
+            alternative_setup = _generate_long_reentry_setup(
+                nearest_support_ob,
+                support_assessment,
+                nearest_resistance_ob,
+                smc_analysis,
+                primary_timeframe,
+                atr
+            )
+
+        # Recommendation based on OB strength
+        if resistance_assessment and resistance_assessment['hold_probability'] >= 0.65:
+            recommendation = {
+                'action': 'SHORT NOW',
+                'confidence': 'HIGH' if resistance_assessment['hold_probability'] >= 0.75 else 'MEDIUM',
+                'reason': f"Price at {resistance_assessment['strength_category']} resistance OB ({resistance_assessment['hold_probability']:.0%} hold probability). {resistance_assessment['assessment']}.",
+                'alternative': f"If resistance breaks, wait for pullback to ${nearest_resistance_ob.top:.2f} to re-enter LONG" if nearest_resistance_ob else None
+            }
+        else:
+            recommendation = {
+                'action': 'WAIT FOR CONFIRMATION',
+                'confidence': 'LOW',
+                'reason': f"At WEAK resistance OB ({resistance_assessment['breakout_probability']:.0%} breakout probability). Wait for rejection confirmation or breakout.",
+                'alternative': f"On breakout, consider LONG above ${nearest_resistance_ob.top:.2f}" if nearest_resistance_ob else None
+            }
+
+    elif at_support:
+        # Price at support - PRIMARY: LONG setup
+        primary_setup = _generate_long_setup(
+            current_price,
+            nearest_support_ob,
+            support_assessment,
+            nearest_resistance_ob,
+            smc_analysis,
+            primary_timeframe,
+            atr
+        )
+
+        # ALTERNATIVE: SHORT re-entry after rejection
+        if nearest_resistance_ob:
+            alternative_setup = _generate_short_reentry_setup(
+                nearest_resistance_ob,
+                resistance_assessment,
+                nearest_support_ob,
+                smc_analysis,
+                primary_timeframe,
+                atr
+            )
+
+        # Recommendation based on OB strength
+        if support_assessment and support_assessment['hold_probability'] >= 0.65:
+            recommendation = {
+                'action': 'LONG NOW',
+                'confidence': 'HIGH' if support_assessment['hold_probability'] >= 0.75 else 'MEDIUM',
+                'reason': f"Price at {support_assessment['strength_category']} support OB ({support_assessment['hold_probability']:.0%} hold probability). {support_assessment['assessment']}.",
+                'alternative': f"If support breaks, wait for retest of ${nearest_support_ob.bottom:.2f} to re-enter SHORT" if nearest_support_ob else None
+            }
+        else:
+            recommendation = {
+                'action': 'WAIT FOR CONFIRMATION',
+                'confidence': 'LOW',
+                'reason': f"At WEAK support OB ({support_assessment['breakout_probability']:.0%} breakout probability). Wait for bounce confirmation or breakdown.",
+                'alternative': f"On breakdown, consider SHORT below ${nearest_support_ob.bottom:.2f}" if nearest_support_ob else None
+            }
+
+    else:  # in_between
+        # Price between zones - use overall bias
+        if overall_bias == 'BUY':
+            # PRIMARY: LONG at support
+            if nearest_support_ob:
+                primary_setup = _generate_long_setup(
+                    nearest_support_ob.top,  # Entry at top of support zone
+                    nearest_support_ob,
+                    support_assessment,
+                    nearest_resistance_ob,
+                    smc_analysis,
+                    primary_timeframe,
+                    atr
+                )
+
+            recommendation = {
+                'action': 'WAIT FOR PULLBACK',
+                'confidence': 'MEDIUM',
+                'reason': f"Price {distance_to_support_pct:.1f}% above support OB. Overall bias is BULLISH. Wait for pullback to ${nearest_support_ob.top:.2f} for better entry." if nearest_support_ob else "Overall bias is BULLISH but no clear support zone nearby.",
+                'alternative': f"If price reaches ${nearest_resistance_ob.bottom:.2f} resistance, consider SHORT" if nearest_resistance_ob else None
+            }
+
+        else:  # SELL bias
+            # PRIMARY: SHORT at resistance
+            if nearest_resistance_ob:
+                primary_setup = _generate_short_setup(
+                    nearest_resistance_ob.bottom,  # Entry at bottom of resistance zone
+                    nearest_resistance_ob,
+                    resistance_assessment,
+                    nearest_support_ob,
+                    smc_analysis,
+                    primary_timeframe,
+                    atr
+                )
+
+            recommendation = {
+                'action': 'WAIT FOR RALLY',
+                'confidence': 'MEDIUM',
+                'reason': f"Price {distance_to_resistance_pct:.1f}% below resistance OB. Overall bias is BEARISH. Wait for rally to ${nearest_resistance_ob.bottom:.2f} for better entry." if nearest_resistance_ob else "Overall bias is BEARISH but no clear resistance zone nearby.",
+                'alternative': f"If price reaches ${nearest_support_ob.top:.2f} support, consider LONG" if nearest_support_ob else None
+            }
+
+    return {
+        'position_analysis': position_analysis,
+        'primary_setup': primary_setup,
+        'alternative_setup': alternative_setup,
+        'order_block_assessments': {
+            'resistance': resistance_assessment,
+            'support': support_assessment
+        },
+        'recommendation': recommendation
+    }
+
+
+def _generate_short_setup(
+    entry_price: float,
+    resistance_ob: Any,
+    resistance_assessment: Dict[str, Any],
+    nearest_support_ob: Any,
+    smc_analysis: Dict[str, Any],
+    primary_timeframe: str,
+    atr: Optional[float]
+) -> Dict[str, Any]:
+    """Generate SHORT setup details."""
+    # Entry at current price or top of resistance zone
+    entry = entry_price
+
+    # Stop loss above resistance OB
+    stop_loss = resistance_ob.top * 1.002 if resistance_ob else entry * 1.02
+
+    # Take profit at support OB or using R:R
+    if nearest_support_ob:
+        tp1 = nearest_support_ob.top
+        tp2 = nearest_support_ob.bottom * 0.998
+    else:
+        # Use 2:1 R:R if no support found
+        risk = stop_loss - entry
+        tp1 = entry - (risk * 1.5)
+        tp2 = entry - (risk * 2.5)
+
+    return {
+        'direction': 'SELL',
+        'entry_price': entry,
+        'entry_type': 'MARKET' if abs(entry - entry_price) < entry * 0.002 else 'LIMIT',
+        'entry_zone': (resistance_ob.bottom, resistance_ob.top) if resistance_ob else None,
+        'stop_loss': stop_loss,
+        'stop_loss_reason': f"Above {primary_timeframe} resistance OB" if resistance_ob else "ATR-based",
+        'take_profit_1': tp1,
+        'take_profit_2': tp2,
+        'tp_reason': f"At support OB ${nearest_support_ob.bottom:.2f}-${nearest_support_ob.top:.2f}" if nearest_support_ob else "2:1 R:R",
+        'risk_pct': ((stop_loss - entry) / entry * 100),
+        'reward_pct_tp1': ((entry - tp1) / entry * 100),
+        'reward_pct_tp2': ((entry - tp2) / entry * 100),
+        'ob_strength': resistance_assessment,
+        'rationale': f"SHORT at resistance. OB strength: {resistance_assessment['strength_score']}/10. Hold probability: {resistance_assessment['hold_probability']:.0%}."
+    }
+
+
+def _generate_long_setup(
+    entry_price: float,
+    support_ob: Any,
+    support_assessment: Dict[str, Any],
+    nearest_resistance_ob: Any,
+    smc_analysis: Dict[str, Any],
+    primary_timeframe: str,
+    atr: Optional[float]
+) -> Dict[str, Any]:
+    """Generate LONG setup details."""
+    # Entry at current price or bottom of support zone
+    entry = entry_price
+
+    # Stop loss below support OB
+    stop_loss = support_ob.bottom * 0.998 if support_ob else entry * 0.98
+
+    # Take profit at resistance OB or using R:R
+    if nearest_resistance_ob:
+        tp1 = nearest_resistance_ob.bottom
+        tp2 = nearest_resistance_ob.top * 1.002
+    else:
+        # Use 2:1 R:R if no resistance found
+        risk = entry - stop_loss
+        tp1 = entry + (risk * 1.5)
+        tp2 = entry + (risk * 2.5)
+
+    return {
+        'direction': 'BUY',
+        'entry_price': entry,
+        'entry_type': 'MARKET' if abs(entry - entry_price) < entry * 0.002 else 'LIMIT',
+        'entry_zone': (support_ob.bottom, support_ob.top) if support_ob else None,
+        'stop_loss': stop_loss,
+        'stop_loss_reason': f"Below {primary_timeframe} support OB" if support_ob else "ATR-based",
+        'take_profit_1': tp1,
+        'take_profit_2': tp2,
+        'tp_reason': f"At resistance OB ${nearest_resistance_ob.bottom:.2f}-${nearest_resistance_ob.top:.2f}" if nearest_resistance_ob else "2:1 R:R",
+        'risk_pct': ((entry - stop_loss) / entry * 100),
+        'reward_pct_tp1': ((tp1 - entry) / entry * 100),
+        'reward_pct_tp2': ((tp2 - entry) / entry * 100),
+        'ob_strength': support_assessment,
+        'rationale': f"LONG at support. OB strength: {support_assessment['strength_score']}/10. Hold probability: {support_assessment['hold_probability']:.0%}."
+    }
+
+
+def _generate_long_reentry_setup(
+    support_ob: Any,
+    support_assessment: Dict[str, Any],
+    nearest_resistance_ob: Any,
+    smc_analysis: Dict[str, Any],
+    primary_timeframe: str,
+    atr: Optional[float]
+) -> Dict[str, Any]:
+    """Generate LONG re-entry setup after SHORT closes."""
+    entry = support_ob.top  # Enter at top of support zone on pullback
+    stop_loss = support_ob.bottom * 0.998
+
+    if nearest_resistance_ob:
+        tp1 = nearest_resistance_ob.bottom
+        tp2 = nearest_resistance_ob.top * 1.002
+    else:
+        risk = entry - stop_loss
+        tp1 = entry + (risk * 1.5)
+        tp2 = entry + (risk * 2.5)
+
+    return {
+        'direction': 'BUY',
+        'entry_price': entry,
+        'entry_type': 'LIMIT',
+        'entry_zone': (support_ob.bottom, support_ob.top),
+        'stop_loss': stop_loss,
+        'take_profit_1': tp1,
+        'take_profit_2': tp2,
+        'trigger_condition': f"After SHORT position closes at TP1 (${tp1:.2f}), wait for pullback to support",
+        'risk_pct': ((entry - stop_loss) / entry * 100),
+        'reward_pct_tp1': ((tp1 - entry) / entry * 100),
+        'reward_pct_tp2': ((tp2 - entry) / entry * 100),
+        'ob_strength': support_assessment,
+        'rationale': f"Re-enter LONG at support after SHORT completes. Support strength: {support_assessment['strength_score']}/10."
+    }
+
+
+def _generate_short_reentry_setup(
+    resistance_ob: Any,
+    resistance_assessment: Dict[str, Any],
+    nearest_support_ob: Any,
+    smc_analysis: Dict[str, Any],
+    primary_timeframe: str,
+    atr: Optional[float]
+) -> Dict[str, Any]:
+    """Generate SHORT re-entry setup after LONG closes."""
+    entry = resistance_ob.bottom  # Enter at bottom of resistance zone on rally
+    stop_loss = resistance_ob.top * 1.002
+
+    if nearest_support_ob:
+        tp1 = nearest_support_ob.top
+        tp2 = nearest_support_ob.bottom * 0.998
+    else:
+        risk = stop_loss - entry
+        tp1 = entry - (risk * 1.5)
+        tp2 = entry - (risk * 2.5)
+
+    return {
+        'direction': 'SELL',
+        'entry_price': entry,
+        'entry_type': 'LIMIT',
+        'entry_zone': (resistance_ob.bottom, resistance_ob.top),
+        'stop_loss': stop_loss,
+        'take_profit_1': tp1,
+        'take_profit_2': tp2,
+        'trigger_condition': f"After LONG position closes at TP1 (${tp1:.2f}), wait for rally to resistance",
+        'risk_pct': ((stop_loss - entry) / entry * 100),
+        'reward_pct_tp1': ((entry - tp1) / entry * 100),
+        'reward_pct_tp2': ((entry - tp2) / entry * 100),
+        'ob_strength': resistance_assessment,
+        'rationale': f"Re-enter SHORT at resistance after LONG completes. Resistance strength: {resistance_assessment['strength_score']}/10."
+    }
