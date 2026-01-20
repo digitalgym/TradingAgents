@@ -1127,18 +1127,25 @@ def simulate_trade_lifecycle():
 
 def main():
     """Main function to demonstrate commodity trading."""
-    
+
     # Check for API key
     if not os.getenv("XAI_API_KEY"):
         print("ERROR: XAI_API_KEY not set in environment or .env file")
         print("Please set your xAI API key to use TradingAgents with Grok")
         return
-    
-    # Example: Analyze Silver
-    # You can change this to any of: XAUUSD, XAGUSD, XPTUSD, COPPER-C
-    # Or use aliases: gold, silver, platinum, copper
-    
-    symbol = "XAGUSD"  # Silver
+
+    # Prompt for symbol/forex pair
+    print("\n" + "="*70)
+    print("TRADINGAGENTS - COMMODITY & FOREX ANALYSIS")
+    print("="*70)
+    print("\nAvailable symbols:")
+    print("  Commodities: XAUUSD (Gold), XAGUSD (Silver), XPTUSD (Platinum), COPPER-C")
+    print("  Forex Pairs: EURUSD, GBPUSD, USDJPY, AUDUSD, NZDUSD, USDCAD, USDCHF, etc.")
+
+    symbol_input = input("\nEnter symbol to analyze [XAGUSD]: ").strip().upper()
+    symbol = symbol_input if symbol_input else "XAGUSD"
+
+    print(f"\n✓ Analyzing: {symbol}")
 
     # Get most recent trading day (Friday if weekend)
     today = datetime.now()
@@ -1151,7 +1158,7 @@ def main():
     else:  # Monday-Friday
         trade_date = today.strftime("%Y-%m-%d")
 
-    print(f"Using trade date: {trade_date}")
+    print(f"✓ Trade date: {trade_date}")
 
     try:
         final_state, signal, smc_analysis = analyze_commodity(symbol, trade_date)
