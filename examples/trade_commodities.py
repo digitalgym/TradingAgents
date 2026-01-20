@@ -471,15 +471,16 @@ def display_smc_levels(symbol: str, signal: str, smc_analysis: dict, trade_date:
     return stop_suggestion, tp_suggestions
 
 
-def display_comprehensive_smc_plan(symbol: str, signal: str, smc_analysis: dict, trade_date: str):
+def display_comprehensive_smc_plan(symbol: str, signal: str, smc_analysis: dict, trade_date: str, final_state: dict = None):
     """
-    Display comprehensive multi-scenario SMC trading plan.
+    Display comprehensive multi-scenario SMC trading plan with LLM enhancement.
 
     Analyzes current price position relative to SMC zones and generates:
     - Position analysis (at resistance, at support, or in between)
     - Order block strength assessments (retests, confluence, breakout probability)
     - Primary setup based on current position
     - Alternative setup for opposite scenario
+    - LLM-enhanced contextual intelligence (market regime, sentiment, risks)
     - Clear recommendation with confidence level
     """
     if not smc_analysis or signal == "HOLD":
@@ -487,6 +488,9 @@ def display_comprehensive_smc_plan(symbol: str, signal: str, smc_analysis: dict,
 
     from tradingagents.dataflows.smc_utils import generate_smc_trading_plan
     from tradingagents.dataflows.interface import route_to_vendor
+    from tradingagents.dataflows.llm_smc_enhancer import enhance_plan_with_llm
+    from langchain_openai import ChatOpenAI
+    import os
 
     # Get current price
     current_price = None
@@ -520,6 +524,31 @@ def display_comprehensive_smc_plan(symbol: str, signal: str, smc_analysis: dict,
     if 'error' in plan:
         print(f"\nError generating trading plan: {plan['error']}")
         return None
+
+    # Enhance plan with LLM reasoning (if API key available)
+    xai_api_key = os.getenv("XAI_API_KEY")
+    if xai_api_key:
+        try:
+            print("\n[Enhancing plan with LLM contextual intelligence...]")
+            llm = ChatOpenAI(
+                model="grok-beta",
+                temperature=0.3,
+                api_key=xai_api_key,
+                base_url="https://api.x.ai/v1"
+            )
+
+            plan = enhance_plan_with_llm(
+                plan=plan,
+                smc_analysis=smc_analysis,
+                llm=llm,
+                atr=atr_value,
+                final_state=final_state
+            )
+            print("[LLM enhancement complete]")
+        except Exception as e:
+            print(f"[LLM enhancement skipped: {e}]")
+    else:
+        print("[LLM enhancement skipped: XAI_API_KEY not set]")
 
     print(f"\n{'='*70}")
     print("COMPREHENSIVE SMC TRADING PLAN")
@@ -589,6 +618,24 @@ def display_comprehensive_smc_plan(symbol: str, signal: str, smc_analysis: dict,
         print(f"  R:R Ratio (TP2): 1:{(setup['reward_pct_tp2']/setup['risk_pct']):.2f}")
         print(f"\nRationale: {setup['rationale']}")
 
+        # Display LLM enhancement if available
+        if 'llm_enhancement' in setup:
+            llm = setup['llm_enhancement']
+            print(f"\n--- LLM Contextual Intelligence ---")
+            print(f"Confidence Level: {llm['confidence_level']}")
+            print(f"Adjusted Hold Probability: {llm['adjusted_hold_probability']:.0%} (Rule-based: {llm['rule_based_hold_prob']:.0%})")
+            print(f"Probability Adjustment: {llm['probability_adjustment']:+.0%}")
+            print(f"\nKey Reasoning:")
+            print(f"  {llm['key_reasoning']}")
+            print(f"\nContextual Factors:")
+            for factor in llm['contextual_factors']:
+                print(f"  • {factor}")
+            print(f"\nTop Risks:")
+            for risk in llm['top_risks']:
+                print(f"  ⚠️  {risk}")
+            print(f"\nRecommended Action: {llm['recommended_action']}")
+            print(f"Assessment vs Rules: {llm['adjustment_vs_rules']}")
+
     # Alternative Setup
     if plan['alternative_setup']:
         setup = plan['alternative_setup']
@@ -608,6 +655,48 @@ def display_comprehensive_smc_plan(symbol: str, signal: str, smc_analysis: dict,
         print(f"  Reward (TP2): {setup['reward_pct_tp2']:.2f}%")
         print(f"  R:R Ratio (TP1): 1:{(setup['reward_pct_tp1']/setup['risk_pct']):.2f}")
         print(f"\nRationale: {setup['rationale']}")
+
+        # Display LLM enhancement if available
+        if 'llm_enhancement' in setup:
+            llm = setup['llm_enhancement']
+            print(f"\n--- LLM Contextual Intelligence ---")
+            print(f"Confidence Level: {llm['confidence_level']}")
+            print(f"Adjusted Hold Probability: {llm['adjusted_hold_probability']:.0%} (Rule-based: {llm['rule_based_hold_prob']:.0%})")
+            print(f"Probability Adjustment: {llm['probability_adjustment']:+.0%}")
+            print(f"\nKey Reasoning:")
+            print(f"  {llm['key_reasoning']}")
+            print(f"\nContextual Factors:")
+            for factor in llm['contextual_factors']:
+                print(f"  • {factor}")
+            print(f"\nTop Risks:")
+            for risk in llm['top_risks']:
+                print(f"  ⚠️  {risk}")
+            print(f"\nRecommended Action: {llm['recommended_action']}")
+
+    # Display LLM adjustment to recommendation if significant
+    if 'llm_adjustment' in plan['recommendation']:
+        llm_adj = plan['recommendation']['llm_adjustment']
+        print(f"\n{'='*70}")
+        print("[LLM RECOMMENDATION ADJUSTMENT]")
+        print(f"{'='*70}")
+        print(f"Rule-based: {llm_adj['original_action']}")
+        print(f"LLM Suggests: {llm_adj['llm_recommended_action']}")
+        print(f"Probability Change: {llm_adj['probability_adjustment']}")
+        print(f"\nReason: {llm_adj['reason']}")
+
+    # Display market context if available
+    if 'market_context' in plan:
+        ctx = plan['market_context']
+        print(f"\n{'='*70}")
+        print("[MARKET CONTEXT]")
+        print(f"{'='*70}")
+        print(f"Volatility: {ctx['volatility']['description']}")
+        print(f"Trend: {ctx['trend']['description']}")
+        print(f"Structure: {ctx['structure']['description']}")
+        if ctx.get('news_sentiment'):
+            print(f"News: {ctx['news_sentiment']}")
+        if ctx.get('social_sentiment'):
+            print(f"Social: {ctx['social_sentiment']}")
 
     print(f"\n{'='*70}\n")
 
@@ -677,21 +766,41 @@ def prompt_trade_execution(symbol: str, signal: str, smc_analysis: dict = None, 
     print(f"\nCurrent Price: ${current_price:.{digits}f}")
     print(f"Spread: {symbol_info['spread']} | Min lot: {symbol_info['volume_min']}")
 
-    # Get SMC-based levels
+    # Get SMC-based levels and entry strategy
+    from tradingagents.dataflows.smc_utils import suggest_smc_entry_strategy
+
     smc_sl = None
     smc_tp = None
+    smc_entry = None
 
     if smc_analysis:
-        d1_analysis = smc_analysis.get('D1')
-        if d1_analysis:
-            smc_sl = suggest_smc_stop_loss(
-                smc_analysis=d1_analysis,
-                direction=signal,
-                entry_price=current_price,
-                max_distance_pct=3.0
-            )
+        # Get ATR for stop loss fallback
+        from tradingagents.risk.stop_loss import get_atr_for_symbol
+        atr = get_atr_for_symbol(symbol, period=14)
+
+        # Get SMC entry strategy
+        smc_entry = suggest_smc_entry_strategy(
+            smc_analysis=smc_analysis,
+            direction=signal,
+            current_price=current_price,
+            primary_timeframe='1H'
+        )
+
+        # Use full multi-timeframe analysis for stop loss
+        smc_sl = suggest_smc_stop_loss(
+            smc_analysis=smc_analysis,  # Pass full multi-TF dict
+            direction=signal,
+            entry_price=current_price,
+            atr=atr if atr > 0 else None,
+            atr_multiplier=2.0,
+            primary_timeframe='1H'
+        )
+
+        # Use first available timeframe for take profits
+        first_tf_data = smc_analysis.get('1H') or smc_analysis.get('4H') or smc_analysis.get('D1')
+        if first_tf_data:
             smc_tps = suggest_smc_take_profits(
-                smc_analysis=d1_analysis,
+                smc_analysis=first_tf_data,
                 direction=signal,
                 entry_price=current_price,
                 num_targets=3
@@ -699,10 +808,14 @@ def prompt_trade_execution(symbol: str, signal: str, smc_analysis: dict = None, 
             if smc_tps:
                 smc_tp = smc_tps[0]  # Use first TP target
 
-    # Calculate fallback ATR-based levels
-    from tradingagents.risk.stop_loss import DynamicStopLoss, get_atr_for_symbol
+    # Calculate fallback ATR-based levels (use already imported get_atr_for_symbol)
+    from tradingagents.risk.stop_loss import DynamicStopLoss
 
-    atr = get_atr_for_symbol(symbol, period=14)
+    # ATR already fetched above if smc_analysis exists, otherwise get it now
+    if not smc_analysis:
+        from tradingagents.risk.stop_loss import get_atr_for_symbol
+        atr = get_atr_for_symbol(symbol, period=14)
+
     dsl = DynamicStopLoss(atr_multiplier=2.0, trailing_multiplier=1.5, risk_reward_ratio=2.0)
 
     if atr > 0:
@@ -759,15 +872,65 @@ def prompt_trade_execution(symbol: str, signal: str, smc_analysis: dict = None, 
     volume_input = input(f"\nLot size (min: {symbol_info['volume_min']}) [0.01]: ").strip()
     volume = float(volume_input) if volume_input else 0.01
 
-    # Order type
-    order_type = input("Order type - (M)arket or (L)imit? [M]: ").strip().upper()
-    use_limit = order_type == "L"
+    # Entry Strategy Options
+    print("\n--- Entry Strategy Options ---")
 
-    if use_limit:
-        entry_input = input(f"Entry price [current: {current_price}]: ").strip()
-        entry_price = float(entry_input) if entry_input else current_price
+    # Option 1: Market order at current price
+    print(f"  1. MARKET order at ${current_price:.{digits}f}")
+    print(f"     Immediate execution, no risk of missing trade")
+
+    # Option 2: Limit order at SMC zone (if available)
+    smc_limit_available = False
+    if smc_entry and smc_entry.get('limit_entry') and 'price' in smc_entry['limit_entry']:
+        smc_limit_available = True
+        limit_data = smc_entry['limit_entry']
+        print(f"  2. LIMIT order at ${limit_data['price']:.{digits}f} (SMC Order Block)")
+        print(f"     Zone: ${limit_data['zone_bottom']:.{digits}f} - ${limit_data['zone_top']:.{digits}f}")
+        print(f"     Confluence: {limit_data['confluence_score']:.1f} ({', '.join(limit_data['aligned_timeframes'])})")
+        print(f"     Better R:R, may not fill")
     else:
+        print(f"  2. LIMIT order (manual entry price)")
+
+    print(f"  3. Manual (specify custom entry price and type)")
+
+    # Show recommendation if available
+    if smc_entry:
+        rec = smc_entry['recommendation']
+        if rec == 'MARKET':
+            print(f"\n  Recommendation: MARKET (Option 1) - Price far from optimal zone")
+        elif rec == 'LIMIT':
+            print(f"\n  Recommendation: LIMIT (Option 2) - Wait for pullback to OB")
+        elif rec == 'LIMIT_OR_MARKET':
+            print(f"\n  Recommendation: Either MARKET or LIMIT - Price near optimal zone")
+
+    entry_choice = input("\nSelect entry strategy (1/2/3) [1]: ").strip()
+
+    if entry_choice == "2" and smc_limit_available:
+        # Use SMC limit order
+        use_limit = True
+        entry_price = round(limit_data['price'], digits)
+        print(f"  ✓ Using SMC limit order: ${entry_price:.{digits}f}")
+    elif entry_choice == "2" and not smc_limit_available:
+        # Manual limit order
+        use_limit = True
+        entry_input = input(f"  Enter limit price [current: ${current_price:.{digits}f}]: ").strip()
+        entry_price = float(entry_input) if entry_input else current_price
+        print(f"  ✓ Using limit order: ${entry_price:.{digits}f}")
+    elif entry_choice == "3":
+        # Manual entry
+        order_type_input = input("  Order type - (M)arket or (L)imit? [M]: ").strip().upper()
+        use_limit = order_type_input == "L"
+        if use_limit:
+            entry_input = input(f"  Entry price [current: ${current_price:.{digits}f}]: ").strip()
+            entry_price = float(entry_input) if entry_input else current_price
+        else:
+            entry_price = current_price
+        print(f"  ✓ Using {'limit' if use_limit else 'market'} order: ${entry_price:.{digits}f}")
+    else:
+        # Default: Market order
+        use_limit = False
         entry_price = current_price
+        print(f"  ✓ Using market order: ${entry_price:.{digits}f}")
 
     # Normalize prices to tick size
     tick_size = symbol_info.get('trade_tick_size', 0.01)
@@ -998,8 +1161,8 @@ def main():
         if smc_analysis and signal != "HOLD":
             display_smc_levels(symbol, signal, smc_analysis, trade_date)
 
-            # Display comprehensive multi-scenario SMC trading plan
-            display_comprehensive_smc_plan(symbol, signal, smc_analysis, trade_date)
+            # Display comprehensive multi-scenario SMC trading plan with LLM enhancement
+            display_comprehensive_smc_plan(symbol, signal, smc_analysis, trade_date, final_state)
 
         # Prompt for trade execution
         if signal in ["BUY", "SELL"]:
