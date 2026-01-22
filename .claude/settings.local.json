@@ -4,7 +4,11 @@
       "Bash(.venv/Scripts/python.exe -m pytest tests/test_smc_integration.py -v)",
       "Bash(.venv/Scripts/python.exe:*)",
       "Bash(python -m pytest:*)",
-      "Bash(python examples/trade_commodities.py:*)"
+      "Bash(python examples/trade_commodities.py:*)",
+      "Bash(python:*)",
+      "Bash(ls:*)",
+      "Bash(if not exist tests mkdir tests)",
+      "Bash(move test*.py tests)"
     ]
   }
 }

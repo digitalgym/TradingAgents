@@ -9,3 +9,10 @@ eval_results/
 eval_data/
 *.egg-info/
 .env
+
+# ChromaDB and Memory Database
+memory_db/
+*.sqlite3
+*.bin
+chroma/
+.chroma/

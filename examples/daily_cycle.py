@@ -459,42 +459,48 @@ class DailyAnalysisCycle:
             print(f"Initializing TradingAgentsGraph...")
             self.graph = TradingAgentsGraph(config=self.config, debug=False)
     
-    def run_cycle(self) -> Tuple[Dict[str, Any], str]:
+    def run_cycle(self) -> Tuple[Dict[str, Any], str, Dict[str, Any]]:
         """
         Run one complete analysis cycle:
         1. Evaluate any pending predictions that are due
-        2. Run new analysis
-        3. Store new prediction for later evaluation
-        
+        2. Run new analysis with SMC integration
+        3. Display comprehensive SMC trading plan with LLM enhancement
+        4. Store new prediction for later evaluation
+
         Returns:
-            (final_state, signal) from the new analysis
+            (final_state, signal, smc_analysis) from the new analysis
         """
         self._ensure_graph()
-        
+
         print(f"\n{'='*70}")
         print(f"ANALYSIS CYCLE - {self.symbol}")
         print(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"Evaluation window: {self.evaluation_hours} hours")
         print(f"{'='*70}")
-        
+
         # Step 1: Evaluate pending predictions
         self._evaluate_pending()
-        
-        # Step 2: Run new analysis
-        final_state, signal = self._run_analysis()
-        
-        # Step 3: Store prediction for later evaluation
-        self._store_prediction(final_state, signal)
-        
-        # Step 4: Save last run timestamp for recovery
+
+        # Step 2: Run new analysis with SMC
+        final_state, signal, smc_analysis = self._run_analysis()
+
+        # Step 3: Display SMC-based trading plan if available
+        if smc_analysis and signal != "HOLD":
+            trade_date = datetime.now().strftime("%Y-%m-%d")
+            self._display_smc_plan(signal, smc_analysis, trade_date, final_state)
+
+        # Step 4: Store prediction for later evaluation
+        self._store_prediction(final_state, signal, smc_analysis)
+
+        # Step 5: Save last run timestamp for recovery
         save_last_run_state(self.symbol)
-        
+
         print(f"\n{'='*70}")
         print(f"CYCLE COMPLETE")
         print(f"Next evaluation in {self.evaluation_hours} hours")
         print(f"{'='*70}\n")
-        
-        return final_state, signal
+
+        return final_state, signal, smc_analysis
     
     def _evaluate_pending(self):
         """Evaluate all pending predictions that are due."""
@@ -520,36 +526,177 @@ class DailyAnalysisCycle:
                 import traceback
                 traceback.print_exc()
     
-    def _run_analysis(self) -> Tuple[Dict[str, Any], str]:
-        """Run the trading analysis."""
+    def _run_analysis(self) -> Tuple[Dict[str, Any], str, Dict[str, Any]]:
+        """Run the trading analysis with SMC integration."""
         trade_date = datetime.now().strftime("%Y-%m-%d")
-        
+
         print(f"\nRunning analysis for {self.symbol} on {trade_date}...")
-        
+
+        # Run SMC analysis first
+        smc_analysis = None
+        try:
+            from tradingagents.dataflows.smc_utils import (
+                analyze_multi_timeframe_smc,
+                format_smc_for_prompt,
+                get_htf_bias_alignment
+            )
+
+            print("Running Smart Money Concepts analysis...")
+            smc_analysis = analyze_multi_timeframe_smc(
+                symbol=self.symbol,
+                timeframes=['1H', '4H', 'D1']
+            )
+
+            if smc_analysis:
+                alignment = get_htf_bias_alignment(smc_analysis)
+                print(f"SMC Analysis: {alignment['message']}")
+
+                # Format SMC context for LLM
+                smc_context = format_smc_for_prompt(smc_analysis, self.symbol)
+
+                # Inject SMC context into state before propagation
+                # Initialize curr_state if it doesn't exist
+                if self.graph.curr_state is None:
+                    self.graph.curr_state = {}
+                self.graph.curr_state['smc_context'] = smc_context
+        except Exception as e:
+            print(f"Warning: SMC analysis failed: {e}")
+
+        # Run main analysis with SMC context
         final_state, signal = self.graph.propagate(self.symbol, trade_date)
-        
+
         print(f"\n--- Analysis Result ---")
         print(f"Signal: {signal}")
         print(f"Decision: {final_state.get('final_trade_decision', 'N/A')[:300]}...")
-        
-        return final_state, signal
+
+        return final_state, signal, smc_analysis
     
-    def _store_prediction(self, final_state: Dict[str, Any], signal: str):
-        """Extract and store prediction for later evaluation."""
+    def _display_smc_plan(self, signal: str, smc_analysis: Dict[str, Any], trade_date: str, final_state: Dict[str, Any]):
+        """Display comprehensive SMC trading plan with LLM enhancement."""
+        try:
+            from tradingagents.dataflows.smc_utils import generate_smc_trading_plan
+            from tradingagents.dataflows.llm_smc_enhancer import enhance_plan_with_llm
+            from tradingagents.dataflows.interface import route_to_vendor
+            from langchain_openai import ChatOpenAI
+            import os
+
+            # Get current price
+            current_price = None
+            for tf in ['1H', '4H', 'H4', 'D1']:
+                if tf in smc_analysis and 'current_price' in smc_analysis[tf]:
+                    current_price = smc_analysis[tf]['current_price']
+                    break
+
+            if not current_price:
+                print("Could not determine current price from SMC data")
+                return
+
+            # Get ATR
+            atr_data = route_to_vendor("get_indicators", self.symbol, "atr", trade_date, 14)
+            atr_value = None
+            if "ATR(14):" in atr_data:
+                try:
+                    atr_value = float(atr_data.split("ATR(14):")[1].split()[0])
+                except:
+                    pass
+
+            # Generate comprehensive trading plan
+            plan = generate_smc_trading_plan(
+                smc_analysis=smc_analysis,
+                current_price=current_price,
+                overall_bias=signal,
+                primary_timeframe='1H',
+                atr=atr_value
+            )
+
+            if 'error' in plan:
+                print(f"\nError generating trading plan: {plan['error']}")
+                return
+
+            # Enhance with LLM
+            xai_api_key = os.getenv("XAI_API_KEY")
+            if xai_api_key:
+                try:
+                    print("\n[Enhancing plan with LLM contextual intelligence...]")
+                    llm = ChatOpenAI(
+                        model="grok-beta",
+                        temperature=0.3,
+                        api_key=xai_api_key,
+                        base_url="https://api.x.ai/v1"
+                    )
+
+                    plan = enhance_plan_with_llm(
+                        plan=plan,
+                        smc_analysis=smc_analysis,
+                        llm=llm,
+                        atr=atr_value,
+                        final_state=final_state
+                    )
+                    print("[LLM enhancement complete]")
+                except Exception as e:
+                    print(f"[LLM enhancement skipped: {e}]")
+
+            # Display the plan (simplified version for daily cycle)
+            print(f"\n{'='*70}")
+            print("COMPREHENSIVE SMC TRADING PLAN")
+            print(f"{'='*70}")
+
+            pos = plan['position_analysis']
+            print(f"\n[POSITION ANALYSIS]")
+            print(f"Current Price: ${pos['current_price']:.2f}")
+            print(f"Position: {pos['position']}")
+
+            # Display recommendation
+            rec = plan['recommendation']
+            print(f"\n[RECOMMENDATION: {rec['action']}] - Confidence: {rec['confidence']}")
+            print(f"{rec['reason']}")
+
+            # Display primary setup
+            if plan.get('primary_setup'):
+                setup = plan['primary_setup']
+                print(f"\n[PRIMARY SETUP: {setup['direction']}]")
+                print(f"Entry: ${setup['entry_price']:.2f} ({setup['entry_type']})")
+                print(f"Stop Loss: ${setup['stop_loss']:.2f}")
+                print(f"Take Profit 1: ${setup['take_profit_1']:.2f}")
+                print(f"R:R Ratio: 1:{(setup['reward_pct_tp1']/setup['risk_pct']):.2f}")
+
+                # Show LLM enhancement if available
+                if 'llm_enhancement' in setup:
+                    llm = setup['llm_enhancement']
+                    print(f"\nLLM Confidence: {llm['confidence_level']}")
+                    print(f"Adjusted Hold Probability: {llm['adjusted_hold_probability']:.0%}")
+                    print(f"Recommended Action: {llm['recommended_action']}")
+
+            print(f"\n{'='*70}\n")
+
+        except Exception as e:
+            print(f"Warning: Could not display SMC plan: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def _store_prediction(self, final_state: Dict[str, Any], signal: str, smc_analysis: Dict[str, Any] = None):
+        """Extract and store prediction for later evaluation with SMC context."""
         current_price = get_current_price(self.symbol)
-        
+
         if current_price <= 0:
             print("Warning: Could not get current price, prediction storage may be incomplete")
             current_price = 0.0
-        
+
         prediction = extract_prediction(
-            final_state, signal, current_price, 
+            final_state, signal, current_price,
             evaluation_hours=self.evaluation_hours
         )
-        
+
+        # Add SMC context to prediction
+        if smc_analysis:
+            prediction["smc_context"] = {
+                "has_smc_data": True,
+                "timeframes": list(smc_analysis.keys()),
+            }
+
         # Add position sizing recommendation if signal is BUY or SELL
         if signal.upper() in ["BUY", "SELL"] and current_price > 0:
-            position_rec = self._calculate_position_size(signal, current_price)
+            position_rec = self._calculate_position_size(signal, current_price, smc_analysis)
             if position_rec:
                 prediction["position_sizing"] = position_rec
                 print(f"\n--- Position Sizing ---")
@@ -557,19 +704,23 @@ class DailyAnalysisCycle:
                 print(f"MT5 Lots: {position_rec['mt5_lots']:.2f}")
                 print(f"Risk Amount: ${position_rec['risk_amount']:.2f}")
                 print(f"Risk %: {position_rec['risk_percent']*100:.2f}%")
-        
+
         save_prediction(self.symbol, prediction, final_state)
     
     def _calculate_position_size(
-        self, 
-        signal: str, 
+        self,
+        signal: str,
         current_price: float,
+        smc_analysis: Dict[str, Any] = None,
         account_balance: float = 100000,
         atr_multiplier: float = 2.0
     ) -> Optional[Dict[str, Any]]:
         """
-        Calculate position size based on Kelly criterion and ATR-based stop loss.
-        
+        Calculate position size based on Kelly criterion and SMC-based stop loss.
+
+        Uses SMC order blocks for stop loss placement when available,
+        falls back to ATR-based stop loss otherwise.
+
         Uses backtest history for Kelly parameters if available.
         """
         try:
@@ -577,17 +728,17 @@ class DailyAnalysisCycle:
             from tradingagents.dataflows.mt5_data import get_mt5_data
             import pandas as pd
             import io
-            
+
             # Fetch recent data for ATR
             end_date = datetime.now().strftime("%Y-%m-%d")
             start_date = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
-            
+
             csv_data = get_mt5_data(self.symbol, start_date, end_date, timeframe="H4")
-            
+
             if csv_data is None or isinstance(csv_data, str) and csv_data.startswith("Error"):
                 print("Warning: Failed to get MT5 data for ATR calculation")
                 return None
-            
+
             # Parse CSV string to DataFrame
             if isinstance(csv_data, str):
                 # Filter out comment lines starting with #
@@ -598,20 +749,20 @@ class DailyAnalysisCycle:
                 df = pd.read_csv(io.StringIO('\n'.join(lines)))
             else:
                 df = csv_data
-            
+
             if df is None or len(df) < 14:
                 print("Warning: Insufficient data for ATR calculation")
                 return None
-            
+
             # Calculate ATR - handle column name variations
             high_col = 'high' if 'high' in df.columns else 'High'
             low_col = 'low' if 'low' in df.columns else 'Low'
             close_col = 'close' if 'close' in df.columns else 'Close'
-            
+
             high = df[high_col].values
             low = df[low_col].values
             close = df[close_col].values
-            
+
             tr = []
             for i in range(1, len(df)):
                 tr.append(max(
@@ -620,12 +771,38 @@ class DailyAnalysisCycle:
                     abs(low[i] - close[i-1])
                 ))
             atr = sum(tr[-14:]) / 14  # 14-period ATR
-            
-            # Calculate stop loss based on ATR
-            if signal.upper() == "BUY":
-                stop_loss = current_price - (atr * atr_multiplier)
-            else:
-                stop_loss = current_price + (atr * atr_multiplier)
+
+            # Try to get SMC-based stop loss first
+            stop_loss = None
+            stop_loss_method = "ATR"
+
+            if smc_analysis:
+                try:
+                    from tradingagents.dataflows.smc_utils import suggest_smc_stop_loss
+
+                    smc_sl = suggest_smc_stop_loss(
+                        smc_analysis=smc_analysis,
+                        direction=signal,
+                        entry_price=current_price,
+                        atr=atr,
+                        atr_multiplier=atr_multiplier,
+                        primary_timeframe='1H'
+                    )
+
+                    if smc_sl and smc_sl.get('price'):
+                        stop_loss = smc_sl['price']
+                        stop_loss_method = f"SMC ({smc_sl.get('source', 'Order Block')})"
+                        if smc_sl.get('confluence_score', 0) > 1.0:
+                            stop_loss_method += f" Confluence: {smc_sl['confluence_score']:.1f}"
+                except Exception as e:
+                    print(f"Warning: SMC stop loss calculation failed: {e}")
+
+            # Fallback to ATR-based stop loss
+            if stop_loss is None:
+                if signal.upper() == "BUY":
+                    stop_loss = current_price - (atr * atr_multiplier)
+                else:
+                    stop_loss = current_price + (atr * atr_multiplier)
             
             # Load trade history for Kelly calculation
             trade_history = self._load_trade_history()
@@ -681,6 +858,7 @@ class DailyAnalysisCycle:
                 "risk_percent": result.risk_percent,
                 "entry_price": current_price,
                 "stop_loss": stop_loss,
+                "stop_loss_method": stop_loss_method,
                 "take_profit_2r": tp_2r,
                 "take_profit_3r": tp_3r,
                 "atr": atr,

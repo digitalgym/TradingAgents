@@ -315,47 +315,13 @@ def display_smc_levels(symbol: str, signal: str, smc_analysis: dict, trade_date:
     print(f"Signal: {signal}")
     print(f"Available timeframes: {list(smc_analysis.keys())}")
 
-    # Get entry strategy suggestion
+    # Get entry strategy suggestion (for SL/TP calculations, not display here)
     entry_strategy = suggest_smc_entry_strategy(
         smc_analysis=smc_analysis,
         direction=signal,
         current_price=current_price,
         primary_timeframe='1H'
     )
-
-    print(f"\n{'='*60}")
-    print("ENTRY STRATEGY")
-    print(f"{'='*60}")
-
-    # Display Market Entry option
-    print(f"\n[OPTION 1: MARKET ORDER]")
-    print(f"  Entry Price: ${entry_strategy['market_entry']['price']:.2f}")
-    print(f"  Type: {entry_strategy['market_entry']['type']}")
-    print(f"  Pros: Immediate execution, no risk of missing the trade")
-    print(f"  Cons: Entering away from optimal SMC zone, higher risk")
-
-    # Display Limit Entry option
-    print(f"\n[OPTION 2: LIMIT ORDER AT ORDER BLOCK]")
-    if entry_strategy['limit_entry'] and 'price' in entry_strategy['limit_entry']:
-        limit_entry = entry_strategy['limit_entry']
-        print(f"  Entry Price: ${limit_entry['price']:.2f}")
-        print(f"  Entry Zone: ${limit_entry['zone_bottom']:.2f} - ${limit_entry['zone_top']:.2f}")
-        print(f"  Type: {limit_entry['type']}")
-        print(f"  Confluence: {limit_entry['confluence_score']:.1f} ({', '.join(limit_entry['aligned_timeframes'])})")
-        print(f"  Pros: Better risk/reward, entering at institutional zone")
-        print(f"  Cons: Price may not return to zone, could miss the trade")
-        print(f"  Reason: {limit_entry['reason']}")
-    else:
-        print(f"  {entry_strategy['limit_entry']['reason']}")
-
-    # Display Recommendation
-    print(f"\n[RECOMMENDATION: {entry_strategy['recommendation']}]")
-    if 'recommendation_reason' in entry_strategy:
-        print(f"  {entry_strategy['recommendation_reason']}")
-        if entry_strategy['distance_to_zone_pct'] is not None:
-            print(f"  Distance to optimal zone: {entry_strategy['distance_to_zone_pct']:.2f}%")
-
-    print(f"\n{'='*60}")
 
     # Get ATR for stop loss fallback
     atr_data = route_to_vendor("get_indicators", symbol, "atr", trade_date, 14)
