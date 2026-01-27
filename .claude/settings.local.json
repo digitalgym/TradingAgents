@@ -8,7 +8,26 @@
       "Bash(python:*)",
       "Bash(ls:*)",
       "Bash(if not exist tests mkdir tests)",
-      "Bash(move test*.py tests)"
+      "Bash(move test*.py tests)",
+      "Bash(npm install:*)",
+      "Bash(curl:*)",
+      "Bash(timeout:*)",
+      "Bash(ping:*)",
+      "Bash(echo:*)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(tasklist:*)",
+      "Bash(Get-ChildItem -Recurse -Directory -Filter __pycache__)",
+      "Bash(dir:*)",
+      "Bash(dir /s /b \"d:\\\\Documents\\\\TradingAgents\\\\*.md\")",
+      "Bash(head:*)",
+      "Bash(d:/Documents/TradingAgents/.venv/Scripts/pip.exe install:*)",
+      "Bash(d:/Documents/TradingAgents/.venv/Scripts/python.exe:*)",
+      "Bash(d:/Documents/TradingAgents/.venv/Scripts/pip.exe list:*)",
+      "Bash(git config:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
