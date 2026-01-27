@@ -1,0 +1,70 @@
+symbols:
+- symbol: XAUUSD
+  max_positions: 1
+  risk_budget_pct: 2.0
+  correlation_group: metals
+  timeframes:
+  - 1H
+  - 4H
+  - D1
+  enabled: true
+  min_confidence: 0.6
+- symbol: XAGUSD
+  max_positions: 1
+  risk_budget_pct: 1.5
+  correlation_group: metals
+  timeframes:
+  - 1H
+  - 4H
+  - D1
+  enabled: true
+  min_confidence: 0.6
+- symbol: COPPER-C
+  max_positions: 1
+  risk_budget_pct: 1.5
+  correlation_group: industrial_metals
+  timeframes:
+  - 1H
+  - 4H
+  - D1
+  enabled: true
+  min_confidence: 0.6
+- symbol: EURUSD
+  max_positions: 1
+  risk_budget_pct: 1.5
+  correlation_group: forex
+  timeframes:
+  - 1H
+  - 4H
+  - D1
+  enabled: true
+  min_confidence: 0.6
+max_total_positions: 4
+max_daily_trades: 3
+max_correlation_group_positions: 2
+total_risk_budget_pct: 6.0
+daily_loss_limit_pct: 3.0
+max_consecutive_losses: 2
+cooldown_hours: 24
+execution_mode: full_auto
+default_lot_size: 0.01
+use_atr_stops: true
+atr_stop_multiplier: 2.0
+atr_trailing_multiplier: 1.5
+risk_reward_ratio: 2.0
+schedule:
+  morning_analysis_hour: 8
+  morning_analysis_minute: 0
+  midday_review_hour: 13
+  midday_review_minute: 0
+  evening_reflect_hour: 20
+  evening_reflect_minute: 0
+  timezone: UTC
+llm_provider: xai
+deep_think_llm: grok-4-1-fast-reasoning
+quick_think_llm: grok-4-1-fast-non-reasoning
+max_debate_rounds: 1
+asset_type: commodity
+state_file: portfolio_state.json
+decisions_dir: examples/trade_decisions
+logs_dir: logs/portfolio

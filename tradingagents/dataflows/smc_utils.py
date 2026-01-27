@@ -1419,6 +1419,299 @@ def _generate_long_reentry_setup(
     }
 
 
+def get_smc_position_review_context(
+    symbol: str,
+    direction: str,
+    entry_price: float,
+    current_price: float,
+    sl: float = 0,
+    tp: float = 0,
+    timeframe: str = 'H1',
+    lookback: int = 100
+) -> Dict[str, Any]:
+    """
+    Generate SMC context for reviewing an open position.
+
+    Reusable function for both web API and automation.
+    Analyzes current market structure relative to the position.
+
+    Args:
+        symbol: Trading symbol
+        direction: 'BUY' or 'SELL'
+        entry_price: Position entry price
+        current_price: Current market price
+        sl: Current stop loss (0 if none)
+        tp: Current take profit (0 if none)
+        timeframe: Primary timeframe for analysis (default: 'H1')
+        lookback: Bars to analyze (default: 100)
+
+    Returns:
+        dict with:
+        - smc_context: Formatted string for LLM prompt
+        - bias: Current market bias
+        - bias_aligns: Whether bias aligns with position direction
+        - support_levels: List of support zones
+        - resistance_levels: List of resistance zones
+        - sl_at_risk: Whether SL is near liquidity/weak zone
+        - suggested_sl: SMC-based SL suggestion
+        - suggested_tp: SMC-based TP suggestion
+        - structure_shift: Whether there's been a CHOCH against position
+        - raw_analysis: Full SMC analysis data
+    """
+    try:
+        # Get OHLCV data
+        if not mt5.initialize():
+            return {'error': 'MT5 not initialized', 'smc_context': ''}
+
+        # Map timeframe string to MT5 constant
+        tf_map = {
+            'M15': mt5.TIMEFRAME_M15,
+            'M30': mt5.TIMEFRAME_M30,
+            'H1': mt5.TIMEFRAME_H1,
+            '1H': mt5.TIMEFRAME_H1,
+            'H4': mt5.TIMEFRAME_H4,
+            '4H': mt5.TIMEFRAME_H4,
+            'D1': mt5.TIMEFRAME_D1,
+        }
+        mt5_tf = tf_map.get(timeframe.upper(), mt5.TIMEFRAME_H1)
+
+        rates = mt5.copy_rates_from_pos(symbol, mt5_tf, 0, lookback)
+        if rates is None or len(rates) < 50:
+            return {'error': 'Insufficient price data', 'smc_context': ''}
+
+        df = pd.DataFrame(rates)
+        df['time'] = pd.to_datetime(df['time'], unit='s')
+
+        # Run SMC analysis
+        analyzer = SmartMoneyAnalyzer(fvg_min_size_atr=0.1)
+        order_blocks = analyzer.detect_order_blocks(df, lookback=lookback)
+        fvgs = analyzer.detect_fair_value_gaps(df, lookback=lookback)
+        swing_points = analyzer.detect_swing_points(df, lookback=lookback)
+        structure_breaks = analyzer.detect_structure_breaks(df, swing_points)
+        zones = analyzer.get_unmitigated_zones(order_blocks, fvgs, current_price)
+
+        # Determine market bias
+        bias = analyzer._determine_bias(
+            structure_breaks.get('recent_bos', []),
+            structure_breaks.get('recent_choc', []),
+            zones,
+            current_price
+        )
+
+        # Check if bias aligns with position
+        if direction.upper() == 'BUY':
+            bias_aligns = bias == 'bullish'
+        else:
+            bias_aligns = bias == 'bearish'
+
+        # Check for structure shift against position (CHOCH)
+        recent_choc = structure_breaks.get('choc', [])[-3:]
+        structure_shift = False
+        for choc in recent_choc:
+            # CHOCH against a BUY = bearish CHOCH, against SELL = bullish CHOCH
+            if direction.upper() == 'BUY' and hasattr(choc, 'type') and choc.type == 'bearish':
+                structure_shift = True
+            elif direction.upper() == 'SELL' and hasattr(choc, 'type') and choc.type == 'bullish':
+                structure_shift = True
+
+        # Format support/resistance levels
+        support_levels = []
+        resistance_levels = []
+
+        for z in zones.get('support', [])[:3]:
+            mid = (z.get('top', 0) + z.get('bottom', 0)) / 2
+            support_levels.append({
+                'type': z.get('type', 'zone'),
+                'price': mid,
+                'top': z.get('top'),
+                'bottom': z.get('bottom'),
+                'strength': z.get('strength', 0.5)
+            })
+
+        for z in zones.get('resistance', [])[:3]:
+            mid = (z.get('top', 0) + z.get('bottom', 0)) / 2
+            resistance_levels.append({
+                'type': z.get('type', 'zone'),
+                'price': mid,
+                'top': z.get('top'),
+                'bottom': z.get('bottom'),
+                'strength': z.get('strength', 0.5)
+            })
+
+        # Check if SL is at risk (near liquidity pool or weak)
+        sl_at_risk = False
+        sl_risk_reason = None
+        if sl > 0:
+            # Check if SL is above support (for BUY) or below resistance (for SELL)
+            if direction.upper() == 'BUY' and support_levels:
+                nearest_support = support_levels[0]
+                if sl > nearest_support['bottom']:
+                    sl_at_risk = True
+                    sl_risk_reason = f"SL ({sl:.5f}) is above support zone ({nearest_support['bottom']:.5f}) - may get stopped out before bounce"
+            elif direction.upper() == 'SELL' and resistance_levels:
+                nearest_resistance = resistance_levels[0]
+                if sl < nearest_resistance['top']:
+                    sl_at_risk = True
+                    sl_risk_reason = f"SL ({sl:.5f}) is below resistance zone ({nearest_resistance['top']:.5f}) - may get stopped out before rejection"
+
+        # Calculate ATR for fallback trailing SL
+        atr = None
+        try:
+            high = df['high'].values
+            low = df['low'].values
+            close = df['close'].values
+            tr_list = []
+            for i in range(1, len(df)):
+                tr_list.append(max(
+                    high[i] - low[i],
+                    abs(high[i] - close[i-1]),
+                    abs(low[i] - close[i-1])
+                ))
+            if len(tr_list) >= 14:
+                atr = sum(tr_list[-14:]) / 14
+        except Exception:
+            pass
+
+        # Generate SMC-based SL/TP suggestions
+        suggested_sl = None
+        suggested_tp = None
+        suggested_tp_source = None
+        trailing_sl = None
+        trailing_sl_source = None
+
+        if direction.upper() == 'BUY':
+            # SL below nearest support
+            if support_levels:
+                suggested_sl = support_levels[0]['bottom'] * 0.998
+            # TP at nearest resistance
+            if resistance_levels:
+                suggested_tp = resistance_levels[0]['bottom']
+                suggested_tp_source = f"{resistance_levels[0]['type']} @ {resistance_levels[0]['price']:.5f}"
+            elif atr and sl > 0:
+                # Fallback: ATR-based TP (2:1 R:R from current SL)
+                risk = entry_price - sl
+                suggested_tp = current_price + (risk * 2)
+                suggested_tp_source = "ATR 2:1 R:R"
+            elif atr:
+                # No SL set - use 2x ATR from current price
+                suggested_tp = current_price + (atr * 2)
+                suggested_tp_source = "ATR (2x)"
+
+            # Trailing SL: Find most recent bullish OB/FVG between entry and current price
+            # (levels price has already cleared that can now act as support)
+            if current_price > entry_price:  # Only trail if in profit
+                # Look for bullish zones between entry and current price
+                cleared_supports = [
+                    s for s in support_levels
+                    if s['top'] > entry_price and s['top'] < current_price
+                ]
+                if cleared_supports:
+                    # Use the highest cleared support (closest to current price)
+                    best_trail = max(cleared_supports, key=lambda s: s['top'])
+                    trailing_sl = best_trail['bottom'] * 0.998
+                    trailing_sl_source = f"{best_trail['type']} @ {best_trail['price']:.5f}"
+                elif atr:
+                    # Fallback: ATR-based trailing (1.5 ATR from current price)
+                    trailing_sl = current_price - (atr * 1.5)
+                    trailing_sl_source = "ATR (1.5x)"
+        else:  # SELL
+            # SL above nearest resistance
+            if resistance_levels:
+                suggested_sl = resistance_levels[0]['top'] * 1.002
+            # TP at nearest support
+            if support_levels:
+                suggested_tp = support_levels[0]['top']
+                suggested_tp_source = f"{support_levels[0]['type']} @ {support_levels[0]['price']:.5f}"
+            elif atr and sl > 0:
+                # Fallback: ATR-based TP (2:1 R:R from current SL)
+                risk = sl - entry_price
+                suggested_tp = current_price - (risk * 2)
+                suggested_tp_source = "ATR 2:1 R:R"
+            elif atr:
+                # No SL set - use 2x ATR from current price
+                suggested_tp = current_price - (atr * 2)
+                suggested_tp_source = "ATR (2x)"
+
+            # Trailing SL: Find most recent bearish OB/FVG between entry and current price
+            if current_price < entry_price:  # Only trail if in profit
+                # Look for bearish zones between current price and entry
+                cleared_resistances = [
+                    r for r in resistance_levels
+                    if r['bottom'] < entry_price and r['bottom'] > current_price
+                ]
+                if cleared_resistances:
+                    # Use the lowest cleared resistance (closest to current price)
+                    best_trail = min(cleared_resistances, key=lambda r: r['bottom'])
+                    trailing_sl = best_trail['top'] * 1.002
+                    trailing_sl_source = f"{best_trail['type']} @ {best_trail['price']:.5f}"
+                elif atr:
+                    # Fallback: ATR-based trailing (1.5 ATR from current price)
+                    trailing_sl = current_price + (atr * 1.5)
+                    trailing_sl_source = "ATR (1.5x)"
+
+        # Build context string for LLM
+        unmitigated_obs = [ob for ob in order_blocks if not ob.mitigated]
+        unmitigated_fvgs = [fvg for fvg in fvgs if not fvg.mitigated]
+
+        support_str = '\n'.join([
+            f"  - {s['type']} @ {s['price']:.5f} (strength: {s['strength']:.0%})"
+            for s in support_levels
+        ]) if support_levels else '  None identified'
+
+        resistance_str = '\n'.join([
+            f"  - {r['type']} @ {r['price']:.5f} (strength: {r['strength']:.0%})"
+            for r in resistance_levels
+        ]) if resistance_levels else '  None identified'
+
+        smc_context = f"""
+CURRENT MARKET STRUCTURE (SMC {timeframe}):
+Market Bias: {bias.upper()}
+Bias Alignment: {'✓ ALIGNED with position' if bias_aligns else '⚠️ AGAINST position direction'}
+Structure Shift: {'⚠️ CHOCH detected AGAINST position' if structure_shift else 'No recent shift against position'}
+
+Unmitigated Order Blocks: {len(unmitigated_obs)} ({len([ob for ob in unmitigated_obs if ob.type == 'bullish'])} bullish, {len([ob for ob in unmitigated_obs if ob.type == 'bearish'])} bearish)
+Unmitigated FVGs: {len(unmitigated_fvgs)} ({len([fvg for fvg in unmitigated_fvgs if fvg.type == 'bullish'])} bullish, {len([fvg for fvg in unmitigated_fvgs if fvg.type == 'bearish'])} bearish)
+
+KEY SUPPORT LEVELS (below price):
+{support_str}
+
+KEY RESISTANCE LEVELS (above price):
+{resistance_str}
+
+SL ASSESSMENT: {'⚠️ ' + sl_risk_reason if sl_at_risk else '✓ SL placement appears safe'}
+"""
+
+        return {
+            'smc_context': smc_context,
+            'bias': bias,
+            'bias_aligns': bias_aligns,
+            'structure_shift': structure_shift,
+            'support_levels': support_levels,
+            'resistance_levels': resistance_levels,
+            'sl_at_risk': sl_at_risk,
+            'sl_risk_reason': sl_risk_reason,
+            'suggested_sl': suggested_sl,
+            'suggested_tp': suggested_tp,
+            'suggested_tp_source': suggested_tp_source,
+            'trailing_sl': trailing_sl,
+            'trailing_sl_source': trailing_sl_source,
+            'unmitigated_obs': len(unmitigated_obs),
+            'unmitigated_fvgs': len(unmitigated_fvgs),
+            'raw_analysis': {
+                'order_blocks': order_blocks,
+                'fvgs': fvgs,
+                'zones': zones,
+                'structure_breaks': structure_breaks
+            }
+        }
+
+    except Exception as e:
+        return {
+            'error': str(e),
+            'smc_context': f'(SMC analysis unavailable: {str(e)[:50]})'
+        }
+
+
 def _generate_short_reentry_setup(
     resistance_ob: Any,
     resistance_assessment: Dict[str, Any],

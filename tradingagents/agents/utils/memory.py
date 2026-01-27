@@ -33,25 +33,33 @@ class FinancialSituationMemory:
         self.name = name
         
         # Determine embedding provider
-        # "auto" = use local for xAI/grok, OpenAI for others
-        # "local" = always use sentence-transformers
+        # "auto" = use fastembed for xAI/grok (lightweight, no PyTorch), OpenAI for others
+        # "local" = sentence-transformers (requires PyTorch)
+        # "fastembed" = fastembed library (lightweight, no PyTorch needed)
         # "openai" = always use OpenAI API
         # "ollama" = use Ollama local embeddings
-        
-        if embedding_provider == "local" or (embedding_provider == "auto" and self.llm_provider in ["xai", "grok"]):
-            # Use local sentence-transformers (no API needed)
+
+        self._embedding_provider = embedding_provider
+        self._use_local = False
+        self._use_fastembed = False
+        self._local_model = None
+        self._fastembed_model = None
+        self.client = None
+
+        if embedding_provider == "fastembed" or (embedding_provider == "auto" and self.llm_provider in ["xai", "grok"]):
+            # Use fastembed (lightweight, no PyTorch needed)
+            self._use_fastembed = True
+            self._fastembed_model_name = config.get("fastembed_model", "BAAI/bge-small-en-v1.5")
+        elif embedding_provider == "local":
+            # Use local sentence-transformers (requires PyTorch)
             self._use_local = True
-            self._local_model = None  # Lazy load
             self._local_model_name = config.get("local_embedding_model", "all-MiniLM-L6-v2")
-            self.client = None
         elif embedding_provider == "ollama" or backend_url == "http://localhost:11434/v1":
             # Ollama local
-            self._use_local = False
             self.embedding = "nomic-embed-text"
             self.client = OpenAI(base_url="http://localhost:11434/v1")
         else:
             # Default to OpenAI for embeddings
-            self._use_local = False
             self.embedding = "text-embedding-3-small"
             self.client = OpenAI(
                 base_url="https://api.openai.com/v1",
@@ -76,9 +84,21 @@ class FinancialSituationMemory:
             self._local_model = SentenceTransformer(self._local_model_name)
         return self._local_model
 
+    def _get_fastembed_model(self):
+        """Lazy load the fastembed model (lightweight, no PyTorch needed)."""
+        if self._fastembed_model is None:
+            from fastembed import TextEmbedding
+            self._fastembed_model = TextEmbedding(model_name=self._fastembed_model_name)
+        return self._fastembed_model
+
     def get_embedding(self, text):
         """Get embedding for a text"""
-        if self._use_local:
+        if self._use_fastembed:
+            model = self._get_fastembed_model()
+            # fastembed returns a generator, get first result
+            embeddings = list(model.embed([text]))
+            return embeddings[0].tolist()
+        elif self._use_local:
             model = self._get_local_model()
             embedding = model.encode(text, convert_to_numpy=True)
             return embedding.tolist()

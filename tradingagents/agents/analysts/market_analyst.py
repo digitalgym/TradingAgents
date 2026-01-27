@@ -12,6 +12,9 @@ def create_market_analyst(llm):
         ticker = state["company_of_interest"]
         company_name = state["company_of_interest"]
 
+        # Get current broker price - CRITICAL for accurate price references
+        current_price = state.get("current_price")
+
         # Get SMC context if available
         smc_context = state.get("smc_context") or ""
 
@@ -34,7 +37,17 @@ IMPORTANT: Incorporate the Smart Money Concepts (SMC) analysis above into your t
 - Align your support/resistance analysis with the institutional zones identified above
 """
 
+        # Build broker price context - CRITICAL: News may report different prices than your broker
+        price_context = ""
+        if current_price:
+            price_context = f"""
+CRITICAL BROKER PRICE INFORMATION:
+Your broker quotes {ticker} at {current_price:.5f}. This is the ACTUAL trading price you must use.
+Note: News sources may report different prices (e.g., spot prices vs. CFD prices). Always use your broker's price ({current_price:.5f}) for entry, stop loss, and take profit calculations.
+"""
+
         system_message = (
+            price_context +
             """You are a trading assistant tasked with analyzing financial markets. Your role is to select the **most relevant indicators** for a given market condition or trading strategy from the following list. The goal is to choose up to **8 indicators** that provide complementary insights without redundancy. Categories and each category's indicators are:
 
 Moving Averages:

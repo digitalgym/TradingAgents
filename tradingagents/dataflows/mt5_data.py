@@ -240,18 +240,52 @@ def list_mt5_symbols(
 ) -> list:
     """List available MT5 symbols, optionally filtered."""
     _ensure_mt5_initialized()
-    
+
     symbols = mt5.symbols_get()
     if symbols is None:
         return []
-    
+
     symbol_names = [s.name for s in symbols]
-    
+
     if filter_pattern:
         pattern = filter_pattern.upper()
         symbol_names = [s for s in symbol_names if pattern in s.upper()]
-    
+
     return symbol_names
+
+
+def get_market_watch_symbols() -> list:
+    """
+    Get symbols currently visible in MT5 Market Watch.
+
+    Returns:
+        List of dicts with symbol info for each Market Watch symbol
+    """
+    _ensure_mt5_initialized()
+
+    symbols = mt5.symbols_get()
+    if symbols is None:
+        return []
+
+    market_watch = []
+    for s in symbols:
+        if s.visible:  # visible=True means it's in Market Watch
+            # Get current tick for bid/ask
+            tick = mt5.symbol_info_tick(s.name)
+            market_watch.append({
+                "symbol": s.name,
+                "description": s.description,
+                "bid": tick.bid if tick else None,
+                "ask": tick.ask if tick else None,
+                "spread": s.spread,
+                "digits": s.digits,
+                "currency_base": s.currency_base,
+                "currency_profit": s.currency_profit,
+                "trade_contract_size": s.trade_contract_size,
+                "volume_min": s.volume_min,
+            })
+
+    return market_watch
 
 
 def get_asset_type(symbol: str) -> str:

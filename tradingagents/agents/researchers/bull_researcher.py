@@ -15,15 +15,26 @@ def create_bull_researcher(llm, memory):
         news_report = state["news_report"]
         fundamentals_report = state["fundamentals_report"]
 
+        # Get current broker price for context
+        current_price = state.get("current_price")
+        ticker = state.get("company_of_interest", "")
+
         curr_situation = f"{market_research_report}\n\n{sentiment_report}\n\n{news_report}\n\n{fundamentals_report}"
-        
+
         past_memory_str = ""
         if memory is not None:
             past_memories = memory.get_memories(curr_situation, n_matches=2)
             for i, rec in enumerate(past_memories, 1):
                 past_memory_str += rec["recommendation"] + "\n\n"
 
-        prompt = f"""You are a Bull Analyst advocating for investing in the stock. Your task is to build a strong, evidence-based case emphasizing growth potential, competitive advantages, and positive market indicators. Leverage the provided research and data to address concerns and counter bearish arguments effectively.
+        # Build broker price context
+        price_context = ""
+        if current_price:
+            price_context = f"""BROKER PRICE: The trader's broker quotes {ticker} at {current_price:.5f}. Use this price (not news prices) when discussing entry levels, targets, or stop losses.
+
+"""
+
+        prompt = f"""{price_context}You are a Bull Analyst advocating for investing in the stock. Your task is to build a strong, evidence-based case emphasizing growth potential, competitive advantages, and positive market indicators. Leverage the provided research and data to address concerns and counter bearish arguments effectively.
 
 Key points to focus on:
 - Growth Potential: Highlight the company's market opportunities, revenue projections, and scalability.

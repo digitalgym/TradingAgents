@@ -70,6 +70,7 @@ from cli.smc_commands import (
     smc_levels_command,
     smc_validate_command
 )
+from cli.portfolio_commands import portfolio_app
 
 console = Console()
 
@@ -78,6 +79,9 @@ app = typer.Typer(
     help="TradingAgents CLI: Multi-Agents LLM Financial Trading Framework",
     add_completion=True,  # Enable shell completion
 )
+
+# Register portfolio sub-commands
+app.add_typer(portfolio_app, name="portfolio")
 
 
 @app.callback()
@@ -1681,9 +1685,19 @@ def analyze():
 
 
 @app.command(name="batch-review")
-def batch_review():
-    """Review all unreviewed trades grouped by symbol (avoids re-reviews)."""  
-    batch_review_command()
+def batch_review(
+    open_positions: bool = typer.Option(
+        False, "--open", "-o",
+        help="Review open positions with SL/TP updates instead of closed trades"
+    ),
+):
+    """
+    Batch review trades.
+
+    By default, reviews closed unreviewed trades for memory creation.
+    Use --open to review open positions with LLM analysis and SL/TP updates.
+    """
+    batch_review_command(review_open=open_positions)
 
 
 @app.command()
@@ -2087,21 +2101,13 @@ def auto_reflect():
 
 def analyze_trade_improvements(trade_data: dict, exit_price: float, returns: float) -> str:
     """Use LLM to analyze trade and suggest improvements."""
-    import os
-    from openai import OpenAI
-    
-    # Try xAI first, then OpenAI
-    if os.getenv("XAI_API_KEY"):
-        client = OpenAI(
-            api_key=os.getenv("XAI_API_KEY"),
-            base_url="https://api.x.ai/v1",
-        )
-        model = "grok-3-mini-fast"
-    elif os.getenv("OPENAI_API_KEY"):
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        model = "gpt-4o-mini"
-    else:
-        return "[dim]No API key available for trade analysis.[/dim]"
+    from tradingagents.dataflows.llm_client import get_llm_client, chat_completion
+
+    # Get LLM client (xAI Responses API or OpenAI Chat Completions)
+    try:
+        client, model, uses_responses = get_llm_client()
+    except ValueError as e:
+        return f"[dim]No API key available for trade analysis: {e}[/dim]"
     
     entry = trade_data['entry_price']
     sl = trade_data['stop_loss']
@@ -2157,7 +2163,8 @@ Be specific with numbers where possible (e.g., "A trailing stop of 50 pips would
 Keep response concise and actionable."""
 
     try:
-        response = client.chat.completions.create(
+        response = chat_completion(
+            client=client,
             model=model,
             messages=[
                 {"role": "system", "content": "You are an expert trading coach analyzing completed trades to help improve future performance. Be specific and actionable."},
@@ -2165,8 +2172,9 @@ Keep response concise and actionable."""
             ],
             max_tokens=800,
             temperature=0.7,
+            use_responses_api=uses_responses,
         )
-        return response.choices[0].message.content
+        return response
     except Exception as e:
         return f"[dim]Could not generate suggestions: {e}[/dim]"
 
@@ -2489,10 +2497,9 @@ def positions():
 @app.command()
 def review():
     """Re-analyze open trades and suggest strategy updates based on current market conditions."""
-    import os
     import questionary
     from datetime import datetime
-    from openai import OpenAI
+    from tradingagents.dataflows.llm_client import get_llm_client, chat_completion
     from tradingagents.dataflows.mt5_data import (
         get_open_positions,
         get_mt5_current_price,
@@ -2534,18 +2541,11 @@ def review():
                 console.print("[red]Invalid selection.[/red]")
                 return
         
-        # Setup LLM client
-        if os.getenv("XAI_API_KEY"):
-            client = OpenAI(
-                api_key=os.getenv("XAI_API_KEY"),
-                base_url="https://api.x.ai/v1",
-            )
-            model = "grok-3-mini-fast"
-        elif os.getenv("OPENAI_API_KEY"):
-            client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-            model = "gpt-4o-mini"
-        else:
-            console.print("[red]No API key available (XAI_API_KEY or OPENAI_API_KEY required).[/red]")
+        # Setup LLM client (uses xAI Responses API or OpenAI Chat Completions)
+        try:
+            client, model, uses_responses = get_llm_client()
+        except ValueError as e:
+            console.print(f"[red]No API key available: {e}[/red]")
             return
         
         for pos in positions_to_review:
@@ -2685,7 +2685,8 @@ Be specific with exact price levels. Consider:
 Keep response concise and actionable."""
 
             try:
-                response = client.chat.completions.create(
+                analysis = chat_completion(
+                    client=client,
                     model=model,
                     messages=[
                         {"role": "system", "content": "You are an expert trade manager analyzing open positions. Provide specific, actionable recommendations with exact price levels."},
@@ -2693,10 +2694,9 @@ Keep response concise and actionable."""
                     ],
                     max_tokens=800,
                     temperature=0.7,
+                    use_responses_api=uses_responses,
                 )
-                
-                analysis = response.choices[0].message.content
-                
+
                 if not analysis:
                     console.print("[yellow]No analysis returned from LLM[/yellow]")
                     continue

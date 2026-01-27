@@ -8,21 +8,22 @@ DEFAULT_CONFIG = {
         os.path.abspath(os.path.join(os.path.dirname(__file__), ".")),
         "dataflows/data_cache",
     ),
-    # LLM settings
-    "llm_provider": "openai",
-    "deep_think_llm": "o4-mini",
-    "quick_think_llm": "gpt-4o-mini",
-    "backend_url": "https://api.openai.com/v1",
+    # LLM settings - use xAI/Grok by default (OpenAI as fallback)
+    "llm_provider": "xai",
+    "deep_think_llm": "grok-4-1-fast-reasoning",
+    "quick_think_llm": "grok-4-1-fast-non-reasoning",
+    "backend_url": "https://api.x.ai/v1",
     # Debate and discussion settings
     "max_debate_rounds": 1,
     "max_risk_discuss_rounds": 1,
     "max_recur_limit": 100,
     # Memory settings
     "use_memory": True,
-    # Embedding provider: "auto", "local", "openai", "ollama"
-    # "auto" = local for xAI/grok, OpenAI for others
-    # "local" = sentence-transformers (no API needed)
-    "embedding_provider": "auto",
+    # Embedding provider: "auto", "local", "fastembed", "openai", "ollama"
+    # "auto" = fastembed for xAI/grok (lightweight), OpenAI for others
+    # "local" = sentence-transformers (requires PyTorch, but more accurate)
+    # "fastembed" = lightweight local embeddings (no PyTorch needed)
+    "embedding_provider": "local",  # Use sentence-transformers (works in .venv)
     "local_embedding_model": "all-MiniLM-L6-v2",  # Model for local embeddings
     # Data vendor configuration
     # Category-level configuration (default for all tools in category)

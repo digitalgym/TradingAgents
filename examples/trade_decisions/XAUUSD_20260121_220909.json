@@ -32,5 +32,7 @@
   "sharpe_contribution": -0.01765845894775711,
   "drawdown_impact": -8.410000000003492e-05,
   "pattern_tags": [],
-  "has_context": false
+  "has_context": false,
+  "reviewed": true,
+  "reviewed_at": "2026-01-23T06:13:40.077088"
 }

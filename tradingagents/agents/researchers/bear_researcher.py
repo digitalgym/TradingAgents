@@ -15,15 +15,26 @@ def create_bear_researcher(llm, memory):
         news_report = state["news_report"]
         fundamentals_report = state["fundamentals_report"]
 
+        # Get current broker price for context
+        current_price = state.get("current_price")
+        ticker = state.get("company_of_interest", "")
+
         curr_situation = f"{market_research_report}\n\n{sentiment_report}\n\n{news_report}\n\n{fundamentals_report}"
-        
+
         past_memory_str = ""
         if memory is not None:
             past_memories = memory.get_memories(curr_situation, n_matches=2)
             for i, rec in enumerate(past_memories, 1):
                 past_memory_str += rec["recommendation"] + "\n\n"
 
-        prompt = f"""You are a Bear Analyst making the case against investing in the stock. Your goal is to present a well-reasoned argument emphasizing risks, challenges, and negative indicators. Leverage the provided research and data to highlight potential downsides and counter bullish arguments effectively.
+        # Build broker price context
+        price_context = ""
+        if current_price:
+            price_context = f"""BROKER PRICE: The trader's broker quotes {ticker} at {current_price:.5f}. Use this price (not news prices) when discussing entry levels, targets, or stop losses.
+
+"""
+
+        prompt = f"""{price_context}You are a Bear Analyst making the case against investing in the stock. Your goal is to present a well-reasoned argument emphasizing risks, challenges, and negative indicators. Leverage the provided research and data to highlight potential downsides and counter bullish arguments effectively.
 
 Key points to focus on:
 

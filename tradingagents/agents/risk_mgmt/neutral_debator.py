@@ -15,18 +15,27 @@ def create_neutral_debator(llm):
         sentiment_report = state["sentiment_report"]
         news_report = state["news_report"]
         fundamentals_report = state["fundamentals_report"]
-        
+
+        # Get current broker price for context
+        current_price = state.get("current_price")
+        ticker = state.get("company_of_interest", "")
+
         # Get SMC context if available
         smc_context = state.get("smc_context") or ""
 
         trader_decision = state["trader_investment_plan"]
-        
+
+        # Build price context
+        price_context = ""
+        if current_price:
+            price_context = f"[BROKER PRICE: {ticker} at {current_price:.5f}. Use this for price level discussions.]\n\n"
+
         # Build base prompt
         smc_instruction = ""
         if smc_context:
             smc_instruction = f"\n\n{smc_context}\n\nIMPORTANT: Use the Smart Money Concepts analysis above to provide balanced recommendations. Suggest stop losses that protect capital while avoiding premature exits (placed beyond institutional zones). Recommend take profits at realistic resistance/support levels where institutional orders cluster."
 
-        prompt = f"""As the Neutral Risk Analyst, your role is to provide a balanced perspective, weighing both the potential benefits and risks of the trader's decision or plan. You prioritize a well-rounded approach, evaluating the upsides and downsides while factoring in broader market trends, potential economic shifts, and diversification strategies.Here is the trader's decision:
+        prompt = f"""{price_context}As the Neutral Risk Analyst, your role is to provide a balanced perspective, weighing both the potential benefits and risks of the trader's decision or plan. You prioritize a well-rounded approach, evaluating the upsides and downsides while factoring in broader market trends, potential economic shifts, and diversification strategies.Here is the trader's decision:
 
 {trader_decision}
 

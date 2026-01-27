@@ -5,11 +5,11 @@ These memories will be retrieved during analysis when similar situations arise.
 
 from tradingagents.agents.utils.memory import FinancialSituationMemory
 
-# Config for local embeddings (no API needed)
+# Config for fastembed (lightweight local embeddings, no PyTorch needed)
 config = {
     "llm_provider": "xai",
-    "embedding_provider": "local",
-    "local_embedding_model": "all-MiniLM-L6-v2",
+    "embedding_provider": "fastembed",  # Uses fastembed library (no PyTorch)
+    "fastembed_model": "BAAI/bge-small-en-v1.5",  # Good quality, small size
 }
 
 # Trading memories to add - these are personal trading discipline reminders

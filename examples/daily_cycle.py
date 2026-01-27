@@ -23,7 +23,7 @@ import pickle
 import argparse
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, List
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -644,7 +644,16 @@ class DailyAnalysisCycle:
             pos = plan['position_analysis']
             print(f"\n[POSITION ANALYSIS]")
             print(f"Current Price: ${pos['current_price']:.2f}")
-            print(f"Position: {pos['position']}")
+
+            # Determine position description
+            if pos.get('at_resistance'):
+                position_desc = f"At Resistance (${pos['nearest_resistance']['price_range'][0]:.2f} - ${pos['nearest_resistance']['price_range'][1]:.2f})"
+            elif pos.get('at_support'):
+                position_desc = f"At Support (${pos['nearest_support']['price_range'][0]:.2f} - ${pos['nearest_support']['price_range'][1]:.2f})"
+            else:
+                position_desc = "Between zones"
+
+            print(f"Position: {position_desc}")
 
             # Display recommendation
             rec = plan['recommendation']
@@ -954,7 +963,7 @@ def should_run_analysis(symbol: str, min_hours: float = MIN_HOURS_BETWEEN_RUNS) 
 def run_scheduler(symbol: str, run_at_hour: int = 9, evaluation_hours: int = 24):
     """
     Run the analysis cycle on a daily schedule.
-    
+
     Args:
         symbol: Trading symbol to analyze
         run_at_hour: Hour of day to run (0-23, default 9 = 9 AM)
@@ -966,12 +975,12 @@ def run_scheduler(symbol: str, run_at_hour: int = 9, evaluation_hours: int = 24)
     except ImportError:
         print("Error: Please install schedule: pip install schedule")
         return
-    
+
     cycle = DailyAnalysisCycle(symbol, evaluation_hours=evaluation_hours)
-    
+
     # Schedule the job
     schedule.every().day.at(f"{run_at_hour:02d}:00").do(cycle.run_cycle)
-    
+
     print(f"\n{'='*70}")
     print(f"ANALYSIS SCHEDULER STARTED")
     print(f"{'='*70}")
@@ -981,10 +990,10 @@ def run_scheduler(symbol: str, run_at_hour: int = 9, evaluation_hours: int = 24)
     print(f"Min hours between runs: {MIN_HOURS_BETWEEN_RUNS}")
     print(f"Press Ctrl+C to stop")
     print(f"{'='*70}\n")
-    
+
     # Check if we should run immediately or skip
     should_run, reason = should_run_analysis(symbol)
-    
+
     if should_run:
         print(f"Running initial cycle... ({reason})")
         cycle.run_cycle()
@@ -994,8 +1003,92 @@ def run_scheduler(symbol: str, run_at_hour: int = 9, evaluation_hours: int = 24)
         # Still evaluate pending predictions
         cycle._ensure_graph()
         cycle._evaluate_pending()
-    
+
     # Then run on schedule
+    while True:
+        schedule.run_pending()
+        time.sleep(60)  # Check every minute
+
+
+def run_multi_symbol_scheduler(symbols: List[str], run_at_hour: int = 9, evaluation_hours: int = 24, stagger_minutes: int = 5):
+    """
+    Run analysis cycles for multiple symbols on a daily schedule.
+
+    Staggers symbol analysis by a few minutes to avoid overwhelming the system.
+
+    Args:
+        symbols: List of trading symbols to analyze (e.g., ["XAUUSD", "XAGUSD", "XPTUSD", "COPPER-C"])
+        run_at_hour: Hour of day to start (0-23, default 9 = 9 AM)
+        evaluation_hours: Hours until prediction evaluation (default 24)
+        stagger_minutes: Minutes between each symbol analysis (default 5)
+    """
+    try:
+        import schedule
+        import time
+    except ImportError:
+        print("Error: Please install schedule: pip install schedule")
+        return
+
+    # Create a cycle instance for each symbol
+    cycles = {symbol: DailyAnalysisCycle(symbol, evaluation_hours=evaluation_hours) for symbol in symbols}
+
+    print(f"\n{'='*70}")
+    print(f"MULTI-SYMBOL ANALYSIS SCHEDULER STARTED")
+    print(f"{'='*70}")
+    print(f"Symbols: {', '.join(symbols)}")
+    print(f"Start time: {run_at_hour:02d}:00 daily")
+    print(f"Stagger: {stagger_minutes} minutes between symbols")
+    print(f"Evaluation window: {evaluation_hours} hours")
+    print(f"Min hours between runs: {MIN_HOURS_BETWEEN_RUNS}")
+    print(f"Press Ctrl+C to stop")
+    print(f"{'='*70}\n")
+
+    # Schedule each symbol at staggered times
+    for i, symbol in enumerate(symbols):
+        cycle = cycles[symbol]
+        offset_minutes = i * stagger_minutes
+        run_hour = run_at_hour
+        run_minute = offset_minutes
+
+        # Handle hour overflow
+        if run_minute >= 60:
+            run_hour = (run_hour + run_minute // 60) % 24
+            run_minute = run_minute % 60
+
+        schedule_time = f"{run_hour:02d}:{run_minute:02d}"
+        schedule.every().day.at(schedule_time).do(cycle.run_cycle)
+
+        print(f"[{symbol}] Scheduled at {schedule_time}")
+
+        # Check if we should run immediately
+        should_run, reason = should_run_analysis(symbol)
+
+        if should_run:
+            print(f"[{symbol}] Running initial cycle... ({reason})")
+            try:
+                cycle.run_cycle()
+                # Brief pause between symbols to avoid overwhelming the system
+                if i < len(symbols) - 1:
+                    print(f"Pausing {stagger_minutes//2} seconds before next symbol...")
+                    time.sleep(stagger_minutes * 30)  # Half the stagger time
+            except Exception as e:
+                print(f"[{symbol}] Error in initial cycle: {e}")
+                import traceback
+                traceback.print_exc()
+        else:
+            print(f"[{symbol}] Skipping initial cycle: {reason}")
+            # Still evaluate pending predictions
+            try:
+                cycle._ensure_graph()
+                cycle._evaluate_pending()
+            except Exception as e:
+                print(f"[{symbol}] Error evaluating pending: {e}")
+
+    print(f"\n{'='*70}")
+    print("All symbols initialized. Running on schedule...")
+    print(f"{'='*70}\n")
+
+    # Run on schedule
     while True:
         schedule.run_pending()
         time.sleep(60)  # Check every minute
@@ -1006,10 +1099,21 @@ def main():
         description="Daily Analysis Cycle with 24-Hour Retrospective Evaluation"
     )
     parser.add_argument(
-        "--symbol", 
-        type=str, 
+        "--symbol",
+        type=str,
         default="XAUUSD",
         help="Trading symbol to analyze (default: XAUUSD)"
+    )
+    parser.add_argument(
+        "--symbols",
+        type=str,
+        nargs="+",
+        help="Multiple symbols to analyze (e.g., --symbols XAUUSD XAGUSD XPTUSD)"
+    )
+    parser.add_argument(
+        "--commodities",
+        action="store_true",
+        help="Analyze all major commodities: Gold (XAUUSD), Silver (XAGUSD), Platinum (XPTUSD), Copper (COPPER-C)"
     )
     parser.add_argument(
         "--run-once",
@@ -1021,6 +1125,12 @@ def main():
         type=int,
         default=9,
         help="Hour of day to run analysis (0-23, default: 9)"
+    )
+    parser.add_argument(
+        "--stagger-minutes",
+        type=int,
+        default=5,
+        help="Minutes to stagger between symbols (default: 5)"
     )
     parser.add_argument(
         "--evaluate-only",
@@ -1038,37 +1148,80 @@ def main():
         default=24,
         help="Hours until prediction evaluation (default: 24, use 72 for swing trades)"
     )
-    
+
     args = parser.parse_args()
-    
+
     # Check API key
     if not os.getenv("XAI_API_KEY"):
         print("Error: XAI_API_KEY not set in environment")
         return
-    
-    if args.list_pending:
-        pending = load_pending_predictions(args.symbol)
-        if not pending:
-            print(f"No pending predictions for {args.symbol}")
-        else:
-            print(f"\nPending predictions for {args.symbol}:")
-            for p in pending:
-                pred = p["prediction"]
-                print(f"  - {pred['signal']} @ ${pred['price_at_analysis']:.2f}")
-                print(f"    Due: {pred['evaluation_due']}")
-        return
-    
-    if args.evaluate_only:
-        cycle = DailyAnalysisCycle(args.symbol)
-        cycle._ensure_graph()
-        cycle._evaluate_pending()
-        return
-    
-    if args.run_once:
-        cycle = DailyAnalysisCycle(args.symbol, evaluation_hours=args.evaluation_hours)
-        cycle.run_cycle()
+
+    # Determine which symbols to analyze
+    symbols = []
+    if args.commodities:
+        symbols = ["XAUUSD", "XAGUSD", "XPTUSD", "COPPER-C"]
+        print(f"Analyzing all major commodities: {', '.join(symbols)}")
+    elif args.symbols:
+        symbols = args.symbols
+        print(f"Analyzing multiple symbols: {', '.join(symbols)}")
     else:
-        run_scheduler(args.symbol, args.run_at, args.evaluation_hours)
+        symbols = [args.symbol]
+
+    # Handle list-pending and evaluate-only for all symbols
+    if args.list_pending:
+        for symbol in symbols:
+            pending = load_pending_predictions(symbol)
+            if not pending:
+                print(f"No pending predictions for {symbol}")
+            else:
+                print(f"\nPending predictions for {symbol}:")
+                for p in pending:
+                    pred = p["prediction"]
+                    print(f"  - {pred['signal']} @ ${pred['price_at_analysis']:.2f}")
+                    print(f"    Due: {pred['evaluation_due']}")
+        return
+
+    if args.evaluate_only:
+        for symbol in symbols:
+            print(f"\n{'='*70}")
+            print(f"Evaluating pending predictions for {symbol}")
+            print(f"{'='*70}")
+            cycle = DailyAnalysisCycle(symbol)
+            cycle._ensure_graph()
+            cycle._evaluate_pending()
+        return
+
+    # Run analysis
+    if len(symbols) == 1:
+        # Single symbol mode
+        if args.run_once:
+            cycle = DailyAnalysisCycle(symbols[0], evaluation_hours=args.evaluation_hours)
+            cycle.run_cycle()
+        else:
+            run_scheduler(symbols[0], args.run_at, args.evaluation_hours)
+    else:
+        # Multi-symbol mode
+        if args.run_once:
+            # Run all symbols once, staggered
+            for i, symbol in enumerate(symbols):
+                print(f"\n{'='*70}")
+                print(f"Running cycle {i+1}/{len(symbols)}: {symbol}")
+                print(f"{'='*70}")
+                try:
+                    cycle = DailyAnalysisCycle(symbol, evaluation_hours=args.evaluation_hours)
+                    cycle.run_cycle()
+                    # Brief pause between symbols
+                    if i < len(symbols) - 1:
+                        import time
+                        print(f"\nPausing {args.stagger_minutes//2} seconds before next symbol...")
+                        time.sleep(args.stagger_minutes * 30)
+                except Exception as e:
+                    print(f"Error analyzing {symbol}: {e}")
+                    import traceback
+                    traceback.print_exc()
+        else:
+            # Multi-symbol scheduled mode
+            run_multi_symbol_scheduler(symbols, args.run_at, args.evaluation_hours, args.stagger_minutes)
 
 
 if __name__ == "__main__":

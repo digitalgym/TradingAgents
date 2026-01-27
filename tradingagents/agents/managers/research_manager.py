@@ -10,17 +10,31 @@ def create_research_manager(llm, memory):
         news_report = state["news_report"]
         fundamentals_report = state["fundamentals_report"]
 
+        # Get current broker price - CRITICAL for accurate price references
+        current_price = state.get("current_price")
+        ticker = state.get("company_of_interest", "")
+
         investment_debate_state = state["investment_debate_state"]
 
         curr_situation = f"{market_research_report}\n\n{sentiment_report}\n\n{news_report}\n\n{fundamentals_report}"
-        
+
         past_memory_str = ""
         if memory is not None:
             past_memories = memory.get_memories(curr_situation, n_matches=2)
             for i, rec in enumerate(past_memories, 1):
                 past_memory_str += rec["recommendation"] + "\n\n"
 
-        prompt = f"""As the portfolio manager and debate facilitator, your role is to critically evaluate this round of debate and make a definitive decision: align with the bear analyst, the bull analyst, or choose Hold only if it is strongly justified based on the arguments presented.
+        # Build broker price context
+        price_context = ""
+        if current_price:
+            price_context = f"""
+CRITICAL - BROKER PRICE CONTEXT:
+The trader's broker quotes {ticker} at {current_price:.5f}. This is the ACTUAL trading price.
+News sources may report different prices (e.g., spot prices vs CFD prices). When discussing price levels, targets, or stop losses, use the broker price ({current_price:.5f}) as the reference point, not news-reported prices.
+
+"""
+
+        prompt = f"""{price_context}As the portfolio manager and debate facilitator, your role is to critically evaluate this round of debate and make a definitive decision: align with the bear analyst, the bull analyst, or choose Hold only if it is strongly justified based on the arguments presented.
 
 Summarize the key points from both sides concisely, focusing on the most compelling evidence or reasoning. Your recommendation—Buy, Sell, or Hold—must be clear and actionable. Avoid defaulting to Hold simply because both sides have valid points; commit to a stance grounded in the debate's strongest arguments.
 

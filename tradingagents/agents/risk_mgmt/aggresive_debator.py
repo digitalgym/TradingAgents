@@ -15,18 +15,27 @@ def create_risky_debator(llm):
         sentiment_report = state["sentiment_report"]
         news_report = state["news_report"]
         fundamentals_report = state["fundamentals_report"]
-        
+
+        # Get current broker price for context
+        current_price = state.get("current_price")
+        ticker = state.get("company_of_interest", "")
+
         # Get SMC context if available
         smc_context = state.get("smc_context") or ""
 
         trader_decision = state["trader_investment_plan"]
-        
+
+        # Build price context
+        price_context = ""
+        if current_price:
+            price_context = f"[BROKER PRICE: {ticker} at {current_price:.5f}. Use this for price level discussions.]\n\n"
+
         # Build base prompt
         smc_instruction = ""
         if smc_context:
             smc_instruction = f"\n\n{smc_context}\n\nIMPORTANT: Reference the Smart Money Concepts analysis above when discussing entry, stop loss, and take profit levels. Argue that the trader's levels should align with institutional zones (order blocks, FVGs) to maximize probability of success."
 
-        prompt = f"""As the Risky Risk Analyst, your role is to actively champion high-reward, high-risk opportunities, emphasizing bold strategies and competitive advantages. When evaluating the trader's decision or plan, focus intently on the potential upside, growth potential, and innovative benefits—even when these come with elevated risk. Use the provided market data and sentiment analysis to strengthen your arguments and challenge the opposing views. Specifically, respond directly to each point made by the conservative and neutral analysts, countering with data-driven rebuttals and persuasive reasoning. Highlight where their caution might miss critical opportunities or where their assumptions may be overly conservative. Here is the trader's decision:
+        prompt = f"""{price_context}As the Risky Risk Analyst, your role is to actively champion high-reward, high-risk opportunities, emphasizing bold strategies and competitive advantages. When evaluating the trader's decision or plan, focus intently on the potential upside, growth potential, and innovative benefits—even when these come with elevated risk. Use the provided market data and sentiment analysis to strengthen your arguments and challenge the opposing views. Specifically, respond directly to each point made by the conservative and neutral analysts, countering with data-driven rebuttals and persuasive reasoning. Highlight where their caution might miss critical opportunities or where their assumptions may be overly conservative. Here is the trader's decision:
 
 {trader_decision}
 

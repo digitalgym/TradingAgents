@@ -50,6 +50,7 @@ class RiskDebateState(TypedDict):
 class AgentState(MessagesState):
     company_of_interest: Annotated[str, "Company that we are interested in trading"]
     trade_date: Annotated[str, "What date we are trading at"]
+    current_price: Annotated[Optional[float], "Current broker price for the symbol"]
 
     sender: Annotated[str, "Agent that sent this message"]
 
@@ -74,7 +75,10 @@ class AgentState(MessagesState):
         RiskDebateState, "Current state of the debate on evaluating risk"
     ]
     final_trade_decision: Annotated[str, "Final decision made by the Risk Analysts"]
-    
+    final_trade_decision_structured: Annotated[
+        Optional[dict], "Structured trading decision with guaranteed schema (if available)"
+    ]
+
     # smart money concepts analysis (optional - only for commodity/MT5)
     smc_context: Annotated[Optional[str], "Formatted SMC analysis for prompts"]
     smc_analysis: Annotated[Optional[dict], "Raw SMC analysis data"]

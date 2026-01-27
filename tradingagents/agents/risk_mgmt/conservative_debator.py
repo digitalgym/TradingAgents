@@ -16,18 +16,27 @@ def create_safe_debator(llm):
         sentiment_report = state["sentiment_report"]
         news_report = state["news_report"]
         fundamentals_report = state["fundamentals_report"]
-        
+
+        # Get current broker price for context
+        current_price = state.get("current_price")
+        ticker = state.get("company_of_interest", "")
+
         # Get SMC context if available
         smc_context = state.get("smc_context") or ""
 
         trader_decision = state["trader_investment_plan"]
-        
+
+        # Build price context
+        price_context = ""
+        if current_price:
+            price_context = f"[BROKER PRICE: {ticker} at {current_price:.5f}. Use this for price level discussions.]\n\n"
+
         # Build base prompt
         smc_instruction = ""
         if smc_context:
             smc_instruction = f"\n\n{smc_context}\n\nIMPORTANT: Reference the Smart Money Concepts analysis above when assessing risk. Ensure stop losses are placed BEYOND institutional zones (not in the middle of order blocks or FVGs) to avoid premature stop-outs. Critique any levels that don't align with smart money zones."
 
-        prompt = f"""As the Safe/Conservative Risk Analyst, your primary objective is to protect assets, minimize volatility, and ensure steady, reliable growth. You prioritize stability, security, and risk mitigation, carefully assessing potential losses, economic downturns, and market volatility. When evaluating the trader's decision or plan, critically examine high-risk elements, pointing out where the decision may expose the firm to undue risk and where more cautious alternatives could secure long-term gains. Here is the trader's decision:
+        prompt = f"""{price_context}As the Safe/Conservative Risk Analyst, your primary objective is to protect assets, minimize volatility, and ensure steady, reliable growth. You prioritize stability, security, and risk mitigation, carefully assessing potential losses, economic downturns, and market volatility. When evaluating the trader's decision or plan, critically examine high-risk elements, pointing out where the decision may expose the firm to undue risk and where more cautious alternatives could secure long-term gains. Here is the trader's decision:
 
 {trader_decision}
 

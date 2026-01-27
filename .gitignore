@@ -16,3 +16,9 @@ memory_db/
 *.bin
 chroma/
 .chroma/
+
+# Web folder
+web/frontend/node_modules/
+web/frontend/.next/
+web/frontend/out/
+web/backend/__pycache__/
