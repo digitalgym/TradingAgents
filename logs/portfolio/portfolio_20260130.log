@@ -1,0 +1,71 @@
+2026-01-30 09:36:37,830 - INFO - ==================================================
+2026-01-30 09:36:37,830 - INFO - STARTING EVENING REFLECTION CYCLE
+2026-01-30 09:36:37,830 - INFO - ==================================================
+2026-01-30 09:36:37,830 - INFO - Active decisions: 7
+2026-01-30 09:36:37,844 - INFO - Processing closed trade: XAUUSD_20260129_235513 (exit: 5402.39, profit: $-218.58)
+2026-01-30 09:36:37,970 - INFO - Processing closed trade: XAUUSD_20260129_235323 (exit: 5402.63, profit: $-167.21)
+2026-01-30 09:36:38,081 - INFO - Processing closed trade: XAGUSD_20260129_233952 (exit: 108.777, profit: $-749.62)
+2026-01-30 09:36:38,231 - INFO - Processing closed trade: XAGUSD_20260129_152332 (exit: 118.198, profit: $-32.32)
+2026-01-30 09:36:38,348 - INFO - Processing closed trade: XAUUSD_20260129_152241 (exit: 5505.25, profit: $-0.61)
+2026-01-30 09:36:38,481 - INFO - Processing closed trade: XAUUSD_20260128_222232 (exit: 5152.89, profit: $-273.47)
+2026-01-30 09:36:38,596 - INFO - ==================================================
+REFLECTION REPORT
+==================================================
+Time: 2026-01-30 09:36:37
+
+Trades Processed: 6
+Winning Trades: 0
+Losing Trades: 6
+Total P&L: $-1,441.81
+
+Reflections Created: 0
+Memories Stored: 0
+
+Closed Trades:
+  XAUUSD BUY: $-218.58 (-0.96%) - unknown
+  XAUUSD BUY: $-167.21 (0.00%) - unknown
+  XAGUSD BUY: $-749.62 (0.00%) - unknown
+  XAGUSD MODIFY_SLTP: $-32.32 (0.00%) - unknown
+  XAUUSD MODIFY_SLTP: $-0.61 (0.00%) - unknown
+  XAUUSD BUY: $-273.47 (-0.93%) - unknown
+
+Duration: 0.8s
+==================================================
+2026-01-30 16:11:25,495 - INFO - ==================================================
+2026-01-30 16:11:25,495 - INFO - ==================================================
+2026-01-30 16:11:25,495 - INFO - STARTING EVENING REFLECTION CYCLE
+2026-01-30 16:11:25,495 - INFO - STARTING EVENING REFLECTION CYCLE
+2026-01-30 16:11:25,495 - INFO - ==================================================
+2026-01-30 16:11:25,495 - INFO - ==================================================
+2026-01-30 16:11:25,495 - INFO - Active decisions: 1
+2026-01-30 16:11:25,495 - INFO - Active decisions: 1
+2026-01-30 16:11:25,512 - INFO - ==================================================
+REFLECTION REPORT
+==================================================
+Time: 2026-01-30 16:11:25
+
+Trades Processed: 0
+Winning Trades: 0
+Losing Trades: 0
+Total P&L: $0.00
+
+Reflections Created: 0
+Memories Stored: 0
+
+Duration: 0.0s
+==================================================
+2026-01-30 16:11:25,512 - INFO - ==================================================
+REFLECTION REPORT
+==================================================
+Time: 2026-01-30 16:11:25
+
+Trades Processed: 0
+Winning Trades: 0
+Losing Trades: 0
+Total P&L: $0.00
+
+Reflections Created: 0
+Memories Stored: 0
+
+Duration: 0.0s
+==================================================

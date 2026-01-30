@@ -19,6 +19,8 @@ from .managers.risk_manager import create_risk_manager
 
 from .trader.trader import create_trader
 
+from .position_manager.position_manager import create_position_manager_agent, PositionManagerDecision
+
 __all__ = [
     "FinancialSituationMemory",
     "AgentState",
@@ -37,4 +39,6 @@ __all__ = [
     "create_safe_debator",
     "create_social_media_analyst",
     "create_trader",
+    "create_position_manager_agent",
+    "PositionManagerDecision",
 ]

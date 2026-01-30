@@ -82,3 +82,11 @@ class AgentState(MessagesState):
     # smart money concepts analysis (optional - only for commodity/MT5)
     smc_context: Annotated[Optional[str], "Formatted SMC analysis for prompts"]
     smc_analysis: Annotated[Optional[dict], "Raw SMC analysis data"]
+
+    # Trading session context (for session-aware analysis)
+    trading_session: Annotated[Optional[str], "Current trading session (asian/london/new_york/overlap)"]
+    session_info: Annotated[Optional[dict], "Session-specific metadata (volatility expectations, key levels)"]
+
+    # Memory tracking for feedback loop
+    memory_ids_used: Annotated[Optional[dict], "Dict mapping agent names to lists of memory IDs they used"]
+    force_fresh: Annotated[Optional[bool], "If True, bypass agent output cache and re-run all agents"]

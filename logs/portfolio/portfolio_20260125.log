@@ -1,0 +1,44 @@
+2026-01-25 13:49:27,360 - INFO - ==================================================
+2026-01-25 13:49:27,361 - INFO - STARTING EVENING REFLECTION CYCLE
+2026-01-25 13:49:27,361 - INFO - ==================================================
+2026-01-25 13:49:27,363 - INFO - Active decisions: 2
+2026-01-25 13:49:27,366 - INFO - Processing closed trade: XAUUSD_20260123_062556 (exit: 4948.69, profit: $151.20)
+2026-01-25 13:49:27,784 - INFO - Processing closed trade: XAGUSD_20260123_061015 (exit: 98.858, profit: $357.80)
+2026-01-25 13:49:27,832 - INFO - ==================================================
+REFLECTION REPORT
+==================================================
+Time: 2026-01-25 13:49:27
+
+Trades Processed: 2
+Winning Trades: 0
+Losing Trades: 2
+Total P&L: $509.00
+
+Reflections Created: 0
+Memories Stored: 0
+
+Closed Trades:
+  XAUUSD HOLD: +$151.20 (+0.00%) - unknown
+  XAGUSD HOLD: +$357.80 (+0.00%) - unknown
+
+Duration: 0.5s
+==================================================
+2026-01-25 13:51:23,287 - INFO - ==================================================
+2026-01-25 13:51:23,287 - INFO - STARTING EVENING REFLECTION CYCLE
+2026-01-25 13:51:23,287 - INFO - ==================================================
+2026-01-25 13:51:23,287 - INFO - Active decisions: 0
+2026-01-25 13:51:23,287 - INFO - ==================================================
+REFLECTION REPORT
+==================================================
+Time: 2026-01-25 13:51:23
+
+Trades Processed: 0
+Winning Trades: 0
+Losing Trades: 0
+Total P&L: $0.00
+
+Reflections Created: 0
+Memories Stored: 0
+
+Duration: 0.0s
+==================================================

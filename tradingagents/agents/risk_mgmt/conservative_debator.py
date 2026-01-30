@@ -31,10 +31,23 @@ def create_safe_debator(llm):
         if current_price:
             price_context = f"[BROKER PRICE: {ticker} at {current_price:.5f}. Use this for price level discussions.]\n\n"
 
-        # Build base prompt
+        # Build SMC instruction with conservative focus
         smc_instruction = ""
         if smc_context:
-            smc_instruction = f"\n\n{smc_context}\n\nIMPORTANT: Reference the Smart Money Concepts analysis above when assessing risk. Ensure stop losses are placed BEYOND institutional zones (not in the middle of order blocks or FVGs) to avoid premature stop-outs. Critique any levels that don't align with smart money zones."
+            smc_instruction = f"""
+
+{smc_context}
+
+CONSERVATIVE SMC RISK ASSESSMENT:
+Use the Smart Money Concepts data above to identify and highlight risks:
+- If price is in PREMIUM zone (above equilibrium), warn against buying - institutions are selling there
+- Point out nearby RESISTANCE zones (bearish OBs, FVGs) that could reject price
+- Highlight unswept EQH (Equal Highs) above price as potential stop-hunt targets
+- Critique stop loss placements that are INSIDE order blocks or FVGs - they will likely get hit
+- Recommend WIDER stops beyond institutional zones for safety
+- Note any bearish CHOCH or structure shifts that increase downside risk
+- If confluence score is LOW, emphasize the weak setup quality as additional risk
+- If multi-timeframe biases CONFLICT, highlight this uncertainty as a reason for caution"""
 
         prompt = f"""{price_context}As the Safe/Conservative Risk Analyst, your primary objective is to protect assets, minimize volatility, and ensure steady, reliable growth. You prioritize stability, security, and risk mitigation, carefully assessing potential losses, economic downturns, and market volatility. When evaluating the trader's decision or plan, critically examine high-risk elements, pointing out where the decision may expose the firm to undue risk and where more cautious alternatives could secure long-term gains. Here is the trader's decision:
 

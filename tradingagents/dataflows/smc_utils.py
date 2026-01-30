@@ -7,8 +7,121 @@ with trading decisions.
 
 import pandas as pd
 import MetaTrader5 as mt5
-from typing import Dict, List, Any, Optional
+from datetime import datetime, timezone
+from typing import Dict, List, Any, Optional, Tuple
 from tradingagents.indicators.smart_money import SmartMoneyAnalyzer
+
+
+def get_current_trading_session() -> Tuple[str, Dict[str, Any]]:
+    """
+    Determine the current trading session based on UTC time.
+
+    Trading sessions (approximate UTC times):
+    - Asian/Tokyo: 00:00 - 09:00 UTC
+    - London: 07:00 - 16:00 UTC
+    - New York: 12:00 - 21:00 UTC
+    - London/NY Overlap: 12:00 - 16:00 UTC (highest volatility)
+    - Asian/London Overlap: 07:00 - 09:00 UTC
+
+    Returns:
+        Tuple of (session_name, session_info_dict)
+    """
+    now = datetime.now(timezone.utc)
+    hour = now.hour
+
+    # Define session characteristics
+    session_info = {
+        "utc_hour": hour,
+        "timestamp": now.isoformat(),
+    }
+
+    # Determine primary session
+    if 0 <= hour < 7:
+        # Pure Asian session
+        session = "asian"
+        session_info.update({
+            "name": "Asian/Tokyo Session",
+            "volatility": "low_to_moderate",
+            "characteristics": "Range-bound, liquidity building. Good for identifying key levels.",
+            "smc_relevance": "Asian session often creates the highs/lows that get swept during London.",
+            "recommendation": "Identify EQH/EQL formed during this session - they are liquidity targets for London.",
+        })
+    elif 7 <= hour < 9:
+        # Asian/London overlap
+        session = "asian_london_overlap"
+        session_info.update({
+            "name": "Asian/London Overlap",
+            "volatility": "increasing",
+            "characteristics": "Volatility picking up. Asian highs/lows become targets.",
+            "smc_relevance": "London traders may sweep Asian session liquidity.",
+            "recommendation": "Watch for liquidity grabs of Asian session EQH/EQL before true moves.",
+        })
+    elif 9 <= hour < 12:
+        # Pure London session (before NY opens)
+        session = "london"
+        session_info.update({
+            "name": "London Session",
+            "volatility": "high",
+            "characteristics": "High volatility, strong moves. Major institutional activity.",
+            "smc_relevance": "Best time for SMC setups. Clear Order Blocks and FVGs form.",
+            "recommendation": "High-probability SMC entries. Watch for BOS/CHOCH confirmations.",
+        })
+    elif 12 <= hour < 16:
+        # London/NY overlap - highest volatility
+        session = "london_ny_overlap"
+        session_info.update({
+            "name": "London/New York Overlap",
+            "volatility": "highest",
+            "characteristics": "Peak volatility and volume. Largest moves occur here.",
+            "smc_relevance": "Premium SMC setups. Confluence zones have highest probability.",
+            "recommendation": "Best time for high-confluence SMC trades. Watch for reversals at premium/discount extremes.",
+        })
+    elif 16 <= hour < 21:
+        # Pure NY session (after London closes)
+        session = "new_york"
+        session_info.update({
+            "name": "New York Session",
+            "volatility": "moderate_to_high",
+            "characteristics": "Continuation or reversal of London moves. US economic data.",
+            "smc_relevance": "NY may reverse London moves or continue them. Watch for mitigation of London OBs.",
+            "recommendation": "Look for continuation patterns or reversals at SMC zones.",
+        })
+    else:
+        # Late NY / Early Asian transition
+        session = "late_ny"
+        session_info.update({
+            "name": "Late NY / Pre-Asian",
+            "volatility": "low",
+            "characteristics": "Low liquidity period. Avoid trading unless holding positions.",
+            "smc_relevance": "Poor time for new entries. Existing zones may not hold.",
+            "recommendation": "Avoid new entries. Use this time to analyze and plan for Asian session.",
+        })
+
+    return session, session_info
+
+
+def format_session_context(session: str, session_info: Dict[str, Any]) -> str:
+    """
+    Format session information for inclusion in agent prompts.
+
+    Args:
+        session: Session identifier
+        session_info: Session metadata dictionary
+
+    Returns:
+        Formatted string for prompt injection
+    """
+    lines = [
+        f"\n[TRADING SESSION CONTEXT]",
+        f"Current Session: {session_info.get('name', session.upper())}",
+        f"UTC Time: {session_info.get('utc_hour', 'N/A')}:00",
+        f"Volatility: {session_info.get('volatility', 'unknown').replace('_', ' ').title()}",
+        f"Characteristics: {session_info.get('characteristics', 'N/A')}",
+        f"SMC Relevance: {session_info.get('smc_relevance', 'N/A')}",
+        f"Recommendation: {session_info.get('recommendation', 'N/A')}",
+        ""
+    ]
+    return '\n'.join(lines)
 
 
 def get_mt5_data_for_smc(
@@ -80,13 +193,14 @@ def analyze_multi_timeframe_smc(
     for tf_name in timeframes:
         if tf_name not in tf_map:
             continue
-        
+
         df = get_mt5_data_for_smc(symbol, tf_map[tf_name], bars=500)
-        
+
         if df is not None and len(df) > 50:
-            analysis = analyzer.analyze_full_smc(df)
+            # Use extended analysis with new features
+            analysis = analyzer.analyze_full_smc_extended(df)
             results[tf_name] = analysis
-    
+
     return results
 
 
@@ -719,15 +833,19 @@ def suggest_smc_entry_strategy(
 
 def format_smc_for_prompt(
     mtf_analysis: Dict[str, Any],
-    symbol: str
+    symbol: str,
+    include_extended: bool = True,
+    include_session: bool = True
 ) -> str:
     """
     Format multi-timeframe SMC analysis for LLM prompt.
-    
+
     Args:
-        mtf_analysis: Multi-timeframe SMC analysis
+        mtf_analysis: Multi-timeframe SMC analysis (from analyze_full_smc_extended)
         symbol: Trading symbol
-    
+        include_extended: Include extended features (equal levels, breakers, OTE, confluence)
+        include_session: Include current trading session context
+
     Returns:
         Formatted string for prompt injection
     """
@@ -735,34 +853,166 @@ def format_smc_for_prompt(
     lines.append(f"\n{'='*70}")
     lines.append(f"SMART MONEY CONCEPTS ANALYSIS - {symbol}")
     lines.append(f"{'='*70}\n")
-    
+
+    # Add session context at the top if requested
+    if include_session:
+        try:
+            session, session_info = get_current_trading_session()
+            session_context = format_session_context(session, session_info)
+            lines.append(session_context)
+        except Exception:
+            pass  # Silently skip if session detection fails
+
+    # Track aggregate confluence for multi-timeframe summary
+    aggregate_confluence = None
+    primary_tf_analysis = None
+
     for tf, analysis in mtf_analysis.items():
         lines.append(f"[{tf} TIMEFRAME]")
         lines.append(f"  Bias: {analysis['bias'].upper()}")
         lines.append(f"  Order Blocks: {analysis['order_blocks']['unmitigated']} unmitigated")
         lines.append(f"  Fair Value Gaps: {analysis['fair_value_gaps']['unmitigated']} unmitigated")
-        
+
         if analysis['structure']['recent_choc']:
             lines.append(f"  ⚠️  CHOC detected: {len(analysis['structure']['recent_choc'])} recent")
-        
+
         if analysis['structure']['recent_bos']:
             lines.append(f"  ✓ BOS detected: {len(analysis['structure']['recent_bos'])} recent")
-        
+
         # Key levels
-        if analysis['nearest_support']:
+        if analysis.get('nearest_support'):
             s = analysis['nearest_support']
-            dist = ((analysis['current_price'] - s['top']) / analysis['current_price'] * 100)
-            lines.append(f"  Nearest Support: ${s['bottom']:.2f}-${s['top']:.2f} ({s['type']}) | -{dist:.2f}%")
-        
-        if analysis['nearest_resistance']:
+            current_price = analysis.get('current_price', 0)
+            if current_price > 0:
+                dist = ((current_price - s['top']) / current_price * 100)
+                lines.append(f"  Nearest Support: ${s['bottom']:.2f}-${s['top']:.2f} ({s['type']}) | -{dist:.2f}%")
+
+        if analysis.get('nearest_resistance'):
             r = analysis['nearest_resistance']
-            dist = ((r['bottom'] - analysis['current_price']) / analysis['current_price'] * 100)
-            lines.append(f"  Nearest Resistance: ${r['bottom']:.2f}-${r['top']:.2f} ({r['type']}) | +{dist:.2f}%")
-        
+            current_price = analysis.get('current_price', 0)
+            if current_price > 0:
+                dist = ((r['bottom'] - current_price) / current_price * 100)
+                lines.append(f"  Nearest Resistance: ${r['bottom']:.2f}-${r['top']:.2f} ({r['type']}) | +{dist:.2f}%")
+
+        # Extended features (from analyze_full_smc_extended)
+        if include_extended:
+            # Equal Highs/Lows - Liquidity targets
+            equal_levels = analysis.get('equal_levels', {})
+            if isinstance(equal_levels, dict):
+                equal_highs = equal_levels.get('equal_highs', [])
+                equal_lows = equal_levels.get('equal_lows', [])
+                if equal_highs or equal_lows:
+                    lines.append(f"  ⚡ Liquidity Targets: {len(equal_highs)} EQH (above), {len(equal_lows)} EQL (below)")
+                    # Show nearest unswept liquidity
+                    unswept_highs = [eh for eh in equal_highs if not getattr(eh, 'swept', False)]
+                    unswept_lows = [el for el in equal_lows if not getattr(el, 'swept', False)]
+                    if unswept_highs:
+                        nearest_eqh = min(unswept_highs, key=lambda x: getattr(x, 'price', float('inf')))
+                        if hasattr(nearest_eqh, 'price'):
+                            lines.append(f"     → Nearest EQH: ${nearest_eqh.price:.2f} ({getattr(nearest_eqh, 'touches', '?')} touches)")
+                    if unswept_lows:
+                        nearest_eql = max(unswept_lows, key=lambda x: getattr(x, 'price', 0))
+                        if hasattr(nearest_eql, 'price'):
+                            lines.append(f"     → Nearest EQL: ${nearest_eql.price:.2f} ({getattr(nearest_eql, 'touches', '?')} touches)")
+
+            # Breaker Blocks - Failed OBs that become opposite zones
+            breaker_blocks = analysis.get('breaker_blocks', {})
+            if isinstance(breaker_blocks, dict):
+                bullish_breakers = breaker_blocks.get('bullish', [])
+                bearish_breakers = breaker_blocks.get('bearish', [])
+                if bullish_breakers or bearish_breakers:
+                    lines.append(f"  🔄 Breaker Blocks: {len(bullish_breakers)} bullish, {len(bearish_breakers)} bearish")
+                    # Show active breakers
+                    for bb in (bullish_breakers + bearish_breakers)[:2]:
+                        if hasattr(bb, 'top') and hasattr(bb, 'bottom'):
+                            bb_type = getattr(bb, 'current_type', 'unknown')
+                            mitigated = getattr(bb, 'mitigated', False)
+                            if not mitigated:
+                                lines.append(f"     → {bb_type.upper()} breaker: ${bb.bottom:.2f}-${bb.top:.2f}")
+
+            # OTE Zones - Optimal Trade Entry (Fibonacci retracement zones)
+            ote_zones = analysis.get('ote_zones', {})
+            if isinstance(ote_zones, dict):
+                bullish_ote = ote_zones.get('bullish', [])
+                bearish_ote = ote_zones.get('bearish', [])
+                if bullish_ote or bearish_ote:
+                    lines.append(f"  🎯 OTE Zones: {len(bullish_ote)} bullish, {len(bearish_ote)} bearish")
+                    # Show nearest OTE zone
+                    for ote in bullish_ote[:1]:
+                        if hasattr(ote, 'fib_618') and hasattr(ote, 'fib_79'):
+                            lines.append(f"     → Bullish OTE: ${ote.fib_79:.2f}-${ote.fib_618:.2f} (61.8%-79% retracement)")
+                    for ote in bearish_ote[:1]:
+                        if hasattr(ote, 'fib_618') and hasattr(ote, 'fib_79'):
+                            lines.append(f"     → Bearish OTE: ${ote.fib_618:.2f}-${ote.fib_79:.2f} (61.8%-79% retracement)")
+
+            # Premium/Discount Zone - Current price position relative to range
+            premium_discount = analysis.get('premium_discount', {})
+            if isinstance(premium_discount, dict) and premium_discount.get('current_zone'):
+                zone = premium_discount['current_zone']
+                position_pct = premium_discount.get('position_percent', 50)
+                equilibrium = premium_discount.get('equilibrium', 0)
+                zone_emoji = "🔴" if zone == "premium" else "🟢" if zone == "discount" else "⚪"
+                lines.append(f"  {zone_emoji} Price Zone: {zone.upper()} ({position_pct:.0f}% of range)")
+                if equilibrium > 0:
+                    lines.append(f"     → Equilibrium: ${equilibrium:.2f}")
+
+            # Confluence Score - Overall setup quality
+            confluence = analysis.get('confluence_score', {})
+            if isinstance(confluence, dict) and confluence.get('total_score') is not None:
+                total = confluence.get('total_score', 0)
+                recommendation = confluence.get('recommendation', '')
+
+                # Score breakdown
+                score_emoji = "🟢" if total >= 70 else "🟡" if total >= 50 else "🔴"
+                lines.append(f"  {score_emoji} Confluence Score: {total}/100 - {recommendation}")
+
+                # Component scores if available
+                components = []
+                if confluence.get('bias_alignment'):
+                    components.append(f"Bias:{confluence['bias_alignment']}")
+                if confluence.get('zone_proximity'):
+                    components.append(f"Zone:{confluence['zone_proximity']}")
+                if confluence.get('structure_confirmation'):
+                    components.append(f"Structure:{confluence['structure_confirmation']}")
+                if confluence.get('mtf_alignment'):
+                    components.append(f"MTF:{confluence['mtf_alignment']}")
+                if components:
+                    lines.append(f"     → Components: {', '.join(components)}")
+
+                # Store for aggregate
+                if tf == '1H' or primary_tf_analysis is None:
+                    aggregate_confluence = confluence
+                    primary_tf_analysis = analysis
+
         lines.append("")
-    
+
+    # Multi-timeframe summary
+    if len(mtf_analysis) > 1:
+        lines.append("[MULTI-TIMEFRAME SUMMARY]")
+        biases = {tf: a.get('bias', 'neutral') for tf, a in mtf_analysis.items()}
+        bias_values = list(biases.values())
+
+        # Check alignment
+        if len(set(bias_values)) == 1 and 'neutral' not in bias_values:
+            lines.append(f"  ✅ ALL TIMEFRAMES ALIGNED: {bias_values[0].upper()}")
+        else:
+            bullish_count = sum(1 for b in bias_values if b == 'bullish')
+            bearish_count = sum(1 for b in bias_values if b == 'bearish')
+            if bullish_count > bearish_count:
+                lines.append(f"  ⚠️ MIXED BIAS: {bullish_count}/{len(bias_values)} bullish")
+            elif bearish_count > bullish_count:
+                lines.append(f"  ⚠️ MIXED BIAS: {bearish_count}/{len(bias_values)} bearish")
+            else:
+                lines.append(f"  ⚠️ CONFLICTING SIGNALS: No clear bias alignment")
+
+        # Overall confluence recommendation
+        if aggregate_confluence and aggregate_confluence.get('recommendation'):
+            lines.append(f"  📊 Trading Recommendation: {aggregate_confluence['recommendation']}")
+
+        lines.append("")
+
     lines.append(f"{'='*70}\n")
-    
+
     return '\n'.join(lines)
 
 

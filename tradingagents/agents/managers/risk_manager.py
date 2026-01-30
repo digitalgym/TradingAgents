@@ -3,6 +3,7 @@ import json
 from typing import Optional
 
 from tradingagents.schemas import FinalTradingDecision
+from tradingagents.agents.utils.agent_utils import record_memory_usage, extract_memory_ids_from_results
 
 
 def create_risk_manager(llm, memory, use_structured_output: bool = True):
@@ -34,6 +35,9 @@ def create_risk_manager(llm, memory, use_structured_output: bool = True):
         # Get current broker price - CRITICAL for accurate price levels
         current_price = state.get("current_price")
 
+        # Get SMC context if available
+        smc_context = state.get("smc_context") or ""
+
         history = state["risk_debate_state"]["history"]
         risk_debate_state = state["risk_debate_state"]
         market_research_report = state["market_report"]
@@ -44,11 +48,17 @@ def create_risk_manager(llm, memory, use_structured_output: bool = True):
 
         curr_situation = f"{market_research_report}\n\n{sentiment_report}\n\n{news_report}\n\n{fundamentals_report}"
 
+        # Track memory IDs for feedback loop
+        memory_ids_used = []
+
         past_memory_str = ""
         if memory is not None:
             past_memories = memory.get_memories(curr_situation, n_matches=2)
             for i, rec in enumerate(past_memories, 1):
                 past_memory_str += rec["recommendation"] + "\n\n"
+            # Track which memories were used
+            if past_memories:
+                memory_ids_used = extract_memory_ids_from_results(past_memories)
 
         # Build broker price context - CRITICAL
         price_context = ""
@@ -58,6 +68,24 @@ def create_risk_manager(llm, memory, use_structured_output: bool = True):
 This is the ACTUAL trading price from the broker. News sources may report different prices (e.g., spot vs CFD).
 When specifying entry_price, stop_loss, and take_profit, they MUST be based on this broker price ({current_price:.5f}), not news-reported prices.
 
+"""
+
+        # Build SMC validation guidance for final decision
+        smc_guidance = ""
+        if smc_context:
+            smc_guidance = f"""
+
+{smc_context}
+
+**SMC VALIDATION REQUIREMENTS**:
+Your final decision MUST be validated against the Smart Money Concepts analysis above:
+1. **Entry Price**: Should be AT or NEAR an institutional zone (Order Block or FVG), not in empty space
+2. **Stop Loss**: MUST be placed BEYOND the nearest institutional zone (below OB for buys, above OB for sells) - NOT inside the zone
+3. **Take Profit**: Should target the next institutional zone in the trade direction (resistance for buys, support for sells)
+4. **Confluence Score**: If the score is below 50, increase caution; above 70 supports conviction
+5. **Price Zone**: Favor BUYS in discount zone, SELLS in premium zone; be cautious at equilibrium
+6. **Multi-Timeframe Alignment**: Strong trades have all timeframes aligned; mixed signals warrant reduced size
+7. **Liquidity Targets**: Consider EQH/EQL as potential stop-hunt levels - don't place stops at these levels
 """
 
         # Base prompt for both structured and unstructured output
@@ -70,16 +98,17 @@ When specifying entry_price, stop_loss, and take_profit, they MUST be based on t
 
 **Past Lessons Learned** (use these to avoid repeating mistakes):
 {past_memory_str if past_memory_str else "No past lessons available."}
-
+{smc_guidance}
 **Analysts Debate History**:
 {history}
 
 Guidelines for Decision-Making:
 1. **Summarize Key Arguments**: Extract the strongest points from each analyst, focusing on relevance to the context.
 2. **Provide Rationale**: Support your recommendation with direct quotes and counterarguments from the debate.
-3. **Refine the Trader's Plan**: Adjust entry, stop loss, and take profit levels based on the analysts' risk insights.
+3. **Refine the Trader's Plan**: Adjust entry, stop loss, and take profit levels based on the analysts' risk insights AND SMC analysis.
 4. **Learn from Past Mistakes**: Apply lessons from past decisions to avoid repeating errors.
-5. **Be Decisive**: Choose Hold only if strongly justified by specific arguments, not as a fallback."""
+5. **Be Decisive**: Choose Hold only if strongly justified by specific arguments, not as a fallback.
+6. **Validate Against SMC**: Ensure all price levels align with institutional zones from the SMC analysis."""
 
         if structured_llm is not None:
             # Use structured output - LLM returns FinalTradingDecision directly
@@ -117,11 +146,17 @@ Your decision must include:
                     "count": risk_debate_state["count"],
                 }
 
-                return {
+                result = {
                     "risk_debate_state": new_risk_debate_state,
                     "final_trade_decision": text_decision,
                     "final_trade_decision_structured": decision_dict,
                 }
+
+                # Include memory tracking if memories were used
+                if memory_ids_used:
+                    result.update(record_memory_usage(state, "risk_manager", memory_ids_used))
+
+                return result
 
             except Exception as e:
                 # Fallback to unstructured if structured output fails
@@ -153,11 +188,17 @@ End your response with: FINAL TRANSACTION PROPOSAL: **BUY/HOLD/SELL**"""
             "count": risk_debate_state["count"],
         }
 
-        return {
+        result = {
             "risk_debate_state": new_risk_debate_state,
             "final_trade_decision": response.content,
             "final_trade_decision_structured": None,  # Will be parsed by SignalProcessor
         }
+
+        # Include memory tracking if memories were used
+        if memory_ids_used:
+            result.update(record_memory_usage(state, "risk_manager", memory_ids_used))
+
+        return result
 
     return risk_manager_node
 

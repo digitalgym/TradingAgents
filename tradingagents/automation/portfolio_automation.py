@@ -1037,9 +1037,11 @@ class PortfolioAutomation:
                         if context and context.get("final_state"):
                             graph = self._get_graph()
                             graph.curr_state = context["final_state"]
-                            graph.reflect_and_remember(pnl_percent)
-                            report.reflections_created += 1
-                            report.memories_stored += 1
+                            # Reload decision to get updated outcome fields for SMC learning
+                            closed_decision = load_decision(decision_id)
+                            result = graph.reflect_and_remember(pnl_percent, decision=closed_decision)
+                            report.reflections_created += result.get("reflections_created", 1)
+                            report.memories_stored += result.get("memories_stored", 1)
                             self.logger.info(f"  Reflection created for {decision_id}")
                     except Exception as e:
                         self.logger.warning(f"  Could not create reflection: {e}")

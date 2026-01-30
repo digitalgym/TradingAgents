@@ -27,7 +27,10 @@
       "Bash(d:/Documents/TradingAgents/.venv/Scripts/pip.exe list:*)",
       "Bash(git config:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npm run build:*)",
+      "Bash(node -e:*)",
+      "Bash(npx kill-port:*)"
     ]
   }
 }

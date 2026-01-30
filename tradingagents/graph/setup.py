@@ -1,6 +1,6 @@
 # TradingAgents/graph/setup.py
 
-from typing import Dict, Any
+from typing import Dict, Any, Callable, Optional
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph, START
 from langgraph.prebuilt import ToolNode
@@ -9,6 +9,71 @@ from tradingagents.agents import *
 from tradingagents.agents.utils.agent_states import AgentState
 
 from .conditional_logic import ConditionalLogic
+
+# Import caching - will be available when running via backend
+# Silently skip if not available (e.g., running standalone)
+try:
+    import sys
+    from pathlib import Path
+    # Add backend to path if not already there
+    backend_path = Path(__file__).parent.parent.parent / "web" / "backend"
+    if str(backend_path) not in sys.path:
+        sys.path.insert(0, str(backend_path))
+    from state_store import AgentOutputCache
+    CACHING_AVAILABLE = True
+except ImportError:
+    CACHING_AVAILABLE = False
+    AgentOutputCache = None
+
+
+def create_cached_analyst_node(
+    original_node: Callable,
+    agent_name: str,
+    report_key: str,
+    cache_ttl_hours: float
+) -> Callable:
+    """Wrap an analyst node with caching logic.
+
+    Args:
+        original_node: The original analyst node function
+        agent_name: Name used for cache key (e.g., "social_analyst")
+        report_key: State key for the report (e.g., "sentiment_report")
+        cache_ttl_hours: How long to cache the output
+
+    Returns:
+        Wrapped node function with caching
+    """
+    def cached_node(state):
+        # Check if caching is available and not bypassed
+        if not CACHING_AVAILABLE or not AgentOutputCache:
+            return original_node(state)
+
+        symbol = state.get("company_of_interest", "")
+        force_fresh = state.get("force_fresh", False)
+
+        # Check cache (unless force_fresh is set)
+        if not force_fresh:
+            cached = AgentOutputCache.get(symbol, agent_name)
+            if cached and not cached.get("expired"):
+                print(f"[Cache] Using cached {agent_name} output for {symbol} (age: {cached['age_hours']:.1f}h)")
+                # Return cached report - empty messages means no tool calls needed
+                return {
+                    "messages": [],
+                    report_key: cached["output"],
+                }
+
+        # Run original node
+        result = original_node(state)
+
+        # Cache the report if it was generated (non-empty report means final output)
+        report = result.get(report_key, "")
+        if report and len(report.strip()) > 0:
+            print(f"[Cache] Storing {agent_name} output for {symbol} (TTL: {cache_ttl_hours}h)")
+            AgentOutputCache.store(symbol, agent_name, report, cache_ttl_hours)
+
+        return result
+
+    return cached_node
 
 
 class GraphSetup:
@@ -25,6 +90,8 @@ class GraphSetup:
         invest_judge_memory,
         risk_manager_memory,
         conditional_logic: ConditionalLogic,
+        smc_pattern_memory=None,
+        meta_pattern_learning=None,
     ):
         """Initialize with required components."""
         self.quick_thinking_llm = quick_thinking_llm
@@ -36,6 +103,8 @@ class GraphSetup:
         self.invest_judge_memory = invest_judge_memory
         self.risk_manager_memory = risk_manager_memory
         self.conditional_logic = conditional_logic
+        self.smc_pattern_memory = smc_pattern_memory
+        self.meta_pattern_learning = meta_pattern_learning
 
     def setup_graph(
         self, selected_analysts=["market", "social", "news", "fundamentals"]
@@ -65,22 +134,28 @@ class GraphSetup:
             tool_nodes["market"] = self.tool_nodes["market"]
 
         if "social" in selected_analysts:
-            analyst_nodes["social"] = create_social_media_analyst(
-                self.quick_thinking_llm
+            # Wrap social analyst with caching (4 hour TTL)
+            original_social = create_social_media_analyst(self.quick_thinking_llm)
+            analyst_nodes["social"] = create_cached_analyst_node(
+                original_social, "social_analyst", "sentiment_report", 4.0
             )
             delete_nodes["social"] = create_msg_delete()
             tool_nodes["social"] = self.tool_nodes["social"]
 
         if "news" in selected_analysts:
-            analyst_nodes["news"] = create_news_analyst(
-                self.quick_thinking_llm
+            # Wrap news analyst with caching (2 hour TTL)
+            original_news = create_news_analyst(self.quick_thinking_llm)
+            analyst_nodes["news"] = create_cached_analyst_node(
+                original_news, "news_analyst", "news_report", 2.0
             )
             delete_nodes["news"] = create_msg_delete()
             tool_nodes["news"] = self.tool_nodes["news"]
 
         if "fundamentals" in selected_analysts:
-            analyst_nodes["fundamentals"] = create_fundamentals_analyst(
-                self.quick_thinking_llm
+            # Wrap fundamentals analyst with caching (24 hour TTL)
+            original_fundamentals = create_fundamentals_analyst(self.quick_thinking_llm)
+            analyst_nodes["fundamentals"] = create_cached_analyst_node(
+                original_fundamentals, "fundamentals_analyst", "fundamentals_report", 24.0
             )
             delete_nodes["fundamentals"] = create_msg_delete()
             tool_nodes["fundamentals"] = self.tool_nodes["fundamentals"]
@@ -93,9 +168,12 @@ class GraphSetup:
             self.quick_thinking_llm, self.bear_memory
         )
         research_manager_node = create_research_manager(
-            self.deep_thinking_llm, self.invest_judge_memory
+            self.deep_thinking_llm,
+            self.invest_judge_memory,
+            smc_memory=self.smc_pattern_memory,
+            meta_pattern_learning=self.meta_pattern_learning,
         )
-        trader_node = create_trader(self.quick_thinking_llm, self.trader_memory)
+        trader_node = create_trader(self.quick_thinking_llm, self.trader_memory, self.smc_pattern_memory)
 
         # Create risk analysis nodes
         risky_analyst = create_risky_debator(self.quick_thinking_llm)

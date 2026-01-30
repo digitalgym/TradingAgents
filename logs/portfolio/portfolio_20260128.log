@@ -1,0 +1,92 @@
+2026-01-28 07:01:29,976 - INFO - ==================================================
+2026-01-28 07:01:29,976 - INFO - STARTING EVENING REFLECTION CYCLE
+2026-01-28 07:01:29,976 - INFO - ==================================================
+2026-01-28 07:01:29,976 - INFO - Active decisions: 6
+2026-01-28 07:01:29,997 - INFO - Processing closed trade: AUDUSD_20260127_230843 (exit: 0.70099, profit: $-8.55)
+2026-01-28 07:01:30,075 - INFO - Processing closed trade: XAUUSD_20260127_212945 (exit: 5140.2, profit: $68.46)
+2026-01-28 07:01:30,177 - INFO - Processing closed trade: XAUUSD_20260126_220343 (exit: 5041.19, profit: $-149.20)
+2026-01-28 07:01:30,278 - INFO - Processing closed trade: XAGUSD_20260126_124207 (exit: 110.242, profit: $243.45)
+2026-01-28 07:01:30,392 - INFO - Processing closed trade: XAUUSD_20260126_122911 (exit: 5090.85, profit: $156.06)
+2026-01-28 07:01:30,477 - INFO - ==================================================
+REFLECTION REPORT
+==================================================
+Time: 2026-01-28 07:01:29
+
+Trades Processed: 5
+Winning Trades: 0
+Losing Trades: 5
+Total P&L: $310.22
+
+Reflections Created: 0
+Memories Stored: 0
+
+Closed Trades:
+  AUDUSD SELL: $-8.55 (0.00%) - unknown
+  XAUUSD MODIFY_SLTP: +$68.46 (+0.00%) - unknown
+  XAUUSD BUY: $-149.20 (-0.51%) - unknown
+  XAGUSD MODIFY_SLTP: +$243.45 (+0.00%) - unknown
+  XAUUSD MODIFY_SLTP: +$156.06 (+0.00%) - unknown
+
+Duration: 0.5s
+==================================================
+2026-01-28 07:03:25,660 - INFO - ==================================================
+2026-01-28 07:03:25,660 - INFO - ==================================================
+2026-01-28 07:03:25,660 - INFO - STARTING EVENING REFLECTION CYCLE
+2026-01-28 07:03:25,660 - INFO - STARTING EVENING REFLECTION CYCLE
+2026-01-28 07:03:25,660 - INFO - ==================================================
+2026-01-28 07:03:25,660 - INFO - ==================================================
+2026-01-28 07:03:25,660 - INFO - Active decisions: 1
+2026-01-28 07:03:25,660 - INFO - Active decisions: 1
+2026-01-28 07:03:25,673 - INFO - ==================================================
+REFLECTION REPORT
+==================================================
+Time: 2026-01-28 07:03:25
+
+Trades Processed: 0
+Winning Trades: 0
+Losing Trades: 0
+Total P&L: $0.00
+
+Reflections Created: 0
+Memories Stored: 0
+
+Duration: 0.0s
+==================================================
+2026-01-28 07:03:25,673 - INFO - ==================================================
+REFLECTION REPORT
+==================================================
+Time: 2026-01-28 07:03:25
+
+Trades Processed: 0
+Winning Trades: 0
+Losing Trades: 0
+Total P&L: $0.00
+
+Reflections Created: 0
+Memories Stored: 0
+
+Duration: 0.0s
+==================================================
+2026-01-28 23:05:15,248 - INFO - ==================================================
+2026-01-28 23:05:15,266 - INFO - STARTING EVENING REFLECTION CYCLE
+2026-01-28 23:05:15,266 - INFO - ==================================================
+2026-01-28 23:05:15,266 - INFO - Active decisions: 3
+2026-01-28 23:05:15,285 - INFO - Processing closed trade: XAGUSD_20260127_214914 (exit: 113.945, profit: $255.40)
+2026-01-28 23:05:15,383 - INFO - ==================================================
+REFLECTION REPORT
+==================================================
+Time: 2026-01-28 23:05:15
+
+Trades Processed: 1
+Winning Trades: 0
+Losing Trades: 1
+Total P&L: $255.40
+
+Reflections Created: 0
+Memories Stored: 0
+
+Closed Trades:
+  XAGUSD MODIFY_SLTP: +$255.40 (+0.00%) - unknown
+
+Duration: 0.1s
+==================================================

@@ -30,10 +30,23 @@ def create_neutral_debator(llm):
         if current_price:
             price_context = f"[BROKER PRICE: {ticker} at {current_price:.5f}. Use this for price level discussions.]\n\n"
 
-        # Build base prompt
+        # Build SMC instruction with balanced perspective
         smc_instruction = ""
         if smc_context:
-            smc_instruction = f"\n\n{smc_context}\n\nIMPORTANT: Use the Smart Money Concepts analysis above to provide balanced recommendations. Suggest stop losses that protect capital while avoiding premature exits (placed beyond institutional zones). Recommend take profits at realistic resistance/support levels where institutional orders cluster."
+            smc_instruction = f"""
+
+{smc_context}
+
+BALANCED SMC RISK ASSESSMENT:
+Use the Smart Money Concepts data above to provide a balanced evaluation:
+- Consider the confluence score - HIGH scores (70+) support the trade, LOW scores warrant caution
+- If multi-timeframe biases ALIGN, this supports conviction; if MIXED, recommend reduced position size
+- Evaluate price zone position - DISCOUNT zone supports buys, PREMIUM zone supports sells, EQUILIBRIUM is neutral
+- Balance stop loss placement: wide enough to be beyond institutional zones, tight enough for reasonable R:R
+- Use OTE zones (61.8%-79% retracement) as realistic entry areas that balance risk and reward
+- Reference both support AND resistance zones to set realistic TP expectations
+- Note the number of unmitigated zones - more zones mean more potential reversal points (both risk and opportunity)
+- Suggest partial profit-taking at the first institutional zone, with runners to further targets"""
 
         prompt = f"""{price_context}As the Neutral Risk Analyst, your role is to provide a balanced perspective, weighing both the potential benefits and risks of the trader's decision or plan. You prioritize a well-rounded approach, evaluating the upsides and downsides while factoring in broader market trends, potential economic shifts, and diversification strategies.Here is the trader's decision:
 

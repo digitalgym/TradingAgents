@@ -187,3 +187,38 @@ class FinalTradingDecision(BaseSchema):
     key_catalysts: Optional[str] = Field(
         None, description="Key factors that could drive the trade in the expected direction"
     )
+
+
+class PredictionLesson(BaseSchema):
+    """
+    Structured lesson from evaluating a prediction against actual outcome.
+
+    Used by daily_cycle.py to extract actionable lessons from predictions.
+    """
+
+    analysis: str = Field(
+        ...,
+        description="Analysis of what happened and why the prediction was correct/incorrect"
+    )
+    predictive_factors: List[str] = Field(
+        default_factory=list,
+        description="Factors from the analysis that correctly predicted the outcome"
+    )
+    misleading_factors: List[str] = Field(
+        default_factory=list,
+        description="Factors that led to incorrect conclusions or were overweighted"
+    )
+    lesson: str = Field(
+        ...,
+        description="Concise, actionable lesson (2-3 sentences) for improving future predictions"
+    )
+    confidence_adjustment: float = Field(
+        0.0,
+        ge=-0.5,
+        le=0.5,
+        description="Suggested adjustment to confidence scoring for similar situations (-0.5 to +0.5)"
+    )
+    similar_pattern_advice: Optional[str] = Field(
+        None,
+        description="Specific advice for when similar market patterns occur in the future"
+    )

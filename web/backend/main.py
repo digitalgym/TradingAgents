@@ -5,7 +5,7 @@ import asyncio
 import sys
 from pathlib import Path
 from datetime import datetime
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Dict
 from contextlib import asynccontextmanager
 import json
 
@@ -17,6 +17,8 @@ import traceback
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+# Add backend directory to path for local imports (state_store)
+sys.path.insert(0, str(Path(__file__).parent))
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
@@ -25,6 +27,7 @@ load_dotenv(env_path)
 
 from tradingagents.default_config import DEFAULT_CONFIG
 from tradingagents import trade_decisions
+from state_store import AutomationState, LearningCycleState, AnalysisCache, TrailingStopState, AgentOutputCache
 from tradingagents.schemas import (
     TradeAnalysisResult,
     PositionReview,
@@ -40,12 +43,202 @@ from tradingagents.schemas import (
 websocket_connections: List[WebSocket] = []
 analysis_tasks: dict = {}
 
+# Trailing stop monitor state
+trailing_stop_monitor_running = False
+
+
+async def trailing_stop_monitor():
+    """Background task that monitors and updates trailing stops.
+
+    Runs every 2 seconds, checks all positions with active trailing stops,
+    and updates SL as price moves favorably.
+    """
+    global trailing_stop_monitor_running
+    trailing_stop_monitor_running = True
+    print("[Trailing Stop Monitor] Started")
+
+    import MetaTrader5 as mt5
+
+    while trailing_stop_monitor_running:
+        try:
+            # Get all active trailing stops
+            trailing_stops = TrailingStopState.get_all()
+
+            if trailing_stops:
+                # Ensure MT5 is initialized
+                if not mt5.initialize():
+                    print("[Trailing Stop Monitor] MT5 not initialized, skipping cycle")
+                    await asyncio.sleep(2)
+                    continue
+
+                # Get all open positions
+                positions = mt5.positions_get()
+                if positions is None:
+                    positions = []
+
+                open_tickets = {p.ticket for p in positions}
+
+                for ticket, config in list(trailing_stops.items()):
+                    # Remove trailing stop if position is closed
+                    if ticket not in open_tickets:
+                        TrailingStopState.disable(ticket)
+                        print(f"[Trailing Stop Monitor] Position {ticket} closed, removing trailing stop")
+                        continue
+
+                    # Get current position
+                    pos = next((p for p in positions if p.ticket == ticket), None)
+                    if not pos:
+                        continue
+
+                    # Get current price
+                    tick = mt5.symbol_info_tick(pos.symbol)
+                    if tick is None:
+                        continue
+
+                    current_price = tick.bid if pos.type == 1 else tick.ask  # type 1 = SELL
+                    direction = config["direction"]
+                    trail_distance = config["trail_distance"]
+                    best_price = config["best_price"]
+
+                    # Check if price moved favorably
+                    new_best = best_price
+                    if direction == "BUY" and current_price > best_price:
+                        new_best = current_price
+                    elif direction == "SELL" and current_price < best_price:
+                        new_best = current_price
+
+                    if new_best != best_price:
+                        # Price moved favorably - calculate new SL
+                        if direction == "BUY":
+                            new_sl = new_best - trail_distance
+                        else:
+                            new_sl = new_best + trail_distance
+
+                        # Get symbol info for rounding
+                        symbol_info = mt5.symbol_info(pos.symbol)
+                        if symbol_info:
+                            new_sl = round(new_sl, symbol_info.digits)
+
+                        # Only move SL if it's better than current
+                        should_update = False
+                        if direction == "BUY" and (pos.sl == 0 or new_sl > pos.sl):
+                            should_update = True
+                        elif direction == "SELL" and (pos.sl == 0 or new_sl < pos.sl):
+                            should_update = True
+
+                        if should_update:
+                            # Modify position
+                            modify_request = {
+                                "action": mt5.TRADE_ACTION_SLTP,
+                                "position": ticket,
+                                "symbol": pos.symbol,
+                                "sl": new_sl,
+                                "tp": pos.tp,
+                            }
+
+                            result = mt5.order_send(modify_request)
+
+                            if result.retcode == mt5.TRADE_RETCODE_DONE:
+                                TrailingStopState.update_best_price(ticket, new_best)
+                                print(f"[Trailing Stop Monitor] {pos.symbol} #{ticket}: Trailed SL to {new_sl} (best: {new_best})")
+                            else:
+                                print(f"[Trailing Stop Monitor] Failed to trail {ticket}: {result.comment}")
+
+        except Exception as e:
+            print(f"[Trailing Stop Monitor] Error: {e}")
+
+        await asyncio.sleep(2)  # Check every 2 seconds
+
+    print("[Trailing Stop Monitor] Stopped")
+
+
+async def check_and_recover_services():
+    """Check if services should be running and recover them if needed."""
+    import psutil
+
+    # Check Learning Cycle
+    learning_state = LearningCycleState.get_status()
+    if learning_state.get("enabled"):
+        pid_file = Path("daily_cycle.pid")
+        process_alive = False
+
+        if pid_file.exists():
+            try:
+                pid = int(pid_file.read_text().strip())
+                process_alive = psutil.pid_exists(pid)
+            except Exception:
+                pass
+
+        if not process_alive:
+            print("[Auto-Recovery] Learning cycle was enabled but process died. Attempting restart...")
+            symbols = learning_state.get("symbols", [])
+            run_at = learning_state.get("run_at", 9)
+            if symbols:
+                try:
+                    import subprocess
+                    project_root = Path(__file__).parent.parent.parent
+                    cmd = [
+                        sys.executable,
+                        str(project_root / "examples" / "daily_cycle.py"),
+                        "--symbols", *symbols,
+                        "--run-at", str(run_at),
+                    ]
+                    process = subprocess.Popen(
+                        cmd,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        cwd=str(project_root),
+                        creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
+                    )
+                    pid_file.write_text(str(process.pid))
+                    print(f"[Auto-Recovery] Learning cycle restarted with PID {process.pid}")
+                except Exception as e:
+                    print(f"[Auto-Recovery] Failed to restart learning cycle: {e}")
+
+    # Check Portfolio Automation
+    automation_state = AutomationState.get_status()
+    if automation_state.get("enabled"):
+        pid_file = Path("portfolio_scheduler.pid")
+        process_alive = False
+
+        if pid_file.exists():
+            try:
+                pid = int(pid_file.read_text().strip())
+                process_alive = psutil.pid_exists(pid)
+            except Exception:
+                pass
+
+        if not process_alive:
+            print("[Auto-Recovery] Portfolio automation was enabled but process died. Attempting restart...")
+            try:
+                import subprocess
+                process = subprocess.Popen(
+                    [sys.executable, "-m", "cli.main", "portfolio", "start"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    cwd=str(Path(__file__).parent.parent.parent)
+                )
+                print(f"[Auto-Recovery] Portfolio automation restart initiated")
+            except Exception as e:
+                print(f"[Auto-Recovery] Failed to restart portfolio automation: {e}")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events"""
+    global trailing_stop_monitor_running
     print("TradingAgents API starting...")
+
+    # Check and recover services that should be running
+    await check_and_recover_services()
+
+    # Start trailing stop monitor
+    asyncio.create_task(trailing_stop_monitor())
+
     yield
+
+    # Stop trailing stop monitor
+    trailing_stop_monitor_running = False
     print("TradingAgents API shutting down...")
 
 
@@ -84,6 +277,7 @@ class AnalysisRequest(BaseModel):
     timeframe: str = "H1"
     use_smc: bool = True
     save_decision: bool = True
+    force_fresh: bool = False  # Bypass agent output cache when True
 
 
 class PositionModifyRequest(BaseModel):
@@ -295,6 +489,8 @@ def get_pending_orders() -> List[dict]:
 @app.get("/api/status")
 async def get_status():
     """Get overall system status"""
+    import psutil
+
     mt5_status = get_mt5_status()
 
     # Check portfolio automation status
@@ -303,11 +499,35 @@ async def get_status():
     if pid_file.exists():
         try:
             pid = int(pid_file.read_text().strip())
-            import psutil
             if psutil.pid_exists(pid):
                 automation_status = {"running": True, "pid": pid}
         except:
             pass
+
+    # Add persistent state info for automation
+    automation_persistent = AutomationState.get_status()
+    automation_status["enabled"] = automation_persistent.get("enabled", False)
+    automation_status["last_start"] = automation_persistent.get("last_start")
+    automation_status["last_stop"] = automation_persistent.get("last_stop")
+    automation_status["stop_reason"] = automation_persistent.get("stop_reason")
+
+    # Check daily cycle status
+    daily_cycle_status = {"running": False}
+    daily_cycle_pid_file = Path("daily_cycle.pid")
+    if daily_cycle_pid_file.exists():
+        try:
+            pid = int(daily_cycle_pid_file.read_text().strip())
+            if psutil.pid_exists(pid):
+                daily_cycle_status = {"running": True, "pid": pid}
+        except:
+            pass
+
+    # Add persistent state info for daily cycle
+    learning_persistent = LearningCycleState.get_status()
+    daily_cycle_status["enabled"] = learning_persistent.get("enabled", False)
+    daily_cycle_status["last_start"] = learning_persistent.get("last_start")
+    daily_cycle_status["last_stop"] = learning_persistent.get("last_stop")
+    daily_cycle_status["stop_reason"] = learning_persistent.get("stop_reason")
 
     # Get decision store stats
     active_decisions = trade_decisions.list_active_decisions()
@@ -316,6 +536,7 @@ async def get_status():
     return {
         "mt5": mt5_status,
         "automation": automation_status,
+        "daily_cycle": daily_cycle_status,
         "decisions": {
             "total": len(active_decisions) + len(closed_decisions),
             "open": len(active_decisions)
@@ -375,8 +596,20 @@ async def get_dashboard():
 
 @app.get("/api/positions")
 async def list_positions():
-    """Get all open positions"""
+    """Get all open positions with trailing stop status"""
     positions = get_open_positions()
+
+    # Add trailing stop status to each position
+    trailing_stops = TrailingStopState.get_all()
+    for pos in positions:
+        trailing_config = trailing_stops.get(pos["ticket"])
+        if trailing_config:
+            pos["trailing_active"] = True
+            pos["trailing_distance"] = trailing_config["trail_distance"]
+            pos["trailing_best_price"] = trailing_config["best_price"]
+        else:
+            pos["trailing_active"] = False
+
     return {"positions": positions, "count": len(positions)}
 
 
@@ -497,6 +730,225 @@ async def close_position(request: PositionCloseRequest):
         return {"success": True, "message": "Position closed successfully"}
     except HTTPException:
         raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/positions/breakeven/{ticket}")
+async def set_position_breakeven(ticket: int):
+    """Set stop loss to entry price (breakeven) for a position"""
+    try:
+        import MetaTrader5 as mt5
+        if not mt5.initialize():
+            raise HTTPException(status_code=500, detail="MT5 not initialized")
+
+        position = mt5.positions_get(ticket=ticket)
+        if not position:
+            raise HTTPException(status_code=404, detail="Position not found")
+
+        pos = position[0]
+        entry_price = pos.price_open
+        direction = "BUY" if pos.type == 0 else "SELL"
+
+        # Get current price to check if breakeven is valid
+        tick = mt5.symbol_info_tick(pos.symbol)
+        if tick is None:
+            raise HTTPException(status_code=500, detail=f"Could not get tick data for {pos.symbol}")
+
+        current_price = tick.bid if pos.type == 1 else tick.ask
+
+        # Validate breakeven makes sense (position should be in profit)
+        if direction == "BUY" and current_price <= entry_price:
+            raise HTTPException(status_code=400, detail="Position not in profit - cannot set breakeven")
+        if direction == "SELL" and current_price >= entry_price:
+            raise HTTPException(status_code=400, detail="Position not in profit - cannot set breakeven")
+
+        # Get symbol info for price formatting
+        symbol_info = mt5.symbol_info(pos.symbol)
+        if symbol_info is None:
+            raise HTTPException(status_code=500, detail=f"Could not get symbol info for {pos.symbol}")
+
+        # Round entry price to symbol's digits
+        breakeven_sl = round(entry_price, symbol_info.digits)
+
+        # Modify position
+        modify_request = {
+            "action": mt5.TRADE_ACTION_SLTP,
+            "position": ticket,
+            "symbol": pos.symbol,
+            "sl": breakeven_sl,
+            "tp": pos.tp,  # Keep existing TP
+        }
+
+        result = mt5.order_send(modify_request)
+
+        if result.retcode != mt5.TRADE_RETCODE_DONE:
+            raise HTTPException(status_code=400, detail=f"Modify failed: {result.comment}")
+
+        return {
+            "success": True,
+            "message": f"Stop loss set to breakeven ({breakeven_sl})",
+            "new_sl": breakeven_sl
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class TrailingStopRequest(BaseModel):
+    atr_multiplier: float = 1.5  # Default 1.5x ATR for trailing
+
+
+@app.post("/api/positions/trailing/{ticket}")
+async def set_position_trailing(ticket: int, request: TrailingStopRequest = None):
+    """Enable a proper trailing stop for a position.
+
+    This sets an initial SL based on ATR and enables automatic trailing
+    that will follow price as it moves favorably.
+    """
+    try:
+        import MetaTrader5 as mt5
+        if not mt5.initialize():
+            raise HTTPException(status_code=500, detail="MT5 not initialized")
+
+        position = mt5.positions_get(ticket=ticket)
+        if not position:
+            raise HTTPException(status_code=404, detail="Position not found")
+
+        pos = position[0]
+        entry_price = pos.price_open
+        direction = "BUY" if pos.type == 0 else "SELL"
+
+        # Get current price
+        tick = mt5.symbol_info_tick(pos.symbol)
+        if tick is None:
+            raise HTTPException(status_code=500, detail=f"Could not get tick data for {pos.symbol}")
+
+        current_price = tick.bid if pos.type == 1 else tick.ask
+
+        # Get ATR for trailing distance
+        from tradingagents.risk.stop_loss import get_atr_for_symbol
+        atr = get_atr_for_symbol(pos.symbol, period=14)
+        if atr is None or atr <= 0:
+            raise HTTPException(status_code=400, detail="Could not calculate ATR for trailing stop")
+
+        # Get symbol info for price formatting
+        symbol_info = mt5.symbol_info(pos.symbol)
+        if symbol_info is None:
+            raise HTTPException(status_code=500, detail=f"Could not get symbol info for {pos.symbol}")
+
+        # Calculate trailing stop
+        multiplier = request.atr_multiplier if request else 1.5
+        trail_distance = atr * multiplier
+
+        if direction == "BUY":
+            # For BUY, trailing SL is below current price
+            trailing_sl = current_price - trail_distance
+            # Don't move SL below entry if not in profit
+            if trailing_sl < entry_price:
+                trailing_sl = entry_price
+        else:
+            # For SELL, trailing SL is above current price
+            trailing_sl = current_price + trail_distance
+            # Don't move SL above entry if not in profit
+            if trailing_sl > entry_price:
+                trailing_sl = entry_price
+
+        # Round to symbol's digits
+        trailing_sl = round(trailing_sl, symbol_info.digits)
+
+        # Only apply if new SL is better than existing
+        if pos.sl > 0:
+            if direction == "BUY" and trailing_sl <= pos.sl:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"New trailing SL ({trailing_sl}) is not better than current SL ({pos.sl})"
+                )
+            if direction == "SELL" and trailing_sl >= pos.sl:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"New trailing SL ({trailing_sl}) is not better than current SL ({pos.sl})"
+                )
+
+        # Modify position to set initial SL
+        modify_request = {
+            "action": mt5.TRADE_ACTION_SLTP,
+            "position": ticket,
+            "symbol": pos.symbol,
+            "sl": trailing_sl,
+            "tp": pos.tp,  # Keep existing TP
+        }
+
+        result = mt5.order_send(modify_request)
+
+        if result.retcode != mt5.TRADE_RETCODE_DONE:
+            raise HTTPException(status_code=400, detail=f"Modify failed: {result.comment}")
+
+        # Enable automatic trailing - this will be monitored by the background task
+        TrailingStopState.enable(
+            ticket=ticket,
+            symbol=pos.symbol,
+            direction=direction,
+            trail_distance=trail_distance,
+            atr_multiplier=multiplier,
+            current_price=current_price
+        )
+
+        return {
+            "success": True,
+            "message": f"Trailing stop enabled at {trail_distance:.2f} ({multiplier}x ATR). SL will follow price automatically.",
+            "new_sl": trailing_sl,
+            "trailing_active": True,
+            "atr": atr,
+            "trail_distance": trail_distance
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/positions/trailing/{ticket}")
+async def disable_position_trailing(ticket: int):
+    """Disable automatic trailing for a position (keeps current SL)."""
+    try:
+        trailing_config = TrailingStopState.get(ticket)
+        if not trailing_config:
+            raise HTTPException(status_code=404, detail="No active trailing stop for this position")
+
+        TrailingStopState.disable(ticket)
+
+        return {
+            "success": True,
+            "message": f"Trailing stop disabled for position {ticket}. Current SL remains in place."
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/positions/trailing")
+async def get_active_trailing_stops():
+    """Get all positions with active trailing stops."""
+    try:
+        trailing_stops = TrailingStopState.get_all()
+        return {
+            "trailing_stops": [
+                {
+                    "ticket": config["ticket"],
+                    "symbol": config["symbol"],
+                    "direction": config["direction"],
+                    "trail_distance": config["trail_distance"],
+                    "atr_multiplier": config["atr_multiplier"],
+                    "best_price": config["best_price"],
+                    "enabled_at": config["enabled_at"],
+                    "last_updated": config.get("last_updated"),
+                }
+                for config in trailing_stops.values()
+            ]
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -659,7 +1111,8 @@ async def review_position(ticket: int, request: PositionReviewRequest):
 
         # LLM analysis if requested
         if request.review_mode == "llm":
-            from tradingagents.dataflows.llm_client import get_llm_client, chat_completion
+            from tradingagents.dataflows.llm_client import get_llm_client, structured_output
+            from tradingagents.schemas import QuickPositionReview
 
             try:
                 client, model, uses_responses = get_llm_client()
@@ -714,68 +1167,47 @@ Volume: {pos.volume} lots
 
 TASK: Assess whether current market structure still supports this {direction} position.
 
-Respond with ONLY valid JSON:
-{{
-  "recommendation": "HOLD" | "CLOSE" | "ADJUST",
-  "suggested_sl": <number based on SMC levels or null>,
-  "suggested_tp": <number based on SMC levels or null>,
-  "risk_level": "Low" | "Medium" | "High",
-  "reasoning": "<2-3 sentences explaining if market structure supports the position, key levels to watch, and any shift in bias>"
-}}
-
-Guidelines:
-- If bias has shifted AGAINST position direction, recommend CLOSE or tight SL
+Guidelines for your recommendation:
+- HOLD if position is well-placed and market structure supports it
+- ADJUST if SL/TP should be updated (provide new suggested_sl and/or suggested_tp values)
+- CLOSE only if bias has clearly shifted AGAINST position WITH a structure break (CHOCH)
 - Place SL below/above nearest SMC support/resistance (Order Blocks, FVGs)
 - Set TP at next SMC resistance/support level
-- Consider if price is approaching liquidity zones or structure breaks
-- Set to null ONLY if current levels align well with SMC structure"""
+- Set suggested_sl/suggested_tp to null ONLY if current levels are well-placed"""
 
             try:
-                analysis_content = chat_completion(
+                # Use structured output for guaranteed JSON schema compliance
+                parsed = structured_output(
                     client=client,
                     model=model,
                     messages=[
-                        {"role": "system", "content": "You are an expert trade manager. Always respond with valid JSON only, no markdown or extra text."},
+                        {"role": "system", "content": "You are an expert trade manager. Analyze the position and provide your recommendation."},
                         {"role": "user", "content": prompt},
                     ],
+                    response_schema=QuickPositionReview,
                     max_tokens=400,
                     temperature=0.3,
                     use_responses_api=uses_responses,
                 )
-                if not analysis_content:
-                    analysis_content = "{}"
 
-                # Parse the JSON response
-                import json
-                try:
-                    # Clean up response - remove markdown code blocks if present
-                    clean_content = analysis_content.strip()
-                    if clean_content.startswith("```"):
-                        clean_content = clean_content.split("```")[1]
-                        if clean_content.startswith("json"):
-                            clean_content = clean_content[4:]
-                        clean_content = clean_content.strip()
-
-                    parsed = json.loads(clean_content)
-                    result["llm_analysis"] = {
-                        "recommendation": parsed.get("recommendation", "HOLD"),
-                        "suggested_sl": parsed.get("suggested_sl"),
-                        "suggested_tp": parsed.get("suggested_tp"),
-                        "risk_level": parsed.get("risk_level", "Medium"),
-                        "reasoning": parsed.get("reasoning", ""),
-                        "model": model,
-                        "raw": analysis_content
-                    }
-                except json.JSONDecodeError:
-                    # Fallback to raw text if JSON parsing fails
-                    result["llm_analysis"] = {
-                        "analysis": analysis_content,
-                        "model": model,
-                        "parse_error": True
-                    }
+                # structured_output returns a Pydantic model instance
+                result["llm_analysis"] = {
+                    "recommendation": parsed.recommendation.value,
+                    "suggested_sl": parsed.suggested_sl,
+                    "suggested_tp": parsed.suggested_tp,
+                    "risk_level": parsed.risk_level.value,
+                    "reasoning": parsed.reasoning,
+                    "model": model,
+                    "structured_output": True,
+                }
             except Exception as e:
+                # Fallback if structured output fails
                 import traceback as tb
-                result["llm_analysis"] = {"error": str(e), "trace": tb.format_exc()}
+                result["llm_analysis"] = {
+                    "error": str(e),
+                    "trace": tb.format_exc(),
+                    "model": model,
+                }
 
         return result
     except HTTPException:
@@ -1101,87 +1533,100 @@ If recommending CLOSE, explain the urgent reason (reversal signals, overextended
             if decision is None:
                 decision = {}
 
-            # Extract trading plans
+            # Extract trading plans (for display, not decision-making)
             trader_plan = final_state.get("trader_investment_plan", "")
             risk_decision = final_state.get("final_trade_decision", "")
 
-            # Parse recommendation from the decision
-            # Primary signal: Trading plan (BUY/SELL) vs position direction
-            # Secondary: SMC data (structure shifts, bias alignment)
-            recommendation = "HOLD"  # Default
-            suggested_sl = None
-            suggested_tp = None
-            close_reason = None
+            # Get market analysis and research summary for the position manager
+            market_analysis = final_state.get("market_report", "")
+            research_summary = final_state.get("final_report", "")
 
-            # FIRST: Check if trading signal conflicts with position direction
-            # This is the most important check - if plan says SELL and we're in a BUY, close it
-            trading_signal = decision.get('signal', 'HOLD').upper()
+            # Update progress: Running Position Manager
+            analysis_tasks[task_id].update({
+                "progress": 90,
+                "current_step": "position_manager",
+                "current_step_title": "Position Manager making final decision...",
+                "in_progress_agents": ["position_manager"],
+            })
 
-            if trading_signal == "SELL" and direction == "BUY":
-                recommendation = "CLOSE"
-                close_reason = f"Trading plan recommends SELL - conflicts with current BUY position"
-            elif trading_signal == "BUY" and direction == "SELL":
-                recommendation = "CLOSE"
-                close_reason = f"Trading plan recommends BUY - conflicts with current SELL position"
-            else:
-                # Signal aligns with position or is HOLD - use SMC data for finer adjustments
-                bias_aligns = smc_review.get('bias_aligns', True)
-                structure_shift = smc_review.get('structure_shift', False)
-                sl_at_risk = smc_review.get('sl_at_risk', False)
+            # Use the dedicated Position Manager Agent for position-specific decisions
+            # This agent is specifically designed for managing existing positions,
+            # unlike the trader agent which is designed for new trade entries.
+            from tradingagents.agents.position_manager import create_position_manager_agent
+            from tradingagents.dataflows.llm_client import get_llm_client
 
-                if structure_shift and not bias_aligns:
-                    # Clear bearish signal against position - recommend CLOSE
-                    recommendation = "CLOSE"
-                    close_reason = "Structure shift (CHOCH) detected against position with misaligned bias"
-                elif structure_shift:
-                    # Structure shift but bias might still be ok - recommend ADJUST
-                    recommendation = "ADJUST"
-                    close_reason = "Structure shift detected - consider tightening stops"
-                elif not bias_aligns:
-                    # Bias against position but no structure shift yet - ADJUST
-                    recommendation = "ADJUST"
-                    close_reason = "Market bias against position direction"
-                elif sl_at_risk and smc_review.get('trailing_sl'):
-                    # SL is weak but we have a better level - ADJUST
-                    recommendation = "ADJUST"
+            llm_client, model, uses_responses = get_llm_client()
 
-            # Only override with text parsing if we find VERY explicit close signals
-            # Look for patterns like "CLOSE IMMEDIATELY" or "EXIT NOW" not just the words
-            combined_text = f"{risk_decision} {trader_plan}".upper()
-            close_patterns = [
-                "CLOSE IMMEDIATELY", "CLOSE NOW", "EXIT IMMEDIATELY", "EXIT NOW",
-                "RECOMMEND CLOSING", "SHOULD CLOSE", "MUST CLOSE",
-                "CLOSE THIS POSITION", "EXIT THIS POSITION"
-            ]
-            if any(pattern in combined_text for pattern in close_patterns):
-                recommendation = "CLOSE"
-                if not close_reason:
-                    close_reason = "Agent recommends closing based on analysis"
+            position_manager = create_position_manager_agent(
+                llm_client=llm_client,
+                model=model,
+                use_responses_api=uses_responses,
+            )
 
-            # Use SMC-suggested values if available
-            if smc_review.get('suggested_sl'):
-                suggested_sl = smc_review['suggested_sl']
-            if smc_review.get('suggested_tp'):
-                suggested_tp = smc_review['suggested_tp']
+            # Build position context for the manager
+            position_context = {
+                'direction': direction,
+                'entry_price': entry_price,
+                'current_price': current_price,
+                'current_sl': current_sl,
+                'current_tp': current_tp,
+                'pnl_pct': pnl_pct,
+                'profit': pos.profit,
+                'volume': volume,
+            }
 
-            # If decision has specific values, use those
-            if decision.get('stop_loss'):
-                suggested_sl = decision['stop_loss']
-            if decision.get('take_profit'):
-                suggested_tp = decision['take_profit']
+            # Build SMC context with support/resistance levels
+            smc_context_for_manager = {
+                'bias': smc_review.get('bias', 'neutral'),
+                'bias_aligns': smc_review.get('bias_aligns', True),
+                'structure_shift': smc_review.get('structure_shift', False),
+                'sl_at_risk': smc_review.get('sl_at_risk', False),
+                'sl_risk_reason': smc_review.get('sl_risk_reason', ''),
+                'suggested_sl': smc_review.get('suggested_sl'),
+                'suggested_tp': smc_review.get('suggested_tp'),
+                'trailing_sl': smc_review.get('trailing_sl'),
+                'support_levels': smc_review.get('support_levels', []),
+                'resistance_levels': smc_review.get('resistance_levels', []),
+            }
+
+            # Get position management decision from dedicated agent
+            pm_decision = position_manager(
+                position_context=position_context,
+                smc_context=smc_context_for_manager,
+                market_analysis=market_analysis,
+                research_summary=research_summary,
+            )
+
+            # Extract decision values
+            recommendation = pm_decision.action.value  # HOLD, ADJUST, or CLOSE
+            suggested_sl = pm_decision.suggested_sl or pm_decision.trail_sl_to or smc_review.get('suggested_sl')
+            suggested_tp = pm_decision.suggested_tp or smc_review.get('suggested_tp')
+            close_reason = pm_decision.close_reason
+
+            # Get the trading signal from the original decision (for display only)
+            trading_signal = decision.get('signal', 'HOLD').upper() if decision else 'HOLD'
+
+            # Add position manager output for frontend display
+            if "agent_outputs" not in analysis_tasks[task_id]:
+                analysis_tasks[task_id]["agent_outputs"] = {}
+            analysis_tasks[task_id]["agent_outputs"]["position_manager"] = {
+                "title": "Position Manager Decision",
+                "output": f"**Recommendation:** {recommendation}\n\n**Risk Level:** {pm_decision.risk_assessment}\n\n**Key Factors:**\n" + "\n".join([f"- {f}" for f in pm_decision.key_factors[:3]]) + f"\n\n**Reasoning:**\n{pm_decision.reasoning[:800]}"
+            }
 
             analysis_tasks[task_id].update({
                 "status": "completed",
                 "progress": 100,
                 "current_step": "complete",
                 "current_step_title": "Position Analysis Complete",
+                "in_progress_agents": [],  # Clear in-progress
                 "decision": decision,
                 "position_review": {
                     "recommendation": recommendation,
-                    "trading_signal": trading_signal,  # What the plan recommends (BUY/SELL/HOLD)
+                    "trading_signal": trading_signal,  # What the trader would do for a NEW trade (informational only)
                     "suggested_sl": suggested_sl,
                     "suggested_tp": suggested_tp,
-                    "suggested_trailing_sl": smc_review.get('trailing_sl'),
+                    "suggested_trailing_sl": pm_decision.trail_sl_to or smc_review.get('trailing_sl'),
                     "trailing_sl_source": smc_review.get('trailing_sl_source'),
                     "close_reason": close_reason,
                     "bias": smc_review.get('bias'),
@@ -1189,6 +1634,11 @@ If recommending CLOSE, explain the urgent reason (reversal signals, overextended
                     "structure_shift": smc_review.get('structure_shift'),
                     "sl_at_risk": smc_review.get('sl_at_risk'),
                     "sl_risk_reason": smc_review.get('sl_risk_reason'),
+                    # Additional fields from position manager
+                    "urgency": pm_decision.urgency.value,
+                    "risk_assessment": pm_decision.risk_assessment,
+                    "key_factors": pm_decision.key_factors,
+                    "pm_reasoning": pm_decision.reasoning,
                 },
                 "trading_plan": {
                     "trader_plan": trader_plan,
@@ -1790,6 +2240,74 @@ async def get_swing_levels(symbol: str, direction: str = "BUY", timeframe: str =
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/api/chart/candles/{symbol}")
+async def get_chart_candles(symbol: str, timeframe: str = "H1", bars: int = 100):
+    """
+    Get OHLC candle data for charting.
+
+    Returns candle data with open, high, low, close, time.
+    """
+    try:
+        import MetaTrader5 as mt5
+        import pandas as pd
+
+        if not mt5.initialize():
+            raise HTTPException(status_code=500, detail="MT5 not initialized")
+
+        # Get timeframe constant
+        tf_map = {
+            "M1": mt5.TIMEFRAME_M1,
+            "M5": mt5.TIMEFRAME_M5,
+            "M15": mt5.TIMEFRAME_M15,
+            "M30": mt5.TIMEFRAME_M30,
+            "H1": mt5.TIMEFRAME_H1,
+            "H4": mt5.TIMEFRAME_H4,
+            "D1": mt5.TIMEFRAME_D1,
+            "W1": mt5.TIMEFRAME_W1,
+        }
+        tf = tf_map.get(timeframe.upper(), mt5.TIMEFRAME_H1)
+
+        # Limit bars to reasonable amount
+        bars = min(bars, 500)
+
+        # Get price data
+        rates = mt5.copy_rates_from_pos(symbol, tf, 0, bars)
+        if rates is None or len(rates) == 0:
+            raise HTTPException(status_code=400, detail="No price data available")
+
+        df = pd.DataFrame(rates)
+        df['time'] = pd.to_datetime(df['time'], unit='s')
+
+        # Get current tick for live price
+        tick = mt5.symbol_info_tick(symbol)
+        symbol_info = mt5.symbol_info(symbol)
+        digits = symbol_info.digits if symbol_info else 5
+
+        candles = []
+        for _, row in df.iterrows():
+            candles.append({
+                'time': row['time'].isoformat(),
+                'open': round(float(row['open']), digits),
+                'high': round(float(row['high']), digits),
+                'low': round(float(row['low']), digits),
+                'close': round(float(row['close']), digits),
+                'volume': int(row['tick_volume']) if 'tick_volume' in row else 0,
+            })
+
+        return {
+            'symbol': symbol,
+            'timeframe': timeframe,
+            'candles': candles,
+            'current_price': round(tick.bid, digits) if tick else None,
+            'digits': digits,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/api/trade/save-decision")
 async def save_trade_decision(request: SaveDecisionRequest):
     """Save a trade decision for tracking and learning"""
@@ -2129,7 +2647,8 @@ async def run_analysis(request: AnalysisRequest, background_tasks: BackgroundTas
                 request.symbol,
                 request.timeframe,
                 smc_context=smc_context_str,
-                progress_callback=progress_callback
+                progress_callback=progress_callback,
+                force_fresh=request.force_fresh
             )
 
             # Handle case where final_state is None (analysis failed or returned no state)
@@ -2350,7 +2869,8 @@ async def run_analysis(request: AnalysisRequest, background_tasks: BackgroundTas
                         }
                     }
 
-            analysis_tasks[task_id].update({
+            # Build the result object
+            result = {
                 "status": "completed",
                 "progress": 100,
                 "current_step": "complete",
@@ -2364,7 +2884,28 @@ async def run_analysis(request: AnalysisRequest, background_tasks: BackgroundTas
                 },
                 # Include SMC analysis data
                 "smc_analysis": smc_response_data,
-            })
+                # Include full analysis context for reflection/learning
+                # This is the final_state from the graph, needed for creating memories
+                "analysis_context": {
+                    "final_state": final_state,  # Full graph state for reflection
+                    "symbol": request.symbol,
+                    "timeframe": request.timeframe,
+                },
+            }
+
+            analysis_tasks[task_id].update(result)
+
+            # Cache the analysis result for later retrieval
+            try:
+                cache_result = {
+                    "decision": decision,
+                    "trading_plan": result["trading_plan"],
+                    "smc_analysis": smc_response_data,
+                    "agent_outputs": analysis_tasks[task_id].get("agent_outputs", {}),
+                }
+                AnalysisCache.store(request.symbol, request.timeframe, cache_result)
+            except Exception as cache_err:
+                print(f"Failed to cache analysis result: {cache_err}")
 
         except Exception as e:
             import traceback as tb
@@ -2391,6 +2932,79 @@ async def get_analysis_status(task_id: str):
         raise HTTPException(status_code=404, detail="Task not found")
 
     return analysis_tasks[task_id]
+
+
+@app.get("/api/analysis/cached/{symbol}")
+async def get_cached_analysis(symbol: str, timeframe: str = "H1"):
+    """Get cached analysis for a symbol/timeframe combination"""
+    cache = AnalysisCache.get(symbol, timeframe)
+    if not cache:
+        return {"cached": False, "symbol": symbol, "timeframe": timeframe}
+
+    age_hours = AnalysisCache.get_age_hours(symbol, timeframe)
+    return {
+        "cached": True,
+        "symbol": symbol,
+        "timeframe": timeframe,
+        "cached_at": cache.get("cached_at"),
+        "age_hours": round(age_hours, 2) if age_hours else None,
+        "is_fresh": AnalysisCache.is_fresh(symbol, timeframe),
+        "result": cache.get("result"),
+    }
+
+
+@app.get("/api/analysis/cached")
+async def list_cached_analyses():
+    """List all cached analyses with their ages"""
+    cached = AnalysisCache.list_cached()
+    return {"cached_analyses": cached}
+
+
+@app.delete("/api/analysis/cached/{symbol}")
+async def clear_cached_analysis(symbol: str, timeframe: str = "H1"):
+    """Clear cached analysis for a symbol/timeframe combination"""
+    AnalysisCache.clear(symbol, timeframe)
+    return {"status": "cleared", "symbol": symbol, "timeframe": timeframe}
+
+
+# ----- Agent Output Cache -----
+# Caches individual agent outputs (social, news, fundamentals) to avoid re-running slow agents
+
+@app.get("/api/analysis/agent-cache/{symbol}")
+async def get_agent_cache_status(symbol: str):
+    """Get cache status for all agents for a symbol.
+
+    Returns which agents have cached outputs, their age, and expiration status.
+    Used by UI to show cache indicators next to agent names.
+    """
+    cache_status = AgentOutputCache.get_cache_status(symbol)
+    return {
+        "symbol": symbol,
+        "agents": cache_status,
+    }
+
+
+@app.delete("/api/analysis/agent-cache/{symbol}")
+async def clear_agent_cache(symbol: str, agent: str = None):
+    """Clear agent output cache for a symbol.
+
+    Args:
+        symbol: The trading symbol
+        agent: Specific agent to clear (e.g., "social_analyst"), or None to clear all
+    """
+    AgentOutputCache.clear(symbol, agent)
+    return {
+        "status": "cleared",
+        "symbol": symbol,
+        "agent": agent or "all",
+    }
+
+
+@app.delete("/api/analysis/agent-cache")
+async def clear_all_agent_cache():
+    """Clear all agent output caches."""
+    AgentOutputCache.clear_all()
+    return {"status": "cleared", "message": "All agent caches cleared"}
 
 
 # ----- Risk Metrics -----
@@ -2715,38 +3329,215 @@ async def query_memory(request: MemoryQueryRequest):
         return {"error": str(e)}
 
 
+@app.get("/api/memory/lessons")
+async def get_memory_lessons(
+    collection: str = None,
+    tier: str = None,
+    limit: int = 20
+):
+    """
+    Get recent lessons/reflections from memory with full metadata.
+
+    Args:
+        collection: Optional collection name filter (default: all collections)
+        tier: Optional tier filter ("short", "mid", "long")
+        limit: Maximum number of lessons to return
+    """
+    try:
+        import chromadb
+        from pathlib import Path
+
+        memory_db_path = Path(__file__).parent.parent.parent / "memory_db"
+        client = chromadb.PersistentClient(path=str(memory_db_path))
+
+        lessons = []
+        collections_to_query = []
+
+        if collection:
+            try:
+                coll = client.get_collection(collection)
+                collections_to_query.append((collection, coll))
+            except Exception:
+                return {"error": f"Collection '{collection}' not found"}
+        else:
+            # Query all collections
+            for coll in client.list_collections():
+                collections_to_query.append((coll.name, coll))
+
+        for coll_name, coll in collections_to_query:
+            try:
+                # Get all items with metadata
+                count = coll.count()
+                if count == 0:
+                    continue
+
+                results = coll.get(
+                    include=["metadatas", "documents"],
+                    limit=min(count, 100)  # Cap at 100 per collection
+                )
+
+                if not results["documents"]:
+                    continue
+
+                for i, doc in enumerate(results["documents"]):
+                    metadata = results["metadatas"][i] if results["metadatas"] else {}
+
+                    # Apply tier filter
+                    if tier and metadata.get("tier") != tier:
+                        continue
+
+                    lesson = {
+                        "id": results["ids"][i] if results.get("ids") else str(i),
+                        "collection": coll_name,
+                        "situation": doc[:500] if doc else "",  # Truncate for display
+                        "recommendation": metadata.get("recommendation", "")[:1000],  # Truncate
+                        "tier": metadata.get("tier", "short"),
+                        "confidence": metadata.get("confidence", 0.5),
+                        "outcome_quality": metadata.get("outcome_quality", 0.5),
+                        "prediction_correct": metadata.get("prediction_correct", "unknown"),
+                        "timestamp": metadata.get("timestamp"),
+                        "reference_count": metadata.get("reference_count", 0),
+                        "market_regime": metadata.get("market_regime"),
+                        "volatility_regime": metadata.get("volatility_regime"),
+                    }
+                    lessons.append(lesson)
+            except Exception as e:
+                # Skip collections that fail
+                continue
+
+        # Sort by timestamp (newest first) and confidence
+        lessons.sort(key=lambda x: (
+            x.get("timestamp") or "1970-01-01",
+            x.get("confidence", 0)
+        ), reverse=True)
+
+        # Apply limit
+        lessons = lessons[:limit]
+
+        # Calculate summary stats
+        total = len(lessons)
+        correct = sum(1 for l in lessons if l["prediction_correct"] == "True")
+        incorrect = sum(1 for l in lessons if l["prediction_correct"] == "False")
+        avg_confidence = sum(l["confidence"] for l in lessons) / total if total > 0 else 0
+
+        tier_counts = {}
+        for l in lessons:
+            t = l["tier"]
+            tier_counts[t] = tier_counts.get(t, 0) + 1
+
+        return {
+            "lessons": lessons,
+            "summary": {
+                "total": total,
+                "correct_predictions": correct,
+                "incorrect_predictions": incorrect,
+                "unknown": total - correct - incorrect,
+                "avg_confidence": round(avg_confidence, 2),
+                "by_tier": tier_counts
+            }
+        }
+    except Exception as e:
+        import traceback
+        return {"error": str(e), "traceback": traceback.format_exc()}
+
+
+# Track reflection tasks
+reflection_tasks: Dict[str, Dict] = {}
+
+
 @app.post("/api/memory/reflect")
 async def trigger_reflection():
     """
-    Manually trigger reflection on closed trades.
+    Manually trigger reflection on closed trades (runs in background).
 
     This runs the evening reflection cycle which:
     - Finds closed trades that haven't been reflected on
     - Analyzes the outcomes and generates learnings
     - Stores reflections in memory for future reference
+
+    Returns a task_id immediately - poll /api/memory/reflect/status/{task_id} for results.
     """
+    import asyncio
+
+    task_id = f"reflect_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+    # Initialize task state
+    reflection_tasks[task_id] = {
+        "status": "running",
+        "started_at": datetime.now().isoformat(),
+    }
+
+    async def run_reflection():
+        try:
+            from tradingagents.automation.portfolio_automation import PortfolioAutomation
+
+            automation = PortfolioAutomation()
+            result = await automation.run_evening_reflect()
+
+            reflection_tasks[task_id].update({
+                "status": "completed",
+                "completed_at": datetime.now().isoformat(),
+                "success": True,
+                "trades_processed": result.trades_processed,
+                "winning_trades": result.winning_trades,
+                "losing_trades": result.losing_trades,
+                "total_pnl": result.total_pnl,
+                "reflections_created": result.reflections_created,
+                "memories_stored": result.memories_stored,
+                "errors": result.errors if result.errors else {},
+                "duration_seconds": result.total_duration_seconds
+            })
+        except Exception as e:
+            import traceback
+            reflection_tasks[task_id].update({
+                "status": "error",
+                "completed_at": datetime.now().isoformat(),
+                "error": str(e),
+                "traceback": traceback.format_exc()
+            })
+
+    # Run in background
+    asyncio.create_task(run_reflection())
+
+    return {"task_id": task_id, "status": "started"}
+
+
+@app.get("/api/memory/reflect/status/{task_id}")
+async def get_reflection_status(task_id: str):
+    """Get reflection task status"""
+    if task_id not in reflection_tasks:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return reflection_tasks[task_id]
+
+
+@app.delete("/api/memory/{collection}/{memory_id}")
+async def delete_memory(collection: str, memory_id: str):
+    """Delete a specific memory from a collection"""
     try:
-        from tradingagents.automation.portfolio_automation import PortfolioAutomation
+        import chromadb
+        from pathlib import Path
 
-        automation = PortfolioAutomation()
-        # run_evening_reflect is an async method, await it directly
-        result = await automation.run_evening_reflect()
+        memory_db_path = Path(__file__).parent.parent.parent / "memory_db"
+        client = chromadb.PersistentClient(path=str(memory_db_path))
 
-        # Convert dataclass to dict for JSON response
-        return {
-            "success": True,
-            "trades_processed": result.trades_processed,
-            "winning_trades": result.winning_trades,
-            "losing_trades": result.losing_trades,
-            "total_pnl": result.total_pnl,
-            "reflections_created": result.reflections_created,
-            "memories_stored": result.memories_stored,
-            "errors": result.errors if result.errors else {},
-            "duration_seconds": result.total_duration_seconds
-        }
+        try:
+            coll = client.get_collection(collection)
+        except Exception:
+            raise HTTPException(status_code=404, detail=f"Collection '{collection}' not found")
+
+        # Verify the memory exists
+        existing = coll.get(ids=[memory_id])
+        if not existing["ids"]:
+            raise HTTPException(status_code=404, detail=f"Memory '{memory_id}' not found in collection '{collection}'")
+
+        # Delete the memory
+        coll.delete(ids=[memory_id])
+
+        return {"success": True, "message": f"Memory '{memory_id}' deleted from '{collection}'"}
+    except HTTPException:
+        raise
     except Exception as e:
-        import traceback
-        return {"error": str(e), "traceback": traceback.format_exc()}
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ----- Portfolio Automation -----
@@ -2775,6 +3566,13 @@ async def get_portfolio_status():
             status["next_run"] = state.get("next_run")
         except:
             pass
+
+    # Include persistent state info
+    persistent_state = AutomationState.get_status()
+    status["enabled"] = persistent_state.get("enabled", False)
+    status["last_start"] = persistent_state.get("last_start")
+    status["last_stop"] = persistent_state.get("last_stop")
+    status["stop_reason"] = persistent_state.get("stop_reason")
 
     return status
 
@@ -3086,6 +3884,9 @@ async def start_portfolio_automation():
             cwd=str(Path(__file__).parent.parent.parent)
         )
 
+        # Persist enabled state
+        AutomationState.set_enabled(True)
+
         return {"success": True, "message": "Portfolio automation started"}
     except Exception as e:
         return {"error": str(e)}
@@ -3096,6 +3897,9 @@ async def stop_portfolio_automation():
     """Stop portfolio automation"""
     pid_file = Path("portfolio_scheduler.pid")
     if not pid_file.exists():
+        # Still update state even if PID file missing
+        AutomationState.set_enabled(False)
+        AutomationState.set_stop_reason("user_stopped")
         return {"error": "Not running"}
 
     try:
@@ -3108,6 +3912,11 @@ async def stop_portfolio_automation():
             process.wait(timeout=5)
 
         pid_file.unlink()
+
+        # Persist disabled state
+        AutomationState.set_enabled(False)
+        AutomationState.set_stop_reason("user_stopped")
+
         return {"success": True, "message": "Portfolio automation stopped"}
     except Exception as e:
         return {"error": str(e)}
@@ -3170,47 +3979,91 @@ async def run_smc_analysis(
         df = pd.DataFrame(rates)
         df['time'] = pd.to_datetime(df['time'], unit='s')
 
+        # Calculate PDH/PDL (Previous Day High/Low)
+        # Get daily data to find previous day's high and low
+        pdh = None
+        pdl = None
+        try:
+            # Get the last 5 daily bars to find previous day
+            daily_rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_D1, 0, 5)
+            if daily_rates is not None and len(daily_rates) >= 2:
+                # Previous day is index -2 (index -1 is current incomplete day)
+                prev_day = daily_rates[-2]
+                pdh = float(prev_day['high'])
+                pdl = float(prev_day['low'])
+        except Exception as e:
+            logger.warning(f"Failed to calculate PDH/PDL: {e}")
+
         # Use configurable thresholds
         analyzer = SmartMoneyAnalyzer(fvg_min_size_atr=fvg_min_size)
 
-        # Run analysis with custom lookback
-        order_blocks_raw = analyzer.detect_order_blocks(df, lookback=lookback)
-        fvgs_raw = analyzer.detect_fair_value_gaps(df, lookback=lookback)
-        swing_points = analyzer.detect_swing_points(df, lookback=lookback)
-        structure_breaks = analyzer.detect_structure_breaks(df, swing_points)
+        # Run extended analysis with new features (equal levels, breakers, OTE, confluence)
         current_price = df.iloc[-1]['close']
-        zones = analyzer.get_unmitigated_zones(order_blocks_raw, fvgs_raw, current_price)
+        extended_result = analyzer.analyze_full_smc_extended(df, lookback=lookback)
+
+        # Extract components from extended analysis
+        order_blocks_raw = (
+            extended_result.get('order_blocks', {}).get('bullish', []) +
+            extended_result.get('order_blocks', {}).get('bearish', [])
+        )
+        fvgs_raw = (
+            extended_result.get('fair_value_gaps', {}).get('bullish', []) +
+            extended_result.get('fair_value_gaps', {}).get('bearish', [])
+        )
+        swing_points = extended_result.get('swing_points', [])
+        structure_breaks = extended_result.get('structure', {})
+        zones = extended_result.get('zones', {'support': [], 'resistance': []})
+
+        # NEW: Extract new SMC features (handle nested structures)
+        equal_levels_data = extended_result.get('equal_levels', {})
+        if isinstance(equal_levels_data, dict):
+            # Combine equal_highs and equal_lows into single list
+            equal_levels = (
+                equal_levels_data.get('equal_highs', []) +
+                equal_levels_data.get('equal_lows', [])
+            )
+        else:
+            equal_levels = equal_levels_data if isinstance(equal_levels_data, list) else []
+
+        breaker_blocks_data = extended_result.get('breaker_blocks', {})
+        if isinstance(breaker_blocks_data, dict):
+            # Combine bullish and bearish breakers into single list
+            breaker_blocks = (
+                breaker_blocks_data.get('bullish', []) +
+                breaker_blocks_data.get('bearish', [])
+            )
+        else:
+            breaker_blocks = breaker_blocks_data if isinstance(breaker_blocks_data, list) else []
+
+        ote_zones = extended_result.get('ote_zones', [])
+        if not isinstance(ote_zones, list):
+            ote_zones = []
+
+        premium_discount = extended_result.get('premium_discount', None)
+        # Confluence score is at current_confluence key
+        confluence_score = extended_result.get('current_confluence', None)
 
         result = {
             'current_price': current_price,
-            'order_blocks': {
-                'total': len(order_blocks_raw),
-                'unmitigated': len([ob for ob in order_blocks_raw if not ob.mitigated]),
-                'bullish': [ob for ob in order_blocks_raw if ob.type == 'bullish'],
-                'bearish': [ob for ob in order_blocks_raw if ob.type == 'bearish']
-            },
-            'fair_value_gaps': {
-                'total': len(fvgs_raw),
-                'unmitigated': len([fvg for fvg in fvgs_raw if not fvg.mitigated]),
-                'bullish': [fvg for fvg in fvgs_raw if fvg.type == 'bullish'],
-                'bearish': [fvg for fvg in fvgs_raw if fvg.type == 'bearish']
-            },
+            'order_blocks': extended_result.get('order_blocks', {}),
+            'fair_value_gaps': extended_result.get('fair_value_gaps', {}),
             'structure': {
                 'swing_points': len(swing_points),
-                'bos_count': len(structure_breaks['bos']),
-                'choc_count': len(structure_breaks['choc']),
-                'recent_bos': [sp for sp in structure_breaks['bos'] if sp.break_index and sp.break_index >= len(df) - 20],
-                'recent_choc': [sp for sp in structure_breaks['choc'] if sp.break_index and sp.break_index >= len(df) - 20]
+                'bos_count': len(structure_breaks.get('bos', [])),
+                'choc_count': len(structure_breaks.get('choc', [])),
+                'recent_bos': structure_breaks.get('recent_bos', []),
+                'recent_choc': structure_breaks.get('recent_choc', [])
             },
             'zones': zones,
             'nearest_support': zones['support'][0] if zones['support'] else None,
             'nearest_resistance': zones['resistance'][0] if zones['resistance'] else None,
-            'bias': analyzer._determine_bias(
-                structure_breaks.get('recent_bos', []),
-                structure_breaks.get('recent_choc', []),
-                zones,
-                current_price
-            )
+            'bias': extended_result.get('bias', 'neutral'),
+            # NEW: Include new SMC features in result
+            'equal_levels': equal_levels,
+            'breaker_blocks': breaker_blocks,
+            'ote_zones': ote_zones,
+            'premium_discount': premium_discount,
+            'confluence_score': confluence_score
         }
 
         # Extract order blocks as list with serializable format
@@ -3239,17 +4092,29 @@ async def run_smc_analysis(
                 "timestamp": fvg.timestamp
             })
 
-        # Extract unmitigated zones as liquidity zones
-        zones = result.get("zones", {})
+        # Extract liquidity zones (stop loss clusters at swing highs/lows)
+        raw_liquidity_zones = result.get("liquidity_zones", [])
         liquidity_zones = []
-        for z in zones.get("support", []) + zones.get("resistance", []):
-            liquidity_zones.append({
-                "type": z.get("type", "zone"),
-                "price": (z.get("top", 0) + z.get("bottom", 0)) / 2,
-                "top": z.get("top"),
-                "bottom": z.get("bottom"),
-                "strength": z.get("strength", 0)
-            })
+        for lz in raw_liquidity_zones:
+            # Handle both LiquidityZone dataclass objects and dicts
+            if hasattr(lz, 'type'):
+                # It's a dataclass object
+                liquidity_zones.append({
+                    "type": lz.type,  # "buy-side" or "sell-side"
+                    "price": lz.price,
+                    "strength": lz.strength,  # 0-100
+                    "touched": lz.touched,
+                    "timestamp": lz.timestamp
+                })
+            else:
+                # It's already a dict
+                liquidity_zones.append({
+                    "type": lz.get("type", "unknown"),
+                    "price": lz.get("price", 0),
+                    "strength": lz.get("strength", 0),
+                    "touched": lz.get("touched", False),
+                    "timestamp": lz.get("timestamp", "")
+                })
 
         # Build key levels from nearest support/resistance and unmitigated zones
         current_price = result.get("current_price", df.iloc[-1]['close'])
@@ -3367,17 +4232,121 @@ async def run_smc_analysis(
         bias_summary = f"The market bias is **{bias.upper()}** based on Smart Money Concepts analysis."
         bias_explanation = " ".join([f"• {factor}" for factor in bias_factors])
 
+        # Serialize new SMC features with proper attribute mapping
+        equal_levels_serialized = []
+        for el in equal_levels:
+            if hasattr(el, 'type'):
+                # Map "equal_highs" to "eqh" and "equal_lows" to "eql"
+                el_type = "eqh" if el.type == "equal_highs" else "eql" if el.type == "equal_lows" else el.type
+                equal_levels_serialized.append({
+                    "type": el_type,
+                    "price": el.price,
+                    "touches": el.touches,
+                    "strength": 0.5 + (el.touches * 0.1) if el.touches else 0.5,  # Strength based on touches
+                    "swept": getattr(el, 'swept', False)
+                })
+
+        breaker_blocks_serialized = []
+        for bb in breaker_blocks:
+            if hasattr(bb, 'current_type'):
+                breaker_blocks_serialized.append({
+                    "type": bb.current_type,  # "bullish" or "bearish"
+                    "top": bb.top,
+                    "bottom": bb.bottom,
+                    "original_ob_type": getattr(bb, 'original_type', None),
+                    "break_index": getattr(bb, 'break_index', None),
+                    "strength": getattr(bb, 'strength', 0.5),
+                    "mitigated": getattr(bb, 'mitigated', False)
+                })
+
+        ote_zones_serialized = []
+        for ote in ote_zones:
+            if hasattr(ote, 'direction'):
+                # Calculate Fibonacci levels from swing points
+                swing_high = getattr(ote, 'swing_high', 0)
+                swing_low = getattr(ote, 'swing_low', 0)
+                range_size = swing_high - swing_low
+                if ote.direction == "bullish":
+                    # Bullish OTE: retracement from high to low
+                    fib_618 = swing_high - (range_size * 0.618)
+                    fib_705 = swing_high - (range_size * 0.705)
+                    fib_79 = swing_high - (range_size * 0.79)
+                else:
+                    # Bearish OTE: retracement from low to high
+                    fib_618 = swing_low + (range_size * 0.618)
+                    fib_705 = swing_low + (range_size * 0.705)
+                    fib_79 = swing_low + (range_size * 0.79)
+
+                ote_zones_serialized.append({
+                    "type": ote.direction,  # "bullish" or "bearish"
+                    "fib_618": fib_618,
+                    "fib_705": fib_705,
+                    "fib_79": fib_79,
+                    "swing_high": swing_high,
+                    "swing_low": swing_low
+                })
+
+        premium_discount_serialized = None
+        if premium_discount and hasattr(premium_discount, 'zone'):
+            range_high = getattr(premium_discount, 'range_high', 0)
+            range_low = getattr(premium_discount, 'range_low', 0)
+            equilibrium = getattr(premium_discount, 'equilibrium', (range_high + range_low) / 2)
+            premium_discount_serialized = {
+                "current_zone": premium_discount.zone,  # "premium", "discount", or "equilibrium"
+                "equilibrium": equilibrium,
+                "premium_start": equilibrium,  # Premium starts at 50%
+                "discount_end": equilibrium,  # Discount ends at 50%
+                "range_high": range_high,
+                "range_low": range_low,
+                "position_percent": getattr(premium_discount, 'position_pct', 50)
+            }
+
+        confluence_score_serialized = None
+        if confluence_score and hasattr(confluence_score, 'total_score'):
+            # Map factors to categories
+            factors = getattr(confluence_score, 'factors', [])
+            bullish_factors = getattr(confluence_score, 'bullish_factors', 0)
+            bearish_factors = getattr(confluence_score, 'bearish_factors', 0)
+
+            # Determine recommendation based on score and factors
+            total_score = confluence_score.total_score
+            if total_score >= 70:
+                recommendation = "bullish" if bullish_factors > bearish_factors else "bearish" if bearish_factors > bullish_factors else "neutral"
+            elif total_score >= 50:
+                recommendation = "cautious_" + ("bullish" if bullish_factors > bearish_factors else "bearish" if bearish_factors > bullish_factors else "neutral")
+            else:
+                recommendation = "wait"
+
+            confluence_score_serialized = {
+                "total_score": total_score / 10,  # Convert 0-100 to 0-10 scale for UI
+                "bias_alignment": 1 if bullish_factors > 0 or bearish_factors > 0 else 0,
+                "zone_proximity": len([f for f in factors if "zone" in f.lower() or "ob" in f.lower() or "fvg" in f.lower()]),
+                "structure_confirmation": len([f for f in factors if "bos" in f.lower() or "choc" in f.lower()]),
+                "liquidity_target": len([f for f in factors if "liquidity" in f.lower()]),
+                "mtf_alignment": len([f for f in factors if "timeframe" in f.lower() or "htf" in f.lower()]),
+                "session_factor": len([f for f in factors if "session" in f.lower() or "london" in f.lower() or "ny" in f.lower()]),
+                "recommendation": recommendation
+            }
+
         response = {
             "symbol": symbol,
             "timeframe": timeframe,
             "order_blocks": order_blocks,
             "fair_value_gaps": fair_value_gaps,
             "liquidity_zones": liquidity_zones,
+            "pdh": pdh,  # Previous Day High
+            "pdl": pdl,  # Previous Day Low
             "bias": bias,
             "bias_summary": bias_summary,
             "bias_factors": bias_factors,
             "key_levels": key_levels,
             "current_price": round(current_price, 2),
+            # NEW: Include new SMC features
+            "equal_levels": equal_levels_serialized,
+            "breaker_blocks": breaker_blocks_serialized,
+            "ote_zones": ote_zones_serialized,
+            "premium_discount": premium_discount_serialized,
+            "confluence_score": confluence_score_serialized,
             "summary": {
                 "total_obs": ob_data.get("total", 0),
                 "unmitigated_obs": ob_data.get("unmitigated", 0),
@@ -3386,7 +4355,11 @@ async def run_smc_analysis(
                 "bullish_fvgs": bullish_fvgs,
                 "bearish_fvgs": bearish_fvgs,
                 "bullish_obs": bullish_obs,
-                "bearish_obs": bearish_obs
+                "bearish_obs": bearish_obs,
+                # NEW: Summary of new features
+                "equal_levels_count": len(equal_levels_serialized),
+                "breaker_blocks_count": len(breaker_blocks_serialized),
+                "ote_zones_count": len(ote_zones_serialized)
             }
         }
 
@@ -3520,6 +4493,324 @@ async def get_schema(schema_name: str):
     if schema_name not in schemas:
         raise HTTPException(status_code=404, detail=f"Schema '{schema_name}' not found")
     return schemas[schema_name]
+
+
+# ----- Daily Cycle (Prediction Tracking) -----
+
+DAILY_CYCLE_PID_FILE = Path("daily_cycle.pid")
+DAILY_CYCLE_STATE_FILE = Path(__file__).parent.parent.parent / "examples" / ".last_run_state.json"
+DAILY_CYCLE_PREDICTIONS_DIR = Path(__file__).parent.parent.parent / "examples" / "pending_predictions"
+
+
+DAILY_CYCLE_CONFIG_FILE = Path(__file__).parent.parent.parent / "examples" / ".daily_cycle_config.json"
+
+
+@app.get("/api/daily-cycle/status")
+async def get_daily_cycle_status():
+    """Get daily cycle status - shows if prediction tracking is running"""
+    import psutil
+
+    status = {
+        "running": False,
+        "pid": None,
+        "last_run": None,
+        "pending_predictions": 0,
+        "symbols": [],
+        "run_at": None,
+        "started_at": None
+    }
+
+    # Check if process is running
+    if DAILY_CYCLE_PID_FILE.exists():
+        try:
+            pid = int(DAILY_CYCLE_PID_FILE.read_text().strip())
+            if psutil.pid_exists(pid):
+                status["running"] = True
+                status["pid"] = pid
+        except Exception:
+            pass
+
+    # Load config with symbols being tracked
+    if DAILY_CYCLE_CONFIG_FILE.exists():
+        try:
+            config = json.loads(DAILY_CYCLE_CONFIG_FILE.read_text())
+            status["symbols"] = config.get("symbols", [])
+            status["run_at"] = config.get("run_at")
+            status["started_at"] = config.get("started_at")
+        except Exception:
+            pass
+
+    # Load last run state
+    if DAILY_CYCLE_STATE_FILE.exists():
+        try:
+            state = json.loads(DAILY_CYCLE_STATE_FILE.read_text())
+            # Get most recent last_run across all symbols
+            latest_run = None
+            for symbol, info in state.items():
+                run_time = info.get("last_run")
+                if run_time and (latest_run is None or run_time > latest_run):
+                    latest_run = run_time
+            status["last_run"] = latest_run
+        except Exception:
+            pass
+
+    # Count pending predictions
+    if DAILY_CYCLE_PREDICTIONS_DIR.exists():
+        try:
+            status["pending_predictions"] = len(list(DAILY_CYCLE_PREDICTIONS_DIR.glob("*.pkl")))
+        except Exception:
+            pass
+
+    # Include persistent state info
+    persistent_state = LearningCycleState.get_status()
+    status["enabled"] = persistent_state.get("enabled", False)
+    status["last_start"] = persistent_state.get("last_start")
+    status["last_stop"] = persistent_state.get("last_stop")
+    status["stop_reason"] = persistent_state.get("stop_reason")
+
+    # Use persisted symbols if config file doesn't have them
+    # This ensures symbol selection survives backend restarts
+    if not status["symbols"] and persistent_state.get("symbols"):
+        status["symbols"] = persistent_state["symbols"]
+
+    # Also use persisted run_at if not in config
+    if status["run_at"] is None and persistent_state.get("run_at") is not None:
+        status["run_at"] = persistent_state["run_at"]
+
+    return status
+
+
+class DailyCycleStartRequest(BaseModel):
+    symbols: Optional[List[str]] = None  # List of symbols to track
+    use_market_watch: bool = False  # If true, use MT5 market watch symbols
+    run_at: int = 9  # Hour of day to run (0-23)
+    stagger_minutes: int = 5  # Minutes between each symbol analysis
+
+
+@app.post("/api/daily-cycle/start")
+async def start_daily_cycle(request: DailyCycleStartRequest = None):
+    """Start daily cycle for symbols
+
+    Args:
+        symbols: List of trading symbols to track
+        use_market_watch: If true, use symbols from MT5 market watch
+        run_at: Hour of day to run analysis (0-23, default: 9)
+        stagger_minutes: Minutes between each symbol analysis (default: 5)
+    """
+    import subprocess
+
+    # Handle both query params (old style) and request body (new style)
+    if request is None:
+        request = DailyCycleStartRequest()
+
+    # Check if already running
+    if DAILY_CYCLE_PID_FILE.exists():
+        try:
+            pid = int(DAILY_CYCLE_PID_FILE.read_text().strip())
+            import psutil
+            if psutil.pid_exists(pid):
+                return {"error": "Daily cycle already running", "pid": pid}
+        except Exception:
+            pass
+
+    # Determine which symbols to use
+    symbols = []
+
+    if request.use_market_watch:
+        # Get symbols from MT5 market watch
+        try:
+            import MetaTrader5 as mt5
+            if mt5.initialize():
+                all_symbols = mt5.symbols_get()
+                if all_symbols:
+                    symbols = [s.name for s in all_symbols if s.visible]
+        except Exception as e:
+            return {"error": f"Failed to get market watch symbols: {e}"}
+
+        if not symbols:
+            return {"error": "No symbols found in MT5 market watch"}
+    elif request.symbols:
+        symbols = request.symbols
+    else:
+        symbols = ["XAUUSD"]  # Default fallback
+
+    try:
+        # Start the daily cycle as a subprocess
+        project_root = Path(__file__).parent.parent.parent
+
+        # Create log directory and files for subprocess output
+        log_dir = project_root / "logs" / "daily_cycle"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_file = log_dir / f"subprocess_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+
+        # Build command with multiple symbols
+        cmd = [
+            sys.executable,
+            str(project_root / "examples" / "daily_cycle.py"),
+            "--symbols", *symbols,
+            "--run-at", str(request.run_at),
+            "--stagger-minutes", str(request.stagger_minutes)
+        ]
+
+        # Open log file for subprocess output
+        log_handle = open(log_file, "w", encoding="utf-8")
+
+        process = subprocess.Popen(
+            cmd,
+            stdout=log_handle,
+            stderr=subprocess.STDOUT,  # Redirect stderr to stdout (both go to log file)
+            cwd=str(project_root),
+            creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
+        )
+
+        # Save PID and symbols info
+        DAILY_CYCLE_PID_FILE.write_text(str(process.pid))
+
+        # Save symbols being tracked
+        state_file = Path(__file__).parent.parent.parent / "examples" / ".daily_cycle_config.json"
+        state_file.write_text(json.dumps({
+            "symbols": symbols,
+            "run_at": request.run_at,
+            "started_at": datetime.now().isoformat()
+        }))
+
+        # Persist enabled state
+        LearningCycleState.set_enabled(True, symbols=symbols, run_at=request.run_at)
+
+        return {
+            "success": True,
+            "message": f"Daily cycle started for {len(symbols)} symbol(s)",
+            "pid": process.pid,
+            "symbols": symbols,
+            "run_at": request.run_at,
+            "log_file": str(log_file)
+        }
+    except Exception as e:
+        import traceback
+        logging.error(f"Failed to start daily cycle: {e}")
+        logging.error(traceback.format_exc())
+        return {"error": str(e)}
+
+
+@app.post("/api/daily-cycle/stop")
+async def stop_daily_cycle():
+    """Stop the daily cycle"""
+    import psutil
+
+    if not DAILY_CYCLE_PID_FILE.exists():
+        # Still update state even if PID file missing
+        LearningCycleState.set_enabled(False)
+        LearningCycleState.set_stop_reason("user_stopped")
+        return {"error": "Daily cycle not running"}
+
+    try:
+        pid = int(DAILY_CYCLE_PID_FILE.read_text().strip())
+
+        if psutil.pid_exists(pid):
+            process = psutil.Process(pid)
+            process.terminate()
+            try:
+                process.wait(timeout=5)
+            except psutil.TimeoutExpired:
+                process.kill()
+
+        DAILY_CYCLE_PID_FILE.unlink(missing_ok=True)
+
+        # Persist disabled state
+        LearningCycleState.set_enabled(False)
+        LearningCycleState.set_stop_reason("user_stopped")
+
+        return {"success": True, "message": "Daily cycle stopped"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.get("/api/daily-cycle/logs")
+async def get_daily_cycle_logs(lines: int = 100, file: str = None):
+    """Get recent daily cycle logs for debugging
+
+    Args:
+        lines: Number of lines to return (default 100, max 1000)
+        file: Specific log file name to read (if not provided, uses most recent)
+    """
+    project_root = Path(__file__).parent.parent.parent
+    log_dir = project_root / "logs" / "daily_cycle"
+
+    if not log_dir.exists():
+        return {"logs": [], "message": "No logs directory found", "available_files": []}
+
+    # Get available log files
+    log_files = sorted(log_dir.glob("*.log"), key=lambda x: x.stat().st_mtime, reverse=True)
+    available_files = [f.name for f in log_files[:10]]  # Show last 10 files
+
+    if not log_files:
+        return {"logs": [], "message": "No log files found", "available_files": []}
+
+    # Select which file to read
+    if file:
+        log_file = log_dir / file
+        if not log_file.exists():
+            return {"error": f"Log file '{file}' not found", "available_files": available_files}
+    else:
+        log_file = log_files[0]  # Most recent
+
+    # Read the file
+    try:
+        lines = min(lines, 1000)  # Cap at 1000 lines
+        with open(log_file, "r", encoding="utf-8", errors="replace") as f:
+            all_lines = f.readlines()
+
+        # Return last N lines
+        log_lines = all_lines[-lines:] if len(all_lines) > lines else all_lines
+
+        return {
+            "file": log_file.name,
+            "total_lines": len(all_lines),
+            "returned_lines": len(log_lines),
+            "logs": [line.rstrip() for line in log_lines],
+            "available_files": available_files
+        }
+    except Exception as e:
+        return {"error": f"Failed to read log file: {e}", "available_files": available_files}
+
+
+@app.get("/api/daily-cycle/predictions")
+async def get_pending_predictions(symbol: str = None):
+    """Get list of pending predictions awaiting evaluation"""
+    import pickle
+
+    if not DAILY_CYCLE_PREDICTIONS_DIR.exists():
+        return {"predictions": []}
+
+    predictions = []
+    for f in DAILY_CYCLE_PREDICTIONS_DIR.glob("*.pkl"):
+        try:
+            with open(f, "rb") as file:
+                data = pickle.load(file)
+
+            if data.get("status") != "pending":
+                continue
+
+            if symbol and data.get("symbol") != symbol:
+                continue
+
+            pred = data.get("prediction", {})
+            predictions.append({
+                "symbol": data.get("symbol"),
+                "signal": pred.get("signal"),
+                "expected_direction": pred.get("expected_direction"),
+                "price_at_analysis": pred.get("price_at_analysis"),
+                "analysis_timestamp": pred.get("analysis_timestamp"),
+                "evaluation_due": pred.get("evaluation_due"),
+                "filename": f.name
+            })
+        except Exception:
+            continue
+
+    # Sort by evaluation_due
+    predictions.sort(key=lambda x: x.get("evaluation_due", ""), reverse=True)
+
+    return {"predictions": predictions}
 
 
 # ----- Health Check -----

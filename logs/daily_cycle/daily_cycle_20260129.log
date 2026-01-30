@@ -1,0 +1,399 @@
+2026-01-29 07:46:48,251 - INFO - Daily Cycle starting...
+2026-01-29 07:46:48,251 - INFO - Arguments: symbols=['XAUUSD'], run_at=9, run_once=False
+2026-01-29 07:46:48,251 - INFO - Analyzing multiple symbols: XAUUSD
+2026-01-29 07:46:48,267 - INFO - ======================================================================
+2026-01-29 07:46:48,267 - INFO - ANALYSIS CYCLE - XAUUSD
+2026-01-29 07:46:48,267 - INFO - Time: 2026-01-29 07:46:48
+2026-01-29 07:46:48,267 - INFO - Evaluation window: 24 hours
+2026-01-29 07:46:48,267 - INFO - ======================================================================
+2026-01-29 07:46:48,267 - INFO - Initializing TradingAgentsGraph...
+2026-01-29 07:46:50,272 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2026-01-29 07:46:52,860 - INFO - TradingAgentsGraph initialized successfully
+2026-01-29 07:46:52,876 - INFO - No pending predictions to evaluate for XAUUSD
+2026-01-29 07:46:52,876 - INFO - Running analysis for XAUUSD on 2026-01-29...
+2026-01-29 07:46:52,947 - INFO - Running Smart Money Concepts analysis...
+2026-01-29 07:46:53,746 - INFO - SMC Analysis: All timeframes aligned BULLISH
+2026-01-29 07:46:53,746 - INFO - Running main analysis with graph.propagate()...
+2026-01-29 07:46:56,399 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 07:47:12,907 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 07:47:16,363 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 07:48:12,631 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 07:48:16,484 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 07:49:48,033 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 07:49:55,658 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 07:51:21,666 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 07:51:36,182 - INFO - Use pytorch device_name: cpu
+2026-01-29 07:51:36,182 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-01-29 07:51:42,922 - ERROR - Graph propagation failed: [Errno 22] Invalid argument
+2026-01-29 07:51:43,089 - ERROR - Traceback (most recent call last):
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 714, in _run_analysis
+    final_state, signal = self.graph.propagate(self.symbol, trade_date)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\graph\trading_graph.py", line 246, in propagate
+    final_state = self.graph.invoke(init_agent_state, **args)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\main.py", line 3068, in invoke
+    for chunk in self.stream(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\main.py", line 2643, in stream
+    for _ in runner.tick(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\_runner.py", line 167, in tick
+    run_with_retry(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\_retry.py", line 42, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 656, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 400, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\agents\researchers\bull_researcher.py", line 26, in bull_node
+    past_memories = memory.get_memories(curr_situation, n_matches=2)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\agents\utils\memory.py", line 253, in get_memories
+    query_embedding = self.get_embedding(current_situation)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\agents\utils\memory.py", line 103, in get_embedding
+    embedding = model.encode(text, convert_to_numpy=True)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\torch\utils\_contextlib.py", line 120, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\sentence_transformers\SentenceTransformer.py", line 1060, in encode
+    for start_index in trange(0, len(sentences), batch_size, desc="Batches", disable=not show_progress_bar):
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\tqdm\std.py", line 1524, in trange
+    return tqdm(range(*args), **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\tqdm\std.py", line 1096, in __init__
+    self.sp = self.status_printer(self.fp)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\tqdm\std.py", line 448, in status_printer
+    getattr(sys.stderr, 'flush', lambda: None)()
+OSError: [Errno 22] Invalid argument
+During task with name 'Bull Researcher' and id '62d77cb8-401f-affe-311c-e83f0350efb9'
+
+2026-01-29 07:51:43,089 - CRITICAL - FATAL ERROR: Daily cycle crashed: [Errno 22] Invalid argument
+2026-01-29 07:51:43,089 - CRITICAL - Traceback (most recent call last):
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 1397, in <module>
+    main()
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 1369, in main
+    run_scheduler(symbols[0], args.run_at, args.evaluation_hours)
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 1152, in run_scheduler
+    cycle.run_cycle()
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 629, in run_cycle
+    final_state, signal, smc_analysis = self._run_analysis()
+                                        ^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 714, in _run_analysis
+    final_state, signal = self.graph.propagate(self.symbol, trade_date)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\graph\trading_graph.py", line 246, in propagate
+    final_state = self.graph.invoke(init_agent_state, **args)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\main.py", line 3068, in invoke
+    for chunk in self.stream(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\main.py", line 2643, in stream
+    for _ in runner.tick(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\_runner.py", line 167, in tick
+    run_with_retry(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\_retry.py", line 42, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 656, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 400, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\agents\researchers\bull_researcher.py", line 26, in bull_node
+    past_memories = memory.get_memories(curr_situation, n_matches=2)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\agents\utils\memory.py", line 253, in get_memories
+    query_embedding = self.get_embedding(current_situation)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\agents\utils\memory.py", line 103, in get_embedding
+    embedding = model.encode(text, convert_to_numpy=True)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\torch\utils\_contextlib.py", line 120, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\sentence_transformers\SentenceTransformer.py", line 1060, in encode
+    for start_index in trange(0, len(sentences), batch_size, desc="Batches", disable=not show_progress_bar):
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\tqdm\std.py", line 1524, in trange
+    return tqdm(range(*args), **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\tqdm\std.py", line 1096, in __init__
+    self.sp = self.status_printer(self.fp)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\tqdm\std.py", line 448, in status_printer
+    getattr(sys.stderr, 'flush', lambda: None)()
+OSError: [Errno 22] Invalid argument
+During task with name 'Bull Researcher' and id '62d77cb8-401f-affe-311c-e83f0350efb9'
+
+2026-01-29 08:01:22,299 - INFO - Daily Cycle starting...
+2026-01-29 08:01:22,301 - INFO - Arguments: symbols=['XAUUSD'], run_at=9, run_once=False
+2026-01-29 08:01:22,301 - INFO - Analyzing multiple symbols: XAUUSD
+2026-01-29 08:01:22,303 - INFO - ======================================================================
+2026-01-29 08:01:22,304 - INFO - ANALYSIS CYCLE - XAUUSD
+2026-01-29 08:01:22,305 - INFO - Time: 2026-01-29 08:01:22
+2026-01-29 08:01:22,305 - INFO - Evaluation window: 24 hours
+2026-01-29 08:01:22,305 - INFO - ======================================================================
+2026-01-29 08:01:22,305 - INFO - Initializing TradingAgentsGraph...
+2026-01-29 08:01:24,154 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2026-01-29 08:01:25,094 - INFO - TradingAgentsGraph initialized successfully
+2026-01-29 08:01:25,109 - INFO - No pending predictions to evaluate for XAUUSD
+2026-01-29 08:01:25,109 - INFO - Running analysis for XAUUSD on 2026-01-29...
+2026-01-29 08:01:25,109 - INFO - Running Smart Money Concepts analysis...
+2026-01-29 08:01:25,575 - INFO - SMC Analysis: All timeframes aligned BULLISH
+2026-01-29 08:01:25,575 - INFO - Running main analysis with graph.propagate()...
+2026-01-29 08:01:30,630 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:01:45,078 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:01:53,033 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:02:52,106 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:02:57,151 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:04:08,275 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:04:16,610 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:05:43,372 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:05:46,364 - INFO - Use pytorch device_name: cpu
+2026-01-29 08:05:46,364 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-01-29 08:06:34,651 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:06:34,651 - INFO - Use pytorch device_name: cpu
+2026-01-29 08:06:34,651 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-01-29 08:07:33,585 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:07:33,585 - INFO - Use pytorch device_name: cpu
+2026-01-29 08:07:33,585 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-01-29 08:08:56,622 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:08:56,638 - INFO - Use pytorch device_name: cpu
+2026-01-29 08:08:56,638 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-01-29 08:09:42,834 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:10:17,373 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:10:54,681 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:11:37,137 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:11:37,137 - INFO - Use pytorch device_name: cpu
+2026-01-29 08:11:37,137 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-01-29 08:11:59,048 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:11:59,380 - INFO - --- Analysis Result ---
+2026-01-29 08:11:59,380 - INFO - Signal: {'signal': 'BUY', 'confidence': 0.85, 'entry_price': 5417.33, 'stop_loss': 5192.61, 'take_profit': 5610.0, 'take_profit_2': 5650.0, 'risk_level': 'Medium', 'risk_reward_ratio': 1.8, 'rationale': "After evaluating the debate between the Risky, Safe, and Neutral Analysts, I am recommending a BUY on XAUUSD at the broker price of 5417.33. My decision is driven by the compelling bullish arguments from the Risky Analyst, particularly the '38% surge over three months' and '8% jump in the last week,' supported by strong technicals like the MACD histogram at 65.8673 showing 'accelerating upward momentum' with no divergence. The structural fundamentals—central bank buying of '60-70 tons/month,' a weakening US dollar at a four-year low, and geopolitical uncertainties—further reinforce the uptrend, as highlighted in the World Affairs Report and echoed by the Risky Analyst’s focus on 'stagflation fears and safe-haven flows.' While the Safe Analyst raises valid concerns about overbought conditions with an RSI of 90.23 and a potential correction to the middle Bollinger Band at 4692.56600, historical context suggests gold can sustain such levels during strong trends, a point backed by the trader’s past 8.78% success in January 2026 despite high RSI. The Neutral Analyst’s balanced approach of staged entry is integrated into my plan, but I lean toward the Risky Analyst’s view that hesitation risks missing significant upside, especially with 80% positive social media sentiment indicating ongoing bullishness. Lessons from past trades, particularly the January 2026 loss of -5.92% from over-relying on overbought signals without momentum confirmation, push me to prioritize trend strength over immediate correction fears. My confidence of 0.85 reflects strong alignment of technicals and fundamentals, tempered slightly by overbought risks. I’ve refined the trader’s plan to balance aggression with caution, ensuring we ride the uptrend while managing downside.", 'key_risks': 'The primary risks include a sharp correction due to overbought conditions (RSI at 90.23), potentially dropping to supports like 4692.56600 (middle Bollinger Band) or 4428.49980 (50-day SMA), representing a 13-18% decline as warned by the Safe Analyst. A hawkish Fed stance or unexpected US dollar rebound, as noted in the World Affairs Report, could also pressure gold prices short-term. Additionally, high volatility (ATR of 112.36033) increases the chance of stop-loss triggers during temporary dips.', 'key_catalysts': "Key drivers for this trade include continued central bank buying and ETF inflows, sustaining demand as per the Risky Analyst’s emphasis on 'structural tailwinds.' Escalating geopolitical tensions or worsening stagflation data could further boost safe-haven appeal. A persistently weak US dollar, currently at a four-year low, and potential Fed dovishness (despite the recent hold) could propel prices toward analyst targets of $5,410 or $6,000 by year-end, as forecasted in the World Affairs Report.", 'position_size_recommendation': 'standard (5% of portfolio)', 'full_response': "## FINAL TRADING DECISION: **BUY**\n**Confidence**: 85%\n**Risk Level**: Medium\n\n### Trade Parameters\n- **Entry Price**: 5417.33\n- **Stop Loss**: 5192.61\n- **Take Profit**: 5610.0\n- **Take Profit 2**: 5650.0\n- **Risk/Reward Ratio**: 1.80\n- **Position Sizing**: standard (5% of portfolio)\n\n### Rationale\nAfter evaluating the debate between the Risky, Safe, and Neutral Analysts, I am recommending a BUY on XAUUSD at the broker price of 5417.33. My decision is driven by the compelling bullish arguments from the Risky Analyst, particularly the '38% surge over three months' and '8% jump in the last week,' supported by strong technicals like the MACD histogram at 65.8673 showing 'accelerating upward momentum' with no divergence. The structural fundamentals—central bank buying of '60-70 tons/month,' a weakening US dollar at a four-year low, and geopolitical uncertainties—further reinforce the uptrend, as highlighted in the World Affairs Report and echoed by the Risky Analyst’s focus on 'stagflation fears and safe-haven flows.' While the Safe Analyst raises valid concerns about overbought conditions with an RSI of 90.23 and a potential correction to the middle Bollinger Band at 4692.56600, historical context suggests gold can sustain such levels during strong trends, a point backed by the trader’s past 8.78% success in January 2026 despite high RSI. The Neutral Analyst’s balanced approach of staged entry is integrated into my plan, but I lean toward the Risky Analyst’s view that hesitation risks missing significant upside, especially with 80% positive social media sentiment indicating ongoing bullishness. Lessons from past trades, particularly the January 2026 loss of -5.92% from over-relying on overbought signals without momentum confirmation, push me to prioritize trend strength over immediate correction fears. My confidence of 0.85 reflects strong alignment of technicals and fundamentals, tempered slightly by overbought risks. I’ve refined the trader’s plan to balance aggress", 'from_structured_output': True}
+2026-01-29 08:11:59,380 - INFO - Decision: ## FINAL TRADING DECISION: **BUY**
+**Confidence**: 85%
+**Risk Level**: Medium
+
+### Trade Parameters
+- **Entry Price**: 5417.33
+- **Stop Loss**: 5192.61
+- **Take Profit**: 5610.0
+- **Take Profit 2**: 5650.0
+- **Risk/Reward Ratio**: 1.80
+- **Position Sizing**: standard (5% of portfolio)
+
+### Rationale...
+2026-01-29 08:11:59,479 - CRITICAL - FATAL ERROR: Daily cycle crashed: 'dict' object has no attribute 'upper'
+2026-01-29 08:11:59,479 - CRITICAL - Traceback (most recent call last):
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 1397, in <module>
+    main()
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 1369, in main
+    run_scheduler(symbols[0], args.run_at, args.evaluation_hours)
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 1152, in run_scheduler
+    cycle.run_cycle()
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 637, in run_cycle
+    self._store_prediction(final_state, signal, smc_analysis)
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 847, in _store_prediction
+    prediction = extract_prediction(
+                 ^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 127, in extract_prediction
+    if signal.upper() == "BUY":
+       ^^^^^^^^^^^^
+AttributeError: 'dict' object has no attribute 'upper'
+
+2026-01-29 08:39:28,491 - INFO - Daily Cycle starting...
+2026-01-29 08:39:28,493 - INFO - Arguments: symbols=['XAUUSD'], run_at=9, run_once=False
+2026-01-29 08:39:28,493 - INFO - Analyzing multiple symbols: XAUUSD
+2026-01-29 08:39:28,496 - INFO - ======================================================================
+2026-01-29 08:39:28,496 - INFO - ANALYSIS CYCLE - XAUUSD
+2026-01-29 08:39:28,496 - INFO - Time: 2026-01-29 08:39:28
+2026-01-29 08:39:28,496 - INFO - Evaluation window: 24 hours
+2026-01-29 08:39:28,496 - INFO - ======================================================================
+2026-01-29 08:39:28,496 - INFO - Initializing TradingAgentsGraph...
+2026-01-29 08:39:29,948 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2026-01-29 08:39:30,818 - INFO - TradingAgentsGraph initialized successfully
+2026-01-29 08:39:30,818 - INFO - No pending predictions to evaluate for XAUUSD
+2026-01-29 08:39:30,818 - INFO - Running analysis for XAUUSD on 2026-01-29...
+2026-01-29 08:39:30,833 - INFO - Running Smart Money Concepts analysis...
+2026-01-29 08:39:31,272 - INFO - SMC Analysis: All timeframes aligned BULLISH
+2026-01-29 08:39:31,272 - INFO - Running main analysis with graph.propagate()...
+2026-01-29 08:39:34,163 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:39:47,655 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:39:56,620 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:40:57,449 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:41:00,378 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:42:49,504 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:42:59,042 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:44:15,399 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:44:19,133 - INFO - Use pytorch device_name: cpu
+2026-01-29 08:44:19,133 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-01-29 08:45:18,497 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:45:18,497 - INFO - Use pytorch device_name: cpu
+2026-01-29 08:45:18,497 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-01-29 08:46:17,089 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:46:17,089 - INFO - Use pytorch device_name: cpu
+2026-01-29 08:46:17,089 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-01-29 08:47:04,753 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:47:04,756 - INFO - Use pytorch device_name: cpu
+2026-01-29 08:47:04,756 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-01-29 08:47:39,938 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:48:10,601 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:48:50,416 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:49:35,432 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:49:35,441 - INFO - Use pytorch device_name: cpu
+2026-01-29 08:49:35,441 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-01-29 08:49:58,428 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 08:49:58,444 - INFO - --- Analysis Result ---
+2026-01-29 08:49:58,444 - INFO - Signal: {'signal': 'BUY', 'confidence': 0.75, 'entry_price': 5417.33, 'stop_loss': 5192.61, 'take_profit': 5510.0, 'take_profit_2': 5600.0, 'risk_level': 'Medium', 'risk_reward_ratio': 2.33, 'rationale': "After evaluating the debate between the Risky, Neutral, and Safe Analysts, I am recommending a BUY on XAUUSD at the current broker price of 5417.33. My decision aligns primarily with the Risky and Neutral Analysts' perspectives on capturing the ongoing bullish trend, supported by strong technical momentum and fundamental drivers. The Risky Analyst's argument that 'momentum is king right now' with the price 22% above the 50-day SMA and a bullish MACD histogram of 65.8673 (Market Research Report) is compelling, as is their point that overbought conditions (RSI 90.23) can persist in macro-driven trends, referencing 2020 gold rallies. The Neutral Analyst supports this by noting 'no immediate reversal signals' and advocating a balanced entry to participate in potential upside. While the Safe Analyst raises valid concerns about overbought levels and a potential 8-13% correction to the middle Bollinger Band (4692.56600), I counter that the lack of bearish divergence in technicals and sustained safe-haven demand—driven by geopolitical tensions and USD weakness at a four-year low (World Affairs Report)—outweigh the immediate risk of a pullback. Lessons from past trades reinforce this: the successful Buy in January 2026 (8.78% return) showed that aligning with momentum and fundamentals pays off even in overbought conditions, while the failed Sell (-5.92% loss) taught me not to act prematurely on overbought signals without confirmation of reversal. My confidence is moderated to 0.75 due to high volatility (ATR 2.07%) and macro uncertainties, but the trend's strength and structured risk management justify action over holding. I’ve adopted the trader’s original price levels with a tiered take-profit strategy to lock in gains and a stop-loss to cap downside, balancing the Risky Analyst’s boldness with the Neutral Analyst’s moderation and addressing the Safe Analyst’s caution through limited exposure.", 'key_risks': '1. Overbought conditions (RSI 90.23, price above upper Bollinger Band at 5254.41266) could trigger a sharp correction, potentially dropping to the middle Bollinger Band at 4692.56600 (13% downside). 2. Macro shocks like a hawkish Fed pivot or USD rebound, as warned by the Safe Analyst and noted in the World Affairs Report with Powell’s cautious tone, could undermine gold’s safe-haven appeal. 3. Profit-taking or momentum fatigue, highlighted in the Sentiment Report, could reverse the rally without warning, especially near resistance at $5,410-$5,420.', 'key_catalysts': '1. Geopolitical tensions (Russia-Ukraine stalemate, U.S. policy uncertainty under Trump) continue to drive safe-haven demand for gold, as per the World Affairs Report. 2. USD weakness at a four-year low, coupled with central bank buying (60 tonnes monthly) and institutional demand (Tether 1-2 tons weekly), supports sustained upside, as emphasized by the Risky Analyst. 3. Technical momentum, with price significantly above SMAs and a bullish MACD, suggests further gains if resistance at $5,410 is breached, potentially triggering another wave of buying.', 'position_size_recommendation': 'standard (3-5% of portfolio)', 'full_response': "## FINAL TRADING DECISION: **BUY**\n**Confidence**: 75%\n**Risk Level**: Medium\n\n### Trade Parameters\n- **Entry Price**: 5417.33\n- **Stop Loss**: 5192.61\n- **Take Profit**: 5510.0\n- **Take Profit 2**: 5600.0\n- **Risk/Reward Ratio**: 2.33\n- **Position Sizing**: standard (3-5% of portfolio)\n\n### Rationale\nAfter evaluating the debate between the Risky, Neutral, and Safe Analysts, I am recommending a BUY on XAUUSD at the current broker price of 5417.33. My decision aligns primarily with the Risky and Neutral Analysts' perspectives on capturing the ongoing bullish trend, supported by strong technical momentum and fundamental drivers. The Risky Analyst's argument that 'momentum is king right now' with the price 22% above the 50-day SMA and a bullish MACD histogram of 65.8673 (Market Research Report) is compelling, as is their point that overbought conditions (RSI 90.23) can persist in macro-driven trends, referencing 2020 gold rallies. The Neutral Analyst supports this by noting 'no immediate reversal signals' and advocating a balanced entry to participate in potential upside. While the Safe Analyst raises valid concerns about overbought levels and a potential 8-13% correction to the middle Bollinger Band (4692.56600), I counter that the lack of bearish divergence in technicals and sustained safe-haven demand—driven by geopolitical tensions and USD weakness at a four-year low (World Affairs Report)—outweigh the immediate risk of a pullback. Lessons from past trades reinforce this: the successful Buy in January 2026 (8.78% return) showed that aligning with momentum and fundamentals pays off even in overbought conditions, while the failed Sell (-5.92% loss) taught me not to act prematurely on overbought signals without confirmation of reversal. My confidence is moderated to 0.75 due to high volatility (ATR 2.07%) and macro uncertainties, but the trend's strength and structured risk management justify action over holding. I’ve adopted the trader’s original price levels with a ", 'from_structured_output': True}
+2026-01-29 08:49:58,444 - INFO - Decision: ## FINAL TRADING DECISION: **BUY**
+**Confidence**: 75%
+**Risk Level**: Medium
+
+### Trade Parameters
+- **Entry Price**: 5417.33
+- **Stop Loss**: 5192.61
+- **Take Profit**: 5510.0
+- **Take Profit 2**: 5600.0
+- **Risk/Reward Ratio**: 2.33
+- **Position Sizing**: standard (3-5% of portfolio)
+
+### Rationa...
+2026-01-29 08:49:58,546 - CRITICAL - FATAL ERROR: Daily cycle crashed: 'dict' object has no attribute 'upper'
+2026-01-29 08:49:58,547 - CRITICAL - Traceback (most recent call last):
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 1397, in <module>
+    main()
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 1369, in main
+    run_scheduler(symbols[0], args.run_at, args.evaluation_hours)
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 1152, in run_scheduler
+    cycle.run_cycle()
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 637, in run_cycle
+    self._store_prediction(final_state, signal, smc_analysis)
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 847, in _store_prediction
+    prediction = extract_prediction(
+                 ^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 127, in extract_prediction
+    if signal.upper() == "BUY":
+       ^^^^^^^^^^^^
+AttributeError: 'dict' object has no attribute 'upper'
+
+2026-01-29 09:00:13,117 - INFO - Daily Cycle starting...
+2026-01-29 09:00:13,117 - INFO - Arguments: symbols=['XAUUSD'], run_at=9, run_once=False
+2026-01-29 09:00:13,117 - INFO - Analyzing multiple symbols: XAUUSD
+2026-01-29 09:00:13,117 - INFO - ======================================================================
+2026-01-29 09:00:13,117 - INFO - ANALYSIS CYCLE - XAUUSD
+2026-01-29 09:00:13,117 - INFO - Time: 2026-01-29 09:00:13
+2026-01-29 09:00:13,117 - INFO - Evaluation window: 24 hours
+2026-01-29 09:00:13,117 - INFO - ======================================================================
+2026-01-29 09:00:13,117 - INFO - Initializing TradingAgentsGraph...
+2026-01-29 09:00:14,606 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2026-01-29 09:00:15,792 - INFO - TradingAgentsGraph initialized successfully
+2026-01-29 09:00:15,792 - INFO - No pending predictions to evaluate for XAUUSD
+2026-01-29 09:00:15,792 - INFO - Running analysis for XAUUSD on 2026-01-29...
+2026-01-29 09:00:15,807 - INFO - Running Smart Money Concepts analysis...
+2026-01-29 09:00:16,392 - INFO - SMC Analysis: All timeframes aligned BULLISH
+2026-01-29 09:00:16,392 - INFO - Running main analysis with graph.propagate()...
+2026-01-29 09:00:51,273 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 09:01:34,063 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 09:02:21,026 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 09:03:27,893 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 09:03:30,481 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 09:04:49,818 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 09:04:58,593 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 09:06:21,667 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 09:06:25,956 - INFO - Use pytorch device_name: cpu
+2026-01-29 09:06:25,956 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-01-29 09:07:25,484 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 09:07:25,500 - INFO - Use pytorch device_name: cpu
+2026-01-29 09:07:25,500 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-01-29 09:08:39,402 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 09:08:39,402 - INFO - Use pytorch device_name: cpu
+2026-01-29 09:08:39,402 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-01-29 09:09:25,466 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 09:09:25,466 - INFO - Use pytorch device_name: cpu
+2026-01-29 09:09:25,466 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-01-29 09:09:57,431 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 09:10:29,414 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 09:11:20,219 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 09:12:01,284 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 09:12:01,284 - INFO - Use pytorch device_name: cpu
+2026-01-29 09:12:01,284 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-01-29 09:12:21,942 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-29 09:12:22,279 - INFO - --- Analysis Result ---
+2026-01-29 09:12:22,279 - INFO - Signal: {'signal': 'BUY', 'confidence': 0.75, 'entry_price': 5424.67, 'stop_loss': 5312.31, 'take_profit': 5500.0, 'take_profit_2': 5700.0, 'risk_level': 'Medium', 'risk_reward_ratio': 1.8, 'rationale': "After evaluating the debate between the Risky, Neutral, and Safe Analysts, I am recommending a BUY on XAUUSD at the broker price of 5424.67. My decision is primarily driven by the compelling bullish arguments from the Risky Analyst, who emphasizes strong fundamental drivers such as geopolitical tensions, a USD at a four-year low, and central bank buying, alongside robust technical momentum with MACD at 217.19 versus signal 151.32 and price significantly above key SMAs (996 points above 50-day, 1656 above 200-day). As the Risky Analyst states, 'these aren’t fleeting catalysts; they’re structural drivers that can keep pushing gold higher.' I agree that the current trend strength outweighs immediate overbought concerns (RSI 90.23), especially since historical precedents like the 2020 rally show gold sustaining such levels in strong uptrends. However, I’m tempering this optimism with caution from the Neutral and Safe Analysts. The Safe Analyst’s warning of extreme overextension and potential corrections to the Middle Bollinger Band at 4692.57 is valid, as is their concern about volatility (ATR 112.36) potentially gapping below stops. The Neutral Analyst’s balanced approach of scaling in gradually resonates with me, as they note, 'commit the reduced 20% exposure now at 5424.67 to maintain some skin in the game.' Reflecting on past lessons, the January 2026 SELL mistake (-5.92% loss) taught me not to act against a strong trend without multiple bearish confirmations, while the successful BUY at 4828.91 (8.78% gain) highlighted the value of phased entries. Thus, I’m adopting a cautious BUY with reduced initial exposure and tight risk management to balance upside potential with downside protection.", 'key_risks': '1. Overbought conditions (RSI 90.23, price 170.26 points above Upper Bollinger Band at 5254.41) could trigger a sharp correction, potentially to 4692.57 or lower, as warned by the Safe Analyst. 2. A hawkish Fed stance or unexpected USD strength from Powell’s remarks could reduce safe-haven demand for gold, as flagged in the World Affairs Report. 3. High volatility (ATR 112.36, intraday swings of 260+ points) risks gapping below the stop-loss overnight, rendering risk management less effective.', 'key_catalysts': '1. Continued geopolitical tensions (U.S. shutdown fears, Trump’s tariff threats, Greenland rhetoric) driving safe-haven demand, as emphasized by the Risky Analyst. 2. Persistent USD weakness at a four-year low, supporting gold’s appeal as an alternative store of value. 3. Central bank buying, particularly from China, providing a structural floor for gold prices, as noted in the fundamentals report.', 'position_size_recommendation': 'reduced (20% initial exposure)', 'full_response': "## FINAL TRADING DECISION: **BUY**\n**Confidence**: 75%\n**Risk Level**: Medium\n\n### Trade Parameters\n- **Entry Price**: 5424.67\n- **Stop Loss**: 5312.31\n- **Take Profit**: 5500.0\n- **Take Profit 2**: 5700.0\n- **Risk/Reward Ratio**: 1.80\n- **Position Sizing**: reduced (20% initial exposure)\n\n### Rationale\nAfter evaluating the debate between the Risky, Neutral, and Safe Analysts, I am recommending a BUY on XAUUSD at the broker price of 5424.67. My decision is primarily driven by the compelling bullish arguments from the Risky Analyst, who emphasizes strong fundamental drivers such as geopolitical tensions, a USD at a four-year low, and central bank buying, alongside robust technical momentum with MACD at 217.19 versus signal 151.32 and price significantly above key SMAs (996 points above 50-day, 1656 above 200-day). As the Risky Analyst states, 'these aren’t fleeting catalysts; they’re structural drivers that can keep pushing gold higher.' I agree that the current trend strength outweighs immediate overbought concerns (RSI 90.23), especially since historical precedents like the 2020 rally show gold sustaining such levels in strong uptrends. However, I’m tempering this optimism with caution from the Neutral and Safe Analysts. The Safe Analyst’s warning of extreme overextension and potential corrections to the Middle Bollinger Band at 4692.57 is valid, as is their concern about volatility (ATR 112.36) potentially gapping below stops. The Neutral Analyst’s balanced approach of scaling in gradually resonates with me, as they note, 'commit the reduced 20% exposure now at 5424.67 to maintain some skin in the game.' Reflecting on past lessons, the January 2026 SELL mistake (-5.92% loss) taught me not to act against a strong trend without multiple bearish confirmations, while the successful BUY at 4828.91 (8.78% gain) highlighted the value of phased entries. Thus, I’m adopting a cautious BUY with reduced initial exposure and tight risk management to balance upside potential wi", 'from_structured_output': True}
+2026-01-29 09:12:22,279 - INFO - Decision: ## FINAL TRADING DECISION: **BUY**
+**Confidence**: 75%
+**Risk Level**: Medium
+
+### Trade Parameters
+- **Entry Price**: 5424.67
+- **Stop Loss**: 5312.31
+- **Take Profit**: 5500.0
+- **Take Profit 2**: 5700.0
+- **Risk/Reward Ratio**: 1.80
+- **Position Sizing**: reduced (20% initial exposure)
+
+### Ratio...
+2026-01-29 09:12:22,495 - INFO - Prediction saved: XAUUSD_20260129_091222.pkl
+2026-01-29 09:12:22,495 - INFO -    Signal: BUY
+2026-01-29 09:12:22,495 - INFO -    Expected: up
+2026-01-29 09:12:22,495 - INFO -    Price: $5461.53
+2026-01-29 09:12:22,495 - INFO -    Evaluation due: 2026-01-30T09:12:22.348662
+2026-01-29 09:12:22,495 - INFO - ======================================================================
+2026-01-29 09:12:22,495 - INFO - CYCLE COMPLETE
+2026-01-29 09:12:22,495 - INFO - Next evaluation in 24 hours
+2026-01-29 09:12:22,495 - INFO - ======================================================================
+2026-01-30 09:00:24,417 - INFO - ======================================================================
+2026-01-30 09:00:24,432 - INFO - ANALYSIS CYCLE - XAUUSD
+2026-01-30 09:00:24,432 - INFO - Time: 2026-01-30 09:00:24
+2026-01-30 09:00:24,432 - INFO - Evaluation window: 24 hours
+2026-01-30 09:00:24,432 - INFO - ======================================================================
+2026-01-30 09:00:25,484 - INFO - No pending predictions to evaluate for XAUUSD
+2026-01-30 09:00:25,484 - INFO - Running analysis for XAUUSD on 2026-01-30...
+2026-01-30 09:00:25,484 - INFO - Running Smart Money Concepts analysis...
+2026-01-30 09:00:27,051 - INFO - SMC Analysis: All timeframes aligned BULLISH
+2026-01-30 09:00:27,051 - INFO - Running main analysis with graph.propagate()...
+2026-01-30 09:00:35,352 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-30 09:00:53,296 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-30 09:01:26,140 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-30 09:01:31,771 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-30 09:03:17,877 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-30 09:03:27,497 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-30 09:04:39,908 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-30 09:05:25,718 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-30 09:06:20,248 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-30 09:07:05,192 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-30 09:07:39,696 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-30 09:08:03,622 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-30 09:08:40,787 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-30 09:09:21,490 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-30 09:09:40,832 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-30 09:09:41,255 - INFO - --- Analysis Result ---
+2026-01-30 09:09:41,255 - INFO - Signal: {'signal': 'BUY', 'confidence': 0.85, 'entry_price': 5389.45, 'stop_loss': 5180.0, 'take_profit': 5600.0, 'take_profit_2': 5800.0, 'risk_level': 'Medium', 'risk_reward_ratio': 1.86, 'rationale': 'After evaluating the debate between the Risky, Neutral, and Safe Analysts, I recommend a BUY signal for XAUUSD at the broker price of 5389.45. My decision is driven by the strongest arguments from the Risky and Neutral Analysts, balanced with risk management insights from the Safe Analyst. The Risky Analyst’s emphasis on gold’s historical ability to sustain overbought conditions during safe-haven rallies, supported by a 1000+ point surge in two weeks and analyst targets of $6,000-$6,200 (up to 15-20% upside), aligns with current technical strength—price well above the 50-day SMA (4454.71440) and 200-day SMA (3778.44145), and a bullish MACD (237.8087, histogram 69.1896). The Neutral Analyst’s balanced approach of a smaller initial position (3-4% of portfolio) and scaling in at support (5100-5150) mitigates the Safe Analyst’s valid concerns about overbought RSI (86.47) and high volatility (ATR 139.72102). I counter the Safe Analyst’s call to wait for a pullback by noting that structural drivers like central bank buying (950 tons projected for 2026) and geopolitical tensions (US-Iran issues) reduce the likelihood of missing the trend, as per the World Affairs Report. Lessons from past trades, such as the January 2026 Sell decision loss (-5.92%) due to over-reliance on RSI without momentum confirmation, reinforce my decision to respect the current uptrend while managing risk through reduced sizing and tight stops. The trader’s original plan is refined to lower exposure initially, balancing boldness with caution for sustainable growth.', 'key_risks': 'Primary risks include a sharp correction due to overbought conditions (RSI 86.47), as highlighted by the Safe Analyst, with potential downside to 4800 (a 10-15% pullback per historical patterns). Sudden geopolitical de-escalation or USD strength (index currently at 96.16) could undermine safe-haven demand, triggering rapid price drops as seen in the $500 intraday fall on January 29. High volatility (ATR 139.72102) risks whipsaw movements, potentially hitting the stop-loss at 5180 before a recovery.', 'key_catalysts': 'Key drivers include sustained geopolitical tensions (US-Iran issues) boosting safe-haven demand, as noted in the World Affairs Report, and continued USD weakness (index at 96.16) supporting gold’s appeal. Central bank buying (projected 950 tons in 2026) and bullish analyst consensus (targets up to $7,200) provide structural upside. A breakout above resistance at 5598.24 could accelerate momentum toward take-profit levels of 5600 and 5800.', 'position_size_recommendation': 'reduced (3-4% of portfolio)', 'full_response': '## FINAL TRADING DECISION: **BUY**\n**Confidence**: 85%\n**Risk Level**: Medium\n\n### Trade Parameters\n- **Entry Price**: 5389.45\n- **Stop Loss**: 5180.0\n- **Take Profit**: 5600.0\n- **Take Profit 2**: 5800.0\n- **Risk/Reward Ratio**: 1.86\n- **Position Sizing**: reduced (3-4% of portfolio)\n\n### Rationale\nAfter evaluating the debate between the Risky, Neutral, and Safe Analysts, I recommend a BUY signal for XAUUSD at the broker price of 5389.45. My decision is driven by the strongest arguments from the Risky and Neutral Analysts, balanced with risk management insights from the Safe Analyst. The Risky Analyst’s emphasis on gold’s historical ability to sustain overbought conditions during safe-haven rallies, supported by a 1000+ point surge in two weeks and analyst targets of $6,000-$6,200 (up to 15-20% upside), aligns with current technical strength—price well above the 50-day SMA (4454.71440) and 200-day SMA (3778.44145), and a bullish MACD (237.8087, histogram 69.1896). The Neutral Analyst’s balanced approach of a smaller initial position (3-4% of portfolio) and scaling in at support (5100-5150) mitigates the Safe Analyst’s valid concerns about overbought RSI (86.47) and high volatility (ATR 139.72102). I counter the Safe Analyst’s call to wait for a pullback by noting that structural drivers like central bank buying (950 tons projected for 2026) and geopolitical tensions (US-Iran issues) reduce the likelihood of missing the trend, as per the World Affairs Report. Lessons from past trades, such as the January 2026 Sell decision loss (-5.92%) due to over-reliance on RSI without momentum confirmation, reinforce my decision to respect the current uptrend while managing risk through reduced sizing and tight stops. The trader’s original plan is refined to lower exposure initially, balancing boldness with caution for sustainable growth.\n\n### Key Risks\nPrimary risks include a sharp correction due to overbought conditions (RSI 86.47), as highlighted by the Safe Analyst, with pot', 'from_structured_output': True}
+2026-01-30 09:09:41,255 - INFO - Decision: ## FINAL TRADING DECISION: **BUY**
+**Confidence**: 85%
+**Risk Level**: Medium
+
+### Trade Parameters
+- **Entry Price**: 5389.45
+- **Stop Loss**: 5180.0
+- **Take Profit**: 5600.0
+- **Take Profit 2**: 5800.0
+- **Risk/Reward Ratio**: 1.86
+- **Position Sizing**: reduced (3-4% of portfolio)
+
+### Rationale...
+2026-01-30 09:09:41,625 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 404 Not Found"
+2026-01-30 09:09:41,847 - INFO - Prediction saved: XAUUSD_20260130_090941.pkl
+2026-01-30 09:09:41,847 - INFO -    Signal: BUY
+2026-01-30 09:09:41,848 - INFO -    Expected: up
+2026-01-30 09:09:41,848 - INFO -    Price: $5435.76
+2026-01-30 09:09:41,848 - INFO -    Evaluation due: 2026-01-31T09:09:41.726299
+2026-01-30 09:09:41,851 - INFO - ======================================================================
+2026-01-30 09:09:41,851 - INFO - CYCLE COMPLETE
+2026-01-30 09:09:41,851 - INFO - Next evaluation in 24 hours
+2026-01-30 09:09:41,851 - INFO - ======================================================================

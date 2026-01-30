@@ -1,9 +1,9 @@
 # TradingAgents/graph/reflection.py
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from langchain_openai import ChatOpenAI
 
-from tradingagents.agents.utils.memory import TIER_SHORT, TIER_MID, TIER_LONG
+from tradingagents.agents.utils.memory import TIER_SHORT, TIER_MID, TIER_LONG, SMCPatternMemory
 
 
 class Reflector:
@@ -272,10 +272,191 @@ Adhere strictly to these instructions, and ensure your output is detailed, accur
             prediction_correct = returns_losses > 0
         
         tier = self._determine_tier_from_returns(returns_losses)
-        
+
         risk_manager_memory.add_situations(
             [(situation, result)],
             tier=tier,
             returns=returns_losses,
             prediction_correct=prediction_correct
         )
+
+    def reflect_smc_pattern(
+        self,
+        decision: Dict[str, Any],
+        smc_memory: SMCPatternMemory,
+        current_state: Optional[Dict[str, Any]] = None,
+    ):
+        """
+        Reflect on an SMC pattern trade and store for pattern learning.
+
+        This extracts SMC-specific lessons to learn which setups work best.
+
+        Args:
+            decision: The closed trade decision with outcome
+            smc_memory: The SMC pattern memory instance
+            current_state: Optional full state for situation extraction
+        """
+        # Check if decision has SMC context
+        smc_context = decision.get("smc_context", {})
+        setup_type = smc_context.get("setup_type") or decision.get("setup_type")
+
+        if not setup_type:
+            # No SMC setup type - skip SMC pattern storage
+            return
+
+        # Check for structured outcome
+        structured_outcome = decision.get("structured_outcome", {})
+        if not structured_outcome:
+            # Build basic outcome from decision fields
+            structured_outcome = {
+                "result": "win" if decision.get("was_correct") else "loss",
+                "returns_pct": decision.get("pnl_percent", 0),
+                "direction_correct": decision.get("direction_correct", decision.get("was_correct")),
+                "sl_placement": decision.get("sl_placement", "unknown"),
+                "tp_placement": decision.get("tp_placement", "unknown"),
+                "exit_type": decision.get("exit_reason", "unknown"),
+            }
+
+        # Build situation text
+        situation_parts = []
+        if current_state:
+            situation = self._extract_current_situation(current_state)
+            situation_parts.append(situation)
+        else:
+            # Build from decision rationale
+            if decision.get("rationale"):
+                situation_parts.append(decision["rationale"])
+
+        situation_text = "\n".join(situation_parts) if situation_parts else f"{decision['symbol']} {setup_type} trade"
+
+        # Generate SMC-specific lesson
+        lesson = self._generate_smc_lesson(setup_type, smc_context, structured_outcome)
+
+        # Store the pattern
+        smc_memory.store_pattern(
+            decision_id=decision.get("decision_id", "unknown"),
+            symbol=decision.get("symbol", "unknown"),
+            setup_type=setup_type,
+            direction=decision.get("action", "unknown"),
+            smc_context=smc_context,
+            situation_text=situation_text[:2000],  # Truncate for embedding
+            outcome=structured_outcome,
+            lesson=lesson,
+        )
+
+    def _generate_smc_lesson(
+        self,
+        setup_type: str,
+        smc_context: Dict[str, Any],
+        outcome: Dict[str, Any],
+    ) -> str:
+        """Generate a lesson from the SMC pattern outcome."""
+        lessons = []
+
+        result = outcome.get("result", "unknown")
+        direction_correct = outcome.get("direction_correct", True)
+        sl_placement = outcome.get("sl_placement", "unknown")
+        tp_placement = outcome.get("tp_placement", "unknown")
+
+        # Entry zone quality
+        entry_zone = smc_context.get("entry_zone", "unknown")
+        zone_strength = smc_context.get("entry_zone_strength", 0.5)
+        with_trend = smc_context.get("with_trend")
+        confluences = smc_context.get("confluences", [])
+
+        if result == "win":
+            if with_trend:
+                lessons.append(f"{setup_type} worked well WITH trend.")
+            if zone_strength and zone_strength >= 0.7:
+                lessons.append(f"High strength zone ({zone_strength:.0%}) provided good entry.")
+            if confluences:
+                lessons.append(f"Confluences ({', '.join(confluences[:2])}) supported the trade.")
+
+        elif result == "loss":
+            if not direction_correct:
+                if not with_trend:
+                    lessons.append(f"{setup_type} failed - was counter-trend. Consider only with-trend entries.")
+                else:
+                    lessons.append(f"{setup_type} direction was wrong despite with-trend. Review signal quality.")
+
+            elif sl_placement == "too_tight":
+                lessons.append(f"{setup_type} direction correct but SL too tight. Use wider stop for this setup.")
+                if zone_strength and zone_strength < 0.6:
+                    lessons.append(f"Zone strength was only {zone_strength:.0%} - weak zones need wider stops.")
+
+            if tp_placement == "too_ambitious":
+                lessons.append(f"TP was too ambitious for {setup_type}. Use more conservative targets.")
+
+        # Confluence insights
+        if result == "win" and confluences:
+            lessons.append(f"Winning confluences: {', '.join(confluences)}.")
+        elif result == "loss" and not confluences:
+            lessons.append(f"{setup_type} without confluences failed. Require confirmations.")
+
+        return " ".join(lessons) if lessons else f"{setup_type} {result}."
+
+    def reflect_with_smc(
+        self,
+        current_state: Dict[str, Any],
+        returns_losses: float,
+        memories: Dict[str, Any],
+        decision: Optional[Dict[str, Any]] = None,
+        smc_memory: Optional[SMCPatternMemory] = None,
+    ) -> Dict[str, int]:
+        """
+        Full reflection including SMC pattern storage.
+
+        This is the main entry point for reflection that handles both
+        standard agent memories and SMC pattern learning.
+
+        Args:
+            current_state: The full trading state
+            returns_losses: The returns/losses from the trade
+            memories: Dict of agent memories (bull_memory, bear_memory, etc.)
+            decision: Optional closed decision for SMC pattern extraction
+            smc_memory: Optional SMC pattern memory instance
+
+        Returns:
+            Dict with counts of reflections and memories stored
+        """
+        reflections_created = 0
+        memories_stored = 0
+
+        # Standard agent reflections
+        if "bull_memory" in memories:
+            self.reflect_bull_researcher(current_state, returns_losses, memories["bull_memory"])
+            reflections_created += 1
+            memories_stored += 1
+
+        if "bear_memory" in memories:
+            self.reflect_bear_researcher(current_state, returns_losses, memories["bear_memory"])
+            reflections_created += 1
+            memories_stored += 1
+
+        if "trader_memory" in memories:
+            self.reflect_trader(current_state, returns_losses, memories["trader_memory"])
+            reflections_created += 1
+            memories_stored += 1
+
+        if "invest_judge_memory" in memories:
+            self.reflect_invest_judge(current_state, returns_losses, memories["invest_judge_memory"])
+            reflections_created += 1
+            memories_stored += 1
+
+        if "risk_manager_memory" in memories:
+            self.reflect_risk_manager(current_state, returns_losses, memories["risk_manager_memory"])
+            reflections_created += 1
+            memories_stored += 1
+
+        # SMC pattern reflection
+        if decision and smc_memory:
+            setup_type = decision.get("smc_context", {}).get("setup_type") or decision.get("setup_type")
+            if setup_type:
+                self.reflect_smc_pattern(decision, smc_memory, current_state)
+                reflections_created += 1
+                memories_stored += 1
+
+        return {
+            "reflections_created": reflections_created,
+            "memories_stored": memories_stored,
+        }

@@ -21,6 +21,7 @@ import sys
 import json
 import pickle
 import argparse
+import logging
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple, List
@@ -30,6 +31,25 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from dotenv import load_dotenv
 load_dotenv()
 
+# =============================================================================
+# LOGGING SETUP
+# =============================================================================
+
+LOG_DIR = Path(__file__).parent.parent / "logs" / "daily_cycle"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+# Configure logging to both file and console
+log_file = LOG_DIR / f"daily_cycle_{datetime.now().strftime('%Y%m%d')}.log"
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler(log_file, encoding='utf-8'),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger("DailyCycle")
+
 from tradingagents.graph.trading_graph import TradingAgentsGraph
 from tradingagents.agents.utils.memory import (
     FinancialSituationMemory,
@@ -38,6 +58,9 @@ from tradingagents.agents.utils.memory import (
     TIER_LONG
 )
 from tradingagents.risk import PositionSizer, calculate_kelly_from_history
+from tradingagents.schemas import PredictionLesson
+from tradingagents.dataflows.llm_client import structured_output
+from openai import OpenAI
 
 
 # =============================================================================
@@ -80,30 +103,36 @@ MIN_HOURS_BETWEEN_RUNS = 12
 # =============================================================================
 
 def extract_prediction(
-    final_state: Dict[str, Any], 
-    signal: str, 
+    final_state: Dict[str, Any],
+    signal,  # Can be str or dict with 'signal' key
     current_price: float,
     evaluation_hours: int = 24,
     analysis_time: datetime = None
 ) -> Dict[str, Any]:
     """
     Extract structured prediction from analysis state.
-    
+
     Parses the final_trade_decision to determine expected direction.
-    
+
     Args:
         final_state: The analysis state from graph.propagate()
-        signal: BUY/SELL/HOLD signal
+        signal: BUY/SELL/HOLD signal - can be string or dict with 'signal' key
         current_price: Price at time of analysis
         evaluation_hours: Hours until evaluation (default 24, can be 72 for swing trades)
         analysis_time: Override analysis timestamp (for backtesting)
     """
     decision = final_state.get("final_trade_decision", "")
-    
+
+    # Handle signal as dict or string
+    if isinstance(signal, dict):
+        signal_str = signal.get("signal", "HOLD")
+    else:
+        signal_str = str(signal) if signal else "HOLD"
+
     # Determine expected direction from signal
-    if signal.upper() == "BUY":
+    if signal_str.upper() == "BUY":
         expected_direction = "up"
-    elif signal.upper() == "SELL":
+    elif signal_str.upper() == "SELL":
         expected_direction = "down"
     else:
         expected_direction = "sideways"
@@ -121,7 +150,7 @@ def extract_prediction(
     ts = analysis_time or datetime.now()
     
     return {
-        "signal": signal.upper(),
+        "signal": signal_str.upper(),
         "expected_direction": expected_direction,
         "key_factors": key_factors,
         "price_at_analysis": current_price,
@@ -162,27 +191,27 @@ def get_current_price(symbol: str) -> float:
 def save_prediction(symbol: str, prediction: Dict[str, Any], final_state: Dict[str, Any]):
     """Save prediction for later evaluation."""
     PREDICTIONS_DIR.mkdir(parents=True, exist_ok=True)
-    
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"{symbol}_{timestamp}.pkl"
     filepath = PREDICTIONS_DIR / filename
-    
+
     data = {
         "symbol": symbol,
         "prediction": prediction,
         "final_state": final_state,
         "status": "pending",
     }
-    
+
     with open(filepath, "wb") as f:
         pickle.dump(data, f)
-    
-    print(f"Prediction saved: {filepath.name}")
-    print(f"   Signal: {prediction['signal']}")
-    print(f"   Expected: {prediction['expected_direction']}")
-    print(f"   Price: ${prediction['price_at_analysis']:.2f}")
-    print(f"   Evaluation due: {prediction['evaluation_due']}")
-    
+
+    logger.info(f"Prediction saved: {filepath.name}")
+    logger.info(f"   Signal: {prediction['signal']}")
+    logger.info(f"   Expected: {prediction['expected_direction']}")
+    logger.info(f"   Price: ${prediction['price_at_analysis']:.2f}")
+    logger.info(f"   Evaluation due: {prediction['evaluation_due']}")
+
     return filepath
 
 
@@ -280,13 +309,22 @@ def evaluate_prediction(
     print(f"Change: {pct_change:+.2f}% ({actual_direction})")
     print(f"Prediction: {'CORRECT' if prediction_correct else 'INCORRECT'}")
     print(f"Hypothetical P&L: {hypothetical_pnl:+.2f}%")
-    
-    # Generate comparative lesson using LLM
-    lesson = generate_comparative_lesson(prediction, evaluation, graph)
-    evaluation["lesson"] = lesson
-    
-    # Store lesson in memory
-    store_lesson(prediction, evaluation, lesson, graph, final_state)
+
+    # Generate comparative lesson using LLM with structured output
+    lesson_text, lesson_obj = generate_comparative_lesson(prediction, evaluation, graph)
+    evaluation["lesson"] = lesson_text
+    if lesson_obj:
+        evaluation["lesson_structured"] = {
+            "analysis": lesson_obj.analysis,
+            "predictive_factors": lesson_obj.predictive_factors,
+            "misleading_factors": lesson_obj.misleading_factors,
+            "lesson": lesson_obj.lesson,
+            "confidence_adjustment": lesson_obj.confidence_adjustment,
+            "similar_pattern_advice": lesson_obj.similar_pattern_advice,
+        }
+
+    # Store lesson in memory with regime support
+    store_lesson(prediction, evaluation, lesson_text, graph, final_state, lesson_obj)
     
     return evaluation
 
@@ -295,11 +333,14 @@ def generate_comparative_lesson(
     prediction: Dict[str, Any],
     evaluation: Dict[str, Any],
     graph: TradingAgentsGraph
-) -> str:
+) -> Tuple[str, Optional[PredictionLesson]]:
     """
-    Use LLM to generate a comparative analysis lesson.
-    
+    Use LLM with structured output to generate a comparative analysis lesson.
+
     Analyzes what the prediction got right/wrong and why.
+
+    Returns:
+        Tuple of (formatted lesson string, PredictionLesson object or None)
     """
     prompt = f"""You are analyzing a trading prediction to extract lessons for future improvement.
 
@@ -309,7 +350,7 @@ PREDICTION MADE:
 - Price at Analysis: ${prediction['price_at_analysis']:.2f}
 - Key Reasoning: {prediction['final_decision'][:500]}
 
-ACTUAL OUTCOME (24 hours later):
+ACTUAL OUTCOME ({prediction.get('evaluation_hours', 24)} hours later):
 - Actual Direction: {evaluation['actual_direction']}
 - Price Change: {evaluation['pct_change']:+.2f}%
 - Current Price: ${evaluation['price_at_evaluation']:.2f}
@@ -318,25 +359,58 @@ ACTUAL OUTCOME (24 hours later):
 KEY FACTORS FROM ANALYSIS:
 {chr(10).join(prediction['key_factors'][:3])}
 
-TASK:
-1. Analyze whether the prediction was correct and why
-2. Identify which factors in the analysis were predictive vs misleading
-3. Provide a concise lesson (2-3 sentences) that can improve future predictions
-4. Focus on actionable insights, not just observations
-
-Format your response as:
-ANALYSIS: [Your analysis of what happened]
-PREDICTIVE FACTORS: [Factors that correctly predicted the outcome]
-MISLEADING FACTORS: [Factors that led to incorrect conclusions]
-LESSON: [Concise, actionable lesson for future predictions]
-"""
+Analyze the prediction outcome and provide structured lessons for improvement.
+Focus on actionable insights that can improve future predictions."""
 
     try:
-        response = graph.quick_thinking_llm.invoke(prompt)
-        return response.content
+        # Try structured output first
+        client = OpenAI(
+            api_key=os.getenv("XAI_API_KEY"),
+            base_url="https://api.x.ai/v1"
+        )
+
+        messages = [
+            {"role": "system", "content": "You are a trading performance analyst. Extract structured lessons from prediction outcomes."},
+            {"role": "user", "content": prompt}
+        ]
+
+        lesson_obj = structured_output(
+            client=client,
+            model=graph.config.get("quick_think_llm", "grok-3-fast"),
+            messages=messages,
+            response_schema=PredictionLesson,
+            max_tokens=1000,
+            temperature=0.3,
+            use_responses_api=True
+        )
+
+        # Format as string for backward compatibility
+        formatted = f"""ANALYSIS: {lesson_obj.analysis}
+
+PREDICTIVE FACTORS: {', '.join(lesson_obj.predictive_factors) if lesson_obj.predictive_factors else 'None identified'}
+
+MISLEADING FACTORS: {', '.join(lesson_obj.misleading_factors) if lesson_obj.misleading_factors else 'None identified'}
+
+LESSON: {lesson_obj.lesson}
+
+CONFIDENCE ADJUSTMENT: {lesson_obj.confidence_adjustment:+.2f}"""
+
+        if lesson_obj.similar_pattern_advice:
+            formatted += f"\n\nPATTERN ADVICE: {lesson_obj.similar_pattern_advice}"
+
+        return formatted, lesson_obj
+
     except Exception as e:
-        print(f"Warning: Failed to generate lesson: {e}")
-        return f"Prediction was {'correct' if evaluation['prediction_correct'] else 'incorrect'}. Price moved {evaluation['pct_change']:+.2f}%."
+        print(f"Warning: Structured output failed, falling back to raw LLM: {e}")
+
+        # Fallback to raw LLM output
+        try:
+            response = graph.quick_thinking_llm.invoke(prompt)
+            return response.content, None
+        except Exception as e2:
+            print(f"Warning: Failed to generate lesson: {e2}")
+            fallback = f"Prediction was {'correct' if evaluation['prediction_correct'] else 'incorrect'}. Price moved {evaluation['pct_change']:+.2f}%."
+            return fallback, None
 
 
 def determine_tier_from_evaluation(evaluation: Dict[str, Any]) -> str:
@@ -357,18 +431,65 @@ def determine_tier_from_evaluation(evaluation: Dict[str, Any]) -> str:
         return TIER_SHORT  # Standard results
 
 
+def extract_regime_from_state(final_state: Dict[str, Any]) -> Optional[Dict[str, str]]:
+    """
+    Extract market regime information from the analysis state.
+
+    Returns regime dict compatible with memory system:
+    - market_regime: trending_up, trending_down, ranging, volatile
+    - volatility_regime: low, normal, high, extreme
+    """
+    regime = {}
+
+    # Try to extract from SMC context
+    smc_context = final_state.get("smc_context", "")
+    market_report = final_state.get("market_report", "")
+
+    # Simple heuristics - could be enhanced with LLM extraction
+    combined_text = f"{smc_context} {market_report}".lower()
+
+    # Detect market regime
+    if "bullish" in combined_text or "uptrend" in combined_text:
+        regime["market_regime"] = "trending_up"
+    elif "bearish" in combined_text or "downtrend" in combined_text:
+        regime["market_regime"] = "trending_down"
+    elif "ranging" in combined_text or "consolidat" in combined_text:
+        regime["market_regime"] = "ranging"
+    elif "volatile" in combined_text or "choppy" in combined_text:
+        regime["market_regime"] = "volatile"
+
+    # Detect volatility regime
+    if "high volatility" in combined_text or "very volatile" in combined_text:
+        regime["volatility_regime"] = "high"
+    elif "low volatility" in combined_text or "quiet" in combined_text:
+        regime["volatility_regime"] = "low"
+    elif "extreme" in combined_text:
+        regime["volatility_regime"] = "extreme"
+
+    return regime if regime else None
+
+
 def store_lesson(
     prediction: Dict[str, Any],
     evaluation: Dict[str, Any],
     lesson: str,
     graph: TradingAgentsGraph,
-    final_state: Dict[str, Any] = None
+    final_state: Dict[str, Any] = None,
+    lesson_obj: Optional[PredictionLesson] = None
 ):
     """
-    Store the lesson in memory with confidence scoring.
-    
+    Store the lesson in memory with confidence scoring and regime support.
+
     Uses the tiered memory system to store lessons with appropriate
     confidence and tier based on the prediction outcome.
+
+    Args:
+        prediction: The original prediction data
+        evaluation: The evaluation results
+        lesson: Formatted lesson string
+        graph: The TradingAgentsGraph instance
+        final_state: The full analysis state (for regime extraction)
+        lesson_obj: Structured PredictionLesson object (optional)
     """
     # Create situation string from the original analysis
     situation = "\n\n".join([
@@ -376,34 +497,56 @@ def store_lesson(
         prediction["full_state_summary"].get("news_report", ""),
         prediction["full_state_summary"].get("sentiment_report", ""),
     ])
-    
+
     # Create a prediction-specific memory if it doesn't exist
     if not hasattr(graph, 'prediction_memory'):
         graph.prediction_memory = FinancialSituationMemory(
-            "prediction_accuracy", 
+            "prediction_accuracy",
             graph.config
         )
-    
-    # Store the lesson with confidence scoring
-    recommendation = f"""
+
+    # Build recommendation with structured lesson if available
+    if lesson_obj:
+        recommendation = f"""
+PREDICTION EVALUATION ({evaluation['symbol']}):
+Signal: {prediction['signal']} | Expected: {prediction['expected_direction']} | Actual: {evaluation['actual_direction']}
+Result: {'CORRECT' if evaluation['prediction_correct'] else 'INCORRECT'} | P&L: {evaluation['hypothetical_pnl']:+.2f}%
+
+ANALYSIS: {lesson_obj.analysis}
+
+LESSON: {lesson_obj.lesson}
+
+PREDICTIVE FACTORS: {', '.join(lesson_obj.predictive_factors) if lesson_obj.predictive_factors else 'None'}
+MISLEADING FACTORS: {', '.join(lesson_obj.misleading_factors) if lesson_obj.misleading_factors else 'None'}
+
+PATTERN ADVICE: {lesson_obj.similar_pattern_advice or 'N/A'}
+"""
+    else:
+        recommendation = f"""
 PREDICTION EVALUATION ({evaluation['symbol']}):
 Signal: {prediction['signal']} | Expected: {prediction['expected_direction']} | Actual: {evaluation['actual_direction']}
 Result: {'CORRECT' if evaluation['prediction_correct'] else 'INCORRECT'} | P&L: {evaluation['hypothetical_pnl']:+.2f}%
 
 {lesson}
 """
-    
+
     # Determine tier based on evaluation quality
     tier = determine_tier_from_evaluation(evaluation)
-    
+
+    # Extract regime from state for better memory retrieval later
+    regime = None
+    if final_state:
+        regime = extract_regime_from_state(final_state)
+
     # Add with confidence scoring based on returns and correctness
     graph.prediction_memory.add_situations(
         [(situation, recommendation)],
         tier=tier,
         returns=evaluation['hypothetical_pnl'],
-        prediction_correct=evaluation['prediction_correct']
+        prediction_correct=evaluation['prediction_correct'],
+        regime=regime
     )
-    print(f"Lesson stored in prediction_accuracy memory (tier: {tier})")
+    print(f"Lesson stored in prediction_accuracy memory (tier: {tier}, regime: {regime})")
     
     # Also update the standard memories via reflection
     # This uses the existing reflection system with the hypothetical P&L
@@ -456,8 +599,9 @@ class DailyAnalysisCycle:
     def _ensure_graph(self):
         """Lazy initialization of the graph."""
         if self.graph is None:
-            print(f"Initializing TradingAgentsGraph...")
+            logger.info(f"Initializing TradingAgentsGraph...")
             self.graph = TradingAgentsGraph(config=self.config, debug=False)
+            logger.info(f"TradingAgentsGraph initialized successfully")
     
     def run_cycle(self) -> Tuple[Dict[str, Any], str, Dict[str, Any]]:
         """
@@ -470,13 +614,19 @@ class DailyAnalysisCycle:
         Returns:
             (final_state, signal, smc_analysis) from the new analysis
         """
-        self._ensure_graph()
+        logger.info(f"{'='*70}")
+        logger.info(f"ANALYSIS CYCLE - {self.symbol}")
+        logger.info(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        logger.info(f"Evaluation window: {self.evaluation_hours} hours")
+        logger.info(f"{'='*70}")
 
-        print(f"\n{'='*70}")
-        print(f"ANALYSIS CYCLE - {self.symbol}")
-        print(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        print(f"Evaluation window: {self.evaluation_hours} hours")
-        print(f"{'='*70}")
+        try:
+            self._ensure_graph()
+        except Exception as e:
+            logger.error(f"Failed to initialize graph: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            raise
 
         # Step 1: Evaluate pending predictions
         self._evaluate_pending()
@@ -495,42 +645,42 @@ class DailyAnalysisCycle:
         # Step 5: Save last run timestamp for recovery
         save_last_run_state(self.symbol)
 
-        print(f"\n{'='*70}")
-        print(f"CYCLE COMPLETE")
-        print(f"Next evaluation in {self.evaluation_hours} hours")
-        print(f"{'='*70}\n")
+        logger.info(f"{'='*70}")
+        logger.info(f"CYCLE COMPLETE")
+        logger.info(f"Next evaluation in {self.evaluation_hours} hours")
+        logger.info(f"{'='*70}")
 
         return final_state, signal, smc_analysis
     
     def _evaluate_pending(self):
         """Evaluate all pending predictions that are due."""
         pending = load_pending_predictions(self.symbol)
-        
+
         if not pending:
-            print(f"\nNo pending predictions to evaluate for {self.symbol}")
+            logger.info(f"No pending predictions to evaluate for {self.symbol}")
             return
-        
-        print(f"\nFound {len(pending)} pending prediction(s) to evaluate")
-        
+
+        logger.info(f"Found {len(pending)} pending prediction(s) to evaluate")
+
         current_price = get_current_price(self.symbol)
         if current_price <= 0:
-            print("Warning: Could not get current price, skipping evaluation")
+            logger.warning("Could not get current price, skipping evaluation")
             return
-        
+
         for pred_data in pending:
             try:
                 evaluation = evaluate_prediction(pred_data, current_price, self.graph)
                 save_evaluation(evaluation, pred_data["filepath"])
             except Exception as e:
-                print(f"Failed to evaluate prediction: {e}")
+                logger.error(f"Failed to evaluate prediction: {e}")
                 import traceback
-                traceback.print_exc()
+                logger.error(traceback.format_exc())
     
     def _run_analysis(self) -> Tuple[Dict[str, Any], str, Dict[str, Any]]:
         """Run the trading analysis with SMC integration."""
         trade_date = datetime.now().strftime("%Y-%m-%d")
 
-        print(f"\nRunning analysis for {self.symbol} on {trade_date}...")
+        logger.info(f"Running analysis for {self.symbol} on {trade_date}...")
 
         # Run SMC analysis first
         smc_analysis = None
@@ -541,7 +691,7 @@ class DailyAnalysisCycle:
                 get_htf_bias_alignment
             )
 
-            print("Running Smart Money Concepts analysis...")
+            logger.info("Running Smart Money Concepts analysis...")
             smc_analysis = analyze_multi_timeframe_smc(
                 symbol=self.symbol,
                 timeframes=['1H', '4H', 'D1']
@@ -549,7 +699,7 @@ class DailyAnalysisCycle:
 
             if smc_analysis:
                 alignment = get_htf_bias_alignment(smc_analysis)
-                print(f"SMC Analysis: {alignment['message']}")
+                logger.info(f"SMC Analysis: {alignment['message']}")
 
                 # Format SMC context for LLM
                 smc_context = format_smc_for_prompt(smc_analysis, self.symbol)
@@ -560,14 +710,23 @@ class DailyAnalysisCycle:
                     self.graph.curr_state = {}
                 self.graph.curr_state['smc_context'] = smc_context
         except Exception as e:
-            print(f"Warning: SMC analysis failed: {e}")
+            logger.warning(f"SMC analysis failed: {e}")
+            import traceback
+            logger.debug(traceback.format_exc())
 
         # Run main analysis with SMC context
-        final_state, signal = self.graph.propagate(self.symbol, trade_date)
+        logger.info("Running main analysis with graph.propagate()...")
+        try:
+            final_state, signal = self.graph.propagate(self.symbol, trade_date)
+        except Exception as e:
+            logger.error(f"Graph propagation failed: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            raise
 
-        print(f"\n--- Analysis Result ---")
-        print(f"Signal: {signal}")
-        print(f"Decision: {final_state.get('final_trade_decision', 'N/A')[:300]}...")
+        logger.info(f"--- Analysis Result ---")
+        logger.info(f"Signal: {signal}")
+        logger.info(f"Decision: {final_state.get('final_trade_decision', 'N/A')[:300]}...")
 
         return final_state, signal, smc_analysis
     
@@ -683,8 +842,14 @@ class DailyAnalysisCycle:
             import traceback
             traceback.print_exc()
 
-    def _store_prediction(self, final_state: Dict[str, Any], signal: str, smc_analysis: Dict[str, Any] = None):
+    def _store_prediction(self, final_state: Dict[str, Any], signal, smc_analysis: Dict[str, Any] = None):
         """Extract and store prediction for later evaluation with SMC context."""
+        # Handle signal as dict or string
+        if isinstance(signal, dict):
+            signal_str = signal.get("signal", "HOLD")
+        else:
+            signal_str = str(signal) if signal else "HOLD"
+
         current_price = get_current_price(self.symbol)
 
         if current_price <= 0:
@@ -704,7 +869,7 @@ class DailyAnalysisCycle:
             }
 
         # Add position sizing recommendation if signal is BUY or SELL
-        if signal.upper() in ["BUY", "SELL"] and current_price > 0:
+        if signal_str.upper() in ["BUY", "SELL"] and current_price > 0:
             position_rec = self._calculate_position_size(signal, current_price, smc_analysis)
             if position_rec:
                 prediction["position_sizing"] = position_rec
@@ -718,7 +883,7 @@ class DailyAnalysisCycle:
     
     def _calculate_position_size(
         self,
-        signal: str,
+        signal,  # Can be str or dict with 'signal' key
         current_price: float,
         smc_analysis: Dict[str, Any] = None,
         account_balance: float = 100000,
@@ -732,6 +897,12 @@ class DailyAnalysisCycle:
 
         Uses backtest history for Kelly parameters if available.
         """
+        # Handle signal as dict or string
+        if isinstance(signal, dict):
+            signal_str = signal.get("signal", "HOLD")
+        else:
+            signal_str = str(signal) if signal else "HOLD"
+
         try:
             # Get ATR for stop loss calculation
             from tradingagents.dataflows.mt5_data import get_mt5_data
@@ -808,7 +979,7 @@ class DailyAnalysisCycle:
 
             # Fallback to ATR-based stop loss
             if stop_loss is None:
-                if signal.upper() == "BUY":
+                if signal_str.upper() == "BUY":
                     stop_loss = current_price - (atr * atr_multiplier)
                 else:
                     stop_loss = current_price + (atr * atr_multiplier)
@@ -851,7 +1022,7 @@ class DailyAnalysisCycle:
             
             # Calculate take profit levels
             risk_distance = abs(current_price - stop_loss)
-            if signal.upper() == "BUY":
+            if signal_str.upper() == "BUY":
                 tp_2r = current_price + (risk_distance * 2)
                 tp_3r = current_price + (risk_distance * 3)
             else:
@@ -1022,26 +1193,28 @@ def run_multi_symbol_scheduler(symbols: List[str], run_at_hour: int = 9, evaluat
         evaluation_hours: Hours until prediction evaluation (default 24)
         stagger_minutes: Minutes between each symbol analysis (default 5)
     """
+    logger.info(f"Starting multi-symbol scheduler with symbols: {symbols}")
+
     try:
         import schedule
         import time
     except ImportError:
-        print("Error: Please install schedule: pip install schedule")
+        logger.error("Missing dependency: Please install schedule: pip install schedule")
         return
 
     # Create a cycle instance for each symbol
     cycles = {symbol: DailyAnalysisCycle(symbol, evaluation_hours=evaluation_hours) for symbol in symbols}
 
-    print(f"\n{'='*70}")
-    print(f"MULTI-SYMBOL ANALYSIS SCHEDULER STARTED")
-    print(f"{'='*70}")
-    print(f"Symbols: {', '.join(symbols)}")
-    print(f"Start time: {run_at_hour:02d}:00 daily")
-    print(f"Stagger: {stagger_minutes} minutes between symbols")
-    print(f"Evaluation window: {evaluation_hours} hours")
-    print(f"Min hours between runs: {MIN_HOURS_BETWEEN_RUNS}")
-    print(f"Press Ctrl+C to stop")
-    print(f"{'='*70}\n")
+    logger.info(f"{'='*70}")
+    logger.info(f"MULTI-SYMBOL ANALYSIS SCHEDULER STARTED")
+    logger.info(f"{'='*70}")
+    logger.info(f"Symbols: {', '.join(symbols)}")
+    logger.info(f"Start time: {run_at_hour:02d}:00 daily")
+    logger.info(f"Stagger: {stagger_minutes} minutes between symbols")
+    logger.info(f"Evaluation window: {evaluation_hours} hours")
+    logger.info(f"Min hours between runs: {MIN_HOURS_BETWEEN_RUNS}")
+    logger.info(f"Press Ctrl+C to stop")
+    logger.info(f"{'='*70}")
 
     # Schedule each symbol at staggered times
     for i, symbol in enumerate(symbols):
@@ -1058,43 +1231,55 @@ def run_multi_symbol_scheduler(symbols: List[str], run_at_hour: int = 9, evaluat
         schedule_time = f"{run_hour:02d}:{run_minute:02d}"
         schedule.every().day.at(schedule_time).do(cycle.run_cycle)
 
-        print(f"[{symbol}] Scheduled at {schedule_time}")
+        logger.info(f"[{symbol}] Scheduled at {schedule_time}")
 
         # Check if we should run immediately
         should_run, reason = should_run_analysis(symbol)
 
         if should_run:
-            print(f"[{symbol}] Running initial cycle... ({reason})")
+            logger.info(f"[{symbol}] Running initial cycle... ({reason})")
             try:
                 cycle.run_cycle()
                 # Brief pause between symbols to avoid overwhelming the system
                 if i < len(symbols) - 1:
-                    print(f"Pausing {stagger_minutes//2} seconds before next symbol...")
+                    logger.info(f"Pausing {stagger_minutes//2} seconds before next symbol...")
                     time.sleep(stagger_minutes * 30)  # Half the stagger time
             except Exception as e:
-                print(f"[{symbol}] Error in initial cycle: {e}")
+                logger.error(f"[{symbol}] Error in initial cycle: {e}")
                 import traceback
-                traceback.print_exc()
+                logger.error(traceback.format_exc())
         else:
-            print(f"[{symbol}] Skipping initial cycle: {reason}")
+            logger.info(f"[{symbol}] Skipping initial cycle: {reason}")
             # Still evaluate pending predictions
             try:
                 cycle._ensure_graph()
                 cycle._evaluate_pending()
             except Exception as e:
-                print(f"[{symbol}] Error evaluating pending: {e}")
+                logger.error(f"[{symbol}] Error evaluating pending: {e}")
+                import traceback
+                logger.error(traceback.format_exc())
 
-    print(f"\n{'='*70}")
-    print("All symbols initialized. Running on schedule...")
-    print(f"{'='*70}\n")
+    logger.info(f"{'='*70}")
+    logger.info("All symbols initialized. Running on schedule...")
+    logger.info(f"{'='*70}")
 
     # Run on schedule
-    while True:
-        schedule.run_pending()
-        time.sleep(60)  # Check every minute
+    try:
+        while True:
+            schedule.run_pending()
+            time.sleep(60)  # Check every minute
+    except KeyboardInterrupt:
+        logger.info("Scheduler stopped by user (Ctrl+C)")
+    except Exception as e:
+        logger.error(f"Scheduler crashed with error: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise
 
 
 def main():
+    logger.info("Daily Cycle starting...")
+
     parser = argparse.ArgumentParser(
         description="Daily Analysis Cycle with 24-Hour Retrospective Evaluation"
     )
@@ -1150,20 +1335,21 @@ def main():
     )
 
     args = parser.parse_args()
+    logger.info(f"Arguments: symbols={args.symbols}, run_at={args.run_at}, run_once={args.run_once}")
 
     # Check API key
     if not os.getenv("XAI_API_KEY"):
-        print("Error: XAI_API_KEY not set in environment")
+        logger.error("XAI_API_KEY not set in environment")
         return
 
     # Determine which symbols to analyze
     symbols = []
     if args.commodities:
         symbols = ["XAUUSD", "XAGUSD", "XPTUSD", "COPPER-C"]
-        print(f"Analyzing all major commodities: {', '.join(symbols)}")
+        logger.info(f"Analyzing all major commodities: {', '.join(symbols)}")
     elif args.symbols:
         symbols = args.symbols
-        print(f"Analyzing multiple symbols: {', '.join(symbols)}")
+        logger.info(f"Analyzing multiple symbols: {', '.join(symbols)}")
     else:
         symbols = [args.symbol]
 
@@ -1172,20 +1358,20 @@ def main():
         for symbol in symbols:
             pending = load_pending_predictions(symbol)
             if not pending:
-                print(f"No pending predictions for {symbol}")
+                logger.info(f"No pending predictions for {symbol}")
             else:
-                print(f"\nPending predictions for {symbol}:")
+                logger.info(f"Pending predictions for {symbol}:")
                 for p in pending:
                     pred = p["prediction"]
-                    print(f"  - {pred['signal']} @ ${pred['price_at_analysis']:.2f}")
-                    print(f"    Due: {pred['evaluation_due']}")
+                    logger.info(f"  - {pred['signal']} @ ${pred['price_at_analysis']:.2f}")
+                    logger.info(f"    Due: {pred['evaluation_due']}")
         return
 
     if args.evaluate_only:
         for symbol in symbols:
-            print(f"\n{'='*70}")
-            print(f"Evaluating pending predictions for {symbol}")
-            print(f"{'='*70}")
+            logger.info(f"{'='*70}")
+            logger.info(f"Evaluating pending predictions for {symbol}")
+            logger.info(f"{'='*70}")
             cycle = DailyAnalysisCycle(symbol)
             cycle._ensure_graph()
             cycle._evaluate_pending()
@@ -1213,16 +1399,22 @@ def main():
                     # Brief pause between symbols
                     if i < len(symbols) - 1:
                         import time
-                        print(f"\nPausing {args.stagger_minutes//2} seconds before next symbol...")
+                        logger.info(f"Pausing {args.stagger_minutes//2} seconds before next symbol...")
                         time.sleep(args.stagger_minutes * 30)
                 except Exception as e:
-                    print(f"Error analyzing {symbol}: {e}")
+                    logger.error(f"Error analyzing {symbol}: {e}")
                     import traceback
-                    traceback.print_exc()
+                    logger.error(traceback.format_exc())
         else:
             # Multi-symbol scheduled mode
             run_multi_symbol_scheduler(symbols, args.run_at, args.evaluation_hours, args.stagger_minutes)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        logger.critical(f"FATAL ERROR: Daily cycle crashed: {e}")
+        import traceback
+        logger.critical(traceback.format_exc())
+        sys.exit(1)

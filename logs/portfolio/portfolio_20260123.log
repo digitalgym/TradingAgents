@@ -1,0 +1,74 @@
+2026-01-23 06:04:32,264 - INFO - ==================================================
+2026-01-23 06:04:32,265 - INFO - STARTING EVENING REFLECTION CYCLE
+2026-01-23 06:04:32,266 - INFO - ==================================================
+2026-01-23 06:04:32,419 - INFO - Active decisions: 0
+2026-01-23 06:04:32,420 - INFO - ==================================================
+REFLECTION REPORT
+==================================================
+Time: 2026-01-23 06:04:32
+
+Trades Processed: 0
+Winning Trades: 0
+Losing Trades: 0
+Total P&L: $0.00
+
+Reflections Created: 0
+Memories Stored: 0
+
+Duration: 0.2s
+==================================================
+2026-01-23 17:55:38,790 - INFO - ==================================================
+2026-01-23 17:55:38,830 - INFO - STARTING MORNING ANALYSIS CYCLE
+2026-01-23 17:55:38,830 - INFO - ==================================================
+2026-01-23 17:55:39,043 - INFO - Current positions: 3
+2026-01-23 17:55:39,398 - INFO - Trades today: 0/3
+2026-01-23 17:55:39,399 - INFO - Analyzing XAUUSD...
+2026-01-23 17:55:48,613 - ERROR -   Analysis failed: Error code: 401 - {'error': {'message': 'Incorrect API key provided: xai-FFGu************************************************************************DoYz. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
+2026-01-23 17:55:48,614 - INFO - Analyzing XAGUSD...
+2026-01-23 17:55:49,301 - ERROR -   Analysis failed: Error code: 401 - {'error': {'message': 'Incorrect API key provided: xai-FFGu************************************************************************DoYz. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
+2026-01-23 17:55:49,301 - INFO - Analyzing COPPER-C...
+2026-01-23 17:55:49,302 - INFO -   Skipped: max positions for COPPER-C
+2026-01-23 17:55:49,306 - INFO - ==================================================
+MORNING ANALYSIS REPORT
+==================================================
+Time: 2026-01-23 17:55:38
+
+Portfolio Status:
+  Balance: $15,258.44
+  Equity: $12,590.18
+  Open Positions: 3
+
+Analysis Summary:
+  Symbols Analyzed: 0
+  Opportunities Found: 0
+  Skipped: 1
+  Errors: 2
+
+Skipped Symbols:
+  COPPER-C: max_positions_reached
+
+Errors:
+  XAUUSD: Error code: 401 - {'error': {'message': 'Incorrect API key provided: xai-FFGu************************************************************************DoYz. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
+  XAGUSD: Error code: 401 - {'error': {'message': 'Incorrect API key provided: xai-FFGu************************************************************************DoYz. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
+
+Duration: 10.5s
+==================================================
+2026-01-23 22:55:52,046 - INFO - ==================================================
+2026-01-23 22:55:52,073 - INFO - STARTING MIDDAY REVIEW CYCLE
+2026-01-23 22:55:52,074 - INFO - ==================================================
+2026-01-23 22:55:52,085 - INFO - Reviewing 3 positions...
+2026-01-23 22:55:52,616 - INFO - COPPER-C BUY (#7946492): P&L: -100.00%, ATR: 0.1673
+2026-01-23 22:55:52,624 - INFO - COPPER-C BUY (#8066271): P&L: -100.00%, ATR: 0.1673
+2026-01-23 22:55:52,679 - INFO - COPPER-C BUY (#8066351): P&L: -100.00%, ATR: 0.1673
+2026-01-23 22:55:52,680 - INFO - ==================================================
+POSITION REVIEW REPORT
+==================================================
+Time: 2026-01-23 22:55:52
+
+Positions Reviewed: 3
+Adjustments Identified: 0
+Adjustments Applied: 0
+Adjustments Pending: 0
+
+Duration: 0.6s
+==================================================

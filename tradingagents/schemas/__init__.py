@@ -44,6 +44,7 @@ from .trade_analysis import (
     FinalTradingDecision,
     SMCZone,
     SMCAnalysis,
+    PredictionLesson,
 )
 
 from .position_review import (
@@ -86,6 +87,7 @@ def get_all_schemas():
         TradeAnalysisResult,
         QuickTradeAnalysis,
         FinalTradingDecision,
+        PredictionLesson,
         # Position Review
         StopLossAdjustment,
         TakeProfitAdjustment,
@@ -129,6 +131,7 @@ __all__ = [
     "FinalTradingDecision",
     "SMCZone",
     "SMCAnalysis",
+    "PredictionLesson",
     # Position Review
     "PositionReview",
     "QuickPositionReview",

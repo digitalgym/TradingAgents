@@ -14,7 +14,7 @@ from langgraph.prebuilt import ToolNode
 
 from tradingagents.agents import *
 from tradingagents.default_config import DEFAULT_CONFIG
-from tradingagents.agents.utils.memory import FinancialSituationMemory
+from tradingagents.agents.utils.memory import FinancialSituationMemory, SMCPatternMemory, MemoryUsageTracker, MetaPatternLearning
 from tradingagents.agents.utils.agent_states import (
     AgentState,
     InvestDebateState,
@@ -131,12 +131,21 @@ class TradingAgentsGraph:
             self.trader_memory = FinancialSituationMemory("trader_memory", self.config)
             self.invest_judge_memory = FinancialSituationMemory("invest_judge_memory", self.config)
             self.risk_manager_memory = FinancialSituationMemory("risk_manager_memory", self.config)
+            # SMC pattern memory for setup-specific learning
+            self.smc_pattern_memory = SMCPatternMemory(self.config)
+            # Memory usage tracker for feedback loop validation
+            self.memory_usage_tracker = MemoryUsageTracker(self.config)
+            # Meta-pattern learning for cross-agent insights
+            self.meta_pattern_learning = MetaPatternLearning(self.config)
         else:
             self.bull_memory = None
             self.bear_memory = None
             self.trader_memory = None
             self.invest_judge_memory = None
             self.risk_manager_memory = None
+            self.smc_pattern_memory = None
+            self.memory_usage_tracker = None
+            self.meta_pattern_learning = None
 
         # Create tool nodes
         self.tool_nodes = self._create_tool_nodes()
@@ -153,6 +162,8 @@ class TradingAgentsGraph:
             self.invest_judge_memory,
             self.risk_manager_memory,
             self.conditional_logic,
+            self.smc_pattern_memory,
+            self.meta_pattern_learning,
         )
 
         self.propagator = Propagator()
@@ -264,7 +275,7 @@ class TradingAgentsGraph:
             structured_decision
         )
 
-    def propagate_with_progress(self, company_name, trade_date, smc_context: str = None, progress_callback=None):
+    def propagate_with_progress(self, company_name, trade_date, smc_context: str = None, progress_callback=None, force_fresh: bool = False):
         """Run the trading agents graph with progress callbacks.
 
         Args:
@@ -272,6 +283,7 @@ class TradingAgentsGraph:
             trade_date: Date to analyze
             smc_context: Optional formatted SMC analysis string
             progress_callback: Callable for progress updates
+            force_fresh: If True, bypass agent output cache and re-run all agents
 
         Uses graph.stream() for real-time progress updates as each agent completes.
         """
@@ -327,6 +339,9 @@ class TradingAgentsGraph:
         )
         if smc_context:
             init_agent_state["smc_context"] = smc_context
+
+        # Pass force_fresh flag to agent nodes for cache bypass
+        init_agent_state["force_fresh"] = force_fresh
 
         # Use "updates" mode to get individual node outputs for progress tracking
         args = self.propagator.get_graph_args(stream_mode="updates")
@@ -676,23 +691,164 @@ class TradingAgentsGraph:
         ) as f:
             json.dump(self.log_states_dict, f, indent=4)
 
-    def reflect_and_remember(self, returns_losses):
-        """Reflect on decisions and update memory based on returns."""
-        self.reflector.reflect_bull_researcher(
-            self.curr_state, returns_losses, self.bull_memory
+    def reflect_and_remember(self, returns_losses, decision: Optional[Dict[str, Any]] = None):
+        """Reflect on decisions and update memory based on returns.
+
+        Args:
+            returns_losses: The returns/losses percentage from the trade
+            decision: Optional closed decision dict for SMC pattern learning
+        """
+        memories = {
+            "bull_memory": self.bull_memory,
+            "bear_memory": self.bear_memory,
+            "trader_memory": self.trader_memory,
+            "invest_judge_memory": self.invest_judge_memory,
+            "risk_manager_memory": self.risk_manager_memory,
+        }
+
+        # Use unified reflection method that handles both standard and SMC patterns
+        result = self.reflector.reflect_with_smc(
+            self.curr_state,
+            returns_losses,
+            memories,
+            decision=decision,
+            smc_memory=self.smc_pattern_memory,
         )
-        self.reflector.reflect_bear_researcher(
-            self.curr_state, returns_losses, self.bear_memory
+
+        # PHASE 4: Feedback loop validation
+        # Update memory confidence based on trade outcomes
+        if decision and self.memory_usage_tracker:
+            decision_id = decision.get("decision_id")
+            was_successful = decision.get("was_correct", returns_losses > 0)
+
+            if decision_id:
+                try:
+                    validation_result = self.memory_usage_tracker.update_on_outcome(
+                        trade_id=decision_id,
+                        was_successful=was_successful,
+                        returns_pct=returns_losses,
+                        agent_memories=memories,
+                    )
+                    result["memories_validated"] = validation_result.get("updated", 0)
+                except Exception as e:
+                    print(f"Warning: Failed to update memory confidence: {e}")
+
+        # PHASE 5: Meta-pattern learning
+        # Record cross-agent patterns for higher-level learning
+        if decision and self.meta_pattern_learning and self.curr_state:
+            try:
+                decision_id = decision.get("decision_id")
+                was_successful = decision.get("was_correct", returns_losses > 0)
+
+                # Extract bull/bear signals from state
+                debate_state = self.curr_state.get("investment_debate_state", {})
+                bull_history = debate_state.get("bull_history", "")
+                bear_history = debate_state.get("bear_history", "")
+
+                # Infer signals from history (simplified - look for keywords)
+                bull_signal = "neutral"
+                if "bullish" in bull_history.lower() or "buy" in bull_history.lower():
+                    bull_signal = "bullish"
+                elif "bearish" in bull_history.lower() or "sell" in bull_history.lower():
+                    bull_signal = "bearish"
+
+                bear_signal = "neutral"
+                if "bullish" in bear_history.lower() or "buy" in bear_history.lower():
+                    bear_signal = "bullish"
+                elif "bearish" in bear_history.lower() or "sell" in bear_history.lower():
+                    bear_signal = "bearish"
+
+                self.meta_pattern_learning.record_trade_outcome(
+                    decision_id=decision_id,
+                    symbol=decision.get("symbol", "unknown"),
+                    bull_signal=bull_signal,
+                    bear_signal=bear_signal,
+                    final_action=decision.get("action", "HOLD"),
+                    was_successful=was_successful,
+                    returns_pct=returns_losses,
+                    market_regime=decision.get("market_regime"),
+                    volatility_regime=decision.get("volatility_regime"),
+                )
+                result["meta_pattern_recorded"] = True
+            except Exception as e:
+                print(f"Warning: Failed to record meta-pattern: {e}")
+
+        return result
+
+    def track_memory_usage(self, decision_id: str, memory_ids: List[str], collection: str, agent: str):
+        """Track which memories were used for a trade decision.
+
+        This enables the feedback loop - when the trade closes,
+        we can update memory confidence based on whether it helped or not.
+
+        Args:
+            decision_id: The trade/decision ID
+            memory_ids: List of memory IDs that were retrieved
+            collection: Which collection the memories came from
+            agent: Which agent used the memories
+        """
+        if self.memory_usage_tracker and memory_ids:
+            self.memory_usage_tracker.track_usage(
+                trade_id=decision_id,
+                memory_ids=memory_ids,
+                memory_collection=collection,
+                agent_name=agent,
+            )
+
+    def get_meta_insights(
+        self,
+        bull_signal: str = "neutral",
+        bear_signal: str = "neutral",
+        market_regime: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Get meta-pattern insights for decision-making.
+
+        This provides higher-level insights from cross-agent analysis:
+        - Bull/bear agreement patterns
+        - Regime-specific performance
+
+        Args:
+            bull_signal: Bull researcher's signal (bullish/bearish/neutral)
+            bear_signal: Bear researcher's signal (bullish/bearish/neutral)
+            market_regime: Current market regime
+
+        Returns:
+            Dict with insights and recommendations
+        """
+        if not self.meta_pattern_learning:
+            return {"message": "Meta-pattern learning not available"}
+
+        return self.meta_pattern_learning.get_meta_insights_for_decision(
+            bull_signal=bull_signal,
+            bear_signal=bear_signal,
+            market_regime=market_regime,
         )
-        self.reflector.reflect_trader(
-            self.curr_state, returns_losses, self.trader_memory
-        )
-        self.reflector.reflect_invest_judge(
-            self.curr_state, returns_losses, self.invest_judge_memory
-        )
-        self.reflector.reflect_risk_manager(
-            self.curr_state, returns_losses, self.risk_manager_memory
-        )
+
+    def get_memory_stats(self) -> Dict[str, Any]:
+        """Get statistics from all memory systems.
+
+        Useful for monitoring and debugging the learning system.
+        """
+        stats = {}
+
+        if self.bull_memory:
+            stats["bull_memory"] = self.bull_memory.get_memory_stats()
+        if self.bear_memory:
+            stats["bear_memory"] = self.bear_memory.get_memory_stats()
+        if self.trader_memory:
+            stats["trader_memory"] = self.trader_memory.get_memory_stats()
+        if self.invest_judge_memory:
+            stats["invest_judge_memory"] = self.invest_judge_memory.get_memory_stats()
+        if self.risk_manager_memory:
+            stats["risk_manager_memory"] = self.risk_manager_memory.get_memory_stats()
+        if self.smc_pattern_memory:
+            stats["smc_patterns"] = self.smc_pattern_memory.get_memory_stats()
+        if self.memory_usage_tracker:
+            stats["memory_usage"] = self.memory_usage_tracker.get_validation_stats()
+        if self.meta_pattern_learning:
+            stats["meta_patterns"] = self.meta_pattern_learning.get_stats()
+
+        return stats
 
     def process_signal(self, full_signal, current_price: float = None, structured_decision: dict = None):
         """Process a signal to extract the core decision.
