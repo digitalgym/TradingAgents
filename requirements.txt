@@ -1,5 +1,6 @@
 typing-extensions
 langchain-openai
+langchain-xai
 langchain-experimental
 pandas
 yfinance
@@ -26,3 +27,4 @@ langchain_anthropic
 langchain-google-genai
 schedule>=1.2.0
 sentence-transformers
+aiohttp

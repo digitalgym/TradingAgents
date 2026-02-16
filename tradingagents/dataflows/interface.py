@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 
 # Import from vendor-specific modules
@@ -9,6 +10,15 @@ from .mt5_data import get_mt5_data, get_asset_type, get_mt5_indicator
 
 # Configuration and routing logic
 from .config import get_config
+
+logger = logging.getLogger(__name__)
+
+
+# Stub implementations for equity-specific tools (not applicable to commodities/crypto)
+def _not_applicable_for_commodities(ticker, *args, **kwargs):
+    """Return N/A message for equity-specific tools when trading commodities."""
+    logger.info(f"Financial statement requested for {ticker} - not applicable for commodities/crypto")
+    return f"Financial statements (balance sheet, income statement, cash flow) are not applicable for {ticker}. This is a commodity/crypto asset, not an equity. Use get_fundamentals for macro analysis instead."
 
 # Tools organized by category
 TOOLS_CATEGORIES = {
@@ -27,7 +37,10 @@ TOOLS_CATEGORIES = {
     "fundamental_data": {
         "description": "Fundamental analysis (macro factors for commodities)",
         "tools": [
-            "get_fundamentals"
+            "get_fundamentals",
+            "get_balance_sheet",
+            "get_cashflow",
+            "get_income_statement"
         ]
     },
     "news_data": {
@@ -60,9 +73,19 @@ VENDOR_METHODS = {
     "get_indicators": {
         "mt5": get_mt5_indicator,
     },
-    # fundamental_data - OpenAI for commodities (no balance sheets for gold)
+    # fundamental_data - OpenAI for commodities (no balance sheets for gold/crypto)
     "get_fundamentals": {
         "openai": get_fundamentals_openai,
+    },
+    # Equity-specific tools - return N/A for commodities/crypto
+    "get_balance_sheet": {
+        "openai": _not_applicable_for_commodities,
+    },
+    "get_cashflow": {
+        "openai": _not_applicable_for_commodities,
+    },
+    "get_income_statement": {
+        "openai": _not_applicable_for_commodities,
     },
     # news_data
     "get_news": {
@@ -111,13 +134,22 @@ def get_vendor(category: str, method: str = None) -> str:
 
 def route_to_vendor(method: str, *args, **kwargs):
     """Route method calls to appropriate vendor implementation with fallback support."""
-    category = get_category_for_method(method)
+    logger.info(f"route_to_vendor called: method={method}, args={args}")
+
+    try:
+        category = get_category_for_method(method)
+    except ValueError as e:
+        logger.error(f"Method category lookup failed: {e}")
+        raise
+
     vendor_config = get_vendor(category, method)
+    logger.debug(f"Vendor config for {method}: category={category}, vendor_config={vendor_config}")
 
     # Handle comma-separated vendors
     primary_vendors = [v.strip() for v in vendor_config.split(',')]
 
     if method not in VENDOR_METHODS:
+        logger.error(f"Method '{method}' not in VENDOR_METHODS. Available: {list(VENDOR_METHODS.keys())}")
         raise ValueError(f"Method '{method}' not supported")
 
     # Get all available vendors for this method for fallback
@@ -162,7 +194,7 @@ def route_to_vendor(method: str, *args, **kwargs):
                     
             except Exception as e:
                 # Log error but continue with other implementations
-                print(f"ERROR: {impl_func.__name__} from vendor '{vendor_name}' failed: {e}")
+                logger.error(f"Vendor implementation failed: {impl_func.__name__} from '{vendor_name}': {type(e).__name__}: {e}")
                 continue
 
         # Add this vendor's results
@@ -177,9 +209,11 @@ def route_to_vendor(method: str, *args, **kwargs):
 
     # Final result summary
     if not results:
+        logger.error(f"All vendor implementations failed for method '{method}'. Attempted vendors: {fallback_vendors}")
         raise RuntimeError(f"All vendor implementations failed for method '{method}'")
 
     # Return single result if only one, otherwise concatenate as string
+    logger.info(f"route_to_vendor success: method={method}, vendor={successful_vendor}, results_count={len(results)}")
     if len(results) == 1:
         return results[0]
     else:

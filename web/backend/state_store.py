@@ -229,6 +229,15 @@ class LearningCycleState:
         return get_state(cls.KEY_SYMBOLS, [])
 
     @classmethod
+    def set_selected_symbols(cls, symbols: list) -> None:
+        """Save selected symbols without starting the cycle.
+
+        This allows persisting the user's symbol selection even before
+        the learning cycle is started, so it survives page refreshes.
+        """
+        set_state(cls.KEY_SYMBOLS, symbols)
+
+    @classmethod
     def get_run_at(cls) -> Optional[int]:
         """Get scheduled run hour."""
         return get_state(cls.KEY_RUN_AT)

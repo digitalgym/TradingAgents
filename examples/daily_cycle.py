@@ -60,6 +60,8 @@ from tradingagents.agents.utils.memory import (
 from tradingagents.risk import PositionSizer, calculate_kelly_from_history
 from tradingagents.schemas import PredictionLesson
 from tradingagents.dataflows.llm_client import structured_output
+from tradingagents.learning.online_rl import OnlineRLUpdater
+from tradingagents.learning.pattern_analyzer import PatternAnalyzer
 from openai import OpenAI
 
 
@@ -631,6 +633,9 @@ class DailyAnalysisCycle:
         # Step 1: Evaluate pending predictions
         self._evaluate_pending()
 
+        # Step 1b: Trigger automatic learning updates if enough trades
+        self._trigger_learning_updates()
+
         # Step 2: Run new analysis with SMC
         final_state, signal, smc_analysis = self._run_analysis()
 
@@ -675,7 +680,61 @@ class DailyAnalysisCycle:
                 logger.error(f"Failed to evaluate prediction: {e}")
                 import traceback
                 logger.error(traceback.format_exc())
-    
+
+    def _trigger_learning_updates(self):
+        """
+        Check if automatic learning updates should be triggered.
+
+        Runs pattern analysis and updates agent weights when enough trades
+        have accumulated (default: 30 trades since last update).
+        """
+        try:
+            updater = OnlineRLUpdater()
+            should_update, trades_since = updater.should_update()
+
+            if should_update:
+                logger.info(f"{'='*50}")
+                logger.info(f"LEARNING UPDATE TRIGGERED ({trades_since} trades since last update)")
+                logger.info(f"{'='*50}")
+
+                # Run pattern analysis
+                logger.info("Running pattern analysis...")
+                analyzer = PatternAnalyzer()
+                patterns = analyzer.analyze_patterns(lookback_days=30, min_cluster_size=3)
+
+                if patterns.get("patterns"):
+                    logger.info(f"Found {len(patterns['patterns'])} patterns:")
+                    for p in patterns["patterns"][:3]:  # Show top 3
+                        logger.info(f"  - {p.get('name', 'Unknown')}: Win rate {p.get('win_rate', 0)*100:.0f}%")
+
+                    if patterns.get("recommendations"):
+                        logger.info("Recommendations:")
+                        for rec in patterns["recommendations"][:2]:
+                            logger.info(f"  - {rec}")
+
+                # Calculate agent performances and update weights
+                logger.info("Updating agent weights...")
+                performances = updater.calculate_agent_performances(lookback_days=30)
+                update_result = updater.update_weights(performances)
+
+                logger.info(f"Weight update complete:")
+                for agent, weight in update_result["new_weights"].items():
+                    change = update_result["changes"].get(agent, 0)
+                    arrow = "↑" if change > 0 else "↓" if change < 0 else "→"
+                    logger.info(f"  {agent}: {weight:.2%} {arrow} ({change:+.2%})")
+
+                if update_result.get("reasoning"):
+                    logger.info(f"Reasoning: {update_result['reasoning']}")
+
+                logger.info(f"{'='*50}")
+            else:
+                logger.debug(f"Learning update not triggered ({trades_since} trades since last update)")
+
+        except Exception as e:
+            logger.warning(f"Learning update failed (non-critical): {e}")
+            import traceback
+            logger.debug(traceback.format_exc())
+
     def _run_analysis(self) -> Tuple[Dict[str, Any], str, Dict[str, Any]]:
         """Run the trading analysis with SMC integration."""
         trade_date = datetime.now().strftime("%Y-%m-%d")
@@ -857,7 +916,7 @@ class DailyAnalysisCycle:
             current_price = 0.0
 
         prediction = extract_prediction(
-            final_state, signal, current_price,
+            final_state, signal_str, current_price,
             evaluation_hours=self.evaluation_hours
         )
 

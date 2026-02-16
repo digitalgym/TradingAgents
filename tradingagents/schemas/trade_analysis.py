@@ -1,5 +1,6 @@
 """Schema for trade analysis results from the multi-agent system."""
 
+from enum import Enum
 from typing import Optional, List, Dict, Any
 from pydantic import Field
 
@@ -187,6 +188,104 @@ class FinalTradingDecision(BaseSchema):
     key_catalysts: Optional[str] = Field(
         None, description="Key factors that could drive the trade in the expected direction"
     )
+
+
+class QuantSignalType(str, Enum):
+    """Quant analyst signal types."""
+
+    BUY_TO_ENTER = "buy_to_enter"
+    SELL_TO_ENTER = "sell_to_enter"
+    HOLD = "hold"
+    CLOSE = "close"
+
+
+class QuantAnalystDecision(BaseSchema):
+    """
+    Structured output from the Quant Analyst.
+
+    This schema is designed for a systematic quant trader with strict risk discipline.
+    Output aligns with the trade execution modal for seamless integration.
+
+    The quant analyst receives all technical data (SMC, RSI, MACD, etc.) and makes
+    decisions based purely on price, volume, and technical indicators.
+    """
+
+    # Asset identifier
+    symbol: str = Field(
+        ..., description="Trading symbol/coin (e.g., 'XAUUSD', 'BTC', 'ETH')"
+    )
+
+    # Core signal - maps to trade modal
+    signal: QuantSignalType = Field(
+        ..., description="Signal: buy_to_enter, sell_to_enter, hold, or close"
+    )
+
+    # Position parameters
+    quantity: Optional[float] = Field(
+        None, ge=0, description="Suggested position size/quantity. Null for hold."
+    )
+    leverage: Optional[int] = Field(
+        None, ge=1, le=100, description="Suggested leverage (1-100). Default 5-20x."
+    )
+
+    # Risk management - CRITICAL
+    risk_usd: Optional[float] = Field(
+        None, ge=0, description="Dollar risk on this trade (position size × distance to SL)"
+    )
+    profit_target: Optional[float] = Field(
+        None, description="Take profit price target"
+    )
+    stop_loss: Optional[float] = Field(
+        None, description="Stop loss price. MUST be below entry for buys, above for sells."
+    )
+    entry_price: Optional[float] = Field(
+        None, description="Suggested entry price. Use current market price if immediate entry."
+    )
+
+    # Trade validation
+    invalidation_condition: str = Field(
+        ..., description="One clear condition that invalidates this trade setup"
+    )
+
+    # Reasoning
+    justification: str = Field(
+        ..., description="One sentence reason for this trade decision"
+    )
+
+    # Confidence
+    confidence: float = Field(
+        ..., ge=0, le=1, description="Confidence in this signal (0.0 to 1.0)"
+    )
+
+    # Risk assessment (for compatibility with trade modal)
+    risk_level: Optional[RiskLevel] = Field(
+        None, description="Overall risk level assessment"
+    )
+    risk_reward_ratio: Optional[float] = Field(
+        None, ge=0, description="Calculated risk-to-reward ratio"
+    )
+
+    def to_trade_modal_format(self) -> dict:
+        """Convert to format expected by TradeExecutionWizard."""
+        # Map quant signal to standard signal
+        signal_map = {
+            QuantSignalType.BUY_TO_ENTER: "BUY",
+            QuantSignalType.SELL_TO_ENTER: "SELL",
+            QuantSignalType.HOLD: "HOLD",
+            QuantSignalType.CLOSE: "HOLD",  # Close is treated as a HOLD for new entries
+        }
+
+        return {
+            "symbol": self.symbol,
+            "signal": signal_map.get(self.signal, "HOLD"),
+            "suggestedEntry": self.entry_price,
+            "suggestedStopLoss": self.stop_loss,
+            "suggestedTakeProfit": self.profit_target,
+            "rationale": f"{self.justification}. Invalidation: {self.invalidation_condition}",
+            "confidence": self.confidence,
+            "risk_level": self.risk_level,
+            "risk_reward_ratio": self.risk_reward_ratio,
+        }
 
 
 class PredictionLesson(BaseSchema):

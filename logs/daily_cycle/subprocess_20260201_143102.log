@@ -1,0 +1,689 @@
+2026-02-01 14:31:12,448 - INFO - Daily Cycle starting...
+2026-02-01 14:31:12,448 - INFO - Arguments: symbols=['XAUUSD', 'XAGUSD', 'XPTUSD', 'COPPER-C', 'BTCUSD'], run_at=9, run_once=False
+2026-02-01 14:31:12,448 - INFO - Analyzing multiple symbols: XAUUSD, XAGUSD, XPTUSD, COPPER-C, BTCUSD
+2026-02-01 14:31:12,448 - INFO - Starting multi-symbol scheduler with symbols: ['XAUUSD', 'XAGUSD', 'XPTUSD', 'COPPER-C', 'BTCUSD']
+2026-02-01 14:31:12,468 - INFO - ======================================================================
+2026-02-01 14:31:12,468 - INFO - MULTI-SYMBOL ANALYSIS SCHEDULER STARTED
+2026-02-01 14:31:12,468 - INFO - ======================================================================
+2026-02-01 14:31:12,468 - INFO - Symbols: XAUUSD, XAGUSD, XPTUSD, COPPER-C, BTCUSD
+2026-02-01 14:31:12,468 - INFO - Start time: 09:00 daily
+2026-02-01 14:31:12,468 - INFO - Stagger: 5 minutes between symbols
+2026-02-01 14:31:12,468 - INFO - Evaluation window: 24 hours
+2026-02-01 14:31:12,468 - INFO - Min hours between runs: 12
+2026-02-01 14:31:12,468 - INFO - Press Ctrl+C to stop
+2026-02-01 14:31:12,468 - INFO - ======================================================================
+2026-02-01 14:31:12,468 - INFO - [XAUUSD] Scheduled at 09:00
+2026-02-01 14:31:12,468 - INFO - [XAUUSD] Skipping initial cycle: Last run was 5.1 hours ago (minimum: 12h)
+2026-02-01 14:31:12,468 - INFO - Initializing TradingAgentsGraph...
+2026-02-01 14:31:16,478 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2026-02-01 14:31:20,388 - INFO - TradingAgentsGraph initialized successfully
+2026-02-01 14:31:20,398 - INFO - No pending predictions to evaluate for XAUUSD
+2026-02-01 14:31:20,398 - INFO - [XAGUSD] Scheduled at 09:05
+2026-02-01 14:31:20,398 - INFO - [XAGUSD] Running initial cycle... (Last run was 221.2 hours ago)
+2026-02-01 14:31:20,398 - INFO - ======================================================================
+2026-02-01 14:31:20,398 - INFO - ANALYSIS CYCLE - XAGUSD
+2026-02-01 14:31:20,398 - INFO - Time: 2026-02-01 14:31:20
+2026-02-01 14:31:20,398 - INFO - Evaluation window: 24 hours
+2026-02-01 14:31:20,398 - INFO - ======================================================================
+2026-02-01 14:31:20,398 - INFO - Initializing TradingAgentsGraph...
+2026-02-01 14:31:25,024 - INFO - TradingAgentsGraph initialized successfully
+2026-02-01 14:31:25,034 - INFO - Found 2 pending prediction(s) to evaluate
+
+============================================================
+EVALUATION: XAGUSD
+============================================================
+Analysis time: 2026-01-22T22:32:56.382135
+Signal: SELL (expected down)
+Price then: $93.70
+Price now:  $85.29
+Change: -8.98% (down)
+Prediction: CORRECT
+Hypothetical P&L: +8.98%
+2026-02-01 14:31:26,128 - INFO - HTTP Request: POST https://api.x.ai/v1/responses "HTTP/1.1 422 Unprocessable Entity"
+Warning: Structured output failed, falling back to raw LLM: Failed to deserialize the JSON body into the target type: text.format: missing field `schema` at line 1 column 3620
+2026-02-01 14:31:51,518 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:32:08,036 - INFO - Use pytorch device_name: cpu
+2026-02-01 14:32:08,037 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+Lesson stored in prediction_accuracy memory (tier: long, regime: {'market_regime': 'trending_up', 'volatility_regime': 'high'})
+2026-02-01 14:32:50,719 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:32:51,038 - INFO - Use pytorch device_name: cpu
+2026-02-01 14:32:51,038 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-01 14:34:00,420 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:34:00,839 - INFO - Use pytorch device_name: cpu
+2026-02-01 14:34:00,839 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-01 14:34:52,790 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:34:53,509 - INFO - Use pytorch device_name: cpu
+2026-02-01 14:34:53,509 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-01 14:35:45,622 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:35:45,830 - INFO - Use pytorch device_name: cpu
+2026-02-01 14:35:45,830 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-01 14:36:48,205 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:36:48,691 - INFO - Use pytorch device_name: cpu
+2026-02-01 14:36:48,691 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+Evaluation saved: XAGUSD_20260201_143652.json
+
+============================================================
+EVALUATION: XAGUSD
+============================================================
+Analysis time: 2026-01-23T09:19:38.716358
+Signal: SELL (expected down)
+Price then: $96.45
+Price now:  $85.29
+Change: -11.57% (down)
+Prediction: CORRECT
+Hypothetical P&L: +11.57%
+2026-02-01 14:36:53,288 - INFO - HTTP Request: POST https://api.x.ai/v1/responses "HTTP/1.1 422 Unprocessable Entity"
+Warning: Structured output failed, falling back to raw LLM: Failed to deserialize the JSON body into the target type: text.format: missing field `schema` at line 1 column 3621
+2026-02-01 14:37:14,991 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+Lesson stored in prediction_accuracy memory (tier: long, regime: {'market_regime': 'trending_up', 'volatility_regime': 'high'})
+2026-02-01 14:38:01,263 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:39:16,812 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:40:06,616 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:40:52,439 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:41:40,464 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+Evaluation saved: XAGUSD_20260201_144141.json
+2026-02-01 14:41:41,103 - INFO - Running analysis for XAGUSD on 2026-02-01...
+2026-02-01 14:41:41,153 - INFO - Running Smart Money Concepts analysis...
+2026-02-01 14:41:42,773 - INFO - SMC Analysis: All timeframes aligned BULLISH
+2026-02-01 14:41:42,773 - INFO - Running main analysis with graph.propagate()...
+2026-02-01 14:41:55,954 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:41:56,294 - INFO - route_to_vendor called: method=get_stock_data, args=('XAGUSD', '2025-02-01', '2026-02-01')
+2026-02-01 14:41:56,414 - INFO - route_to_vendor success: method=get_stock_data, vendor=mt5, results_count=1
+2026-02-01 14:42:05,254 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:42:05,254 - INFO - route_to_vendor called: method=get_indicators, args=('XAGUSD', 'close_50_sma', '2026-02-01', 30)
+2026-02-01 14:42:05,254 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 14:42:05,254 - INFO - route_to_vendor called: method=get_indicators, args=('XAGUSD', 'close_200_sma', '2026-02-01', 30)
+2026-02-01 14:42:05,264 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 14:42:05,264 - INFO - route_to_vendor called: method=get_indicators, args=('XAGUSD', 'macd', '2026-02-01', 30)
+2026-02-01 14:42:05,264 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 14:42:05,264 - INFO - route_to_vendor called: method=get_indicators, args=('XAGUSD', 'macds', '2026-02-01', 30)
+2026-02-01 14:42:05,264 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 14:42:05,264 - INFO - route_to_vendor called: method=get_indicators, args=('XAGUSD', 'rsi', '2026-02-01', 30)
+2026-02-01 14:42:05,274 - INFO - route_to_vendor called: method=get_indicators, args=('XAGUSD', 'boll_ub', '2026-02-01', 30)
+2026-02-01 14:42:05,274 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 14:42:05,274 - INFO - route_to_vendor called: method=get_indicators, args=('XAGUSD', 'boll_lb', '2026-02-01', 30)
+2026-02-01 14:42:05,274 - INFO - route_to_vendor called: method=get_indicators, args=('XAGUSD', 'atr', '2026-02-01', 30)
+2026-02-01 14:42:05,274 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 14:42:05,281 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+D:\Documents\TradingAgents\tradingagents\dataflows\mt5_data.py:501: RuntimeWarning: invalid value encountered in divide
+  rs = np.where(avg_loss != 0, avg_gain / avg_loss, 0)
+2026-02-01 14:42:05,335 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 14:42:39,554 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:42:43,319 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:42:43,320 - INFO - route_to_vendor called: method=get_news, args=('XAGUSD', '2026-01-25', '2026-01-31')
+2026-02-01 14:43:21,624 - INFO - route_to_vendor success: method=get_news, vendor=xai, results_count=1
+2026-02-01 14:44:02,955 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+[Cache] Storing social_analyst output for XAGUSD (TTL: 4.0h)
+2026-02-01 14:44:08,225 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:44:08,225 - INFO - route_to_vendor called: method=get_news, args=('XAGUSD', '2026-01-25', '2026-02-01')
+2026-02-01 14:44:08,225 - INFO - route_to_vendor called: method=get_global_news, args=('2026-02-01', 7, 10)
+2026-02-01 14:44:30,775 - INFO - route_to_vendor success: method=get_global_news, vendor=xai, results_count=1
+2026-02-01 14:44:44,155 - INFO - route_to_vendor success: method=get_news, vendor=xai, results_count=1
+2026-02-01 14:45:26,750 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+[Cache] Storing news_analyst output for XAGUSD (TTL: 2.0h)
+2026-02-01 14:46:21,859 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:47:08,953 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:47:09,966 - INFO - Use pytorch device_name: cpu
+2026-02-01 14:47:09,966 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-01 14:47:49,487 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:48:09,597 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:48:35,847 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:49:08,467 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:49:39,338 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:49:51,944 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:49:52,284 - INFO - --- Analysis Result ---
+2026-02-01 14:49:52,284 - INFO - Signal: {'signal': 'SELL', 'confidence': 0.75, 'entry_price': 85.139, 'stop_loss': 90.0, 'take_profit': 82.0, 'take_profit_2': 78.0, 'risk_level': 'Medium', 'risk_reward_ratio': 1.71, 'rationale': "After evaluating the debate between the Risky, Safe, and Neutral Analysts, I align with a moderated SELL position on XAGUSD at the broker price of 85.13900. The Risky Analyst's argument for capitalizing on bearish momentum is compelling, particularly with technical indicators like the negative MACD histogram (-0.1202) and RSI drop to 46.69 signaling a correction, alongside macro headwinds such as a stronger USD and risk-on sentiment (S&P 500 at highs, 4.4% GDP growth). The Risky Analyst’s point that 'long-term trends don’t pay the bills in the short term' resonates, as immediate bearish pressures appear stronger than long-term bullish fundamentals. However, I temper their aggressive stance with the Neutral Analyst’s balanced approach, adopting a smaller portfolio allocation (1.5%) and tighter risk controls to address the Safe Analyst’s valid concerns about high volatility (ATR 11.30%) and geopolitical risks. The Safe Analyst’s caution that 'a single headline could reverse the correction' is noted, but the current stabilization at 85.13900 without strong bullish reversal signals suggests downside remains more likely in the near term. Past lessons from the XAUUSD BUY at $4885.51 reinforce avoiding premature directional bets without confirmation—here, bearish signals provide sufficient basis for a SELL, unlike the unconfirmed bullish entry in that case. The adjusted plan refines the trader’s original targets for quicker profit-taking (82.00 and 78.00 vs. 80.00 and 73.50) and a tighter stop-loss (90.00 vs. 94.76) to manage volatility, aligning with SMC principles by targeting key support zones near 82.00 and 78.00 for potential reversals.", 'key_risks': 'High volatility (ATR 11.30%) could lead to whipsaw movements, triggering the stop-loss at 90.00 before targets are reached. Geopolitical escalations (e.g., US-Iran tensions) could reignite safe-haven demand, driving prices upward unexpectedly. A weakening USD or dovish Fed signals could also counter the bearish macro environment.', 'key_catalysts': 'Continued USD strength (DXY rising further), sustained risk-on sentiment (strong US economic data), and institutional selling (further reduction in hedge fund net longs) could drive XAGUSD lower toward 82.00 and 78.00. Technical confirmation of bearish momentum via a break below 84.70 with high volume would support the SELL.', 'position_size_recommendation': '1.5% of portfolio', 'full_response': "## FINAL TRADING DECISION: **SELL**\n**Confidence**: 75%\n**Risk Level**: Medium\n\n### Trade Parameters\n- **Entry Price**: 85.139\n- **Stop Loss**: 90.0\n- **Take Profit**: 82.0\n- **Take Profit 2**: 78.0\n- **Risk/Reward Ratio**: 1.71\n- **Position Sizing**: 1.5% of portfolio\n\n### Rationale\nAfter evaluating the debate between the Risky, Safe, and Neutral Analysts, I align with a moderated SELL position on XAGUSD at the broker price of 85.13900. The Risky Analyst's argument for capitalizing on bearish momentum is compelling, particularly with technical indicators like the negative MACD histogram (-0.1202) and RSI drop to 46.69 signaling a correction, alongside macro headwinds such as a stronger USD and risk-on sentiment (S&P 500 at highs, 4.4% GDP growth). The Risky Analyst’s point that 'long-term trends don’t pay the bills in the short term' resonates, as immediate bearish pressures appear stronger than long-term bullish fundamentals. However, I temper their aggressive stance with the Neutral Analyst’s balanced approach, adopting a smaller portfolio allocation (1.5%) and tighter risk controls to address the Safe Analyst’s valid concerns about high volatility (ATR 11.30%) and geopolitical risks. The Safe Analyst’s caution that 'a single headline could reverse the correction' is noted, but the current stabilization at 85.13900 without strong bullish reversal signals suggests downside remains more likely in the near term. Past lessons from the XAUUSD BUY at $4885.51 reinforce avoiding premature directional bets without confirmation—here, bearish signals provide sufficient basis for a SELL, unlike the unconfirmed bullish entry in that case. The adjusted plan refines the trader’s original targets for quicker profit-taking (82.00 and 78.00 vs. 80.00 and 73.50) and a tighter stop-loss (90.00 vs. 94.76) to manage volatility, aligning with SMC principles by targeting key support zones near 82.00 and 78.00 for potential reversals.\n\n### Key Risks\nHigh volatility (ATR 11.30%) could le", 'from_structured_output': True}
+2026-02-01 14:49:52,284 - INFO - Decision: ## FINAL TRADING DECISION: **SELL**
+**Confidence**: 75%
+**Risk Level**: Medium
+
+### Trade Parameters
+- **Entry Price**: 85.139
+- **Stop Loss**: 90.0
+- **Take Profit**: 82.0
+- **Take Profit 2**: 78.0
+- **Risk/Reward Ratio**: 1.71
+- **Position Sizing**: 1.5% of portfolio
+
+### Rationale
+After evaluatin...
+2026-02-01 14:49:52,298 - INFO - route_to_vendor called: method=get_indicators, args=('XAGUSD', 'atr', '2026-02-01', 14)
+2026-02-01 14:49:52,298 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+
+[Enhancing plan with LLM contextual intelligence...]
+2026-02-01 14:49:53,768 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 404 Not Found"
+[LLM enhancement complete]
+
+======================================================================
+COMPREHENSIVE SMC TRADING PLAN
+======================================================================
+
+[POSITION ANALYSIS]
+Current Price: $85.14
+Position: Between zones
+
+[RECOMMENDATION: WAIT FOR RALLY] - Confidence: MEDIUM
+Price 17.8% below resistance OB. Overall bias is BEARISH. Wait for rally to $100.27 for better entry.
+
+[PRIMARY SETUP: SELL]
+Entry: $100.27 (MARKET)
+Stop Loss: $103.61
+Take Profit 1: $95.25
+R:R Ratio: 1:1.50
+
+LLM Confidence: LOW
+Adjusted Hold Probability: 50%
+Recommended Action: USE_RULE_BASED
+
+======================================================================
+
+
+--- Position Sizing ---
+Recommended Size: 125.0592 units
+MT5 Lots: 1.25
+Risk Amount: $2000.00
+Risk %: 2.00%
+2026-02-01 14:49:53,964 - INFO - Prediction saved: XAGUSD_20260201_144953.pkl
+2026-02-01 14:49:53,964 - INFO -    Signal: SELL
+2026-02-01 14:49:53,964 - INFO -    Expected: down
+2026-02-01 14:49:53,964 - INFO -    Price: $85.29
+2026-02-01 14:49:53,964 - INFO -    Evaluation due: 2026-02-02T14:49:53.852660
+2026-02-01 14:49:53,978 - INFO - ======================================================================
+2026-02-01 14:49:53,978 - INFO - CYCLE COMPLETE
+2026-02-01 14:49:53,978 - INFO - Next evaluation in 24 hours
+2026-02-01 14:49:53,978 - INFO - ======================================================================
+2026-02-01 14:49:53,978 - INFO - Pausing 2 seconds before next symbol...
+2026-02-01 14:52:23,984 - INFO - [XPTUSD] Scheduled at 09:10
+2026-02-01 14:52:23,989 - INFO - [XPTUSD] Running initial cycle... (Last run was 221.4 hours ago)
+2026-02-01 14:52:23,989 - INFO - ======================================================================
+2026-02-01 14:52:23,989 - INFO - ANALYSIS CYCLE - XPTUSD
+2026-02-01 14:52:23,989 - INFO - Time: 2026-02-01 14:52:23
+2026-02-01 14:52:23,989 - INFO - Evaluation window: 24 hours
+2026-02-01 14:52:23,989 - INFO - ======================================================================
+2026-02-01 14:52:23,989 - INFO - Initializing TradingAgentsGraph...
+2026-02-01 14:52:28,529 - INFO - TradingAgentsGraph initialized successfully
+2026-02-01 14:52:29,309 - INFO - Found 2 pending prediction(s) to evaluate
+
+============================================================
+EVALUATION: XPTUSD
+============================================================
+Analysis time: 2026-01-22T22:45:17.784755
+Signal: BUY (expected up)
+Price then: $2509.51
+Price now:  $2203.25
+Change: -12.20% (down)
+Prediction: INCORRECT
+Hypothetical P&L: -12.20%
+2026-02-01 14:52:30,219 - INFO - HTTP Request: POST https://api.x.ai/v1/responses "HTTP/1.1 422 Unprocessable Entity"
+Warning: Structured output failed, falling back to raw LLM: Failed to deserialize the JSON body into the target type: text.format: missing field `schema` at line 1 column 3625
+2026-02-01 14:52:51,780 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:52:51,979 - INFO - Use pytorch device_name: cpu
+2026-02-01 14:52:51,979 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+Lesson stored in prediction_accuracy memory (tier: mid, regime: {'market_regime': 'trending_up', 'volatility_regime': 'high'})
+2026-02-01 14:53:51,540 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:53:51,550 - INFO - Use pytorch device_name: cpu
+2026-02-01 14:53:51,550 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-01 14:54:47,351 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:54:47,360 - INFO - Use pytorch device_name: cpu
+2026-02-01 14:54:47,360 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-01 14:56:00,831 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:56:00,831 - INFO - Use pytorch device_name: cpu
+2026-02-01 14:56:00,831 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-01 14:56:54,731 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:56:54,731 - INFO - Use pytorch device_name: cpu
+2026-02-01 14:56:54,731 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-01 14:57:50,192 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 14:57:50,192 - INFO - Use pytorch device_name: cpu
+2026-02-01 14:57:50,192 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+Evaluation saved: XPTUSD_20260201_145755.json
+
+============================================================
+EVALUATION: XPTUSD
+============================================================
+Analysis time: 2026-01-23T09:29:38.214842
+Signal: SELL (expected down)
+Price then: $2661.54
+Price now:  $2203.25
+Change: -17.22% (down)
+Prediction: CORRECT
+Hypothetical P&L: +17.22%
+2026-02-01 14:57:56,192 - INFO - HTTP Request: POST https://api.x.ai/v1/responses "HTTP/1.1 422 Unprocessable Entity"
+Warning: Structured output failed, falling back to raw LLM: Failed to deserialize the JSON body into the target type: text.format: missing field `schema` at line 1 column 3625
+2026-02-01 14:58:28,582 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+Lesson stored in prediction_accuracy memory (tier: long, regime: {'market_regime': 'trending_up', 'volatility_regime': 'high'})
+2026-02-01 14:59:42,103 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:00:21,686 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:01:34,896 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:02:48,404 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:03:43,755 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+Evaluation saved: XPTUSD_20260201_150344.json
+2026-02-01 15:03:44,205 - INFO - Running analysis for XPTUSD on 2026-02-01...
+2026-02-01 15:03:44,205 - INFO - Running Smart Money Concepts analysis...
+2026-02-01 15:03:45,525 - INFO - SMC Analysis: 2/3 timeframes bullish
+2026-02-01 15:03:45,525 - INFO - Running main analysis with graph.propagate()...
+2026-02-01 15:03:49,496 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:03:49,496 - INFO - route_to_vendor called: method=get_stock_data, args=('XPTUSD', '2025-07-16', '2026-02-01')
+2026-02-01 15:03:49,505 - INFO - route_to_vendor success: method=get_stock_data, vendor=mt5, results_count=1
+2026-02-01 15:04:01,425 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:04:01,425 - INFO - route_to_vendor called: method=get_indicators, args=('XPTUSD', 'close_50_sma,close_200_sma,macd,macds,rsi,boll_ub,boll_lb,atr', '2026-02-01', 30)
+2026-02-01 15:04:01,431 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 15:04:07,266 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:04:07,266 - INFO - route_to_vendor called: method=get_indicators, args=('XPTUSD', 'close_50_sma,close_200_sma,close_10_ema,macd,rsi,bbands,atr', '2026-02-01', 30)
+2026-02-01 15:04:07,266 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 15:04:12,086 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:04:12,086 - INFO - route_to_vendor called: method=get_indicators, args=('XPTUSD', 'close_50_sma', '2026-02-01', 30)
+2026-02-01 15:04:12,095 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 15:04:14,985 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:04:14,985 - INFO - route_to_vendor called: method=get_indicators, args=('XPTUSD', 'close_200_sma', '2026-02-01', 30)
+2026-02-01 15:04:14,985 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 15:04:18,486 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:04:18,490 - INFO - route_to_vendor called: method=get_indicators, args=('XPTUSD', 'close_10_ema', '2026-02-01', 30)
+2026-02-01 15:04:18,490 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 15:04:21,385 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:04:21,389 - INFO - route_to_vendor called: method=get_indicators, args=('XPTUSD', 'macd', '2026-02-01', 30)
+2026-02-01 15:04:21,389 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 15:04:24,521 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:04:24,521 - INFO - route_to_vendor called: method=get_indicators, args=('XPTUSD', 'rsi', '2026-02-01', 30)
+D:\Documents\TradingAgents\tradingagents\dataflows\mt5_data.py:501: RuntimeWarning: invalid value encountered in divide
+  rs = np.where(avg_loss != 0, avg_gain / avg_loss, 0)
+2026-02-01 15:04:24,526 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 15:04:27,636 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:04:27,636 - INFO - route_to_vendor called: method=get_indicators, args=('XPTUSD', 'bbands', '2026-02-01', 30)
+2026-02-01 15:04:27,645 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 15:04:31,838 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:04:31,846 - INFO - route_to_vendor called: method=get_indicators, args=('XPTUSD', 'atr', '2026-02-01', 30)
+2026-02-01 15:04:31,846 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 15:05:11,596 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:05:14,816 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:05:14,826 - INFO - route_to_vendor called: method=get_news, args=('XPTUSD', '2026-01-25', '2026-01-31')
+2026-02-01 15:05:46,296 - INFO - route_to_vendor success: method=get_news, vendor=xai, results_count=1
+2026-02-01 15:06:40,867 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+[Cache] Storing social_analyst output for XPTUSD (TTL: 4.0h)
+2026-02-01 15:06:48,127 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:06:48,127 - INFO - route_to_vendor called: method=get_news, args=('XPTUSD', '2026-01-25', '2026-02-01')
+2026-02-01 15:06:48,127 - INFO - route_to_vendor called: method=get_global_news, args=('2026-02-01', 7, 5)
+2026-02-01 15:07:10,697 - INFO - route_to_vendor success: method=get_global_news, vendor=xai, results_count=1
+2026-02-01 15:07:21,797 - INFO - route_to_vendor success: method=get_news, vendor=xai, results_count=1
+2026-02-01 15:07:59,747 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+[Cache] Storing news_analyst output for XPTUSD (TTL: 2.0h)
+2026-02-01 15:08:39,028 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:09:24,852 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:09:24,983 - INFO - Use pytorch device_name: cpu
+2026-02-01 15:09:24,983 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-01 15:10:06,000 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:10:31,169 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:11:03,031 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:11:45,841 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:12:28,339 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:12:40,570 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:12:40,580 - INFO - --- Analysis Result ---
+2026-02-01 15:12:40,580 - INFO - Signal: {'signal': 'BUY', 'confidence': 0.75, 'entry_price': 2195.05, 'stop_loss': 2067.76, 'take_profit': 2438.52, 'take_profit_2': 2695.0, 'risk_level': 'Medium', 'risk_reward_ratio': 1.43, 'rationale': "After evaluating the debate between the Risky, Safe, and Neutral Analysts, I recommend a BUY on XPTUSD at the current broker price of 2195.05. My decision aligns with the Risky Analyst's view on capturing upside potential (28-44% based on forecasts of $2,813 by Q1 2026 and $3,157 within 12 months) given the strong long-term trend (110-115% YOY gain, price above 200-day SMA of $1,527.26 and 50-day SMA of $2,067.76) and fundamental drivers like South African supply deficits and industrial demand. However, I temper this optimism with the Neutral Analyst's balanced approach of a smaller initial position to mitigate short-term volatility (ATR of 10.05%) and bearish technicals (negative MACD histogram of -27.8241, price below 10-day EMA of $2,501.77). The Safe Analyst's caution on high volatility and macro risks (USD strength, palladium substitution) is noted, but I believe the staged entry and strict risk management address these concerns. Reflecting on past mistakes, such as missing a 17.22% return on XPTUSD by being overly cautious (January 23, 2026), I prioritize acting on the current dip near the Lower Bollinger Band ($2,113.89) as a potential reversal zone within a broader uptrend. The risk-reward ratio of 1.43 (based on entry at $2,195.05, stop-loss at $2,067.76, and first take-profit at $2,438.52) supports this calculated risk. My confidence of 0.75 reflects the strong bullish case tempered by short-term uncertainties.", 'key_risks': 'Key risks include a break below critical support at $2,067.76 (50-day SMA), which could signal a deeper correction, exacerbated by thin liquidity at $2,195 leading to sharper downside moves. Macro headwinds like a rebounding US dollar or geopolitical de-escalation could reduce safe-haven demand, while palladium substitution poses a threat to industrial demand.', 'key_catalysts': 'Key catalysts include escalating geopolitical tensions (e.g., US-Iran risks) driving safe-haven buying, continued supply deficits from South Africa, and sector tailwinds from gold (up 30%) and silver (up 72%) rallies. Positive technical confirmation, such as a MACD crossover or RSI dropping below 40, could also spur buyer interest at support levels.', 'position_size_recommendation': 'reduced', 'full_response': "## FINAL TRADING DECISION: **BUY**\n**Confidence**: 75%\n**Risk Level**: Medium\n\n### Trade Parameters\n- **Entry Price**: 2195.05\n- **Stop Loss**: 2067.76\n- **Take Profit**: 2438.52\n- **Take Profit 2**: 2695.0\n- **Risk/Reward Ratio**: 1.43\n- **Position Sizing**: reduced\n\n### Rationale\nAfter evaluating the debate between the Risky, Safe, and Neutral Analysts, I recommend a BUY on XPTUSD at the current broker price of 2195.05. My decision aligns with the Risky Analyst's view on capturing upside potential (28-44% based on forecasts of $2,813 by Q1 2026 and $3,157 within 12 months) given the strong long-term trend (110-115% YOY gain, price above 200-day SMA of $1,527.26 and 50-day SMA of $2,067.76) and fundamental drivers like South African supply deficits and industrial demand. However, I temper this optimism with the Neutral Analyst's balanced approach of a smaller initial position to mitigate short-term volatility (ATR of 10.05%) and bearish technicals (negative MACD histogram of -27.8241, price below 10-day EMA of $2,501.77). The Safe Analyst's caution on high volatility and macro risks (USD strength, palladium substitution) is noted, but I believe the staged entry and strict risk management address these concerns. Reflecting on past mistakes, such as missing a 17.22% return on XPTUSD by being overly cautious (January 23, 2026), I prioritize acting on the current dip near the Lower Bollinger Band ($2,113.89) as a potential reversal zone within a broader uptrend. The risk-reward ratio of 1.43 (based on entry at $2,195.05, stop-loss at $2,067.76, and first take-profit at $2,438.52) supports this calculated risk. My confidence of 0.75 reflects the strong bullish case tempered by short-term uncertainties.\n\n### Key Risks\nKey risks include a break below critical support at $2,067.76 (50-day SMA), which could signal a deeper correction, exacerbated by thin liquidity at $2,195 leading to sharper downside moves. Macro headwinds like a rebounding US dollar or geopolitical de-esc", 'from_structured_output': True}
+2026-02-01 15:12:40,580 - INFO - Decision: ## FINAL TRADING DECISION: **BUY**
+**Confidence**: 75%
+**Risk Level**: Medium
+
+### Trade Parameters
+- **Entry Price**: 2195.05
+- **Stop Loss**: 2067.76
+- **Take Profit**: 2438.52
+- **Take Profit 2**: 2695.0
+- **Risk/Reward Ratio**: 1.43
+- **Position Sizing**: reduced
+
+### Rationale
+After evaluating ...
+2026-02-01 15:12:40,580 - INFO - route_to_vendor called: method=get_indicators, args=('XPTUSD', 'atr', '2026-02-01', 14)
+2026-02-01 15:12:40,580 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+
+[Enhancing plan with LLM contextual intelligence...]
+2026-02-01 15:12:41,200 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 404 Not Found"
+[LLM enhancement complete]
+
+======================================================================
+COMPREHENSIVE SMC TRADING PLAN
+======================================================================
+
+[POSITION ANALYSIS]
+Current Price: $2195.05
+Position: Between zones
+
+[RECOMMENDATION: WAIT FOR RALLY] - Confidence: MEDIUM
+Price 10.2% below resistance OB. Overall bias is BEARISH. Wait for rally to $2417.96 for better entry.
+
+[PRIMARY SETUP: SELL]
+Entry: $2417.96 (MARKET)
+Stop Loss: $2463.82
+Take Profit 1: $2349.17
+R:R Ratio: 1:1.50
+
+LLM Confidence: LOW
+Adjusted Hold Probability: 65%
+Recommended Action: USE_RULE_BASED
+
+======================================================================
+
+
+--- Position Sizing ---
+Recommended Size: 6.1786 units
+MT5 Lots: 0.06
+Risk Amount: $2000.00
+Risk %: 2.00%
+2026-02-01 15:12:41,310 - INFO - Prediction saved: XPTUSD_20260201_151241.pkl
+2026-02-01 15:12:41,310 - INFO -    Signal: BUY
+2026-02-01 15:12:41,310 - INFO -    Expected: up
+2026-02-01 15:12:41,310 - INFO -    Price: $2203.25
+2026-02-01 15:12:41,310 - INFO -    Evaluation due: 2026-02-02T15:12:41.290221
+2026-02-01 15:12:41,324 - INFO - ======================================================================
+2026-02-01 15:12:41,324 - INFO - CYCLE COMPLETE
+2026-02-01 15:12:41,324 - INFO - Next evaluation in 24 hours
+2026-02-01 15:12:41,324 - INFO - ======================================================================
+2026-02-01 15:12:41,324 - INFO - Pausing 2 seconds before next symbol...
+2026-02-01 15:15:11,329 - INFO - [COPPER-C] Scheduled at 09:15
+2026-02-01 15:15:11,332 - INFO - [COPPER-C] Running initial cycle... (Last run was 221.6 hours ago)
+2026-02-01 15:15:11,332 - INFO - ======================================================================
+2026-02-01 15:15:11,332 - INFO - ANALYSIS CYCLE - COPPER-C
+2026-02-01 15:15:11,332 - INFO - Time: 2026-02-01 15:15:11
+2026-02-01 15:15:11,332 - INFO - Evaluation window: 24 hours
+2026-02-01 15:15:11,332 - INFO - ======================================================================
+2026-02-01 15:15:11,332 - INFO - Initializing TradingAgentsGraph...
+2026-02-01 15:15:17,051 - INFO - TradingAgentsGraph initialized successfully
+2026-02-01 15:15:17,115 - INFO - Found 2 pending prediction(s) to evaluate
+
+============================================================
+EVALUATION: COPPER-C
+============================================================
+Analysis time: 2026-01-22T22:57:04.473941
+Signal: BUY (expected up)
+Price then: $5.67
+Price now:  $5.92
+Change: +4.29% (up)
+Prediction: CORRECT
+Hypothetical P&L: +4.29%
+2026-02-01 15:15:18,127 - INFO - HTTP Request: POST https://api.x.ai/v1/responses "HTTP/1.1 422 Unprocessable Entity"
+Warning: Structured output failed, falling back to raw LLM: Failed to deserialize the JSON body into the target type: text.format: missing field `schema` at line 1 column 3613
+2026-02-01 15:15:57,132 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:15:57,421 - INFO - Use pytorch device_name: cpu
+2026-02-01 15:15:57,421 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+Lesson stored in prediction_accuracy memory (tier: long, regime: {'market_regime': 'trending_up', 'volatility_regime': 'extreme'})
+2026-02-01 15:17:00,102 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:17:00,334 - INFO - Use pytorch device_name: cpu
+2026-02-01 15:17:00,334 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-01 15:18:00,512 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:18:00,522 - INFO - Use pytorch device_name: cpu
+2026-02-01 15:18:00,522 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-01 15:18:54,358 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:18:54,364 - INFO - Use pytorch device_name: cpu
+2026-02-01 15:18:54,364 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-01 15:19:53,909 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:19:53,914 - INFO - Use pytorch device_name: cpu
+2026-02-01 15:19:53,914 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-01 15:20:42,764 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:20:42,831 - INFO - Use pytorch device_name: cpu
+2026-02-01 15:20:42,831 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+Evaluation saved: COPPER-C_20260201_152046.json
+
+============================================================
+EVALUATION: COPPER-C
+============================================================
+Analysis time: 2026-01-23T09:39:40.159747
+Signal: BUY (expected up)
+Price then: $5.75
+Price now:  $5.92
+Change: +2.95% (up)
+Prediction: CORRECT
+Hypothetical P&L: +2.95%
+2026-02-01 15:20:47,844 - INFO - HTTP Request: POST https://api.x.ai/v1/responses "HTTP/1.1 422 Unprocessable Entity"
+Warning: Structured output failed, falling back to raw LLM: Failed to deserialize the JSON body into the target type: text.format: missing field `schema` at line 1 column 3611
+2026-02-01 15:21:34,234 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+Lesson stored in prediction_accuracy memory (tier: mid, regime: {'market_regime': 'trending_up', 'volatility_regime': 'high'})
+2026-02-01 15:22:17,625 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:23:09,600 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:24:03,685 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:25:03,736 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:26:24,227 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+Evaluation saved: COPPER-C_20260201_152624.json
+2026-02-01 15:26:25,011 - INFO - Running analysis for COPPER-C on 2026-02-01...
+2026-02-01 15:26:25,011 - INFO - Running Smart Money Concepts analysis...
+2026-02-01 15:26:26,258 - INFO - SMC Analysis: 2/3 timeframes bullish
+2026-02-01 15:26:26,259 - INFO - Running main analysis with graph.propagate()...
+2026-02-01 15:26:29,865 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:26:29,869 - INFO - route_to_vendor called: method=get_stock_data, args=('COPPER-C', '2025-11-01', '2026-02-01')
+2026-02-01 15:26:29,902 - INFO - route_to_vendor success: method=get_stock_data, vendor=mt5, results_count=1
+2026-02-01 15:26:53,512 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:26:53,516 - INFO - route_to_vendor called: method=get_indicators, args=('COPPER-C', 'close_50_sma,close_200_sma,macd,macds,rsi,boll_ub,boll_lb,atr', '2026-02-01', 30)
+2026-02-01 15:26:53,518 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 15:26:57,582 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:26:57,582 - INFO - route_to_vendor called: method=get_indicators, args=('COPPER-C', 'close_50_sma,close_200_sma,macd,rsi,atr,bbands', '2026-02-01', 30)
+2026-02-01 15:26:57,582 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 15:27:04,049 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:27:04,049 - INFO - route_to_vendor called: method=get_indicators, args=('COPPER-C', 'close_50_sma', '2026-02-01', 30)
+2026-02-01 15:27:04,049 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 15:27:04,049 - INFO - route_to_vendor called: method=get_indicators, args=('COPPER-C', 'close_200_sma', '2026-02-01', 30)
+2026-02-01 15:27:04,049 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 15:27:04,063 - INFO - route_to_vendor called: method=get_indicators, args=('COPPER-C', 'macd', '2026-02-01', 30)
+2026-02-01 15:27:04,063 - INFO - route_to_vendor called: method=get_indicators, args=('COPPER-C', 'rsi', '2026-02-01', 30)
+D:\Documents\TradingAgents\tradingagents\dataflows\mt5_data.py:501: RuntimeWarning: invalid value encountered in divide
+  rs = np.where(avg_loss != 0, avg_gain / avg_loss, 0)
+2026-02-01 15:27:04,063 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 15:27:04,063 - INFO - route_to_vendor called: method=get_indicators, args=('COPPER-C', 'atr', '2026-02-01', 30)
+2026-02-01 15:27:04,063 - INFO - route_to_vendor called: method=get_indicators, args=('COPPER-C', 'bbands', '2026-02-01', 30)
+2026-02-01 15:27:04,063 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 15:27:04,063 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 15:27:04,078 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 15:27:53,066 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:27:56,943 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:27:56,943 - INFO - route_to_vendor called: method=get_news, args=('COPPER-C', '2026-01-25', '2026-01-31')
+2026-02-01 15:28:26,154 - INFO - route_to_vendor success: method=get_news, vendor=xai, results_count=1
+2026-02-01 15:29:06,489 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+[Cache] Storing social_analyst output for COPPER-C (TTL: 4.0h)
+2026-02-01 15:29:13,958 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:29:13,962 - INFO - route_to_vendor called: method=get_news, args=('COPPER-C', '2026-01-25', '2026-02-01')
+2026-02-01 15:29:13,963 - INFO - route_to_vendor called: method=get_global_news, args=('2026-02-01', 7, 10)
+2026-02-01 15:29:38,911 - INFO - route_to_vendor success: method=get_news, vendor=xai, results_count=1
+2026-02-01 15:29:39,229 - INFO - route_to_vendor success: method=get_global_news, vendor=xai, results_count=1
+2026-02-01 15:30:16,616 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+[Cache] Storing news_analyst output for COPPER-C (TTL: 2.0h)
+2026-02-01 15:30:57,202 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:31:50,572 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:31:51,743 - INFO - Use pytorch device_name: cpu
+2026-02-01 15:31:51,743 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-01 15:32:37,874 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:33:03,500 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:33:33,530 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:34:03,131 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:34:45,836 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:35:00,953 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:35:00,969 - INFO - --- Analysis Result ---
+2026-02-01 15:35:00,969 - INFO - Signal: {'signal': 'BUY', 'confidence': 0.85, 'entry_price': 5.9147, 'stop_loss': 5.65, 'take_profit': 6.11, 'take_profit_2': 6.61, 'risk_level': 'Medium', 'risk_reward_ratio': 1.8, 'rationale': "After evaluating the debate between the Risky, Safe, and Neutral Analysts, I recommend a BUY on COPPER-C at the current broker price of 5.91470, aligning with the trader's original plan but with refined risk management. The Risky Analyst's strongest argument is the structural demand for copper driven by megatrends like AI, electric vehicles, and renewable energy, supported by the World Affairs Report's projection of a 50% consumption increase by 2040 and a 10 million-ton shortfall. This long-term bullish outlook is reinforced by technicals from the Market Research Report, showing the price above the 50-day SMA (5.53870) and 200-day SMA (5.00639), with an RSI of 54.98 indicating room for upside. The trader's past success with a COPPER-C buy at $5.80 (2.95% return) further validates focusing on long-term trends with proper risk controls. Countering the Safe Analyst's caution about short-term corrections and macro headwinds (e.g., Goldman Sachs’ warning of an 'unsustainable rally' by mid-2026 and a stronger U.S. dollar), I note that the current price already reflects a pullback from $6.30+, and the staged entry (50% now, 50% reserved for a dip) mitigates overexposure. The Neutral Analyst’s balanced approach of waiting for confirmation at key levels like 5.88171 is considered, but immediate entry captures momentum while fundamentals hold. Refining the trader’s plan, I maintain the entry at 5.91470 for 50% of the position, set a tighter stop-loss at 5.65 (Lower Bollinger Band, reducing downside risk to 4.5% vs. original 7.6%), and keep take-profit targets at 6.11 (3.4% gain for 50% of position) and 6.61 (12% gain for remainder), aligning with SMC institutional zones of support at 5.65 and resistance at 6.11. The risk-reward ratio of 1.8 (risk of 0.26470 vs. potential reward of 0.47530 to first target) justifies the trade. Learning from past mistakes like entering too early on COPPER-C, the staged approach and dynamic monitoring (e.g., tightening stops if below 5.88) prevent similar errors. While a HOLD could be justified by bearish MACD divergence (-0.0024), the structural tailwinds outweigh short-term noise, making BUY the decisive call.", 'key_risks': '1. Short-term correction due to bearish MACD divergence and Goldman Sachs’ warning of an unsustainable rally by mid-2026, potentially driving price to 5.65287 (Lower Bollinger Band). 2. Macro headwinds like a strengthening U.S. dollar and China demand softness, which could suppress commodity prices. 3. Increased supply from projects like Marathon or substitution with aluminum, easing tightness.', 'key_catalysts': '1. Supply disruptions at major mines (e.g., Kakula, Grasberg) persisting, tightening market and boosting prices. 2. Renewed dollar weakness or positive China economic data, enhancing copper demand. 3. Accelerated demand from AI infrastructure or EV policies, driving price toward analyst targets like $6.61.', 'position_size_recommendation': '5-7% of portfolio', 'full_response': "## FINAL TRADING DECISION: **BUY**\n**Confidence**: 85%\n**Risk Level**: Medium\n\n### Trade Parameters\n- **Entry Price**: 5.9147\n- **Stop Loss**: 5.65\n- **Take Profit**: 6.11\n- **Take Profit 2**: 6.61\n- **Risk/Reward Ratio**: 1.80\n- **Position Sizing**: 5-7% of portfolio\n\n### Rationale\nAfter evaluating the debate between the Risky, Safe, and Neutral Analysts, I recommend a BUY on COPPER-C at the current broker price of 5.91470, aligning with the trader's original plan but with refined risk management. The Risky Analyst's strongest argument is the structural demand for copper driven by megatrends like AI, electric vehicles, and renewable energy, supported by the World Affairs Report's projection of a 50% consumption increase by 2040 and a 10 million-ton shortfall. This long-term bullish outlook is reinforced by technicals from the Market Research Report, showing the price above the 50-day SMA (5.53870) and 200-day SMA (5.00639), with an RSI of 54.98 indicating room for upside. The trader's past success with a COPPER-C buy at $5.80 (2.95% return) further validates focusing on long-term trends with proper risk controls. Countering the Safe Analyst's caution about short-term corrections and macro headwinds (e.g., Goldman Sachs’ warning of an 'unsustainable rally' by mid-2026 and a stronger U.S. dollar), I note that the current price already reflects a pullback from $6.30+, and the staged entry (50% now, 50% reserved for a dip) mitigates overexposure. The Neutral Analyst’s balanced approach of waiting for confirmation at key levels like 5.88171 is considered, but immediate entry captures momentum while fundamentals hold. Refining the trader’s plan, I maintain the entry at 5.91470 for 50% of the position, set a tighter stop-loss at 5.65 (Lower Bollinger Band, reducing downside risk to 4.5% vs. original 7.6%), and keep take-profit targets at 6.11 (3.4% gain for 50% of position) and 6.61 (12% gain for remainder), aligning with SMC institutional zones of support at 5.65 and res", 'from_structured_output': True}
+2026-02-01 15:35:00,970 - INFO - Decision: ## FINAL TRADING DECISION: **BUY**
+**Confidence**: 85%
+**Risk Level**: Medium
+
+### Trade Parameters
+- **Entry Price**: 5.9147
+- **Stop Loss**: 5.65
+- **Take Profit**: 6.11
+- **Take Profit 2**: 6.61
+- **Risk/Reward Ratio**: 1.80
+- **Position Sizing**: 5-7% of portfolio
+
+### Rationale
+After evaluating...
+2026-02-01 15:35:00,970 - INFO - route_to_vendor called: method=get_indicators, args=('COPPER-C', 'atr', '2026-02-01', 14)
+2026-02-01 15:35:00,972 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+
+[Enhancing plan with LLM contextual intelligence...]
+2026-02-01 15:35:01,244 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 404 Not Found"
+2026-02-01 15:35:01,501 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 404 Not Found"
+[LLM enhancement complete]
+
+======================================================================
+COMPREHENSIVE SMC TRADING PLAN
+======================================================================
+
+[POSITION ANALYSIS]
+Current Price: $5.91
+Position: At Support ($5.84 - $5.89)
+
+[RECOMMENDATION: LONG NOW] - Confidence: MEDIUM
+Price at STRONG support OB (65% hold probability). STRONG order block | 0 retests | 2.0x confluence (1H, 4H, D1) | medium volume.
+
+[PRIMARY SETUP: BUY]
+Entry: $5.91 (MARKET)
+Stop Loss: $5.83
+Take Profit 1: $5.95
+R:R Ratio: 1:0.41
+
+LLM Confidence: LOW
+Adjusted Hold Probability: 65%
+Recommended Action: USE_RULE_BASED
+
+======================================================================
+
+
+--- Position Sizing ---
+Recommended Size: 3380.6055 units
+MT5 Lots: 33.81
+Risk Amount: $1400.20
+Risk %: 1.40%
+2026-02-01 15:35:01,596 - INFO - Prediction saved: COPPER-C_20260201_153501.pkl
+2026-02-01 15:35:01,596 - INFO -    Signal: BUY
+2026-02-01 15:35:01,596 - INFO -    Expected: up
+2026-02-01 15:35:01,596 - INFO -    Price: $5.92
+2026-02-01 15:35:01,596 - INFO -    Evaluation due: 2026-02-02T15:35:01.580842
+2026-02-01 15:35:01,613 - INFO - ======================================================================
+2026-02-01 15:35:01,613 - INFO - CYCLE COMPLETE
+2026-02-01 15:35:01,613 - INFO - Next evaluation in 24 hours
+2026-02-01 15:35:01,613 - INFO - ======================================================================
+2026-02-01 15:35:01,613 - INFO - Pausing 2 seconds before next symbol...
+2026-02-01 15:37:31,627 - INFO - [BTCUSD] Scheduled at 09:20
+2026-02-01 15:37:31,631 - INFO - [BTCUSD] Running initial cycle... (No previous run found)
+2026-02-01 15:37:31,631 - INFO - ======================================================================
+2026-02-01 15:37:31,631 - INFO - ANALYSIS CYCLE - BTCUSD
+2026-02-01 15:37:31,631 - INFO - Time: 2026-02-01 15:37:31
+2026-02-01 15:37:31,631 - INFO - Evaluation window: 24 hours
+2026-02-01 15:37:31,631 - INFO - ======================================================================
+2026-02-01 15:37:31,631 - INFO - Initializing TradingAgentsGraph...
+2026-02-01 15:37:36,281 - INFO - TradingAgentsGraph initialized successfully
+2026-02-01 15:37:37,047 - INFO - No pending predictions to evaluate for BTCUSD
+2026-02-01 15:37:37,047 - INFO - Running analysis for BTCUSD on 2026-02-01...
+2026-02-01 15:37:37,047 - INFO - Running Smart Money Concepts analysis...
+2026-02-01 15:37:37,969 - INFO - SMC Analysis: 2/3 timeframes bullish
+2026-02-01 15:37:37,969 - INFO - Running main analysis with graph.propagate()...
+2026-02-01 15:37:40,234 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:37:40,238 - INFO - route_to_vendor called: method=get_stock_data, args=('BTCUSD', '2025-11-01', '2026-02-01')
+2026-02-01 15:37:40,240 - INFO - route_to_vendor success: method=get_stock_data, vendor=mt5, results_count=1
+2026-02-01 15:37:55,672 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:37:55,675 - INFO - route_to_vendor called: method=get_indicators, args=('BTCUSD', 'close_50_sma,close_200_sma,close_10_ema,macd,rsi,boll,boll_ub,boll_lb', '2026-02-01', 30)
+2026-02-01 15:37:55,678 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 15:38:02,465 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:38:02,480 - INFO - route_to_vendor called: method=get_indicators, args=('BTCUSD', 'close_50_sma', '2026-02-01', 30)
+2026-02-01 15:38:02,480 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 15:38:02,480 - INFO - route_to_vendor called: method=get_indicators, args=('BTCUSD', 'close_200_sma', '2026-02-01', 30)
+2026-02-01 15:38:02,480 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 15:38:02,480 - INFO - route_to_vendor called: method=get_indicators, args=('BTCUSD', 'close_10_ema', '2026-02-01', 30)
+2026-02-01 15:38:02,480 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 15:38:02,480 - INFO - route_to_vendor called: method=get_indicators, args=('BTCUSD', 'macd', '2026-02-01', 30)
+2026-02-01 15:38:02,480 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 15:38:02,480 - INFO - route_to_vendor called: method=get_indicators, args=('BTCUSD', 'rsi', '2026-02-01', 30)
+2026-02-01 15:38:02,496 - INFO - route_to_vendor called: method=get_indicators, args=('BTCUSD', 'bbands', '2026-02-01', 30)
+2026-02-01 15:38:02,508 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+D:\Documents\TradingAgents\tradingagents\dataflows\mt5_data.py:501: RuntimeWarning: invalid value encountered in divide
+  rs = np.where(avg_loss != 0, avg_gain / avg_loss, 0)
+2026-02-01 15:38:02,508 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+2026-02-01 15:38:46,597 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:38:51,539 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:38:51,541 - INFO - route_to_vendor called: method=get_news, args=('BTCUSD', '2026-01-25', '2026-01-31')
+2026-02-01 15:39:08,497 - INFO - route_to_vendor success: method=get_news, vendor=xai, results_count=1
+2026-02-01 15:39:42,974 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+[Cache] Storing social_analyst output for BTCUSD (TTL: 4.0h)
+2026-02-01 15:39:46,482 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:39:46,485 - INFO - route_to_vendor called: method=get_news, args=('BTCUSD', '2026-01-25', '2026-02-01')
+2026-02-01 15:39:46,487 - INFO - route_to_vendor called: method=get_global_news, args=('2026-02-01', 7, 10)
+2026-02-01 15:40:13,259 - INFO - route_to_vendor success: method=get_news, vendor=xai, results_count=1
+2026-02-01 15:40:23,235 - INFO - route_to_vendor success: method=get_global_news, vendor=xai, results_count=1
+2026-02-01 15:41:18,977 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+[Cache] Storing news_analyst output for BTCUSD (TTL: 2.0h)
+2026-02-01 15:41:18,998 - INFO - Use pytorch device_name: cpu
+2026-02-01 15:41:18,998 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-01 15:42:17,820 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:42:17,829 - INFO - Use pytorch device_name: cpu
+2026-02-01 15:42:17,829 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-01 15:43:25,625 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:43:25,625 - INFO - Use pytorch device_name: cpu
+2026-02-01 15:43:25,625 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-01 15:43:29,034 - INFO - Use pytorch device_name: cpu
+2026-02-01 15:43:29,034 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-01 15:44:21,346 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:44:21,349 - INFO - Use pytorch device_name: cpu
+2026-02-01 15:44:21,349 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-01 15:44:54,737 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:45:20,229 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:45:58,947 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:46:31,375 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:46:31,379 - INFO - Use pytorch device_name: cpu
+2026-02-01 15:46:31,379 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-01 15:46:53,835 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 15:46:53,850 - INFO - --- Analysis Result ---
+2026-02-01 15:46:53,850 - INFO - Signal: {'signal': 'SELL', 'confidence': 0.85, 'entry_price': 78755.71, 'stop_loss': 80500.0, 'take_profit': 75723.85, 'take_profit_2': 70000.0, 'risk_level': 'Medium', 'risk_reward_ratio': 1.8, 'rationale': "After evaluating the debate between the Risky, Neutral, and Safe Analysts, I am recommending a SELL (short) position on BTCUSD at the broker price of 78,755.71. My decision aligns primarily with the Risky and Neutral Analysts’ views due to the compelling bearish technical indicators and macro headwinds. The price is significantly below key moving averages (200 SMA at 104,375.11 and 50 SMA at 89,501.21), and the MACD histogram at -1,225.64 indicates strong downward momentum, as highlighted by the Risky Analyst: 'the technicals are screaming bearish.' The macro environment, with a hawkish Fed shift, rising U.S. yields at 4.30%, and ETF outflows of $1.49B weekly, further supports the bearish case, as noted in the Latest World Affairs Report and echoed by both Risky and Neutral Analysts. However, I am tempering the Risky Analyst’s aggressive stance by adopting the Neutral Analyst’s suggestion of a reduced position size (3-4% of portfolio) and a tighter stop-loss at 80,500.00 instead of 81,100.01 to limit risk exposure to about 2.2%, improving the risk-reward ratio to 1.8:1 for the primary target at 75,723.85 (4% downside gain). This balances the Safe Analyst’s valid concern about volatility and oversold conditions (RSI at 25.34), which could trigger a bounce, with the opportunity presented by the current downtrend. Lessons from past trades, such as XAUUSD, reinforce the importance of dynamic risk management (trailing stops) and sentiment monitoring (Fear & Greed Index), while COPPER-C highlights the need for precise timing and partial profit-taking—hence setting a secondary take-profit at 70,000.00 for potential further downside. The decision avoids the Safe Analyst’s extreme caution of abstaining entirely, as the bearish setup is too strong to ignore with analyst projections like Glassnode’s 75,000 target providing additional credibility.", 'key_risks': 'The primary risk is a sudden reversal or bounce due to oversold conditions (RSI at 25.34) and price below the Lower Bollinger Band (81,100.01), which could trigger a corrective rally to 81,100.01 or higher, as cautioned by the Safe Analyst. High volatility (implied volatility spike from 37 to 44) and liquidation volumes ($1.6B) increase the chance of erratic price swings that could hit the stop-loss before the target. Additionally, unexpected positive sentiment shifts or geopolitical de-escalation could undermine the bearish macro narrative.', 'key_catalysts': 'Key catalysts include continued macro headwinds such as hawkish Fed policy developments, further ETF outflows, or rising U.S. yields, which could pressure risk assets like Bitcoin, as noted in the Latest World Affairs Report. Technical confirmation of the downtrend through a failed retest of 81,100.01 as resistance or sustained bearish momentum (MACD deepening) could drive price to 75,723.85 or lower. Retail panic and capitulation, reflected in the Fear & Greed Index at a 2026 high, may also accelerate downside if selling pressure persists.', 'position_size_recommendation': 'reduced (3-4% of portfolio)', 'full_response': "## FINAL TRADING DECISION: **SELL**\n**Confidence**: 85%\n**Risk Level**: Medium\n\n### Trade Parameters\n- **Entry Price**: 78755.71\n- **Stop Loss**: 80500.0\n- **Take Profit**: 75723.85\n- **Take Profit 2**: 70000.0\n- **Risk/Reward Ratio**: 1.80\n- **Position Sizing**: reduced (3-4% of portfolio)\n\n### Rationale\nAfter evaluating the debate between the Risky, Neutral, and Safe Analysts, I am recommending a SELL (short) position on BTCUSD at the broker price of 78,755.71. My decision aligns primarily with the Risky and Neutral Analysts’ views due to the compelling bearish technical indicators and macro headwinds. The price is significantly below key moving averages (200 SMA at 104,375.11 and 50 SMA at 89,501.21), and the MACD histogram at -1,225.64 indicates strong downward momentum, as highlighted by the Risky Analyst: 'the technicals are screaming bearish.' The macro environment, with a hawkish Fed shift, rising U.S. yields at 4.30%, and ETF outflows of $1.49B weekly, further supports the bearish case, as noted in the Latest World Affairs Report and echoed by both Risky and Neutral Analysts. However, I am tempering the Risky Analyst’s aggressive stance by adopting the Neutral Analyst’s suggestion of a reduced position size (3-4% of portfolio) and a tighter stop-loss at 80,500.00 instead of 81,100.01 to limit risk exposure to about 2.2%, improving the risk-reward ratio to 1.8:1 for the primary target at 75,723.85 (4% downside gain). This balances the Safe Analyst’s valid concern about volatility and oversold conditions (RSI at 25.34), which could trigger a bounce, with the opportunity presented by the current downtrend. Lessons from past trades, such as XAUUSD, reinforce the importance of dynamic risk management (trailing stops) and sentiment monitoring (Fear & Greed Index), while COPPER-C highlights the need for precise timing and partial profit-taking—hence setting a secondary take-profit at 70,000.00 for potential further downside. The decision avoids the Safe Analyst’s ", 'from_structured_output': True}
+2026-02-01 15:46:53,850 - INFO - Decision: ## FINAL TRADING DECISION: **SELL**
+**Confidence**: 85%
+**Risk Level**: Medium
+
+### Trade Parameters
+- **Entry Price**: 78755.71
+- **Stop Loss**: 80500.0
+- **Take Profit**: 75723.85
+- **Take Profit 2**: 70000.0
+- **Risk/Reward Ratio**: 1.80
+- **Position Sizing**: reduced (3-4% of portfolio)
+
+### Rat...
+2026-02-01 15:46:53,850 - INFO - route_to_vendor called: method=get_indicators, args=('BTCUSD', 'atr', '2026-02-01', 14)
+2026-02-01 15:46:53,850 - INFO - route_to_vendor success: method=get_indicators, vendor=mt5, results_count=1
+
+[Enhancing plan with LLM contextual intelligence...]
+2026-02-01 15:46:54,422 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 404 Not Found"
+[LLM enhancement complete]
+
+======================================================================
+COMPREHENSIVE SMC TRADING PLAN
+======================================================================
+
+[POSITION ANALYSIS]
+Current Price: $78853.52
+Position: Between zones
+
+[RECOMMENDATION: WAIT FOR RALLY] - Confidence: MEDIUM
+Price 4.6% below resistance OB. Overall bias is BEARISH. Wait for rally to $82472.94 for better entry.
+
+[PRIMARY SETUP: SELL]
+Entry: $82472.94 (MARKET)
+Stop Loss: $83085.89
+Take Profit 1: $81553.51
+R:R Ratio: 1:1.50
+
+LLM Confidence: LOW
+Adjusted Hold Probability: 65%
+Recommended Action: USE_RULE_BASED
+
+======================================================================
+
+
+--- Position Sizing ---
+Recommended Size: 0.2544 units
+MT5 Lots: 0.01
+Risk Amount: $797.77
+Risk %: 0.80%
+2026-02-01 15:46:54,542 - INFO - Prediction saved: BTCUSD_20260201_154654.pkl
+2026-02-01 15:46:54,542 - INFO -    Signal: SELL
+2026-02-01 15:46:54,542 - INFO -    Expected: down
+2026-02-01 15:46:54,542 - INFO -    Price: $78621.61
+2026-02-01 15:46:54,542 - INFO -    Evaluation due: 2026-02-02T15:46:54.526771
+2026-02-01 15:46:54,546 - INFO - ======================================================================
+2026-02-01 15:46:54,546 - INFO - CYCLE COMPLETE
+2026-02-01 15:46:54,546 - INFO - Next evaluation in 24 hours
+2026-02-01 15:46:54,546 - INFO - ======================================================================
+2026-02-01 15:46:54,547 - INFO - ======================================================================
+2026-02-01 15:46:54,547 - INFO - All symbols initialized. Running on schedule...
+2026-02-01 15:46:54,547 - INFO - ======================================================================

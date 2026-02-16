@@ -1,0 +1,20 @@
+Starting Portfolio Automation...
+Loaded config from: portfolio_config.yaml
+    Portfolio Configuration     
++------------------------------+
+| Setting          | Value     |
+|------------------+-----------|
+| Execution Mode   | full_auto |
+| Symbols          | BTCUSD    |
+| Max Positions    | 4         |
+| Max Daily Trades | 3         |
+| Daily Loss Limit | 3.0%      |
+| Morning Analysis | 08:00     |
+| Midday Review    | 13:00     |
+| Evening Reflect  | 20:00     |
++------------------------------+
+
+Press Ctrl+C to stop
+
+
+Shutting down...

@@ -1,0 +1,14 @@
+{
+  "symbol": "XAUUSD",
+  "analysis_timestamp": "2026-02-03T09:20:10.164206",
+  "evaluation_timestamp": "2026-02-05T09:00:59.054322",
+  "price_at_analysis": 4737.48,
+  "price_at_evaluation": 4981.07,
+  "pct_change": 5.141763131453857,
+  "expected_direction": "down",
+  "actual_direction": "up",
+  "signal": "SELL",
+  "prediction_correct": false,
+  "hypothetical_pnl": -5.141763131453857,
+  "lesson": "Prediction was incorrect. Price moved +5.14%."
+}

@@ -13,7 +13,6 @@ See: https://docs.x.ai/docs/guides/structured-outputs
 
 import os
 import json
-import warnings
 from typing import Optional, List, Dict, Any, Type, TypeVar, Union
 from openai import OpenAI
 
@@ -197,45 +196,6 @@ def _call_chat_completions(
     return ""
 
 
-# Convenience function for simple use cases
-def quick_llm_call(
-    prompt: str,
-    system_prompt: Optional[str] = None,
-    max_tokens: int = 1000,
-    temperature: float = 0.7,
-) -> str:
-    """
-    Make a quick LLM call with sensible defaults.
-
-    Automatically selects xAI or OpenAI based on available API keys.
-    Uses Responses API for xAI, Chat Completions for OpenAI.
-
-    Args:
-        prompt: The user prompt
-        system_prompt: Optional system prompt
-        max_tokens: Maximum tokens in response
-        temperature: Sampling temperature
-
-    Returns:
-        The assistant's response
-    """
-    client, model, uses_responses = get_llm_client()
-
-    messages = []
-    if system_prompt:
-        messages.append({"role": "system", "content": system_prompt})
-    messages.append({"role": "user", "content": prompt})
-
-    return chat_completion(
-        client=client,
-        model=model,
-        messages=messages,
-        max_tokens=max_tokens,
-        temperature=temperature,
-        use_responses_api=uses_responses,
-    )
-
-
 def structured_output(
     client: OpenAI,
     model: str,
@@ -397,48 +357,11 @@ def _call_chat_completions_structured(
     return "{}"
 
 
-# Pre-defined schemas for common trading operations
-# These now use the central schemas module for consistency
-
-class TradeReviewSchema:
-    """
-    JSON schema for trade review analysis.
-
-    DEPRECATED: Use QuickPositionReview from tradingagents.schemas instead.
-
-    Example:
-        from tradingagents.schemas import QuickPositionReview
-        result = structured_output(client, model, messages, response_schema=QuickPositionReview)
-    """
-
-    SCHEMA = QuickPositionReview.get_json_schema()
-
-
-class PortfolioSuggestionSchema:
-    """
-    JSON schema for portfolio diversification suggestions.
-
-    DEPRECATED: Use QuickPortfolioSuggestion from tradingagents.schemas instead.
-
-    Example:
-        from tradingagents.schemas import QuickPortfolioSuggestion
-        result = structured_output(client, model, messages, response_schema=QuickPortfolioSuggestion)
-    """
-
-    SCHEMA = QuickPortfolioSuggestion.get_json_schema()
-
-
-# Re-export schema classes for convenience
 __all__ = [
-    # Client functions
     "get_llm_client",
     "chat_completion",
-    "quick_llm_call",
     "structured_output",
-    # Legacy schemas (use tradingagents.schemas instead)
-    "TradeReviewSchema",
-    "PortfolioSuggestionSchema",
-    # Central schemas (preferred)
+    # Re-exported from tradingagents.schemas for convenience
     "QuickPositionReview",
     "QuickPortfolioSuggestion",
     "TradeAnalysisResult",

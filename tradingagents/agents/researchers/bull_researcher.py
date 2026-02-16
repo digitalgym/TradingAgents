@@ -3,6 +3,7 @@ import time
 import json
 
 from tradingagents.agents.utils.agent_utils import record_memory_usage, extract_memory_ids_from_results
+from tradingagents.learning.trade_similarity import TradeSimilaritySearch
 
 
 def create_bull_researcher(llm, memory):
@@ -45,6 +46,31 @@ def create_bull_researcher(llm, memory):
 
 """
 
+        # Query TradeSimilaritySearch for historical BUY trade performance
+        historical_buy_context = ""
+        try:
+            similarity_search = TradeSimilaritySearch()
+            current_setup = {
+                "symbol": ticker,
+                "direction": "BUY",
+                "market_regime": state.get("market_regime"),
+                "volatility_regime": state.get("volatility_regime"),
+            }
+            similar_trades = similarity_search.find_similar_trades(current_setup, n_results=5, min_confidence=0.3)
+
+            if similar_trades.get("similar_trades"):
+                stats = similar_trades["statistics"]
+                historical_buy_context = f"""
+HISTORICAL BUY PERFORMANCE ({stats['sample_size']} similar trades):
+- Win Rate: {stats['win_rate']*100:.0f}%
+- Avg Risk-Reward: {stats['avg_rr']:.2f}R
+- Best Trade: {stats['best_rr']:+.2f}R | Worst: {stats['worst_rr']:+.2f}R
+
+{"Use this strong historical performance to support your bullish case." if stats['win_rate'] >= 0.55 else "Historical win rate is below 55% - you must provide compelling reasons why THIS setup will outperform."}
+"""
+        except Exception:
+            pass  # Silently ignore errors
+
         # Build SMC instruction for bullish perspective
         smc_instruction = ""
         if smc_context:
@@ -75,7 +101,7 @@ Resources available:
 Market research report: {market_research_report}
 Social media sentiment report: {sentiment_report}
 Latest world affairs news: {news_report}
-Company fundamentals report: {fundamentals_report}{smc_instruction}
+Company fundamentals report: {fundamentals_report}{smc_instruction}{historical_buy_context}
 Conversation history of the debate: {history}
 Last bear argument: {current_response}
 Reflections from similar situations and lessons learned: {past_memory_str}

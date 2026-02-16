@@ -1,0 +1,104 @@
+Starting Portfolio Automation...
+Loaded config from: portfolio_config.yaml
+   Portfolio Configuration   
++---------------------------+
+| Setting          | Value  |
+|------------------+--------|
+| Execution Mode   | paper  |
+| Symbols          | BTCUSD |
+| Max Positions    | 4      |
+| Max Daily Trades | 3      |
+| Daily Loss Limit | 3.0%   |
+| Morning Analysis | 08:00  |
+| Midday Review    | 13:00  |
+| Evening Reflect  | 20:00  |
++---------------------------+
+
+Press Ctrl+C to stop
+
+2026-01-31 17:55:28,762 - ==================================================
+2026-01-31 17:55:28,762 - PortfolioAutomation - INFO - ==================================================
+2026-01-31 17:55:28,762 - STARTING MORNING ANALYSIS CYCLE
+2026-01-31 17:55:28,762 - PortfolioAutomation - INFO - STARTING MORNING ANALYSIS CYCLE
+2026-01-31 17:55:28,762 - ==================================================
+2026-01-31 17:55:28,762 - PortfolioAutomation - INFO - ==================================================
+2026-01-31 17:55:28,963 - Trading blocked: CONSECUTIVE LOSSES: 17 >= 2
+2026-01-31 17:55:28,963 - PortfolioAutomation - WARNING - Trading blocked: CONSECUTIVE LOSSES: 17 >= 2
+2026-01-31 22:55:31,795 - ==================================================
+2026-01-31 22:55:31,795 - PortfolioAutomation - INFO - ==================================================
+2026-01-31 22:55:31,795 - STARTING MIDDAY REVIEW CYCLE
+2026-01-31 22:55:31,795 - PortfolioAutomation - INFO - STARTING MIDDAY REVIEW CYCLE
+2026-01-31 22:55:31,795 - ==================================================
+2026-01-31 22:55:31,795 - PortfolioAutomation - INFO - ==================================================
+2026-01-31 22:55:31,810 - Reviewing 3 positions...
+2026-01-31 22:55:31,810 - PortfolioAutomation - INFO - Reviewing 3 positions...
+2026-01-31 22:55:32,539 - XPTUSD BUY (#8339821): P&L: -100.00%, ATR: 220.5452
+2026-01-31 22:55:32,539 - PortfolioAutomation - INFO - XPTUSD BUY (#8339821): P&L: -100.00%, ATR: 220.5452
+2026-01-31 22:55:32,599 - XAUUSD BUY (#8348409): P&L: -100.00%, ATR: 183.9688
+2026-01-31 22:55:32,599 - PortfolioAutomation - INFO - XAUUSD BUY (#8348409): P&L: -100.00%, ATR: 183.9688
+2026-01-31 22:55:32,599 - XAUUSD BUY (#8589903): P&L: -100.00%, ATR: 183.9688
+2026-01-31 22:55:32,599 - PortfolioAutomation - INFO - XAUUSD BUY (#8589903): P&L: -100.00%, ATR: 183.9688
+2026-01-31 22:55:32,599 - ==================================================
+POSITION REVIEW REPORT
+==================================================
+Time: 2026-01-31 22:55:31
+
+Positions Reviewed: 3
+Adjustments Identified: 0
+Adjustments Applied: 0
+Adjustments Pending: 0
+
+Duration: 0.8s
+==================================================
+2026-01-31 22:55:32,599 - PortfolioAutomation - INFO - ==================================================
+POSITION REVIEW REPORT
+==================================================
+Time: 2026-01-31 22:55:31
+
+Positions Reviewed: 3
+Adjustments Identified: 0
+Adjustments Applied: 0
+Adjustments Pending: 0
+
+Duration: 0.8s
+==================================================
+2026-02-01 05:55:37,195 - ==================================================
+2026-02-01 05:55:37,195 - PortfolioAutomation - INFO - ==================================================
+2026-02-01 05:55:37,195 - STARTING EVENING REFLECTION CYCLE
+2026-02-01 05:55:37,195 - PortfolioAutomation - INFO - STARTING EVENING REFLECTION CYCLE
+2026-02-01 05:55:37,195 - ==================================================
+2026-02-01 05:55:37,195 - PortfolioAutomation - INFO - ==================================================
+2026-02-01 05:55:37,246 - Active decisions: 2
+2026-02-01 05:55:37,246 - PortfolioAutomation - INFO - Active decisions: 2
+2026-02-01 05:55:37,598 - ==================================================
+REFLECTION REPORT
+==================================================
+Time: 2026-02-01 05:55:37
+
+Trades Processed: 0
+Winning Trades: 0
+Losing Trades: 0
+Total P&L: $0.00
+
+Reflections Created: 0
+Memories Stored: 0
+
+Duration: 0.4s
+==================================================
+2026-02-01 05:55:37,598 - PortfolioAutomation - INFO - ==================================================
+REFLECTION REPORT
+==================================================
+Time: 2026-02-01 05:55:37
+
+Trades Processed: 0
+Winning Trades: 0
+Losing Trades: 0
+Total P&L: $0.00
+
+Reflections Created: 0
+Memories Stored: 0
+
+Duration: 0.4s
+==================================================
+
+Shutting down...

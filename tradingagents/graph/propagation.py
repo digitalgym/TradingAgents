@@ -16,7 +16,13 @@ class Propagator:
         self.max_recur_limit = max_recur_limit
 
     def create_initial_state(
-        self, company_name: str, trade_date: str, current_price: float = None
+        self,
+        company_name: str,
+        trade_date: str,
+        current_price: float = None,
+        market_regime: str = None,
+        volatility_regime: str = None,
+        regime_description: str = None,
     ) -> Dict[str, Any]:
         """Create the initial state for the agent graph.
 
@@ -24,12 +30,18 @@ class Propagator:
             company_name: Ticker symbol or company name
             trade_date: Date to analyze
             current_price: Current broker price for the symbol (important for broker-specific pricing)
+            market_regime: Detected market regime (trending-up, trending-down, ranging)
+            volatility_regime: Detected volatility regime (low, normal, high, extreme)
+            regime_description: Human-readable description of current regime
         """
         return {
             "messages": [("human", company_name)],
             "company_of_interest": company_name,
             "trade_date": str(trade_date),
             "current_price": current_price,  # Broker's actual price for this symbol
+            "market_regime": market_regime,  # For regime-aware decisions
+            "volatility_regime": volatility_regime,  # For position sizing
+            "regime_description": regime_description,  # Human-readable regime context
             "investment_debate_state": InvestDebateState(
                 {"history": "", "current_response": "", "count": 0}
             ),
@@ -46,6 +58,8 @@ class Propagator:
             "fundamentals_report": "",
             "sentiment_report": "",
             "news_report": "",
+            "quant_report": None,
+            "quant_decision": None,
             "final_trade_decision": "",
             "final_trade_decision_structured": None,
             "smc_context": None,

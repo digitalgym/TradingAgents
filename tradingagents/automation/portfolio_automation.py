@@ -463,6 +463,20 @@ class PortfolioAutomation:
         self.logger.info("STARTING MORNING ANALYSIS CYCLE")
         self.logger.info("=" * 50)
 
+        try:
+            return await self._run_morning_analysis_impl(report, start_time)
+        except Exception as e:
+            import traceback
+            self.logger.error(f"CRITICAL ERROR in morning analysis: {e}")
+            self.logger.error(traceback.format_exc())
+            report.blocked = True
+            report.blocked_reason = f"Cycle crashed: {str(e)}"
+            report.errors["_cycle"] = str(e)
+            report.total_duration_seconds = time.time() - start_time
+            return report
+
+    async def _run_morning_analysis_impl(self, report: DailyAnalysisReport, start_time: float) -> DailyAnalysisReport:
+        """Internal implementation of morning analysis."""
         # Check MT5 connection
         mt5_status = check_mt5_autotrading()
         if not mt5_status.get("connected"):
@@ -816,7 +830,16 @@ class PortfolioAutomation:
         self.logger.info("STARTING MIDDAY REVIEW CYCLE")
         self.logger.info("=" * 50)
 
-        positions = get_open_positions()
+        try:
+            positions = get_open_positions()
+        except Exception as e:
+            import traceback
+            self.logger.error(f"CRITICAL ERROR getting positions: {e}")
+            self.logger.error(traceback.format_exc())
+            report.errors["_cycle"] = f"Failed to get positions: {str(e)}"
+            report.total_duration_seconds = time.time() - start_time
+            return report
+
         report.positions_reviewed = len(positions)
         self.logger.info(f"Reviewing {len(positions)} positions...")
 
@@ -959,7 +982,16 @@ class PortfolioAutomation:
         self.logger.info("=" * 50)
 
         # Get active decisions
-        active_decisions = list_active_decisions()
+        try:
+            active_decisions = list_active_decisions()
+        except Exception as e:
+            import traceback
+            self.logger.error(f"CRITICAL ERROR getting active decisions: {e}")
+            self.logger.error(traceback.format_exc())
+            report.errors["_cycle"] = f"Failed to get decisions: {str(e)}"
+            report.total_duration_seconds = time.time() - start_time
+            return report
+
         self.logger.info(f"Active decisions: {len(active_decisions)}")
 
         for decision in active_decisions:
@@ -970,7 +1002,13 @@ class PortfolioAutomation:
             decision_id = decision.get("decision_id")
 
             # Check if position is still open
-            positions = get_open_positions()
+            try:
+                positions = get_open_positions()
+            except Exception as e:
+                self.logger.error(f"Error getting positions for {decision_id}: {e}")
+                report.errors[decision_id] = f"Failed to check position: {str(e)}"
+                continue
+
             if any(p.get("ticket") == ticket for p in positions):
                 self.logger.debug(f"{decision_id}: Position still open")
                 continue  # Still open

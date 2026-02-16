@@ -30,7 +30,11 @@
       "Bash(git commit:*)",
       "Bash(npm run build:*)",
       "Bash(node -e:*)",
-      "Bash(npx kill-port:*)"
+      "Bash(npx kill-port:*)",
+      "Bash(pip show:*)",
+      "Bash(.venv/Scripts/python -m pytest:*)",
+      "Bash(sqlite3:*)",
+      "Bash(wmic process:*)"
     ]
   }
 }

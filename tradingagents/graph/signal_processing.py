@@ -4,6 +4,7 @@ import re
 import json
 from typing import Optional, Dict, Any
 from langchain_openai import ChatOpenAI
+from tradingagents.risk.guardrails import RiskGuardrails
 
 
 class SignalProcessor:
@@ -35,12 +36,44 @@ class SignalProcessor:
         """
         # If we have a structured decision from the Risk Manager, use it directly
         if structured_decision is not None:
-            return self._process_structured_decision(
+            result = self._process_structured_decision(
                 structured_decision, full_signal, current_price
             )
+        else:
+            # Fall back to LLM parsing for unstructured text
+            result = self._parse_with_llm(full_signal, current_price)
 
-        # Fall back to LLM parsing for unstructured text
-        return self._parse_with_llm(full_signal, current_price)
+        # Apply guardrails check - override to HOLD if circuit breaker is active
+        result = self._apply_guardrails(result)
+
+        return result
+
+    def _apply_guardrails(self, result: dict) -> dict:
+        """Apply risk guardrails check to the trading signal.
+
+        If guardrails are breached (daily loss limit, consecutive losses, cooldown),
+        override the signal to HOLD to prevent further trading.
+        """
+        try:
+            guardrails = RiskGuardrails()
+            can_trade, reason = guardrails.check_can_trade(account_balance=0)  # Balance not needed for basic check
+
+            if not can_trade and result.get("signal") in ["BUY", "SELL"]:
+                # Override to HOLD with explanation
+                original_signal = result.get("signal")
+                original_rationale = result.get("rationale") or ""
+
+                result["signal"] = "HOLD"
+                result["guardrail_override"] = True
+                result["guardrail_reason"] = reason
+                result["original_signal"] = original_signal
+                result["rationale"] = f"GUARDRAIL OVERRIDE: {reason}. Original recommendation was {original_signal}. {original_rationale}"
+
+        except Exception:
+            # If guardrails check fails, continue without override
+            pass
+
+        return result
 
     def _process_structured_decision(
         self,

@@ -397,3 +397,126 @@ AttributeError: 'dict' object has no attribute 'upper'
 2026-01-30 09:09:41,851 - INFO - CYCLE COMPLETE
 2026-01-30 09:09:41,851 - INFO - Next evaluation in 24 hours
 2026-01-30 09:09:41,851 - INFO - ======================================================================
+2026-01-31 09:00:43,909 - INFO - ======================================================================
+2026-01-31 09:00:44,267 - INFO - ANALYSIS CYCLE - XAUUSD
+2026-01-31 09:00:44,267 - INFO - Time: 2026-01-31 09:00:44
+2026-01-31 09:00:44,267 - INFO - Evaluation window: 24 hours
+2026-01-31 09:00:44,267 - INFO - ======================================================================
+2026-01-31 09:00:44,452 - INFO - Found 1 pending prediction(s) to evaluate
+2026-01-31 09:00:45,886 - INFO - HTTP Request: POST https://api.x.ai/v1/responses "HTTP/1.1 422 Unprocessable Entity"
+2026-01-31 09:01:28,529 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-31 09:01:30,904 - INFO - Use pytorch device_name: cpu
+2026-01-31 09:01:30,904 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-01-31 09:02:48,259 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-31 09:04:04,607 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-31 09:05:26,872 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-31 09:06:31,005 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-31 09:07:32,263 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-31 09:07:32,902 - INFO - Running analysis for XAUUSD on 2026-01-31...
+2026-01-31 09:07:32,902 - INFO - Running Smart Money Concepts analysis...
+2026-01-31 09:07:33,419 - INFO - SMC Analysis: 2/3 timeframes bullish
+2026-01-31 09:07:33,434 - INFO - Running main analysis with graph.propagate()...
+2026-01-31 09:08:00,462 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-31 09:08:21,183 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-31 09:09:33,155 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-31 09:09:38,439 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-31 09:11:04,726 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-31 09:11:10,685 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-31 09:12:39,552 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-31 09:13:28,889 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-31 09:14:15,607 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-31 09:14:59,182 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-31 09:15:36,530 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-31 09:16:22,769 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-31 09:17:21,058 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-31 09:18:14,799 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-31 09:18:28,548 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-31 09:18:28,887 - INFO - --- Analysis Result ---
+2026-01-31 09:18:28,887 - INFO - Signal: {'signal': 'BUY', 'confidence': 0.75, 'entry_price': 4885.51, 'stop_loss': 4700.0, 'take_profit': 5013.16, 'take_profit_2': 5400.0, 'risk_level': 'Medium', 'risk_reward_ratio': 1.5, 'rationale': "After evaluating the debate between the Risky, Neutral, and Safe Analysts, I am recommending a BUY on XAUUSD at the current broker price of $4,885.51000. My decision aligns with the Risky and Neutral Analysts’ views on capturing the upside potential in a long-term bullish trend, supported by gold’s position 29% above the 200-day SMA and 9% above the 50-day SMA, as well as UBS’s target of $6,200 (27% upside). The Risky Analyst’s point that 'history shows gold’s safe-haven status—amped up by geopolitical chaos like US-Iran tensions—makes it a magnet for demand during uncertainty' resonates strongly, especially given ongoing escalations noted in the World Affairs Report. The Neutral Analyst’s balanced approach of 'capturing growth potential while safeguarding against volatility' further supports a measured entry. I acknowledge the Safe Analyst’s concerns about short-term bearish technicals (price below 10-day EMA at $5,013.16) and high volatility (ATR of 183.97), but waiting for perfect clarity risks missing a rebound, as seen in the successful past trade at $4,828.91 (8.78% gain). Learning from the past loss at $5,424.67 (-10.5% loss), where overbought conditions (RSI 90.23) were ignored, I note the current neutral RSI of 55.36 indicates room for upside, justifying a cautious buy. My plan refines the trader’s original strategy by reducing initial exposure to 30% now, reserving 70% for a dip to $4,700 or bullish confirmation above $5,000, balancing risk and opportunity.", 'key_risks': "1. Short-term bearish momentum could push prices below support at $4,700, targeting $4,600 or lower, as warned by the Safe Analyst with 'potential deeper corrections.' 2. A stronger USD (DXY above 97.00) or hawkish Fed rhetoric could pressure gold, as highlighted by the Safe Analyst’s concern over 'hotter-than-expected PPI data (+0.5% MoM headline, +0.7% core).' 3. Volatility (ATR 3.77%) could trigger the stop-loss prematurely during wide daily swings, as seen in the 9.33% drop on January 30.", 'key_catalysts': "1. Escalating geopolitical tensions, particularly US-Iran conflicts over the Strait of Hormuz, could drive safe-haven demand for gold, as emphasized by the Risky Analyst’s view of 'persistent tailwinds.' 2. Potential USD weakness long-term, as forecasted by UBS, could support gold’s appeal. 3. Continued central bank buying and ETF inflows, as noted in the Social Media Sentiment Report, could sustain the bullish trend toward UBS’s $6,200 target.", 'position_size_recommendation': 'reduced (4% of portfolio)', 'full_response': "## FINAL TRADING DECISION: **BUY**\n**Confidence**: 75%\n**Risk Level**: Medium\n\n### Trade Parameters\n- **Entry Price**: 4885.51\n- **Stop Loss**: 4700.0\n- **Take Profit**: 5013.16\n- **Take Profit 2**: 5400.0\n- **Risk/Reward Ratio**: 1.50\n- **Position Sizing**: reduced (4% of portfolio)\n\n### Rationale\nAfter evaluating the debate between the Risky, Neutral, and Safe Analysts, I am recommending a BUY on XAUUSD at the current broker price of $4,885.51000. My decision aligns with the Risky and Neutral Analysts’ views on capturing the upside potential in a long-term bullish trend, supported by gold’s position 29% above the 200-day SMA and 9% above the 50-day SMA, as well as UBS’s target of $6,200 (27% upside). The Risky Analyst’s point that 'history shows gold’s safe-haven status—amped up by geopolitical chaos like US-Iran tensions—makes it a magnet for demand during uncertainty' resonates strongly, especially given ongoing escalations noted in the World Affairs Report. The Neutral Analyst’s balanced approach of 'capturing growth potential while safeguarding against volatility' further supports a measured entry. I acknowledge the Safe Analyst’s concerns about short-term bearish technicals (price below 10-day EMA at $5,013.16) and high volatility (ATR of 183.97), but waiting for perfect clarity risks missing a rebound, as seen in the successful past trade at $4,828.91 (8.78% gain). Learning from the past loss at $5,424.67 (-10.5% loss), where overbought conditions (RSI 90.23) were ignored, I note the current neutral RSI of 55.36 indicates room for upside, justifying a cautious buy. My plan refines the trader’s original strategy by reducing initial exposure to 30% now, reserving 70% for a dip to $4,700 or bullish confirmation above $5,000, balancing risk and opportunity.\n\n### Key Risks\n1. Short-term bearish momentum could push prices below support at $4,700, targeting $4,600 or lower, as warned by the Safe Analyst with 'potential deeper corrections.' 2. A stronger USD (DXY ab", 'from_structured_output': True}
+2026-01-31 09:18:28,887 - INFO - Decision: ## FINAL TRADING DECISION: **BUY**
+**Confidence**: 75%
+**Risk Level**: Medium
+
+### Trade Parameters
+- **Entry Price**: 4885.51
+- **Stop Loss**: 4700.0
+- **Take Profit**: 5013.16
+- **Take Profit 2**: 5400.0
+- **Risk/Reward Ratio**: 1.50
+- **Position Sizing**: reduced (4% of portfolio)
+
+### Rationale
+...
+2026-01-31 09:18:29,386 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 404 Not Found"
+2026-01-31 09:18:29,612 - INFO - Prediction saved: XAUUSD_20260131_091829.pkl
+2026-01-31 09:18:29,612 - INFO -    Signal: BUY
+2026-01-31 09:18:29,612 - INFO -    Expected: up
+2026-01-31 09:18:29,612 - INFO -    Price: $4885.60
+2026-01-31 09:18:29,613 - INFO -    Evaluation due: 2026-02-01T09:18:29.486300
+2026-01-31 09:18:29,616 - INFO - ======================================================================
+2026-01-31 09:18:29,617 - INFO - CYCLE COMPLETE
+2026-01-31 09:18:29,617 - INFO - Next evaluation in 24 hours
+2026-01-31 09:18:29,617 - INFO - ======================================================================
+2026-02-01 09:00:31,551 - INFO - ======================================================================
+2026-02-01 09:00:31,582 - INFO - ANALYSIS CYCLE - XAUUSD
+2026-02-01 09:00:31,582 - INFO - Time: 2026-02-01 09:00:31
+2026-02-01 09:00:31,582 - INFO - Evaluation window: 24 hours
+2026-02-01 09:00:31,582 - INFO - ======================================================================
+2026-02-01 09:00:32,813 - INFO - Found 1 pending prediction(s) to evaluate
+2026-02-01 09:00:33,662 - INFO - HTTP Request: POST https://api.x.ai/v1/responses "HTTP/1.1 422 Unprocessable Entity"
+2026-02-01 09:01:00,096 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:02:28,679 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:03:55,995 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:05:32,878 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:07:18,584 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:08:10,524 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:08:11,078 - INFO - Running analysis for XAUUSD on 2026-02-01...
+2026-02-01 09:08:11,078 - INFO - Running Smart Money Concepts analysis...
+2026-02-01 09:08:11,696 - INFO - SMC Analysis: 2/3 timeframes bullish
+2026-02-01 09:08:11,696 - INFO - Running main analysis with graph.propagate()...
+2026-02-01 09:08:30,042 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:08:46,477 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:08:53,766 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:08:58,964 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:09:05,365 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:09:19,495 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:09:22,576 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:09:28,856 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:10:14,954 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:10:20,402 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:13:14,399 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:13:33,109 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:14:22,621 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:17:01,184 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:19:41,067 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:20:11,779 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:21:44,559 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:22:14,177 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:22:40,754 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:23:21,098 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:23:35,161 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-01 09:23:35,576 - INFO - --- Analysis Result ---
+2026-02-01 09:23:35,576 - INFO - Signal: {'signal': 'BUY', 'confidence': 0.75, 'entry_price': 4885.51, 'stop_loss': 4609.5578, 'take_profit': 5353.89652, 'take_profit_2': 5500.0, 'risk_level': 'Medium', 'risk_reward_ratio': 1.7, 'rationale': "After evaluating the debate between the Risky, Neutral, and Safe Analysts, I am recommending a BUY on XAUUSD at 4885.51000, aligning primarily with the Risky and Neutral perspectives while incorporating risk controls inspired by the Safe Analyst. The Risky Analyst's argument for structural demand—central bank buying (450 tons in Q4 2025) and geopolitical tensions (e.g., US-Venezuela conflicts)—provides a compelling long-term bullish case, as does their point that the 14% pullback represents a buying opportunity with the price stabilized above key supports like $4,780. The Neutral Analyst supports this by noting gold’s 74% YTD gain and potential 27% upside to UBS’s $6,200 target, advocating a balanced entry to avoid missing out. Technical indicators further bolster this decision: an RSI of 55.36 indicates room to run (unlike the overbought 90.23 in the January 29, 2026, loss of -10.55%), and a bullish MACD (Histogram +34.6756) confirms momentum, as highlighted by the Risky Analyst. The price being 9.27% above the 50-day SMA at 4470.86700 reinforces the uptrend’s strength. However, I’m tempering enthusiasm with the Safe Analyst’s valid concerns about volatility (ATR at 3.77%) and potential USD strength from a hawkish Fed shift, which drove a 9.11% daily drop on January 30. Their warning of further downside to $4,500 or $4,000 is noted, but I believe the staged entry and tighter stop-loss mitigate this. Learning from past mistakes, particularly the January 29, 2026, loss due to entering at overbought levels, I’m confident this post-correction entry with neutral RSI avoids similar timing errors. My decision balances growth potential with caution, refining the trader’s plan for a reduced position size (4% vs. 5%) as suggested by the Neutral Analyst, and a tighter stop-loss at 1.5x ATR (4609.55780) to protect against sudden reversals. This isn’t a default to HOLD, as the Safe Analyst’s call to wait for $5,000 confirmation risks missing significant upside, and the fundamentals and technicals align for a BUY now with managed risk.", 'key_risks': '1. High volatility (ATR 3.77%) could lead to sudden price swings, potentially breaking below $4,780 support and targeting $4,500 or $4,000 as warned by bearish analysts. 2. USD strength from a hawkish Fed shift (e.g., Kevin Warsh nomination rumors) or fewer rate cuts in 2026 could pressure gold prices downward, as seen in the 9.11% drop on January 30. 3. Upcoming macro events like Non-Farm Payrolls or Fed rhetoric could spike volatility, risking gaps past stop-loss levels. 4. Retail panic (30% social media positivity) could deepen if institutional selling follows, invalidating the contrarian buy signal.', 'key_catalysts': '1. Geopolitical tensions (e.g., US-Venezuela conflicts, Middle East unrest) driving safe-haven demand for gold, supporting price appreciation. 2. Central bank buying (450 tons in Q4 2025) providing a fundamental floor and long-term bullish momentum. 3. Dovish Fed stance (rates at 3.50-3.75%) and potential USD weakness favoring gold over short-term dollar rebounds. 4. Technical momentum with bullish MACD (+34.6756) and price above key SMAs (50-day at 4470.86700) signaling continued buyer control toward targets like 5353.89652 (+9.6%) and beyond.', 'position_size_recommendation': 'reduced (4% of portfolio)', 'full_response': "## FINAL TRADING DECISION: **BUY**\n**Confidence**: 75%\n**Risk Level**: Medium\n\n### Trade Parameters\n- **Entry Price**: 4885.51\n- **Stop Loss**: 4609.5578\n- **Take Profit**: 5353.89652\n- **Take Profit 2**: 5500.0\n- **Risk/Reward Ratio**: 1.70\n- **Position Sizing**: reduced (4% of portfolio)\n\n### Rationale\nAfter evaluating the debate between the Risky, Neutral, and Safe Analysts, I am recommending a BUY on XAUUSD at 4885.51000, aligning primarily with the Risky and Neutral perspectives while incorporating risk controls inspired by the Safe Analyst. The Risky Analyst's argument for structural demand—central bank buying (450 tons in Q4 2025) and geopolitical tensions (e.g., US-Venezuela conflicts)—provides a compelling long-term bullish case, as does their point that the 14% pullback represents a buying opportunity with the price stabilized above key supports like $4,780. The Neutral Analyst supports this by noting gold’s 74% YTD gain and potential 27% upside to UBS’s $6,200 target, advocating a balanced entry to avoid missing out. Technical indicators further bolster this decision: an RSI of 55.36 indicates room to run (unlike the overbought 90.23 in the January 29, 2026, loss of -10.55%), and a bullish MACD (Histogram +34.6756) confirms momentum, as highlighted by the Risky Analyst. The price being 9.27% above the 50-day SMA at 4470.86700 reinforces the uptrend’s strength. However, I’m tempering enthusiasm with the Safe Analyst’s valid concerns about volatility (ATR at 3.77%) and potential USD strength from a hawkish Fed shift, which drove a 9.11% daily drop on January 30. Their warning of further downside to $4,500 or $4,000 is noted, but I believe the staged entry and tighter stop-loss mitigate this. Learning from past mistakes, particularly the January 29, 2026, loss due to entering at overbought levels, I’m confident this post-correction entry with neutral RSI avoids similar timing errors. My decision balances growth potential with caution, refining the trader’s p", 'from_structured_output': True}
+2026-02-01 09:23:35,576 - INFO - Decision: ## FINAL TRADING DECISION: **BUY**
+**Confidence**: 75%
+**Risk Level**: Medium
+
+### Trade Parameters
+- **Entry Price**: 4885.51
+- **Stop Loss**: 4609.5578
+- **Take Profit**: 5353.89652
+- **Take Profit 2**: 5500.0
+- **Risk/Reward Ratio**: 1.70
+- **Position Sizing**: reduced (4% of portfolio)
+
+### Rati...
+2026-02-01 09:23:35,861 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 404 Not Found"
+2026-02-01 09:23:36,024 - INFO - Prediction saved: XAUUSD_20260201_092336.pkl
+2026-02-01 09:23:36,024 - INFO -    Signal: BUY
+2026-02-01 09:23:36,024 - INFO -    Expected: up
+2026-02-01 09:23:36,024 - INFO -    Price: $4885.60
+2026-02-01 09:23:36,024 - INFO -    Evaluation due: 2026-02-02T09:23:35.939844
+2026-02-01 09:23:36,062 - INFO - ======================================================================
+2026-02-01 09:23:36,062 - INFO - CYCLE COMPLETE
+2026-02-01 09:23:36,062 - INFO - Next evaluation in 24 hours
+2026-02-01 09:23:36,062 - INFO - ======================================================================

@@ -1,14 +1,4 @@
 symbols:
-- symbol: XAUUSD
-  max_positions: 1
-  risk_budget_pct: 2.0
-  correlation_group: metals
-  timeframes:
-  - 1H
-  - 4H
-  - D1
-  enabled: true
-  min_confidence: 0.6
 - symbol: XAGUSD
   max_positions: 1
   risk_budget_pct: 1.5
@@ -19,20 +9,10 @@ symbols:
   - D1
   enabled: true
   min_confidence: 0.6
-- symbol: COPPER-C
+- symbol: XAUUSD
   max_positions: 1
   risk_budget_pct: 1.5
-  correlation_group: industrial_metals
-  timeframes:
-  - 1H
-  - 4H
-  - D1
-  enabled: true
-  min_confidence: 0.6
-- symbol: EURUSD
-  max_positions: 1
-  risk_budget_pct: 1.5
-  correlation_group: forex
+  correlation_group: metals
   timeframes:
   - 1H
   - 4H
@@ -46,7 +26,7 @@ total_risk_budget_pct: 6.0
 daily_loss_limit_pct: 3.0
 max_consecutive_losses: 2
 cooldown_hours: 24
-execution_mode: full_auto
+execution_mode: paper
 default_lot_size: 0.01
 use_atr_stops: true
 atr_stop_multiplier: 2.0

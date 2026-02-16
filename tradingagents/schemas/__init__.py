@@ -45,6 +45,8 @@ from .trade_analysis import (
     SMCZone,
     SMCAnalysis,
     PredictionLesson,
+    QuantSignalType,
+    QuantAnalystDecision,
 )
 
 from .position_review import (
@@ -78,6 +80,7 @@ def get_all_schemas():
         MarketRegime,
         VolatilityRegime,
         Urgency,
+        QuantSignalType,
         # Base
         PriceLevel,
         KeyFactor,
@@ -88,6 +91,7 @@ def get_all_schemas():
         QuickTradeAnalysis,
         FinalTradingDecision,
         PredictionLesson,
+        QuantAnalystDecision,
         # Position Review
         StopLossAdjustment,
         TakeProfitAdjustment,
@@ -121,6 +125,7 @@ __all__ = [
     "MarketRegime",
     "VolatilityRegime",
     "Urgency",
+    "QuantSignalType",
     # Base
     "BaseSchema",
     "PriceLevel",
@@ -132,6 +137,7 @@ __all__ = [
     "SMCZone",
     "SMCAnalysis",
     "PredictionLesson",
+    "QuantAnalystDecision",
     # Position Review
     "PositionReview",
     "QuickPositionReview",

@@ -17,3 +17,181 @@ Memories Stored: 0
 
 Duration: 0.0s
 ==================================================
+2026-01-31 11:31:03,490 - INFO - ==================================================
+2026-01-31 11:31:03,544 - INFO - STARTING MORNING ANALYSIS CYCLE
+2026-01-31 11:31:03,544 - INFO - ==================================================
+2026-01-31 11:31:03,755 - WARNING - Trading blocked: CONSECUTIVE LOSSES: 17 >= 2
+2026-01-31 16:56:57,665 - INFO - ==================================================
+2026-01-31 16:56:57,681 - INFO - STARTING MORNING ANALYSIS CYCLE
+2026-01-31 16:56:57,681 - INFO - ==================================================
+2026-01-31 16:56:57,900 - WARNING - Trading blocked: CONSECUTIVE LOSSES: 17 >= 2
+2026-01-31 16:57:27,070 - INFO - ==================================================
+2026-01-31 16:57:27,070 - INFO - ==================================================
+2026-01-31 16:57:27,071 - INFO - STARTING MORNING ANALYSIS CYCLE
+2026-01-31 16:57:27,071 - INFO - STARTING MORNING ANALYSIS CYCLE
+2026-01-31 16:57:27,071 - INFO - ==================================================
+2026-01-31 16:57:27,071 - INFO - ==================================================
+2026-01-31 16:57:27,296 - WARNING - Trading blocked: CONSECUTIVE LOSSES: 17 >= 2
+2026-01-31 16:57:27,296 - WARNING - Trading blocked: CONSECUTIVE LOSSES: 17 >= 2
+2026-01-31 16:57:29,762 - INFO - ==================================================
+2026-01-31 16:57:29,762 - INFO - ==================================================
+2026-01-31 16:57:29,762 - INFO - ==================================================
+2026-01-31 16:57:29,763 - INFO - STARTING MORNING ANALYSIS CYCLE
+2026-01-31 16:57:29,763 - INFO - STARTING MORNING ANALYSIS CYCLE
+2026-01-31 16:57:29,763 - INFO - STARTING MORNING ANALYSIS CYCLE
+2026-01-31 16:57:29,764 - INFO - ==================================================
+2026-01-31 16:57:29,764 - INFO - ==================================================
+2026-01-31 16:57:29,764 - INFO - ==================================================
+2026-01-31 16:57:29,998 - WARNING - Trading blocked: CONSECUTIVE LOSSES: 17 >= 2
+2026-01-31 16:57:29,998 - WARNING - Trading blocked: CONSECUTIVE LOSSES: 17 >= 2
+2026-01-31 16:57:29,998 - WARNING - Trading blocked: CONSECUTIVE LOSSES: 17 >= 2
+2026-01-31 17:03:46,829 - INFO - ==================================================
+2026-01-31 17:03:46,876 - INFO - STARTING MORNING ANALYSIS CYCLE
+2026-01-31 17:03:46,876 - INFO - ==================================================
+2026-01-31 17:03:47,116 - WARNING - Trading blocked: CONSECUTIVE LOSSES: 17 >= 2
+2026-01-31 17:55:28,762 - INFO - ==================================================
+2026-01-31 17:55:28,762 - INFO - STARTING MORNING ANALYSIS CYCLE
+2026-01-31 17:55:28,762 - INFO - ==================================================
+2026-01-31 17:55:28,963 - WARNING - Trading blocked: CONSECUTIVE LOSSES: 17 >= 2
+2026-01-31 18:11:59,219 - INFO - ==================================================
+2026-01-31 18:11:59,219 - INFO - ==================================================
+2026-01-31 18:11:59,219 - INFO - STARTING MORNING ANALYSIS CYCLE
+2026-01-31 18:11:59,219 - INFO - STARTING MORNING ANALYSIS CYCLE
+2026-01-31 18:11:59,219 - INFO - ==================================================
+2026-01-31 18:11:59,219 - INFO - ==================================================
+2026-01-31 18:11:59,453 - INFO - Current positions: 3
+2026-01-31 18:11:59,453 - INFO - Current positions: 3
+2026-01-31 18:11:59,468 - INFO - Trades today: 0/3
+2026-01-31 18:11:59,468 - INFO - Trades today: 0/3
+2026-01-31 18:11:59,468 - INFO - Analyzing XAUUSD...
+2026-01-31 18:11:59,468 - INFO - Analyzing XAUUSD...
+2026-01-31 18:11:59,468 - INFO -   Skipped: max positions for XAUUSD
+2026-01-31 18:11:59,468 - INFO -   Skipped: max positions for XAUUSD
+2026-01-31 18:11:59,468 - INFO - Analyzing XAGUSD...
+2026-01-31 18:11:59,468 - INFO - Analyzing XAGUSD...
+2026-01-31 18:11:59,468 - INFO -   Skipped: correlation group limit
+2026-01-31 18:11:59,468 - INFO -   Skipped: correlation group limit
+2026-01-31 18:11:59,468 - INFO - Analyzing COPPER-C...
+2026-01-31 18:11:59,468 - INFO - Analyzing COPPER-C...
+2026-01-31 18:20:33,743 - INFO -   Signal: HOLD
+2026-01-31 18:20:33,743 - INFO -   Signal: HOLD
+2026-01-31 18:20:33,759 - INFO - ==================================================
+MORNING ANALYSIS REPORT
+==================================================
+Time: 2026-01-31 18:11:59
+
+Portfolio Status:
+  Balance: $2,502.01
+  Equity: $1,388.51
+  Open Positions: 3
+
+Analysis Summary:
+  Symbols Analyzed: 1
+  Opportunities Found: 0
+  Skipped: 2
+  Errors: 0
+
+Skipped Symbols:
+  XAUUSD: max_positions_reached
+  XAGUSD: correlation_limit
+
+Duration: 514.5s
+==================================================
+2026-01-31 18:20:33,759 - INFO - ==================================================
+MORNING ANALYSIS REPORT
+==================================================
+Time: 2026-01-31 18:11:59
+
+Portfolio Status:
+  Balance: $2,502.01
+  Equity: $1,388.51
+  Open Positions: 3
+
+Analysis Summary:
+  Symbols Analyzed: 1
+  Opportunities Found: 0
+  Skipped: 2
+  Errors: 0
+
+Skipped Symbols:
+  XAUUSD: max_positions_reached
+  XAGUSD: correlation_limit
+
+Duration: 514.5s
+==================================================
+2026-01-31 22:55:31,795 - INFO - ==================================================
+2026-01-31 22:55:31,795 - INFO - STARTING MIDDAY REVIEW CYCLE
+2026-01-31 22:55:31,795 - INFO - ==================================================
+2026-01-31 22:55:31,810 - INFO - Reviewing 3 positions...
+2026-01-31 22:55:32,539 - INFO - XPTUSD BUY (#8339821): P&L: -100.00%, ATR: 220.5452
+2026-01-31 22:55:32,599 - INFO - XAUUSD BUY (#8348409): P&L: -100.00%, ATR: 183.9688
+2026-01-31 22:55:32,599 - INFO - XAUUSD BUY (#8589903): P&L: -100.00%, ATR: 183.9688
+2026-01-31 22:55:32,599 - INFO - ==================================================
+POSITION REVIEW REPORT
+==================================================
+Time: 2026-01-31 22:55:31
+
+Positions Reviewed: 3
+Adjustments Identified: 0
+Adjustments Applied: 0
+Adjustments Pending: 0
+
+Duration: 0.8s
+==================================================
+2026-02-01 05:55:37,195 - INFO - ==================================================
+2026-02-01 05:55:37,195 - INFO - STARTING EVENING REFLECTION CYCLE
+2026-02-01 05:55:37,195 - INFO - ==================================================
+2026-02-01 05:55:37,246 - INFO - Active decisions: 2
+2026-02-01 05:55:37,598 - INFO - ==================================================
+REFLECTION REPORT
+==================================================
+Time: 2026-02-01 05:55:37
+
+Trades Processed: 0
+Winning Trades: 0
+Losing Trades: 0
+Total P&L: $0.00
+
+Reflections Created: 0
+Memories Stored: 0
+
+Duration: 0.4s
+==================================================
+2026-02-01 08:43:05,407 - INFO - ==================================================
+2026-02-01 08:43:05,407 - INFO - ==================================================
+2026-02-01 08:43:05,407 - INFO - STARTING EVENING REFLECTION CYCLE
+2026-02-01 08:43:05,407 - INFO - STARTING EVENING REFLECTION CYCLE
+2026-02-01 08:43:05,407 - INFO - ==================================================
+2026-02-01 08:43:05,407 - INFO - ==================================================
+2026-02-01 08:43:05,425 - INFO - Active decisions: 2
+2026-02-01 08:43:05,425 - INFO - Active decisions: 2
+2026-02-01 08:43:05,435 - INFO - ==================================================
+REFLECTION REPORT
+==================================================
+Time: 2026-02-01 08:43:05
+
+Trades Processed: 0
+Winning Trades: 0
+Losing Trades: 0
+Total P&L: $0.00
+
+Reflections Created: 0
+Memories Stored: 0
+
+Duration: 0.0s
+==================================================
+2026-02-01 08:43:05,435 - INFO - ==================================================
+REFLECTION REPORT
+==================================================
+Time: 2026-02-01 08:43:05
+
+Trades Processed: 0
+Winning Trades: 0
+Losing Trades: 0
+Total P&L: $0.00
+
+Reflections Created: 0
+Memories Stored: 0
+
+Duration: 0.0s
+==================================================

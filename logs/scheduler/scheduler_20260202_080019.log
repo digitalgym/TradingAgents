@@ -1,0 +1,90 @@
+Starting Portfolio Automation...
+Loaded config from: portfolio_config.yaml
+       Portfolio Configuration       
++-----------------------------------+
+| Setting          | Value          |
+|------------------+----------------|
+| Execution Mode   | paper          |
+| Symbols          | XAGUSD, XAUUSD |
+| Max Positions    | 4              |
+| Max Daily Trades | 3              |
+| Daily Loss Limit | 3.0%           |
+| Morning Analysis | 08:00          |
+| Midday Review    | 13:00          |
+| Evening Reflect  | 20:00          |
++-----------------------------------+
+
+Press Ctrl+C to stop
+
+2026-02-02 17:55:13,581 - ==================================================
+2026-02-02 17:55:13,581 - PortfolioAutomation - INFO - ==================================================
+2026-02-02 17:55:13,651 - STARTING MORNING ANALYSIS CYCLE
+2026-02-02 17:55:13,651 - PortfolioAutomation - INFO - STARTING MORNING ANALYSIS CYCLE
+2026-02-02 17:55:13,651 - ==================================================
+2026-02-02 17:55:13,651 - PortfolioAutomation - INFO - ==================================================
+2026-02-02 17:55:14,038 - Current positions: 0
+2026-02-02 17:55:14,038 - PortfolioAutomation - INFO - Current positions: 0
+2026-02-02 17:55:14,111 - Trades today: 0/3
+2026-02-02 17:55:14,111 - PortfolioAutomation - INFO - Trades today: 0/3
+2026-02-02 17:55:14,111 - Analyzing XAGUSD...
+2026-02-02 17:55:14,111 - PortfolioAutomation - INFO - Analyzing XAGUSD...
+D:\Documents\TradingAgents\tradingagents\indicators\regime.py:247: RuntimeWarning: invalid value encountered in divide
+  plus_di = 100 * self._smooth(plus_dm, period) / atr
+D:\Documents\TradingAgents\tradingagents\indicators\regime.py:248: RuntimeWarning: invalid value encountered in divide
+  minus_di = 100 * self._smooth(minus_dm, period) / atr
+D:\Documents\TradingAgents\tradingagents\dataflows\mt5_data.py:501: RuntimeWarning: invalid value encountered in divide
+  rs = np.where(avg_loss != 0, avg_gain / avg_loss, 0)
+2026-02-02 18:01:02,938 -   Signal: HOLD
+2026-02-02 18:01:02,938 - PortfolioAutomation - INFO -   Signal: HOLD
+2026-02-02 18:01:02,938 - Analyzing XAUUSD...
+2026-02-02 18:01:02,938 - PortfolioAutomation - INFO - Analyzing XAUUSD...
+D:\Documents\TradingAgents\tradingagents\indicators\regime.py:247: RuntimeWarning: invalid value encountered in divide
+  plus_di = 100 * self._smooth(plus_dm, period) / atr
+D:\Documents\TradingAgents\tradingagents\indicators\regime.py:248: RuntimeWarning: invalid value encountered in divide
+  minus_di = 100 * self._smooth(minus_dm, period) / atr
+D:\Documents\TradingAgents\tradingagents\dataflows\mt5_data.py:501: RuntimeWarning: invalid value encountered in divide
+  rs = np.where(avg_loss != 0, avg_gain / avg_loss, 0)
+2026-02-02 18:05:51,368 -   Signal: HOLD
+2026-02-02 18:05:51,368 - PortfolioAutomation - INFO -   Signal: HOLD
+2026-02-02 18:05:51,384 - ==================================================
+MORNING ANALYSIS REPORT
+==================================================
+Time: 2026-02-02 17:55:13
+
+Portfolio Status:
+  Balance: $182.92
+  Equity: $182.92
+  Open Positions: 0
+
+Analysis Summary:
+  Symbols Analyzed: 2
+  Opportunities Found: 0
+  Skipped: 0
+  Errors: 0
+
+Duration: 637.8s
+==================================================
+2026-02-02 18:05:51,384 - PortfolioAutomation - INFO - ==================================================
+MORNING ANALYSIS REPORT
+==================================================
+Time: 2026-02-02 17:55:13
+
+Portfolio Status:
+  Balance: $182.92
+  Equity: $182.92
+  Open Positions: 0
+
+Analysis Summary:
+  Symbols Analyzed: 2
+  Opportunities Found: 0
+  Skipped: 0
+  Errors: 0
+
+Duration: 637.8s
+==================================================
+[Cache] Storing social_analyst output for XAGUSD (TTL: 4.0h)
+[Cache] Storing news_analyst output for XAGUSD (TTL: 2.0h)
+[Cache] Storing social_analyst output for XAUUSD (TTL: 4.0h)
+[Cache] Storing news_analyst output for XAUUSD (TTL: 2.0h)
+
+Shutting down...

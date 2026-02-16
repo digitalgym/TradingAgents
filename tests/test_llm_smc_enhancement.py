@@ -17,7 +17,7 @@ import os
 from datetime import datetime, timedelta
 
 os.environ['PYTHONIOENCODING'] = 'utf-8'
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from tradingagents.dataflows.smc_utils import (
     analyze_multi_timeframe_smc,
@@ -31,27 +31,28 @@ from tradingagents.dataflows.llm_smc_enhancer import (
     evaluate_order_block_with_llm,
     enhance_plan_with_llm
 )
-from langchain_openai import ChatOpenAI
+from langchain_xai import ChatXAI
 from dotenv import load_dotenv
+import pytest
 
 load_dotenv()
 
 
-def test_market_context_calculation():
+@pytest.fixture(scope="module")
+def smc_analysis():
+    """Fixture to provide SMC analysis data for tests."""
+    symbol = "XAGUSD"
+    analysis = analyze_multi_timeframe_smc(symbol, ['1H', '4H', 'D1'])
+    if not analysis or '1H' not in analysis:
+        pytest.skip("No SMC data available - MT5 may not be connected")
+    return analysis
+
+
+def test_market_context_calculation(smc_analysis):
     """Test market context helper functions."""
     print("\n" + "="*70)
     print("TEST 1: Market Context Calculation")
     print("="*70)
-
-    symbol = "XAGUSD"
-
-    # Get SMC analysis
-    print(f"\nFetching SMC analysis for {symbol}...")
-    smc_analysis = analyze_multi_timeframe_smc(symbol, ['1H', '4H', 'D1'])
-
-    if not smc_analysis or '1H' not in smc_analysis:
-        print("❌ FAILED: No SMC data available")
-        return False
 
     current_price = smc_analysis['1H']['current_price']
     print(f"Current price: ${current_price:.2f}")
@@ -89,7 +90,6 @@ def test_market_context_calculation():
     print("✅ Market structure analysis passed")
 
     print("\n✅ TEST 1 PASSED: All market context calculations working\n")
-    return True, smc_analysis
 
 
 def test_llm_order_block_evaluation(smc_analysis):
@@ -101,19 +101,15 @@ def test_llm_order_block_evaluation(smc_analysis):
     # Check for API key
     xai_api_key = os.getenv("XAI_API_KEY")
     if not xai_api_key:
-        print("⚠️  SKIPPED: XAI_API_KEY not set")
-        return True
+        pytest.skip("XAI_API_KEY not set")
 
     # Get a bullish order block from 1H
     tf_data = smc_analysis.get('1H')
-    if not tf_data:
-        print("❌ FAILED: No 1H data")
-        return False
+    assert tf_data is not None, "No 1H data available"
 
     bullish_obs = tf_data.get('order_blocks', {}).get('bullish', [])
     if not bullish_obs:
-        print("⚠️  SKIPPED: No bullish order blocks found")
-        return True
+        pytest.skip("No bullish order blocks found")
 
     # Get the first OB
     ob = bullish_obs[0]
@@ -126,8 +122,8 @@ def test_llm_order_block_evaluation(smc_analysis):
     ob_assessment = assess_order_block_strength(
         order_block=ob,
         smc_analysis=smc_analysis,
-        timeframe='1H',
-        current_price=current_price
+        direction='bullish',
+        primary_timeframe='1H'
     )
 
     print(f"\nRule-based assessment:")
@@ -144,11 +140,10 @@ def test_llm_order_block_evaluation(smc_analysis):
 
     # Initialize LLM
     print("\n--- LLM Evaluation ---")
-    llm = ChatOpenAI(
+    llm = ChatXAI(
         model="grok-beta",
         temperature=0.3,
-        api_key=xai_api_key,
-        base_url="https://api.x.ai/v1"
+        xai_api_key=xai_api_key
     )
 
     # Get LLM assessment
@@ -191,7 +186,6 @@ def test_llm_order_block_evaluation(smc_analysis):
     assert llm_assessment['confidence_level'] in ['HIGH', 'MEDIUM', 'LOW']
 
     print("\n✅ TEST 2 PASSED: LLM order block evaluation working\n")
-    return True
 
 
 def test_full_plan_enhancement(smc_analysis):
@@ -203,8 +197,7 @@ def test_full_plan_enhancement(smc_analysis):
     # Check for API key
     xai_api_key = os.getenv("XAI_API_KEY")
     if not xai_api_key:
-        print("⚠️  SKIPPED: XAI_API_KEY not set")
-        return True
+        pytest.skip("XAI_API_KEY not set")
 
     # Get current price
     current_price = smc_analysis['1H']['current_price']
@@ -220,9 +213,7 @@ def test_full_plan_enhancement(smc_analysis):
         atr=0.5
     )
 
-    if 'error' in plan:
-        print(f"❌ FAILED: {plan['error']}")
-        return False
+    assert 'error' not in plan, f"Plan generation failed: {plan.get('error')}"
 
     print(f"Position: {'AT RESISTANCE' if plan['position_analysis']['at_resistance'] else 'AT SUPPORT' if plan['position_analysis']['at_support'] else 'BETWEEN ZONES'}")
     print(f"Primary setup: {plan['primary_setup']['direction'] if plan['primary_setup'] else 'None'}")
@@ -230,11 +221,10 @@ def test_full_plan_enhancement(smc_analysis):
 
     # Enhance with LLM
     print("\n--- Enhancing with LLM ---")
-    llm = ChatOpenAI(
+    llm = ChatXAI(
         model="grok-beta",
         temperature=0.3,
-        api_key=xai_api_key,
-        base_url="https://api.x.ai/v1"
+        xai_api_key=xai_api_key
     )
 
     enhanced_plan = enhance_plan_with_llm(
@@ -290,22 +280,13 @@ def test_full_plan_enhancement(smc_analysis):
         print("\n✓ No significant recommendation adjustment (LLM agrees with rules)")
 
     print("\n✅ TEST 3 PASSED: Full plan enhancement working\n")
-    return True
 
 
-def test_llm_fallback():
+def test_llm_fallback(smc_analysis):
     """Test that system falls back gracefully when LLM fails."""
     print("\n" + "="*70)
     print("TEST 4: LLM Fallback Behavior")
     print("="*70)
-
-    symbol = "XAGUSD"
-
-    # Get SMC analysis
-    smc_analysis = analyze_multi_timeframe_smc(symbol, ['1H', '4H', 'D1'])
-    if not smc_analysis:
-        print("❌ FAILED: No SMC data")
-        return False
 
     current_price = smc_analysis['1H']['current_price']
 
@@ -318,19 +299,16 @@ def test_llm_fallback():
         atr=0.5
     )
 
-    if 'error' in plan:
-        print(f"❌ FAILED: {plan['error']}")
-        return False
+    assert 'error' not in plan, f"Plan generation failed: {plan.get('error')}"
 
     # Try to enhance with invalid LLM (should fallback gracefully)
     print("\n--- Testing with Invalid LLM ---")
 
     # Create LLM with bad API key
-    bad_llm = ChatOpenAI(
+    bad_llm = ChatXAI(
         model="grok-beta",
         temperature=0.3,
-        api_key="invalid_key_for_testing",
-        base_url="https://api.x.ai/v1"
+        xai_api_key="invalid_key_for_testing"
     )
 
     try:
@@ -357,15 +335,14 @@ def test_llm_fallback():
                     print("✅ Fallback uses rule-based assessment")
 
         print("\n✅ TEST 4 PASSED: Fallback behavior working\n")
-        return True
 
     except Exception as e:
+        # Exception is acceptable - LLM failure is expected with invalid key
         print(f"✅ Exception caught (expected): {str(e)[:100]}")
         print("✅ TEST 4 PASSED: Error handling working\n")
-        return True
 
 
-def test_integration_with_xagusd():
+def test_integration_with_xagusd(smc_analysis):
     """Test complete integration with real XAGUSD data."""
     print("\n" + "="*70)
     print("TEST 5: Integration Test with XAGUSD")
@@ -374,19 +351,7 @@ def test_integration_with_xagusd():
     # Check for API key
     xai_api_key = os.getenv("XAI_API_KEY")
     if not xai_api_key:
-        print("⚠️  SKIPPED: XAI_API_KEY not set")
-        print("   Set XAI_API_KEY to run integration test")
-        return True
-
-    symbol = "XAGUSD"
-
-    # Get SMC analysis
-    print(f"\n1. Fetching multi-timeframe SMC analysis for {symbol}...")
-    smc_analysis = analyze_multi_timeframe_smc(symbol, ['1H', '4H', 'D1'])
-
-    if not smc_analysis:
-        print("❌ FAILED: No SMC data")
-        return False
+        pytest.skip("XAI_API_KEY not set")
 
     current_price = smc_analysis['1H']['current_price']
     print(f"   Current price: ${current_price:.2f}")
@@ -402,20 +367,17 @@ def test_integration_with_xagusd():
         atr=0.5
     )
 
-    if 'error' in plan:
-        print(f"❌ FAILED: {plan['error']}")
-        return False
+    assert 'error' not in plan, f"Plan generation failed: {plan.get('error')}"
 
     print(f"   Position: {'AT RESISTANCE' if plan['position_analysis']['at_resistance'] else 'AT SUPPORT' if plan['position_analysis']['at_support'] else 'BETWEEN ZONES'}")
     print(f"   Recommendation: {plan['recommendation']['action']}")
 
     # Enhance with LLM
     print(f"\n3. Enhancing with LLM contextual intelligence...")
-    llm = ChatOpenAI(
+    llm = ChatXAI(
         model="grok-beta",
         temperature=0.3,
-        api_key=xai_api_key,
-        base_url="https://api.x.ai/v1"
+        xai_api_key=xai_api_key
     )
 
     enhanced_plan = enhance_plan_with_llm(
@@ -450,101 +412,8 @@ def test_integration_with_xagusd():
         print(f"\nRecommended Action: {llm_enh['recommended_action']}")
 
     print("\n✅ TEST 5 PASSED: Full integration working\n")
-    return True
-
-
-def run_all_tests():
-    """Run all tests in sequence."""
-    print("\n" + "="*70)
-    print("LLM-ENHANCED SMC TRADING PLAN - TEST SUITE")
-    print("="*70)
-
-    results = []
-    smc_analysis = None
-
-    # Test 1: Market context calculation
-    try:
-        result, smc_data = test_market_context_calculation()
-        results.append(("Market Context Calculation", result))
-        smc_analysis = smc_data
-    except Exception as e:
-        print(f"\n❌ TEST 1 FAILED with exception: {e}")
-        results.append(("Market Context Calculation", False))
-        import traceback
-        traceback.print_exc()
-
-    # Test 2: LLM order block evaluation
-    if smc_analysis:
-        try:
-            result = test_llm_order_block_evaluation(smc_analysis)
-            results.append(("LLM Order Block Evaluation", result))
-        except Exception as e:
-            print(f"\n❌ TEST 2 FAILED with exception: {e}")
-            results.append(("LLM Order Block Evaluation", False))
-            import traceback
-            traceback.print_exc()
-
-    # Test 3: Full plan enhancement
-    if smc_analysis:
-        try:
-            result = test_full_plan_enhancement(smc_analysis)
-            results.append(("Full Plan Enhancement", result))
-        except Exception as e:
-            print(f"\n❌ TEST 3 FAILED with exception: {e}")
-            results.append(("Full Plan Enhancement", False))
-            import traceback
-            traceback.print_exc()
-
-    # Test 4: LLM fallback
-    try:
-        result = test_llm_fallback()
-        results.append(("LLM Fallback Behavior", result))
-    except Exception as e:
-        print(f"\n❌ TEST 4 FAILED with exception: {e}")
-        results.append(("LLM Fallback Behavior", False))
-        import traceback
-        traceback.print_exc()
-
-    # Test 5: Integration test
-    try:
-        result = test_integration_with_xagusd()
-        results.append(("XAGUSD Integration", result))
-    except Exception as e:
-        print(f"\n❌ TEST 5 FAILED with exception: {e}")
-        results.append(("XAGUSD Integration", False))
-        import traceback
-        traceback.print_exc()
-
-    # Summary
-    print("\n" + "="*70)
-    print("TEST SUMMARY")
-    print("="*70)
-
-    passed = 0
-    total = len(results)
-
-    for test_name, result in results:
-        status = "✅ PASSED" if result else "❌ FAILED"
-        print(f"{status}: {test_name}")
-        if result:
-            passed += 1
-
-    print(f"\nResults: {passed}/{total} tests passed")
-
-    if passed == total:
-        print("\n🎉 ALL TESTS PASSED!")
-        return True
-    else:
-        print(f"\n⚠️  {total - passed} test(s) failed")
-        return False
 
 
 if __name__ == "__main__":
-    try:
-        success = run_all_tests()
-        sys.exit(0 if success else 1)
-    except Exception as e:
-        print(f"\n❌ Test suite failed with exception: {e}")
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
+    # Run tests with pytest when executed directly
+    sys.exit(pytest.main([__file__, "-v"]))

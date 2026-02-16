@@ -2,6 +2,7 @@
 FastAPI Backend for TradingAgents Web UI
 """
 import asyncio
+import logging
 import sys
 from pathlib import Path
 from datetime import datetime
@@ -16,14 +17,20 @@ from pydantic import BaseModel
 import traceback
 
 # Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
 # Add backend directory to path for local imports (state_store)
 sys.path.insert(0, str(Path(__file__).parent))
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
-env_path = Path(__file__).parent.parent.parent / ".env"
+env_path = PROJECT_ROOT / ".env"
 load_dotenv(env_path)
+
+# Portfolio config path (in project root)
+PORTFOLIO_CONFIG_FILE = PROJECT_ROOT / "portfolio_config.yaml"
+PORTFOLIO_SCHEDULER_PID_FILE = PROJECT_ROOT / "portfolio_scheduler.pid"
+SCHEDULER_STATE_FILE = PROJECT_ROOT / "scheduler_state.json"
 
 from tradingagents.default_config import DEFAULT_CONFIG
 from tradingagents import trade_decisions
@@ -38,6 +45,16 @@ from tradingagents.schemas import (
     Recommendation,
     generate_json_schemas,
 )
+
+# Helper to safely get attribute from dict or dataclass object
+def safe_attr(obj, attr, default=None):
+    """Safely get attribute from dict or dataclass object."""
+    if obj is None:
+        return default
+    if isinstance(obj, dict):
+        return obj.get(attr, default)
+    return getattr(obj, attr, default)
+
 
 # Global state for WebSocket connections
 websocket_connections: List[WebSocket] = []
@@ -159,7 +176,7 @@ async def check_and_recover_services():
     # Check Learning Cycle
     learning_state = LearningCycleState.get_status()
     if learning_state.get("enabled"):
-        pid_file = Path("daily_cycle.pid")
+        pid_file = PROJECT_ROOT / "daily_cycle.pid"
         process_alive = False
 
         if pid_file.exists():
@@ -198,7 +215,7 @@ async def check_and_recover_services():
     # Check Portfolio Automation
     automation_state = AutomationState.get_status()
     if automation_state.get("enabled"):
-        pid_file = Path("portfolio_scheduler.pid")
+        pid_file = PORTFOLIO_SCHEDULER_PID_FILE
         process_alive = False
 
         if pid_file.exists():
@@ -291,9 +308,21 @@ class PositionCloseRequest(BaseModel):
 
 
 class PortfolioConfigUpdate(BaseModel):
+    # Trading Control
     execution_mode: Optional[str] = None
-    symbols: Optional[List[dict]] = None
+    max_total_positions: Optional[int] = None
+    max_daily_trades: Optional[int] = None
+    total_risk_budget_pct: Optional[float] = None
+    daily_loss_limit_pct: Optional[float] = None
+    # Fine-tuning
+    use_atr_stops: Optional[bool] = None
+    atr_stop_multiplier: Optional[float] = None
+    atr_trailing_multiplier: Optional[float] = None
+    risk_reward_ratio: Optional[float] = None
+    # Schedule
     schedule: Optional[dict] = None
+    # Legacy
+    symbols: Optional[List[dict]] = None
 
 
 class MemoryQueryRequest(BaseModel):
@@ -346,6 +375,7 @@ class PositionSizeRequest(BaseModel):
     symbol: str
     entry_price: float
     stop_loss: float
+    take_profit: Optional[float] = None  # For actual R:R calculation
     risk_amount: Optional[float] = None  # Fixed dollar amount
     risk_percent: Optional[float] = None  # Percentage of account
 
@@ -495,7 +525,7 @@ async def get_status():
 
     # Check portfolio automation status
     automation_status = {"running": False}
-    pid_file = Path("portfolio_scheduler.pid")
+    pid_file = PORTFOLIO_SCHEDULER_PID_FILE
     if pid_file.exists():
         try:
             pid = int(pid_file.read_text().strip())
@@ -513,7 +543,7 @@ async def get_status():
 
     # Check daily cycle status
     daily_cycle_status = {"running": False}
-    daily_cycle_pid_file = Path("daily_cycle.pid")
+    daily_cycle_pid_file = DAILY_CYCLE_PID_FILE
     if daily_cycle_pid_file.exists():
         try:
             pid = int(daily_cycle_pid_file.read_text().strip())
@@ -1010,152 +1040,204 @@ async def batch_close_positions(request: BatchCloseRequest):
 
 @app.post("/api/positions/review/{ticket}")
 async def review_position(ticket: int, request: PositionReviewRequest):
-    """Review a single position with LLM analysis and get SL/TP suggestions"""
-    import traceback
-    try:
-        import MetaTrader5 as mt5
-        if not mt5.initialize():
-            raise HTTPException(status_code=500, detail="MT5 not initialized")
+    """Review a single position with LLM analysis and get SL/TP suggestions (runs in background)"""
+    import asyncio
 
-        position = mt5.positions_get(ticket=ticket)
-        if not position:
-            raise HTTPException(status_code=404, detail="Position not found")
+    task_id = f"review_{ticket}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
-        pos = position[0]
+    # Initialize task state
+    analysis_tasks[task_id] = {
+        "status": "running",
+        "ticket": ticket,
+        "review_mode": request.review_mode,
+        "progress": 0,
+        "started_at": datetime.now().isoformat(),
+        "message": f"Starting position review for ticket {ticket}..."
+    }
 
-        # Get current price
-        tick = mt5.symbol_info_tick(pos.symbol)
-        if tick is None:
-            raise HTTPException(status_code=500, detail=f"Could not get tick data for {pos.symbol}")
-        current_price = tick.bid if pos.type == 1 else tick.ask
+    def run_review_sync():
+        """Run position review synchronously in background thread"""
+        import traceback
+        try:
+            import MetaTrader5 as mt5
+            if not mt5.initialize():
+                analysis_tasks[task_id].update({
+                    "status": "error",
+                    "error": "MT5 not initialized"
+                })
+                return
 
-        # Get ATR analysis
-        from tradingagents.risk.stop_loss import DynamicStopLoss, get_atr_for_symbol
-        atr = get_atr_for_symbol(pos.symbol, period=14)
-        if atr is None:
-            atr = 0.0
+            analysis_tasks[task_id]["message"] = "Fetching position data..."
+            analysis_tasks[task_id]["progress"] = 10
 
-        # Position details
-        entry = pos.price_open
-        sl = pos.sl
-        tp = pos.tp
-        direction = "BUY" if pos.type == 0 else "SELL"
+            position = mt5.positions_get(ticket=ticket)
+            if not position:
+                analysis_tasks[task_id].update({
+                    "status": "error",
+                    "error": "Position not found"
+                })
+                return
 
-        if direction == "BUY":
-            pnl_pct = ((current_price - entry) / entry) * 100
-            sl_distance = entry - sl if sl > 0 else 0
-            tp_distance = tp - entry if tp > 0 else 0
-        else:
-            pnl_pct = ((entry - current_price) / entry) * 100
-            sl_distance = sl - entry if sl > 0 else 0
-            tp_distance = entry - tp if tp > 0 else 0
+            pos = position[0]
 
-        risk_reward = tp_distance / sl_distance if sl_distance > 0 else 0
+            # Get current price
+            tick = mt5.symbol_info_tick(pos.symbol)
+            if tick is None:
+                analysis_tasks[task_id].update({
+                    "status": "error",
+                    "error": f"Could not get tick data for {pos.symbol}"
+                })
+                return
+            current_price = tick.bid if pos.type == 1 else tick.ask
 
-        # ATR-based suggestions
-        suggestions = {}
-        if atr and atr > 0:
-            dsl = DynamicStopLoss(atr_multiplier=2.0, trailing_multiplier=1.5)
-            result_suggestions = dsl.suggest_stop_adjustment(
-                entry_price=entry,
-                current_price=current_price,
-                current_sl=sl,
-                current_tp=tp,
-                atr=atr,
-                direction=direction,
-            )
-            # Ensure suggestions is always a dict (suggest_stop_adjustment can return None)
-            if result_suggestions is not None:
-                suggestions = result_suggestions
+            analysis_tasks[task_id]["message"] = "Calculating ATR analysis..."
+            analysis_tasks[task_id]["progress"] = 20
 
-        # Calculate suggested TP targets based on R:R ratios
-        sl_risk = 0
-        tp_2r = None
-        tp_3r = None
-        if atr and atr > 0:
+            # Get ATR analysis
+            from tradingagents.risk.stop_loss import DynamicStopLoss, get_atr_for_symbol
+            atr = get_atr_for_symbol(pos.symbol, period=14)
+            if atr is None:
+                atr = 0.0
+
+            # Position details
+            entry = pos.price_open
+            sl = pos.sl
+            tp = pos.tp
+            direction = "BUY" if pos.type == 0 else "SELL"
+
             if direction == "BUY":
-                sl_risk = entry - sl if sl > 0 else atr * 2
-                tp_2r = entry + (sl_risk * 2)  # 2:1 R:R
-                tp_3r = entry + (sl_risk * 3)  # 3:1 R:R
+                pnl_pct = ((current_price - entry) / entry) * 100
+                sl_distance = entry - sl if sl > 0 else 0
+                tp_distance = tp - entry if tp > 0 else 0
             else:
-                sl_risk = sl - entry if sl > 0 else atr * 2
-                tp_2r = entry - (sl_risk * 2)  # 2:1 R:R
-                tp_3r = entry - (sl_risk * 3)  # 3:1 R:R
+                pnl_pct = ((entry - current_price) / entry) * 100
+                sl_distance = sl - entry if sl > 0 else 0
+                tp_distance = entry - tp if tp > 0 else 0
 
-        result = {
-            "position": {
-                "ticket": pos.ticket,
-                "symbol": pos.symbol,
-                "type": direction,
-                "volume": pos.volume,
-                "entry": entry,
-                "current_price": current_price,
-                "sl": sl,
-                "tp": tp,
-                "profit": pos.profit,
-                "pnl_pct": pnl_pct,
-                "risk_reward": risk_reward,
-            },
-            "atr_analysis": {
-                "atr": atr,
-                "recommendation": suggestions.get("recommendation", "N/A"),
-                "breakeven_sl": suggestions.get("breakeven", {}).get("new_sl") if suggestions.get("breakeven") else None,
-                "trailing_sl": suggestions.get("trailing", {}).get("new_sl") if suggestions.get("trailing") else None,
-                "atr_stop_distance": atr * 2 if atr > 0 else 0,
-                "atr_trail_distance": atr * 1.5 if atr > 0 else 0,
-                "risk_reward": risk_reward,
-                "tp_2r": tp_2r,  # TP for 2:1 R:R
-                "tp_3r": tp_3r,  # TP for 3:1 R:R
-            }
-        }
+            risk_reward = tp_distance / sl_distance if sl_distance > 0 else 0
 
-        # LLM analysis if requested
-        if request.review_mode == "llm":
-            from tradingagents.dataflows.llm_client import get_llm_client, structured_output
-            from tradingagents.schemas import QuickPositionReview
+            analysis_tasks[task_id]["progress"] = 30
 
-            try:
-                client, model, uses_responses = get_llm_client()
-            except ValueError as e:
-                result["llm_analysis"] = {"error": str(e)}
-                return result
+            # ATR-based suggestions
+            suggestions = {}
+            if atr and atr > 0:
+                dsl = DynamicStopLoss(atr_multiplier=2.0, trailing_multiplier=1.5)
+                result_suggestions = dsl.suggest_stop_adjustment(
+                    entry_price=entry,
+                    current_price=current_price,
+                    current_sl=sl,
+                    current_tp=tp,
+                    atr=atr,
+                    direction=direction,
+                )
+                # Ensure suggestions is always a dict (suggest_stop_adjustment can return None)
+                if result_suggestions is not None:
+                    suggestions = result_suggestions
 
-            # Fetch SMC data for market structure context using reusable function
-            from tradingagents.dataflows.smc_utils import get_smc_position_review_context
+            analysis_tasks[task_id]["progress"] = 40
 
-            smc_review = get_smc_position_review_context(
-                symbol=pos.symbol,
-                direction=direction,
-                entry_price=entry,
-                current_price=current_price,
-                sl=sl,
-                tp=tp,
-                timeframe='H1',
-                lookback=100
-            )
+            # Calculate suggested TP targets based on R:R ratios
+            sl_risk = 0
+            tp_2r = None
+            tp_3r = None
+            if atr and atr > 0:
+                if direction == "BUY":
+                    sl_risk = entry - sl if sl > 0 else atr * 2
+                    tp_2r = entry + (sl_risk * 2)  # 2:1 R:R
+                    tp_3r = entry + (sl_risk * 3)  # 3:1 R:R
+                else:
+                    sl_risk = sl - entry if sl > 0 else atr * 2
+                    tp_2r = entry - (sl_risk * 2)  # 2:1 R:R
+                    tp_3r = entry - (sl_risk * 3)  # 3:1 R:R
 
-            smc_context = smc_review.get('smc_context', '')
-
-            # Store SMC data in result for frontend
-            if 'error' not in smc_review:
-                result["smc_context"] = {
-                    "bias": smc_review.get('bias'),
-                    "bias_aligns": smc_review.get('bias_aligns'),
-                    "structure_shift": smc_review.get('structure_shift'),
-                    "unmitigated_obs": smc_review.get('unmitigated_obs', 0),
-                    "unmitigated_fvgs": smc_review.get('unmitigated_fvgs', 0),
-                    "support_count": len(smc_review.get('support_levels', [])),
-                    "resistance_count": len(smc_review.get('resistance_levels', [])),
-                    "sl_at_risk": smc_review.get('sl_at_risk', False),
-                    "sl_risk_reason": smc_review.get('sl_risk_reason'),
-                    "suggested_sl": smc_review.get('suggested_sl'),
-                    "suggested_tp": smc_review.get('suggested_tp'),
-                    "suggested_tp_source": smc_review.get('suggested_tp_source'),
-                    "trailing_sl": smc_review.get('trailing_sl'),
-                    "trailing_sl_source": smc_review.get('trailing_sl_source'),
+            result = {
+                "position": {
+                    "ticket": pos.ticket,
+                    "symbol": pos.symbol,
+                    "type": direction,
+                    "volume": pos.volume,
+                    "entry": entry,
+                    "current_price": current_price,
+                    "sl": sl,
+                    "tp": tp,
+                    "profit": pos.profit,
+                    "pnl_pct": pnl_pct,
+                    "risk_reward": risk_reward,
+                },
+                "atr_analysis": {
+                    "atr": atr,
+                    "recommendation": suggestions.get("recommendation", "N/A"),
+                    "breakeven_sl": suggestions.get("breakeven", {}).get("new_sl") if suggestions.get("breakeven") else None,
+                    "trailing_sl": suggestions.get("trailing", {}).get("new_sl") if suggestions.get("trailing") else None,
+                    "atr_stop_distance": atr * 2 if atr > 0 else 0,
+                    "atr_trail_distance": atr * 1.5 if atr > 0 else 0,
+                    "risk_reward": risk_reward,
+                    "tp_2r": tp_2r,  # TP for 2:1 R:R
+                    "tp_3r": tp_3r,  # TP for 3:1 R:R
                 }
+            }
 
-            prompt = f"""You are reviewing an OPEN position. Provide a fresh market assessment based on current structure.
+            # LLM analysis if requested
+            if request.review_mode == "llm":
+                analysis_tasks[task_id]["message"] = "Running LLM analysis..."
+                analysis_tasks[task_id]["progress"] = 50
+
+                from tradingagents.dataflows.llm_client import get_llm_client, structured_output
+                from tradingagents.schemas import QuickPositionReview
+
+                try:
+                    client, model, uses_responses = get_llm_client()
+                except ValueError as e:
+                    result["llm_analysis"] = {"error": str(e)}
+                    analysis_tasks[task_id].update({
+                        "status": "completed",
+                        "progress": 100,
+                        "result": result
+                    })
+                    return
+
+                analysis_tasks[task_id]["message"] = "Fetching SMC context..."
+                analysis_tasks[task_id]["progress"] = 60
+
+                # Fetch SMC data for market structure context using reusable function
+                from tradingagents.dataflows.smc_utils import get_smc_position_review_context
+
+                smc_review = get_smc_position_review_context(
+                    symbol=pos.symbol,
+                    direction=direction,
+                    entry_price=entry,
+                    current_price=current_price,
+                    sl=sl,
+                    tp=tp,
+                    timeframe='H1',
+                    lookback=100
+                )
+
+                smc_context = smc_review.get('smc_context', '')
+
+                # Store SMC data in result for frontend
+                if 'error' not in smc_review:
+                    result["smc_context"] = {
+                        "bias": smc_review.get('bias'),
+                        "bias_aligns": smc_review.get('bias_aligns'),
+                        "structure_shift": smc_review.get('structure_shift'),
+                        "unmitigated_obs": smc_review.get('unmitigated_obs', 0),
+                        "unmitigated_fvgs": smc_review.get('unmitigated_fvgs', 0),
+                        "support_count": len(smc_review.get('support_levels', [])),
+                        "resistance_count": len(smc_review.get('resistance_levels', [])),
+                        "sl_at_risk": smc_review.get('sl_at_risk', False),
+                        "sl_risk_reason": smc_review.get('sl_risk_reason'),
+                        "suggested_sl": smc_review.get('suggested_sl'),
+                        "suggested_tp": smc_review.get('suggested_tp'),
+                        "suggested_tp_source": smc_review.get('suggested_tp_source'),
+                        "trailing_sl": smc_review.get('trailing_sl'),
+                        "trailing_sl_source": smc_review.get('trailing_sl_source'),
+                    }
+
+                analysis_tasks[task_id]["message"] = "Generating LLM recommendations..."
+                analysis_tasks[task_id]["progress"] = 80
+
+                prompt = f"""You are reviewing an OPEN position. Provide a fresh market assessment based on current structure.
 
 POSITION: {pos.symbol} {direction}
 Entry: {entry}, Current: {current_price}
@@ -1175,128 +1257,193 @@ Guidelines for your recommendation:
 - Set TP at next SMC resistance/support level
 - Set suggested_sl/suggested_tp to null ONLY if current levels are well-placed"""
 
-            try:
-                # Use structured output for guaranteed JSON schema compliance
-                parsed = structured_output(
-                    client=client,
-                    model=model,
-                    messages=[
-                        {"role": "system", "content": "You are an expert trade manager. Analyze the position and provide your recommendation."},
-                        {"role": "user", "content": prompt},
-                    ],
-                    response_schema=QuickPositionReview,
-                    max_tokens=400,
-                    temperature=0.3,
-                    use_responses_api=uses_responses,
-                )
+                try:
+                    # Use structured output for guaranteed JSON schema compliance
+                    parsed = structured_output(
+                        client=client,
+                        model=model,
+                        messages=[
+                            {"role": "system", "content": "You are an expert trade manager. Analyze the position and provide your recommendation."},
+                            {"role": "user", "content": prompt},
+                        ],
+                        response_schema=QuickPositionReview,
+                        max_tokens=400,
+                        temperature=0.3,
+                        use_responses_api=uses_responses,
+                    )
 
-                # structured_output returns a Pydantic model instance
-                result["llm_analysis"] = {
-                    "recommendation": parsed.recommendation.value,
-                    "suggested_sl": parsed.suggested_sl,
-                    "suggested_tp": parsed.suggested_tp,
-                    "risk_level": parsed.risk_level.value,
-                    "reasoning": parsed.reasoning,
-                    "model": model,
-                    "structured_output": True,
-                }
-            except Exception as e:
-                # Fallback if structured output fails
-                import traceback as tb
-                result["llm_analysis"] = {
-                    "error": str(e),
-                    "trace": tb.format_exc(),
-                    "model": model,
-                }
+                    # structured_output returns a Pydantic model instance
+                    result["llm_analysis"] = {
+                        "recommendation": parsed.recommendation.value,
+                        "suggested_sl": parsed.suggested_sl,
+                        "suggested_tp": parsed.suggested_tp,
+                        "risk_level": parsed.risk_level.value,
+                        "reasoning": parsed.reasoning,
+                        "model": model,
+                        "structured_output": True,
+                    }
+                except Exception as e:
+                    # Fallback if structured output fails
+                    import traceback as tb
+                    result["llm_analysis"] = {
+                        "error": str(e),
+                        "trace": tb.format_exc(),
+                        "model": model,
+                    }
 
-        return result
-    except HTTPException:
-        raise
-    except Exception as e:
-        import sys
-        error_trace = traceback.format_exc()
-        print(f"Review error: {error_trace}", file=sys.stderr)
-        raise HTTPException(status_code=500, detail=f"{str(e)}\n\nTraceback:\n{error_trace}")
+            # Complete task with result
+            analysis_tasks[task_id].update({
+                "status": "completed",
+                "progress": 100,
+                "message": "Review completed",
+                "result": result
+            })
+
+        except Exception as e:
+            import sys
+            error_trace = traceback.format_exc()
+            print(f"Review error: {error_trace}", file=sys.stderr)
+            analysis_tasks[task_id].update({
+                "status": "error",
+                "error": str(e),
+                "trace": error_trace
+            })
+
+    async def run_in_background():
+        await asyncio.to_thread(run_review_sync)
+
+    asyncio.create_task(run_in_background())
+
+    return {"task_id": task_id, "status": "started", "message": "Position review started in background"}
 
 
 @app.post("/api/positions/batch-review")
 async def batch_review_positions(request: BatchReviewRequest):
-    """Get review analysis for multiple positions"""
-    try:
-        import MetaTrader5 as mt5
-        if not mt5.initialize():
-            raise HTTPException(status_code=500, detail="MT5 not initialized")
+    """Get review analysis for multiple positions (runs in background)"""
+    import asyncio
 
-        # Get positions to review
-        if request.tickets:
-            positions = []
-            for ticket in request.tickets:
-                pos = mt5.positions_get(ticket=ticket)
-                if pos:
-                    positions.append(pos[0])
-        else:
-            positions = mt5.positions_get()
+    task_id = f"batch_review_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
-        if not positions:
-            return {"positions": [], "count": 0}
+    # Initialize task state
+    analysis_tasks[task_id] = {
+        "status": "running",
+        "tickets": request.tickets,
+        "progress": 0,
+        "started_at": datetime.now().isoformat(),
+        "message": "Starting batch position review..."
+    }
 
-        from tradingagents.risk.stop_loss import DynamicStopLoss, get_atr_for_symbol
+    def run_batch_review_sync():
+        """Run batch review synchronously in background thread"""
+        try:
+            import MetaTrader5 as mt5
+            if not mt5.initialize():
+                analysis_tasks[task_id].update({
+                    "status": "error",
+                    "error": "MT5 not initialized"
+                })
+                return
 
-        results = []
-        for pos in positions:
-            tick = mt5.symbol_info_tick(pos.symbol)
-            current_price = tick.bid if pos.type == 1 else tick.ask
+            analysis_tasks[task_id]["message"] = "Fetching positions..."
+            analysis_tasks[task_id]["progress"] = 10
 
-            entry = pos.price_open
-            direction = "BUY" if pos.type == 0 else "SELL"
-
-            if direction == "BUY":
-                pnl_pct = ((current_price - entry) / entry) * 100
+            # Get positions to review
+            if request.tickets:
+                positions = []
+                for ticket in request.tickets:
+                    pos = mt5.positions_get(ticket=ticket)
+                    if pos:
+                        positions.append(pos[0])
             else:
-                pnl_pct = ((entry - current_price) / entry) * 100
+                positions = mt5.positions_get()
 
-            # ATR analysis
-            atr = get_atr_for_symbol(pos.symbol, period=14)
-            suggestions = {}
-            if atr and atr > 0:
-                dsl = DynamicStopLoss(atr_multiplier=2.0, trailing_multiplier=1.5)
-                result_suggestions = dsl.suggest_stop_adjustment(
-                    entry_price=entry,
-                    current_price=current_price,
-                    current_sl=pos.sl,
-                    current_tp=pos.tp,
-                    atr=atr,
-                    direction=direction,
-                )
-                if result_suggestions is not None:
-                    suggestions = result_suggestions
+            if not positions:
+                analysis_tasks[task_id].update({
+                    "status": "completed",
+                    "progress": 100,
+                    "result": {"positions": [], "count": 0}
+                })
+                return
 
-            # Safely extract breakeven/trailing (values can be None even if key exists)
-            breakeven_data = suggestions.get("breakeven") or {}
-            trailing_data = suggestions.get("trailing") or {}
+            from tradingagents.risk.stop_loss import DynamicStopLoss, get_atr_for_symbol
 
-            results.append({
-                "ticket": pos.ticket,
-                "symbol": pos.symbol,
-                "type": direction,
-                "volume": pos.volume,
-                "entry": entry,
-                "current_price": current_price,
-                "sl": pos.sl,
-                "tp": pos.tp,
-                "profit": pos.profit,
-                "pnl_pct": pnl_pct,
-                "atr": atr,
-                "recommendation": suggestions.get("recommendation", "N/A"),
-                "breakeven_sl": breakeven_data.get("new_sl"),
-                "trailing_sl": trailing_data.get("new_sl"),
+            results = []
+            total_positions = len(positions)
+
+            for idx, pos in enumerate(positions):
+                progress = 10 + int((idx / total_positions) * 80)
+                analysis_tasks[task_id]["message"] = f"Analyzing position {idx + 1}/{total_positions}..."
+                analysis_tasks[task_id]["progress"] = progress
+
+                tick = mt5.symbol_info_tick(pos.symbol)
+                current_price = tick.bid if pos.type == 1 else tick.ask
+
+                entry = pos.price_open
+                direction = "BUY" if pos.type == 0 else "SELL"
+
+                if direction == "BUY":
+                    pnl_pct = ((current_price - entry) / entry) * 100
+                else:
+                    pnl_pct = ((entry - current_price) / entry) * 100
+
+                # ATR analysis
+                atr = get_atr_for_symbol(pos.symbol, period=14)
+                suggestions = {}
+                if atr and atr > 0:
+                    dsl = DynamicStopLoss(atr_multiplier=2.0, trailing_multiplier=1.5)
+                    result_suggestions = dsl.suggest_stop_adjustment(
+                        entry_price=entry,
+                        current_price=current_price,
+                        current_sl=pos.sl,
+                        current_tp=pos.tp,
+                        atr=atr,
+                        direction=direction,
+                    )
+                    if result_suggestions is not None:
+                        suggestions = result_suggestions
+
+                # Safely extract breakeven/trailing (values can be None even if key exists)
+                breakeven_data = suggestions.get("breakeven") or {}
+                trailing_data = suggestions.get("trailing") or {}
+
+                results.append({
+                    "ticket": pos.ticket,
+                    "symbol": pos.symbol,
+                    "type": direction,
+                    "volume": pos.volume,
+                    "entry": entry,
+                    "current_price": current_price,
+                    "sl": pos.sl,
+                    "tp": pos.tp,
+                    "profit": pos.profit,
+                    "pnl_pct": pnl_pct,
+                    "atr": atr,
+                    "recommendation": suggestions.get("recommendation", "N/A"),
+                    "breakeven_sl": breakeven_data.get("new_sl"),
+                    "trailing_sl": trailing_data.get("new_sl"),
+                })
+
+            analysis_tasks[task_id].update({
+                "status": "completed",
+                "progress": 100,
+                "message": f"Reviewed {len(results)} positions",
+                "result": {"positions": results, "count": len(results)}
             })
 
-        return {"positions": results, "count": len(results)}
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        except Exception as e:
+            import traceback
+            analysis_tasks[task_id].update({
+                "status": "error",
+                "error": str(e),
+                "trace": traceback.format_exc()
+            })
+
+    async def run_in_background():
+        await asyncio.to_thread(run_batch_review_sync)
+
+    asyncio.create_task(run_in_background())
+
+    return {"task_id": task_id, "status": "started", "message": "Batch review started in background"}
 
 
 @app.delete("/api/orders/{ticket}")
@@ -1881,9 +2028,25 @@ async def calculate_position_size(request: PositionSizeRequest):
 
         lots = max(min_lot, min(max_lot, round(lots / lot_step) * lot_step))
 
-        # Calculate risk/reward if we had a standard 2:1 ratio
-        potential_reward = sl_distance * 2
-        potential_profit = (potential_reward / tick_size) * tick_value * lots if tick_size > 0 else 0
+        # Calculate ACTUAL risk/reward based on TP if provided
+        actual_rr = None
+        actual_profit = None
+        rr_warning = None
+
+        if request.take_profit:
+            tp_distance = abs(request.take_profit - request.entry_price)
+            actual_rr = round(tp_distance / sl_distance, 2) if sl_distance > 0 else 0
+            actual_profit = (tp_distance / tick_size) * tick_value * lots if tick_size > 0 else 0
+
+            # Validate R:R - warn if below 1.5
+            if actual_rr < 1.0:
+                rr_warning = f"POOR R:R ({actual_rr}:1) - You risk more than you can gain. Consider moving TP further or SL closer."
+            elif actual_rr < 1.5:
+                rr_warning = f"SUBOPTIMAL R:R ({actual_rr}:1) - Below recommended 1.5:1 minimum."
+
+        # Calculate theoretical 2R profit for comparison
+        potential_reward_2r = sl_distance * 2
+        potential_profit_2r = (potential_reward_2r / tick_size) * tick_value * lots if tick_size > 0 else 0
 
         return {
             "position_size": round(lots, 2),
@@ -1892,7 +2055,10 @@ async def calculate_position_size(request: PositionSizeRequest):
             "sl_distance": round(sl_distance, symbol_info.digits),
             "sl_ticks": round(sl_distance / tick_size) if tick_size > 0 else 0,
             "potential_loss": round(risk_amount, 2),
-            "potential_profit_2r": round(potential_profit, 2),
+            "potential_profit_2r": round(potential_profit_2r, 2),  # Theoretical 2R
+            "actual_rr": actual_rr,  # Actual R:R ratio
+            "actual_profit": round(actual_profit, 2) if actual_profit else None,  # Actual profit at TP
+            "rr_warning": rr_warning,  # Warning if R:R is bad
             "min_lot": min_lot,
             "max_lot": max_lot,
             "lot_step": lot_step,
@@ -1918,8 +2084,10 @@ async def get_market_watch_symbols():
             return {"symbols": [], "count": 0}
 
         market_watch = []
+        seen_symbols = set()
         for s in symbols:
-            if s.visible:  # visible=True means it's in Market Watch
+            if s.visible and s.name not in seen_symbols:  # visible=True means it's in Market Watch
+                seen_symbols.add(s.name)
                 tick = mt5.symbol_info_tick(s.name)
                 market_watch.append({
                     "symbol": s.name,
@@ -2675,57 +2843,67 @@ async def run_analysis(request: AnalysisRequest, background_tasks: BackgroundTas
             # Safely extract order blocks (handle None values)
             order_blocks = smc_data.get("order_blocks") if isinstance(smc_data, dict) else {}
             order_blocks = order_blocks or {}
-            for ob in (order_blocks.get("bullish") or []):
-                if ob and isinstance(ob, dict):
+            for ob in (order_blocks.get("bullish") if isinstance(order_blocks, dict) else []):
+                if ob:
+                    ob_top = safe_attr(ob, "top", 0)
+                    ob_bottom = safe_attr(ob, "bottom", 0)
                     smc_levels.append({
                         "type": "order_block",
-                        "price": (ob.get("top", 0) + ob.get("bottom", 0)) / 2,
+                        "price": (ob_top + ob_bottom) / 2,
                         "direction": "bullish",
-                        "strength": ob.get("strength", 0.5),
-                        "description": f"Bullish OB at {ob.get('bottom', 0):.5f}-{ob.get('top', 0):.5f}"
+                        "strength": safe_attr(ob, "strength", 0.5),
+                        "description": f"Bullish OB at {ob_bottom:.5f}-{ob_top:.5f}"
                     })
-            for ob in (order_blocks.get("bearish") or []):
-                if ob and isinstance(ob, dict):
+            for ob in (order_blocks.get("bearish") if isinstance(order_blocks, dict) else []):
+                if ob:
+                    ob_top = safe_attr(ob, "top", 0)
+                    ob_bottom = safe_attr(ob, "bottom", 0)
                     smc_levels.append({
                         "type": "order_block",
-                        "price": (ob.get("top", 0) + ob.get("bottom", 0)) / 2,
+                        "price": (ob_top + ob_bottom) / 2,
                         "direction": "bearish",
-                        "strength": ob.get("strength", 0.5),
-                        "description": f"Bearish OB at {ob.get('bottom', 0):.5f}-{ob.get('top', 0):.5f}"
+                        "strength": safe_attr(ob, "strength", 0.5),
+                        "description": f"Bearish OB at {ob_bottom:.5f}-{ob_top:.5f}"
                     })
 
             # Safely extract FVGs (handle None values)
             fair_value_gaps = smc_data.get("fair_value_gaps") if isinstance(smc_data, dict) else {}
             fair_value_gaps = fair_value_gaps or {}
-            for fvg in (fair_value_gaps.get("bullish") or []):
-                if fvg and isinstance(fvg, dict):
+            for fvg in (fair_value_gaps.get("bullish") if isinstance(fair_value_gaps, dict) else []):
+                if fvg:
+                    fvg_top = safe_attr(fvg, "top", 0)
+                    fvg_bottom = safe_attr(fvg, "bottom", 0)
                     smc_levels.append({
                         "type": "fvg",
-                        "price": (fvg.get("top", 0) + fvg.get("bottom", 0)) / 2,
+                        "price": (fvg_top + fvg_bottom) / 2,
                         "direction": "bullish",
                         "strength": 0.7,
-                        "description": f"Bullish FVG at {fvg.get('bottom', 0):.5f}-{fvg.get('top', 0):.5f}"
+                        "description": f"Bullish FVG at {fvg_bottom:.5f}-{fvg_top:.5f}"
                     })
-            for fvg in (fair_value_gaps.get("bearish") or []):
-                if fvg and isinstance(fvg, dict):
+            for fvg in (fair_value_gaps.get("bearish") if isinstance(fair_value_gaps, dict) else []):
+                if fvg:
+                    fvg_top = safe_attr(fvg, "top", 0)
+                    fvg_bottom = safe_attr(fvg, "bottom", 0)
                     smc_levels.append({
                         "type": "fvg",
-                        "price": (fvg.get("top", 0) + fvg.get("bottom", 0)) / 2,
+                        "price": (fvg_top + fvg_bottom) / 2,
                         "direction": "bearish",
                         "strength": 0.7,
-                        "description": f"Bearish FVG at {fvg.get('bottom', 0):.5f}-{fvg.get('top', 0):.5f}"
+                        "description": f"Bearish FVG at {fvg_bottom:.5f}-{fvg_top:.5f}"
                     })
 
             # Safely extract liquidity zones (handle None values)
             liquidity_zones = smc_data.get("liquidity_zones") if isinstance(smc_data, dict) else []
             for zone in (liquidity_zones or []):
-                if zone and isinstance(zone, dict):
+                if zone:
+                    zone_price = safe_attr(zone, "price", 0)
+                    zone_type = safe_attr(zone, "type", "")
                     smc_levels.append({
                         "type": "liquidity",
-                        "price": zone.get("price", 0),
-                        "direction": "bullish" if zone.get("type") == "support" else "bearish",
-                        "strength": zone.get("strength", 0.5),
-                        "description": f"Liquidity zone at {zone.get('price', 0):.5f}"
+                        "price": zone_price,
+                        "direction": "bullish" if zone_type == "support" else "bearish",
+                        "strength": safe_attr(zone, "strength", 0.5),
+                        "description": f"Liquidity zone at {zone_price:.5f}"
                     })
 
             # Add nearest support/resistance as pullback entry levels
@@ -2737,27 +2915,27 @@ async def run_analysis(request: AnalysisRequest, background_tasks: BackgroundTas
 
                     # Add nearest support (good for BUY pullback)
                     nearest_support = tf_data.get("nearest_support")
-                    if nearest_support and isinstance(nearest_support, dict):
-                        support_price = nearest_support.get("top", nearest_support.get("bottom", 0))
+                    if nearest_support:
+                        support_price = safe_attr(nearest_support, "top", 0) or safe_attr(nearest_support, "bottom", 0)
                         if support_price > 0:
                             smc_levels.append({
                                 "type": "support",
                                 "price": support_price,
                                 "direction": "bullish",
-                                "strength": nearest_support.get("strength", 0.7),
+                                "strength": safe_attr(nearest_support, "strength", 0.7),
                                 "description": f"Nearest Support ({tf_name}): {support_price:.5f}"
                             })
 
                     # Add nearest resistance (good for SELL pullback)
                     nearest_resistance = tf_data.get("nearest_resistance")
-                    if nearest_resistance and isinstance(nearest_resistance, dict):
-                        resistance_price = nearest_resistance.get("bottom", nearest_resistance.get("top", 0))
+                    if nearest_resistance:
+                        resistance_price = safe_attr(nearest_resistance, "bottom", 0) or safe_attr(nearest_resistance, "top", 0)
                         if resistance_price > 0:
                             smc_levels.append({
                                 "type": "resistance",
                                 "price": resistance_price,
                                 "direction": "bearish",
-                                "strength": nearest_resistance.get("strength", 0.7),
+                                "strength": safe_attr(nearest_resistance, "strength", 0.7),
                                 "description": f"Nearest Resistance ({tf_name}): {resistance_price:.5f}"
                             })
 
@@ -2824,16 +3002,20 @@ async def run_analysis(request: AnalysisRequest, background_tasks: BackgroundTas
 
                             if decision.get("signal") == "BUY":
                                 # SL below support, TP at resistance
-                                if nearest_support and nearest_support.get("bottom"):
-                                    decision["stop_loss"] = nearest_support["bottom"] * 0.998
-                                if nearest_resistance and nearest_resistance.get("bottom"):
-                                    decision["take_profit"] = nearest_resistance["bottom"]
+                                support_bottom = safe_attr(nearest_support, "bottom", 0)
+                                resist_bottom = safe_attr(nearest_resistance, "bottom", 0)
+                                if nearest_support and support_bottom:
+                                    decision["stop_loss"] = support_bottom * 0.998
+                                if nearest_resistance and resist_bottom:
+                                    decision["take_profit"] = resist_bottom
                             elif decision.get("signal") == "SELL":
                                 # SL above resistance, TP at support
-                                if nearest_resistance and nearest_resistance.get("top"):
-                                    decision["stop_loss"] = nearest_resistance["top"] * 1.002
-                                if nearest_support and nearest_support.get("top"):
-                                    decision["take_profit"] = nearest_support["top"]
+                                resist_top = safe_attr(nearest_resistance, "top", 0)
+                                support_top = safe_attr(nearest_support, "top", 0)
+                                if nearest_resistance and resist_top:
+                                    decision["stop_loss"] = resist_top * 1.002
+                                if nearest_support and support_top:
+                                    decision["take_profit"] = support_top
 
                     # Validate: if SL/TP are still None or obviously wrong, clear them
                     for field in ["stop_loss", "take_profit"]:
@@ -3547,7 +3729,7 @@ async def get_portfolio_status():
     """Get portfolio automation status"""
     status = {"running": False}
 
-    pid_file = Path("portfolio_scheduler.pid")
+    pid_file = PORTFOLIO_SCHEDULER_PID_FILE
     if pid_file.exists():
         try:
             pid = int(pid_file.read_text().strip())
@@ -3558,7 +3740,7 @@ async def get_portfolio_status():
             pass
 
     # Load state file if exists
-    state_file = Path("scheduler_state.json")
+    state_file = SCHEDULER_STATE_FILE
     if state_file.exists():
         try:
             state = json.loads(state_file.read_text())
@@ -3580,7 +3762,7 @@ async def get_portfolio_status():
 @app.get("/api/portfolio/config")
 async def get_portfolio_config():
     """Get portfolio configuration"""
-    config_file = Path("portfolio_config.yaml")
+    config_file = PORTFOLIO_CONFIG_FILE
     if not config_file.exists():
         return {"error": "Config file not found"}
 
@@ -3598,7 +3780,7 @@ async def add_portfolio_symbol(request: dict):
     """Add a symbol to portfolio config"""
     import yaml
 
-    config_file = Path("portfolio_config.yaml")
+    config_file = PORTFOLIO_CONFIG_FILE
     if not config_file.exists():
         return {"error": "Config file not found"}
 
@@ -3654,7 +3836,7 @@ async def remove_portfolio_symbol(request: dict):
     """Remove a symbol from portfolio config"""
     import yaml
 
-    config_file = Path("portfolio_config.yaml")
+    config_file = PORTFOLIO_CONFIG_FILE
     if not config_file.exists():
         return {"error": "Config file not found"}
 
@@ -3689,7 +3871,7 @@ async def update_portfolio_symbol(request: dict):
     """Update a symbol's configuration in portfolio config"""
     import yaml
 
-    config_file = Path("portfolio_config.yaml")
+    config_file = PORTFOLIO_CONFIG_FILE
     if not config_file.exists():
         return {"error": "Config file not found"}
 
@@ -3734,13 +3916,116 @@ async def update_portfolio_symbol(request: dict):
         return {"error": str(e)}
 
 
+@app.post("/api/portfolio/config/update")
+async def update_portfolio_config(request: PortfolioConfigUpdate):
+    """Update portfolio-level configuration settings"""
+    import yaml
+
+    config_file = PORTFOLIO_CONFIG_FILE
+    if not config_file.exists():
+        return {"error": "Config file not found"}
+
+    try:
+        with open(config_file) as f:
+            config = yaml.safe_load(f)
+
+        updated_fields = []
+
+        # Execution mode validation
+        if request.execution_mode is not None:
+            valid_modes = ["FULL_AUTO", "SEMI_AUTO", "PAPER", "full_auto", "semi_auto", "paper"]
+            if request.execution_mode not in valid_modes:
+                return {"error": "Invalid execution_mode. Must be one of: FULL_AUTO, SEMI_AUTO, PAPER"}
+            config["execution_mode"] = request.execution_mode.lower()
+            updated_fields.append("execution_mode")
+
+        # Integer validations
+        if request.max_total_positions is not None:
+            if request.max_total_positions < 1 or request.max_total_positions > 20:
+                return {"error": "max_total_positions must be between 1 and 20"}
+            config["max_total_positions"] = request.max_total_positions
+            updated_fields.append("max_total_positions")
+
+        if request.max_daily_trades is not None:
+            if request.max_daily_trades < 1 or request.max_daily_trades > 50:
+                return {"error": "max_daily_trades must be between 1 and 50"}
+            config["max_daily_trades"] = request.max_daily_trades
+            updated_fields.append("max_daily_trades")
+
+        # Float validations for percentages
+        if request.total_risk_budget_pct is not None:
+            if request.total_risk_budget_pct < 0.5 or request.total_risk_budget_pct > 20.0:
+                return {"error": "total_risk_budget_pct must be between 0.5% and 20%"}
+            config["total_risk_budget_pct"] = request.total_risk_budget_pct
+            updated_fields.append("total_risk_budget_pct")
+
+        if request.daily_loss_limit_pct is not None:
+            if request.daily_loss_limit_pct < 0.5 or request.daily_loss_limit_pct > 10.0:
+                return {"error": "daily_loss_limit_pct must be between 0.5% and 10%"}
+            config["daily_loss_limit_pct"] = request.daily_loss_limit_pct
+            updated_fields.append("daily_loss_limit_pct")
+
+        # ATR settings
+        if request.use_atr_stops is not None:
+            config["use_atr_stops"] = request.use_atr_stops
+            updated_fields.append("use_atr_stops")
+
+        if request.atr_stop_multiplier is not None:
+            if request.atr_stop_multiplier < 0.5 or request.atr_stop_multiplier > 5.0:
+                return {"error": "atr_stop_multiplier must be between 0.5 and 5.0"}
+            config["atr_stop_multiplier"] = request.atr_stop_multiplier
+            updated_fields.append("atr_stop_multiplier")
+
+        if request.atr_trailing_multiplier is not None:
+            if request.atr_trailing_multiplier < 0.5 or request.atr_trailing_multiplier > 5.0:
+                return {"error": "atr_trailing_multiplier must be between 0.5 and 5.0"}
+            config["atr_trailing_multiplier"] = request.atr_trailing_multiplier
+            updated_fields.append("atr_trailing_multiplier")
+
+        if request.risk_reward_ratio is not None:
+            if request.risk_reward_ratio < 0.5 or request.risk_reward_ratio > 10.0:
+                return {"error": "risk_reward_ratio must be between 0.5 and 10.0"}
+            config["risk_reward_ratio"] = request.risk_reward_ratio
+            updated_fields.append("risk_reward_ratio")
+
+        # Schedule updates
+        if request.schedule is not None:
+            if "schedule" not in config:
+                config["schedule"] = {}
+            for key in ["morning_analysis_hour", "midday_review_hour", "evening_reflect_hour"]:
+                if key in request.schedule:
+                    hour = request.schedule[key]
+                    if not isinstance(hour, int) or hour < 0 or hour > 23:
+                        return {"error": f"{key} must be an integer between 0 and 23"}
+                    config["schedule"][key] = hour
+                    updated_fields.append(f"schedule.{key}")
+            if "timezone" in request.schedule:
+                config["schedule"]["timezone"] = request.schedule["timezone"]
+                updated_fields.append("schedule.timezone")
+
+        if not updated_fields:
+            return {"error": "No fields provided to update"}
+
+        # Write back to file
+        with open(config_file, 'w') as f:
+            yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+
+        return {
+            "success": True,
+            "updated_fields": updated_fields,
+            "message": f"Updated {len(updated_fields)} field(s)"
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
 @app.get("/api/portfolio/config/suggestions")
 async def get_portfolio_suggestions():
     """Get LLM-powered suggestions for portfolio balance"""
     import yaml
     from tradingagents.dataflows.llm_client import get_llm_client, chat_completion
 
-    config_file = Path("portfolio_config.yaml")
+    config_file = PORTFOLIO_CONFIG_FILE
     if not config_file.exists():
         return {"error": "Config file not found"}
 
@@ -3875,27 +4160,136 @@ async def start_portfolio_automation():
     """Start portfolio automation"""
     try:
         import subprocess
+        import time
 
-        # Start the daemon
-        process = subprocess.Popen(
-            [sys.executable, "-m", "cli.main", "portfolio", "start"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            cwd=str(Path(__file__).parent.parent.parent)
-        )
+        project_root = Path(__file__).parent.parent.parent
+
+        # Check if already running
+        pid_file = project_root / "portfolio_scheduler.pid"
+        if pid_file.exists():
+            try:
+                pid = int(pid_file.read_text().strip())
+                if psutil.pid_exists(pid):
+                    return {"success": True, "message": "Portfolio automation already running", "pid": pid}
+                else:
+                    # Stale PID file, remove it
+                    pid_file.unlink()
+            except:
+                pid_file.unlink()
+
+        log_dir = project_root / "logs" / "scheduler"
+        log_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create log file for subprocess output
+        log_file = log_dir / f"scheduler_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+
+        # Start the daemon with output to log file
+        with open(log_file, "w") as f:
+            process = subprocess.Popen(
+                [sys.executable, "-m", "cli.main", "portfolio", "start"],
+                stdout=f,
+                stderr=subprocess.STDOUT,
+                cwd=str(project_root)
+            )
+
+        # Wait briefly to see if it crashes immediately
+        time.sleep(2)
+
+        # Check if process is still running
+        if process.poll() is not None:
+            # Process exited - read log for error
+            try:
+                error_output = log_file.read_text()[-2000:]  # Last 2000 chars
+            except:
+                error_output = "Unknown error"
+
+            AutomationState.set_enabled(False)
+            AutomationState.set_stop_reason(f"startup_failed: {error_output[:500]}")
+            return {"error": f"Automation failed to start. Check {log_file}. Last output: {error_output[:500]}"}
+
+        # Check if PID file was created
+        pid_file = project_root / "portfolio_scheduler.pid"
+        if not pid_file.exists():
+            # Give it another moment
+            time.sleep(1)
+
+        if pid_file.exists():
+            pid = pid_file.read_text().strip()
+            print(f"[Portfolio Start] Automation started with PID {pid}, log: {log_file}")
+        else:
+            print(f"[Portfolio Start] Warning: PID file not created, but process appears running")
 
         # Persist enabled state
         AutomationState.set_enabled(True)
 
-        return {"success": True, "message": "Portfolio automation started"}
+        return {"success": True, "message": "Portfolio automation started", "log_file": str(log_file)}
     except Exception as e:
+        import traceback
+        print(f"[Portfolio Start] Exception: {traceback.format_exc()}")
         return {"error": str(e)}
+
+
+@app.get("/api/portfolio/diagnose")
+async def diagnose_portfolio_automation():
+    """Diagnose portfolio automation - test imports and config loading"""
+    diagnostics = {
+        "imports_ok": False,
+        "config_ok": False,
+        "scheduler_ok": False,
+        "errors": []
+    }
+
+    # Test imports
+    try:
+        from tradingagents.automation import (
+            PortfolioAutomation,
+            DailyScheduler,
+            load_portfolio_config,
+            get_default_config,
+        )
+        diagnostics["imports_ok"] = True
+    except Exception as e:
+        diagnostics["errors"].append(f"Import error: {str(e)}")
+        return diagnostics
+
+    # Test config loading
+    try:
+        config_file = PORTFOLIO_CONFIG_FILE
+        if config_file.exists():
+            config = load_portfolio_config(str(config_file))
+            diagnostics["config_file"] = str(config_file)
+        else:
+            config = get_default_config()
+            diagnostics["config_file"] = "default"
+
+        errors = config.validate()
+        if errors:
+            diagnostics["errors"].extend([f"Config error: {e}" for e in errors])
+        else:
+            diagnostics["config_ok"] = True
+            diagnostics["execution_mode"] = config.execution_mode.value
+            diagnostics["symbols"] = [s.symbol for s in config.get_enabled_symbols()]
+    except Exception as e:
+        diagnostics["errors"].append(f"Config load error: {str(e)}")
+        return diagnostics
+
+    # Test scheduler init
+    try:
+        automation = PortfolioAutomation(config)
+        scheduler = DailyScheduler(automation)
+        diagnostics["scheduler_ok"] = True
+    except Exception as e:
+        import traceback
+        diagnostics["errors"].append(f"Scheduler init error: {str(e)}")
+        diagnostics["traceback"] = traceback.format_exc()
+
+    return diagnostics
 
 
 @app.post("/api/portfolio/stop")
 async def stop_portfolio_automation():
     """Stop portfolio automation"""
-    pid_file = Path("portfolio_scheduler.pid")
+    pid_file = PORTFOLIO_SCHEDULER_PID_FILE
     if not pid_file.exists():
         # Still update state even if PID file missing
         AutomationState.set_enabled(False)
@@ -3924,24 +4318,86 @@ async def stop_portfolio_automation():
 
 @app.post("/api/portfolio/trigger")
 async def trigger_daily_cycle(cycle_type: str = "morning"):
-    """Manually trigger a daily cycle"""
-    try:
-        from tradingagents.automation.portfolio_automation import PortfolioAutomation
+    """Manually trigger a daily cycle (runs in background - safe to switch tabs)"""
+    import asyncio
 
-        automation = PortfolioAutomation()
+    task_id = f"trigger_{cycle_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
-        if cycle_type == "morning":
-            result = await asyncio.to_thread(automation.run_morning_analysis)
-        elif cycle_type == "midday":
-            result = await asyncio.to_thread(automation.run_midday_review)
-        elif cycle_type == "evening":
-            result = await asyncio.to_thread(automation.run_evening_reflect)
-        else:
-            return {"error": f"Unknown cycle type: {cycle_type}"}
+    # Initialize task state
+    analysis_tasks[task_id] = {
+        "status": "running",
+        "cycle_type": cycle_type,
+        "progress": 0,
+        "started_at": datetime.now().isoformat(),
+        "message": f"Starting {cycle_type} cycle..."
+    }
 
-        return {"success": True, "result": result}
-    except Exception as e:
-        return {"error": str(e)}
+    def run_trigger_sync():
+        """Run trigger synchronously in background thread"""
+        try:
+            import asyncio
+            from tradingagents.automation.portfolio_automation import PortfolioAutomation
+
+            analysis_tasks[task_id]["message"] = f"Initializing {cycle_type} analysis..."
+            analysis_tasks[task_id]["progress"] = 10
+
+            automation = PortfolioAutomation()
+
+            # Create new event loop for this thread
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+            try:
+                analysis_tasks[task_id]["message"] = f"Running {cycle_type} cycle..."
+                analysis_tasks[task_id]["progress"] = 30
+
+                if cycle_type == "morning":
+                    result = loop.run_until_complete(automation.run_morning_analysis())
+                elif cycle_type == "midday":
+                    result = loop.run_until_complete(automation.run_midday_review())
+                elif cycle_type == "evening":
+                    result = loop.run_until_complete(automation.run_evening_reflect())
+                else:
+                    analysis_tasks[task_id].update({
+                        "status": "error",
+                        "error": f"Unknown cycle type: {cycle_type}"
+                    })
+                    return
+            finally:
+                loop.close()
+
+            # Convert result to dict for JSON serialization
+            result_dict = None
+            if result:
+                try:
+                    result_dict = result.__dict__ if hasattr(result, '__dict__') else str(result)
+                except:
+                    result_dict = str(result)
+
+            analysis_tasks[task_id].update({
+                "status": "completed",
+                "progress": 100,
+                "result": result_dict,
+                "message": f"{cycle_type.capitalize()} cycle completed",
+                "completed_at": datetime.now().isoformat()
+            })
+
+        except Exception as e:
+            import traceback
+            analysis_tasks[task_id].update({
+                "status": "error",
+                "error": str(e),
+                "traceback": traceback.format_exc()
+            })
+
+    async def run_in_background():
+        """Wrapper to run sync trigger in a thread pool"""
+        await asyncio.to_thread(run_trigger_sync)
+
+    # Create background task - returns immediately
+    asyncio.create_task(run_in_background())
+
+    return {"task_id": task_id, "status": "started", "message": f"{cycle_type.capitalize()} cycle started in background"}
 
 
 # ----- SMC Analysis -----
@@ -4043,6 +4499,13 @@ async def run_smc_analysis(
         # Confluence score is at current_confluence key
         confluence_score = extended_result.get('current_confluence', None)
 
+        # NEW: Extract advanced SMC patterns (liquidity sweeps, inducements, rejection blocks, turtle soup, alerts)
+        liquidity_sweeps_data = extended_result.get('liquidity_sweeps', {})
+        inducements_data = extended_result.get('inducements', {})
+        rejection_blocks_data = extended_result.get('rejection_blocks', {})
+        turtle_soup_data = extended_result.get('turtle_soup', {})
+        pattern_alerts = extended_result.get('alerts', [])
+
         result = {
             'current_price': current_price,
             'order_blocks': extended_result.get('order_blocks', {}),
@@ -4123,11 +4586,13 @@ async def run_smc_analysis(
         # Add nearest support
         nearest_support = result.get("nearest_support")
         if nearest_support:
-            source_type = nearest_support.get("type", "zone")
-            source_label = "FVG" if source_type == "fvg" else "OB" if source_type == "order_block" else source_type.upper()
+            source_type = safe_attr(nearest_support, "type", "zone")
+            source_label = "FVG" if source_type == "fvg" else "OB" if source_type == "order_block" else str(source_type).upper()
+            support_top = safe_attr(nearest_support, "top", 0)
+            support_bottom = safe_attr(nearest_support, "bottom", 0)
             key_levels.append({
                 "type": "Support Zone",
-                "price": round((nearest_support.get("top", 0) + nearest_support.get("bottom", 0)) / 2, 2),
+                "price": round((support_top + support_bottom) / 2, 2) if support_top or support_bottom else 0,
                 "source": source_label,
                 "direction": "bullish"
             })
@@ -4135,37 +4600,43 @@ async def run_smc_analysis(
         # Add nearest resistance
         nearest_resistance = result.get("nearest_resistance")
         if nearest_resistance:
-            source_type = nearest_resistance.get("type", "zone")
-            source_label = "FVG" if source_type == "fvg" else "OB" if source_type == "order_block" else source_type.upper()
+            source_type = safe_attr(nearest_resistance, "type", "zone")
+            source_label = "FVG" if source_type == "fvg" else "OB" if source_type == "order_block" else str(source_type).upper()
+            resist_top = safe_attr(nearest_resistance, "top", 0)
+            resist_bottom = safe_attr(nearest_resistance, "bottom", 0)
             key_levels.append({
                 "type": "Resistance Zone",
-                "price": round((nearest_resistance.get("top", 0) + nearest_resistance.get("bottom", 0)) / 2, 2),
+                "price": round((resist_top + resist_bottom) / 2, 2) if resist_top or resist_bottom else 0,
                 "source": source_label,
                 "direction": "bearish"
             })
 
         # Add unmitigated OBs as key levels
         for ob in order_blocks:
-            if not ob.get("mitigated", True):
-                ob_type = ob.get("type", "")
+            if not safe_attr(ob, "mitigated", True):
+                ob_type = safe_attr(ob, "type", "")
                 is_bullish = ob_type == "bullish" or str(ob_type).lower().startswith("bull")
                 level_type = "Demand Zone" if is_bullish else "Supply Zone"
+                ob_top = safe_attr(ob, "top", 0)
+                ob_bottom = safe_attr(ob, "bottom", 0)
                 key_levels.append({
                     "type": level_type,
-                    "price": round((ob["top"] + ob["bottom"]) / 2, 2),
+                    "price": round((ob_top + ob_bottom) / 2, 2) if ob_top or ob_bottom else 0,
                     "source": "OB",
                     "direction": "bullish" if is_bullish else "bearish"
                 })
 
         # Add unmitigated FVGs as key levels
         for fvg in fair_value_gaps:
-            if not fvg.get("mitigated", True):
-                fvg_type = fvg.get("type", "")
+            if not safe_attr(fvg, "mitigated", True):
+                fvg_type = safe_attr(fvg, "type", "")
                 is_bullish = fvg_type == "bullish" or str(fvg_type).lower().startswith("bull")
                 level_type = "Bullish FVG" if is_bullish else "Bearish FVG"
+                fvg_top = safe_attr(fvg, "top", 0)
+                fvg_bottom = safe_attr(fvg, "bottom", 0)
                 key_levels.append({
                     "type": level_type,
-                    "price": round((fvg["top"] + fvg["bottom"]) / 2, 2),
+                    "price": round((fvg_top + fvg_bottom) / 2, 2) if fvg_top or fvg_bottom else 0,
                     "source": "FVG",
                     "direction": "bullish" if is_bullish else "bearish"
                 })
@@ -4219,8 +4690,8 @@ async def run_smc_analysis(
 
         # Position relative to key levels
         if nearest_support and nearest_resistance:
-            support_dist = current_price - nearest_support.get("bottom", 0)
-            resist_dist = nearest_resistance.get("top", 0) - current_price
+            support_dist = current_price - safe_attr(nearest_support, "bottom", 0)
+            resist_dist = safe_attr(nearest_resistance, "top", 0) - current_price
             if support_dist < resist_dist:
                 bias_factors.append(f"Price is closer to support ({support_dist:.2f} pts) than resistance ({resist_dist:.2f} pts)")
             else:
@@ -4328,6 +4799,99 @@ async def run_smc_analysis(
                 "recommendation": recommendation
             }
 
+        # Serialize Liquidity Sweeps
+        liquidity_sweeps_serialized = []
+        sweeps_list = (
+            liquidity_sweeps_data.get('recent', []) if isinstance(liquidity_sweeps_data, dict)
+            else liquidity_sweeps_data if isinstance(liquidity_sweeps_data, list) else []
+        )
+        for sweep in sweeps_list:
+            if hasattr(sweep, 'type'):
+                liquidity_sweeps_serialized.append({
+                    "type": sweep.type,  # "bullish" or "bearish"
+                    "sweep_level": sweep.sweep_level,
+                    "sweep_low": getattr(sweep, 'sweep_low', 0),
+                    "sweep_high": getattr(sweep, 'sweep_high', 0),
+                    "close_price": getattr(sweep, 'close_price', 0),
+                    "rejection_strength": getattr(sweep, 'rejection_strength', 0),
+                    "atr_penetration": getattr(sweep, 'atr_penetration', 0),
+                    "timestamp": sweep.timestamp,
+                    "session": getattr(sweep, 'session', None)
+                })
+
+        # Serialize Inducements
+        inducements_serialized = []
+        inducements_list = (
+            inducements_data.get('recent', []) if isinstance(inducements_data, dict)
+            else inducements_data if isinstance(inducements_data, list) else []
+        )
+        for ind in inducements_list:
+            if hasattr(ind, 'type'):
+                inducements_serialized.append({
+                    "type": ind.type,  # "bullish" or "bearish"
+                    "inducement_level": ind.inducement_level,
+                    "inducement_index": getattr(ind, 'inducement_index', 0),
+                    "break_index": getattr(ind, 'break_index', 0),
+                    "reversal_index": getattr(ind, 'reversal_index', 0),
+                    "target_liquidity": getattr(ind, 'target_liquidity', None),
+                    "timestamp": ind.timestamp,
+                    "trapped_direction": getattr(ind, 'trapped_direction', '')
+                })
+
+        # Serialize Rejection Blocks
+        rejection_blocks_serialized = []
+        rejection_list = (
+            rejection_blocks_data.get('unmitigated', []) if isinstance(rejection_blocks_data, dict)
+            else rejection_blocks_data if isinstance(rejection_blocks_data, list) else []
+        )
+        for rb in rejection_list:
+            if hasattr(rb, 'type'):
+                rejection_blocks_serialized.append({
+                    "type": rb.type,  # "bullish" or "bearish"
+                    "rejection_price": rb.rejection_price,
+                    "body_top": getattr(rb, 'body_top', 0),
+                    "body_bottom": getattr(rb, 'body_bottom', 0),
+                    "wick_size": getattr(rb, 'wick_size', 0),
+                    "wick_atr_ratio": getattr(rb, 'wick_atr_ratio', 0),
+                    "timestamp": rb.timestamp,
+                    "session": getattr(rb, 'session', None),
+                    "held": getattr(rb, 'held', True),
+                    "mitigated": getattr(rb, 'mitigated', False)
+                })
+
+        # Serialize Turtle Soup patterns
+        turtle_soup_serialized = []
+        turtle_list = (
+            turtle_soup_data.get('recent', []) if isinstance(turtle_soup_data, dict)
+            else turtle_soup_data if isinstance(turtle_soup_data, list) else []
+        )
+        for ts in turtle_list:
+            if hasattr(ts, 'type'):
+                turtle_soup_serialized.append({
+                    "type": ts.type,  # "bullish" or "bearish"
+                    "level": ts.level,
+                    "penetration": getattr(ts, 'penetration', 0),
+                    "penetration_atr": getattr(ts, 'penetration_atr', 0),
+                    "timestamp": ts.timestamp,
+                    "swing_index": getattr(ts, 'swing_index', 0)
+                })
+
+        # Serialize Pattern Alerts
+        alerts_serialized = []
+        for alert in (pattern_alerts if isinstance(pattern_alerts, list) else []):
+            if hasattr(alert, 'priority'):
+                alerts_serialized.append({
+                    "priority": alert.priority,  # "HIGH", "MEDIUM", "LOW"
+                    "pattern_type": alert.pattern_type,
+                    "direction": alert.direction,
+                    "message": alert.message,
+                    "price_level": getattr(alert, 'price_level', None),
+                    "timestamp": alert.timestamp,
+                    "action_suggestion": getattr(alert, 'action_suggestion', None)
+                })
+            elif isinstance(alert, dict):
+                alerts_serialized.append(alert)
+
         response = {
             "symbol": symbol,
             "timeframe": timeframe,
@@ -4347,6 +4911,12 @@ async def run_smc_analysis(
             "ote_zones": ote_zones_serialized,
             "premium_discount": premium_discount_serialized,
             "confluence_score": confluence_score_serialized,
+            # Advanced SMC patterns
+            "liquidity_sweeps": liquidity_sweeps_serialized,
+            "inducements": inducements_serialized,
+            "rejection_blocks": rejection_blocks_serialized,
+            "turtle_soup": turtle_soup_serialized,
+            "alerts": alerts_serialized,
             "summary": {
                 "total_obs": ob_data.get("total", 0),
                 "unmitigated_obs": ob_data.get("unmitigated", 0),
@@ -4359,7 +4929,13 @@ async def run_smc_analysis(
                 # NEW: Summary of new features
                 "equal_levels_count": len(equal_levels_serialized),
                 "breaker_blocks_count": len(breaker_blocks_serialized),
-                "ote_zones_count": len(ote_zones_serialized)
+                "ote_zones_count": len(ote_zones_serialized),
+                # Advanced pattern counts
+                "liquidity_sweeps_count": len(liquidity_sweeps_serialized),
+                "inducements_count": len(inducements_serialized),
+                "rejection_blocks_count": len(rejection_blocks_serialized),
+                "turtle_soup_count": len(turtle_soup_serialized),
+                "active_alerts_count": len(alerts_serialized)
             }
         }
 
@@ -4369,7 +4945,7 @@ async def run_smc_analysis(
                 "lookback_bars": lookback,
                 "fvg_min_size_atr": fvg_min_size,
                 "all_fvgs_detected": len(fair_value_gaps),
-                "mitigated_fvgs": len([f for f in fair_value_gaps if f.get("mitigated")]),
+                "mitigated_fvgs": len([f for f in fair_value_gaps if safe_attr(f, "mitigated", False)]),
                 "data_bars": len(df),
                 "fvg_details": fair_value_gaps,  # Full details of all FVGs
                 "ob_details": order_blocks       # Full details of all OBs
@@ -4447,6 +5023,886 @@ async def get_market_regime(symbol: str, timeframe: str = "H1"):
         return {"error": str(e)}
 
 
+# ----- LLM Health Check -----
+
+@app.get("/api/llm/status")
+async def check_llm_status():
+    """
+    Check if the LLM API is available and has credits.
+    Makes a minimal test call to verify the API is working.
+    """
+    import os
+    import time
+
+    start_time = time.time()
+    provider = None
+    model = None
+    status = "unknown"
+    message = ""
+    error_type = None
+
+    try:
+        # Determine which provider is configured
+        if os.getenv("XAI_API_KEY"):
+            provider = "xAI"
+            api_key = os.getenv("XAI_API_KEY")
+            base_url = "https://api.x.ai/v1"
+            model = "grok-3-mini-fast"
+        elif os.getenv("OPENAI_API_KEY"):
+            provider = "OpenAI"
+            api_key = os.getenv("OPENAI_API_KEY")
+            base_url = "https://api.openai.com/v1"
+            model = "gpt-4o-mini"
+        else:
+            return {
+                "status": "not_configured",
+                "provider": None,
+                "model": None,
+                "message": "No LLM API key configured. Set XAI_API_KEY or OPENAI_API_KEY.",
+                "response_time_ms": 0,
+                "recommendation": "rule-based"
+            }
+
+        # Make a minimal test call
+        from openai import OpenAI
+
+        client = OpenAI(api_key=api_key, base_url=base_url)
+
+        # Minimal prompt to test API - just ask for a single word
+        response = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": "Reply with only the word 'OK'"}],
+            max_tokens=5,
+            temperature=0
+        )
+
+        response_time = (time.time() - start_time) * 1000
+
+        if response and response.choices:
+            status = "available"
+            message = "LLM API is working and has credits"
+            return {
+                "status": status,
+                "provider": provider,
+                "model": model,
+                "message": message,
+                "response_time_ms": round(response_time, 0),
+                "recommendation": "ai" if response_time < 5000 else "rule-based"
+            }
+
+    except Exception as e:
+        response_time = (time.time() - start_time) * 1000
+        error_str = str(e).lower()
+
+        # Detect credit/quota errors
+        if any(term in error_str for term in ["credit", "quota", "billing", "insufficient", "exceeded", "limit"]):
+            status = "no_credits"
+            error_type = "credits_exhausted"
+            message = "LLM credits exhausted or billing issue"
+        elif any(term in error_str for term in ["rate", "too many"]):
+            status = "rate_limited"
+            error_type = "rate_limit"
+            message = "Rate limited - too many requests"
+        elif any(term in error_str for term in ["auth", "key", "invalid", "unauthorized"]):
+            status = "auth_error"
+            error_type = "authentication"
+            message = "API key is invalid or unauthorized"
+        elif any(term in error_str for term in ["timeout", "timed out"]):
+            status = "timeout"
+            error_type = "timeout"
+            message = "API request timed out"
+        elif any(term in error_str for term in ["connect", "network", "unreachable"]):
+            status = "network_error"
+            error_type = "network"
+            message = "Cannot connect to LLM API"
+        else:
+            status = "error"
+            error_type = "unknown"
+            message = f"LLM error: {str(e)[:100]}"
+
+        return {
+            "status": status,
+            "provider": provider,
+            "model": model,
+            "message": message,
+            "error_type": error_type,
+            "error_detail": str(e)[:200],
+            "response_time_ms": round(response_time, 0),
+            "recommendation": "rule-based"
+        }
+
+
+# ----- Rule-Based Analysis (No LLM) -----
+
+class RuleBasedAnalysisRequest(BaseModel):
+    symbol: str
+    timeframe: str = "H1"
+
+
+@app.post("/api/analysis/rule-based")
+async def run_rule_based_analysis(request: RuleBasedAnalysisRequest):
+    """
+    Run analysis using pure SMC rules without any LLM calls.
+    This is a fallback when LLM credits are exhausted or for fast/free analysis.
+    """
+    try:
+        import MetaTrader5 as mt5
+        import pandas as pd
+        import numpy as np
+
+        if not mt5.initialize():
+            raise HTTPException(status_code=500, detail="MT5 not initialized")
+
+        # Get symbol info for current price
+        symbol_info = mt5.symbol_info_tick(request.symbol)
+        if symbol_info is None:
+            raise HTTPException(status_code=400, detail=f"Symbol {request.symbol} not found")
+
+        current_price = (symbol_info.bid + symbol_info.ask) / 2
+
+        # Map timeframe
+        tf_map = {
+            "M1": mt5.TIMEFRAME_M1, "M5": mt5.TIMEFRAME_M5, "M15": mt5.TIMEFRAME_M15,
+            "M30": mt5.TIMEFRAME_M30, "H1": mt5.TIMEFRAME_H1, "H4": mt5.TIMEFRAME_H4,
+            "D1": mt5.TIMEFRAME_D1, "W1": mt5.TIMEFRAME_W1
+        }
+        tf = tf_map.get(request.timeframe.upper(), mt5.TIMEFRAME_H1)
+
+        # Get price data
+        rates = mt5.copy_rates_from_pos(request.symbol, tf, 0, 200)
+        if rates is None or len(rates) == 0:
+            raise HTTPException(status_code=400, detail="Failed to get price data")
+
+        df = pd.DataFrame(rates)
+        df['time'] = pd.to_datetime(df['time'], unit='s')
+
+        # === STEP 1: Calculate Market Regime ===
+        high_low = df['high'] - df['low']
+        atr = high_low.rolling(14).mean().iloc[-1]
+        avg_atr = high_low.rolling(50).mean().iloc[-1]
+
+        # ADX calculation
+        plus_dm = df['high'].diff()
+        minus_dm = -df['low'].diff()
+        plus_dm[plus_dm < 0] = 0
+        minus_dm[minus_dm < 0] = 0
+
+        tr = high_low.copy()
+        atr_14 = tr.rolling(14).mean()
+        plus_di = 100 * (plus_dm.rolling(14).mean() / atr_14)
+        minus_di = 100 * (minus_dm.rolling(14).mean() / atr_14)
+        dx = 100 * abs(plus_di - minus_di) / (plus_di + minus_di + 0.0001)
+        adx = dx.rolling(14).mean().iloc[-1]
+
+        # Determine regime
+        volatility_regime = "high" if atr > avg_atr * 1.5 else "normal" if atr > avg_atr * 0.7 else "low"
+
+        if adx > 25:
+            if plus_di.iloc[-1] > minus_di.iloc[-1]:
+                market_regime = "trending-up"
+            else:
+                market_regime = "trending-down"
+        else:
+            market_regime = "ranging"
+
+        # === STEP 2: Run SMC Analysis ===
+        from tradingagents.indicators.smart_money import SmartMoneyAnalyzer
+
+        analyzer = SmartMoneyAnalyzer()
+        smc_result = analyzer.analyze_full_smc(
+            df,
+            current_price=current_price,
+            use_structural_obs=True
+        )
+
+        # === STEP 3: Generate Rule-Based Trade Plan ===
+        from tradingagents.dataflows.smc_trade_plan import SMCTradePlanGenerator
+
+        generator = SMCTradePlanGenerator(
+            min_quality_score=50.0,  # Slightly lower threshold for rule-based
+            min_rr_ratio=1.5,
+            sl_buffer_atr=0.5,
+            entry_zone_percent=0.5
+        )
+
+        # Flatten SMC analysis for the generator
+        flat_smc = {
+            "order_blocks": smc_result.get("order_blocks", {}),
+            "fair_value_gaps": smc_result.get("fair_value_gaps", {}),
+            "liquidity_zones": smc_result.get("liquidity_zones", {}),
+            "market_structure": smc_result.get("market_structure", {}),
+            "atr": atr if not np.isnan(atr) else current_price * 0.01,
+        }
+
+        base_plan = generator.generate_plan(
+            smc_analysis=flat_smc,
+            current_price=current_price,
+            atr=atr if not np.isnan(atr) else current_price * 0.01,
+            market_regime=market_regime,
+            session=None
+        )
+
+        # === STEP 4: Build Response ===
+        if base_plan:
+            # Calculate R:R
+            entry = base_plan.entry_price
+            sl = base_plan.stop_loss
+            tp = base_plan.take_profit
+            risk = abs(entry - sl)
+            reward = abs(tp - entry)
+            rr_ratio = reward / risk if risk > 0 else 0
+
+            # Build checklist summary
+            checklist_items = []
+            if base_plan.checklist.htf_trend_aligned:
+                checklist_items.append("HTF trend aligned")
+            if base_plan.checklist.zone_unmitigated:
+                checklist_items.append("Zone unmitigated")
+            if base_plan.checklist.has_confluence:
+                checklist_items.append("Has confluence")
+            if base_plan.checklist.liquidity_target_exists:
+                checklist_items.append("Liquidity target exists")
+            if base_plan.checklist.structure_confirmed:
+                checklist_items.append("Structure confirmed")
+            if base_plan.checklist.in_discount_premium:
+                checklist_items.append("Premium/Discount correct")
+            if base_plan.checklist.session_favorable:
+                checklist_items.append("Session favorable")
+
+            # Build rationale
+            rationale = f"""## Rule-Based SMC Analysis
+
+### Market Conditions
+- **Regime**: {market_regime}
+- **Volatility**: {volatility_regime}
+- **ADX**: {adx:.1f} ({"Strong trend" if adx > 25 else "Weak/No trend"})
+
+### Trade Setup
+- **Signal**: {base_plan.signal}
+- **Setup Type**: {base_plan.setup_type.value}
+- **Zone Quality**: {base_plan.zone_quality_score:.0f}/100
+- **Risk:Reward**: 1:{rr_ratio:.2f}
+
+### Entry Checklist ({base_plan.checklist.passed_count}/{base_plan.checklist.total_count} passed)
+{chr(10).join(f"- ✅ {item}" for item in checklist_items)}
+
+### Confluence Factors
+{chr(10).join(f"- {factor}" for factor in base_plan.confluence_factors)}
+
+### Recommendation
+**{base_plan.recommendation}**{f" - {base_plan.skip_reason}" if base_plan.skip_reason else ""}
+
+---
+*This analysis was generated using systematic SMC rules without AI interpretation. For more nuanced analysis with market context, run the full multi-agent analysis.*
+"""
+
+            decision = {
+                "signal": base_plan.signal,
+                "confidence": base_plan.zone_quality_score / 100,
+                "entry_price": round(entry, 5),
+                "stop_loss": round(sl, 5),
+                "take_profit": round(tp, 5),
+                "rationale": rationale,
+                "setup_type": base_plan.setup_type.value,
+                "key_factors": base_plan.confluence_factors,
+                "analysis_mode": "rule-based",
+                "zone_quality": base_plan.zone_quality_score,
+                "rr_ratio": round(rr_ratio, 2),
+                "checklist": {
+                    "passed": base_plan.checklist.passed_count,
+                    "total": base_plan.checklist.total_count,
+                    "items": checklist_items
+                }
+            }
+        else:
+            # No valid setup found
+            decision = {
+                "signal": "HOLD",
+                "confidence": 0.0,
+                "entry_price": None,
+                "stop_loss": None,
+                "take_profit": None,
+                "rationale": f"""## Rule-Based SMC Analysis
+
+### Market Conditions
+- **Regime**: {market_regime}
+- **Volatility**: {volatility_regime}
+- **ADX**: {adx:.1f}
+
+### No Valid Setup Found
+
+The systematic SMC rules did not identify a high-probability trade setup at this time.
+
+**Possible reasons:**
+- No unmitigated zones near current price
+- Zone quality below threshold (50)
+- Risk:Reward ratio below minimum (1.5:1)
+- Trend not aligned with potential entries
+
+**Recommendation**: Wait for price to approach a quality SMC zone or run full multi-agent analysis for deeper context.
+
+---
+*This analysis was generated using systematic SMC rules without AI interpretation.*
+""",
+                "setup_type": None,
+                "key_factors": [],
+                "analysis_mode": "rule-based",
+                "zone_quality": 0,
+                "rr_ratio": 0,
+                "checklist": None
+            }
+
+        # Include SMC levels for chart display
+        smc_levels = []
+
+        # Helper to safely get attribute from dataclass or dict
+        def safe_attr(obj, attr, default=None):
+            if obj is None:
+                return default
+            if isinstance(obj, dict):
+                return obj.get(attr, default)
+            return getattr(obj, attr, default)
+
+        # Order blocks
+        obs = smc_result.get("order_blocks", {})
+        for ob in (obs.get("bullish") or []):
+            if ob and not safe_attr(ob, "mitigated", False):
+                smc_levels.append({
+                    "type": "order_block",
+                    "price": (safe_attr(ob, "top", 0) + safe_attr(ob, "bottom", 0)) / 2,
+                    "direction": "bullish",
+                    "strength": safe_attr(ob, "strength", 0.5)
+                })
+        for ob in (obs.get("bearish") or []):
+            if ob and not safe_attr(ob, "mitigated", False):
+                smc_levels.append({
+                    "type": "order_block",
+                    "price": (safe_attr(ob, "top", 0) + safe_attr(ob, "bottom", 0)) / 2,
+                    "direction": "bearish",
+                    "strength": safe_attr(ob, "strength", 0.5)
+                })
+
+        # FVGs
+        fvgs = smc_result.get("fair_value_gaps", {})
+        for fvg in (fvgs.get("bullish") or []):
+            if fvg and not safe_attr(fvg, "mitigated", False):
+                smc_levels.append({
+                    "type": "fvg",
+                    "price": (safe_attr(fvg, "top", 0) + safe_attr(fvg, "bottom", 0)) / 2,
+                    "direction": "bullish"
+                })
+        for fvg in (fvgs.get("bearish") or []):
+            if fvg and not safe_attr(fvg, "mitigated", False):
+                smc_levels.append({
+                    "type": "fvg",
+                    "price": (safe_attr(fvg, "top", 0) + safe_attr(fvg, "bottom", 0)) / 2,
+                    "direction": "bearish"
+                })
+
+        # Liquidity - liquidity_zones is a list, not a dict
+        liq_zones = smc_result.get("liquidity_zones", [])
+        # Handle both list and dict formats
+        if isinstance(liq_zones, dict):
+            # Dict format with buy_side/sell_side keys
+            for zone in (liq_zones.get("buy_side") or []):
+                if zone:
+                    smc_levels.append({
+                        "type": "liquidity",
+                        "price": safe_attr(zone, "price", 0),
+                        "direction": "bullish"
+                    })
+            for zone in (liq_zones.get("sell_side") or []):
+                if zone:
+                    smc_levels.append({
+                        "type": "liquidity",
+                        "price": safe_attr(zone, "price", 0),
+                        "direction": "bearish"
+                    })
+        else:
+            # List format - each zone has a 'type' field
+            for zone in liq_zones:
+                if zone:
+                    zone_type = safe_attr(zone, "type", "")
+                    direction = "bullish" if zone_type == "buy-side" else "bearish"
+                    smc_levels.append({
+                        "type": "liquidity",
+                        "price": safe_attr(zone, "price", 0),
+                        "direction": direction
+                    })
+
+        return {
+            "status": "completed",
+            "symbol": request.symbol,
+            "timeframe": request.timeframe,
+            "current_price": round(current_price, 5),
+            "decision": decision,
+            "smc_levels": smc_levels,
+            "regime": {
+                "market_regime": market_regime,
+                "volatility": volatility_regime,
+                "adx": round(adx, 2) if not np.isnan(adx) else None,
+                "atr": round(atr, 5) if not np.isnan(atr) else None
+            },
+            "analysis_mode": "rule-based",
+            "llm_used": False
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        return {
+            "status": "error",
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+
+# ----- Quant Analysis (SMC + Indicators, Single LLM Call) -----
+
+class QuantAnalysisRequest(BaseModel):
+    symbol: str
+    timeframe: str = "H1"
+
+
+@app.post("/api/analysis/quant")
+async def run_quant_analysis(request: QuantAnalysisRequest):
+    """
+    Run quantitative SMC analysis using a single LLM call.
+
+    This is a focused quant approach that:
+    - Uses only chart data (SMC levels, RSI, MACD, Bollinger Bands, etc.)
+    - No news, no sentiment, no fundamentals
+    - Single systematic LLM prompt for trade decision
+    - Faster than full multi-agent pipeline
+
+    Returns structured trade decision compatible with trade execution modal.
+    """
+    try:
+        import MetaTrader5 as mt5
+        import pandas as pd
+        import numpy as np
+
+        if not mt5.initialize():
+            raise HTTPException(status_code=500, detail="MT5 not initialized")
+
+        # Get symbol info for current price
+        symbol_info = mt5.symbol_info_tick(request.symbol)
+        if symbol_info is None:
+            raise HTTPException(status_code=400, detail=f"Symbol {request.symbol} not found")
+
+        current_price = (symbol_info.bid + symbol_info.ask) / 2
+        bid = symbol_info.bid
+        ask = symbol_info.ask
+
+        # Map timeframe
+        tf_map = {
+            "M1": mt5.TIMEFRAME_M1, "M5": mt5.TIMEFRAME_M5, "M15": mt5.TIMEFRAME_M15,
+            "M30": mt5.TIMEFRAME_M30, "H1": mt5.TIMEFRAME_H1, "H4": mt5.TIMEFRAME_H4,
+            "D1": mt5.TIMEFRAME_D1, "W1": mt5.TIMEFRAME_W1
+        }
+        tf = tf_map.get(request.timeframe.upper(), mt5.TIMEFRAME_H1)
+
+        # Get price data
+        rates = mt5.copy_rates_from_pos(request.symbol, tf, 0, 200)
+        if rates is None or len(rates) == 0:
+            raise HTTPException(status_code=400, detail="Failed to get price data")
+
+        df = pd.DataFrame(rates)
+        df['time'] = pd.to_datetime(df['time'], unit='s')
+
+        # === STEP 1: Calculate Technical Indicators ===
+
+        # ATR
+        high_low = df['high'] - df['low']
+        atr = high_low.rolling(14).mean().iloc[-1]
+
+        # RSI
+        delta = df['close'].diff()
+        gain = (delta.where(delta > 0, 0)).rolling(14).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
+        rs = gain / (loss + 0.0001)
+        rsi = 100 - (100 / (1 + rs))
+        rsi_value = rsi.iloc[-1]
+
+        # MACD
+        ema12 = df['close'].ewm(span=12, adjust=False).mean()
+        ema26 = df['close'].ewm(span=26, adjust=False).mean()
+        macd_line = ema12 - ema26
+        signal_line = macd_line.ewm(span=9, adjust=False).mean()
+        macd_hist = macd_line - signal_line
+        macd_value = macd_line.iloc[-1]
+        macd_signal = signal_line.iloc[-1]
+        macd_histogram = macd_hist.iloc[-1]
+
+        # Bollinger Bands
+        sma20 = df['close'].rolling(20).mean()
+        std20 = df['close'].rolling(20).std()
+        bb_upper = sma20 + (2 * std20)
+        bb_lower = sma20 - (2 * std20)
+        bb_upper_val = bb_upper.iloc[-1]
+        bb_lower_val = bb_lower.iloc[-1]
+        bb_middle_val = sma20.iloc[-1]
+
+        # EMA
+        ema20 = df['close'].ewm(span=20, adjust=False).mean().iloc[-1]
+        ema50 = df['close'].ewm(span=50, adjust=False).mean().iloc[-1]
+
+        # ADX for trend strength
+        plus_dm = df['high'].diff()
+        minus_dm = -df['low'].diff()
+        plus_dm[plus_dm < 0] = 0
+        minus_dm[minus_dm < 0] = 0
+        tr = high_low.copy()
+        atr_14 = tr.rolling(14).mean()
+        plus_di = 100 * (plus_dm.rolling(14).mean() / atr_14)
+        minus_di = 100 * (minus_dm.rolling(14).mean() / atr_14)
+        dx = 100 * abs(plus_di - minus_di) / (plus_di + minus_di + 0.0001)
+        adx = dx.rolling(14).mean().iloc[-1]
+
+        # Market regime
+        avg_atr = high_low.rolling(50).mean().iloc[-1]
+        volatility_regime = "high" if atr > avg_atr * 1.5 else "normal" if atr > avg_atr * 0.7 else "low"
+
+        if adx > 25:
+            if plus_di.iloc[-1] > minus_di.iloc[-1]:
+                market_regime = "trending-up"
+            else:
+                market_regime = "trending-down"
+        else:
+            market_regime = "ranging"
+
+        # === STEP 2: Run SMC Analysis ===
+        from tradingagents.indicators.smart_money import SmartMoneyAnalyzer
+
+        analyzer = SmartMoneyAnalyzer()
+        smc_result = analyzer.analyze_full_smc(
+            df,
+            current_price=current_price,
+            use_structural_obs=True
+        )
+
+        # Format SMC context for LLM
+        smc_context = _format_smc_for_quant(smc_result, current_price, atr)
+
+        # === STEP 3: Build Indicator Context ===
+        indicators_context = f"""## Technical Indicators
+
+### Momentum
+- **RSI(14)**: {rsi_value:.1f} {"(Overbought)" if rsi_value > 70 else "(Oversold)" if rsi_value < 30 else "(Neutral)"}
+- **MACD**: {macd_value:.5f} | Signal: {macd_signal:.5f} | Histogram: {macd_histogram:.5f}
+  - {"Bullish (MACD > Signal)" if macd_value > macd_signal else "Bearish (MACD < Signal)"}
+
+### Trend
+- **EMA20**: {ema20:.5f} {"(Price above)" if current_price > ema20 else "(Price below)"}
+- **EMA50**: {ema50:.5f} {"(Price above)" if current_price > ema50 else "(Price below)"}
+- **ADX**: {adx:.1f} {"(Strong trend)" if adx > 25 else "(Weak/No trend)"}
+- **Regime**: {market_regime}
+
+### Volatility
+- **ATR(14)**: {atr:.5f}
+- **Volatility**: {volatility_regime}
+- **Bollinger Bands**: Upper={bb_upper_val:.5f} | Middle={bb_middle_val:.5f} | Lower={bb_lower_val:.5f}
+  - {"Price near upper band" if current_price > bb_upper_val * 0.99 else "Price near lower band" if current_price < bb_lower_val * 1.01 else "Price within bands"}
+"""
+
+        # === STEP 4: Call Quant Analyst LLM ===
+        from tradingagents.agents.analysts.quant_analyst import create_quant_analyst
+        from tradingagents.default_config import DEFAULT_CONFIG
+        import os
+
+        # Get LLM configuration
+        config = DEFAULT_CONFIG.copy()
+
+        # Create LLM based on provider
+        if config["llm_provider"].lower() in ["xai", "grok"]:
+            from langchain_xai import ChatXAI
+            api_key = os.environ.get("XAI_API_KEY") or ""
+            llm = ChatXAI(model=config["deep_think_llm"], xai_api_key=api_key)
+        elif config["llm_provider"].lower() in ["openai", "ollama", "openrouter"]:
+            from langchain_openai import ChatOpenAI
+            from openai import OpenAI
+            api_key = os.environ.get("OPENAI_API_KEY") or ""
+            sync_client = OpenAI(api_key=api_key, base_url=config["backend_url"])
+            llm = ChatOpenAI(
+                model=config["deep_think_llm"],
+                base_url=config["backend_url"],
+                api_key=api_key,
+                root_client=sync_client
+            )
+        else:
+            raise HTTPException(status_code=500, detail=f"Unsupported LLM provider: {config['llm_provider']}")
+
+        # Create mock state with all the data
+        quant_state = {
+            "company_of_interest": request.symbol,
+            "trade_date": pd.Timestamp.now().strftime("%Y-%m-%d"),
+            "current_price": current_price,
+            "smc_context": smc_context,
+            "smc_analysis": smc_result,
+            "market_report": indicators_context,
+            "market_regime": market_regime,
+            "volatility_regime": volatility_regime,
+            "trading_session": _get_trading_session(),
+        }
+
+        # Run quant analyst
+        quant_analyst = create_quant_analyst(llm, use_structured_output=True)
+        result = quant_analyst(quant_state)
+
+        quant_report = result.get("quant_report", "")
+        quant_decision = result.get("quant_decision")
+
+        # === STEP 5: Build Response ===
+        if quant_decision:
+            # Map signal
+            signal_map = {
+                "buy_to_enter": "BUY",
+                "sell_to_enter": "SELL",
+                "hold": "HOLD",
+                "close": "HOLD"
+            }
+            signal = quant_decision.get("signal", "hold")
+            if isinstance(signal, dict):
+                signal = signal.get("value", "hold")
+
+            mapped_signal = signal_map.get(signal, "HOLD")
+
+            decision = {
+                "signal": mapped_signal,
+                "confidence": quant_decision.get("confidence", 0.5),
+                "entry_price": quant_decision.get("entry_price"),
+                "stop_loss": quant_decision.get("stop_loss"),
+                "take_profit": quant_decision.get("profit_target"),
+                "rationale": f"{quant_decision.get('justification', '')}\n\n**Invalidation**: {quant_decision.get('invalidation_condition', 'N/A')}",
+                "analysis_mode": "quant",
+                "leverage": quant_decision.get("leverage"),
+                "risk_usd": quant_decision.get("risk_usd"),
+                "risk_level": quant_decision.get("risk_level"),
+                "risk_reward_ratio": quant_decision.get("risk_reward_ratio"),
+                "full_report": quant_report
+            }
+        else:
+            # Fallback if structured output failed
+            decision = {
+                "signal": "HOLD",
+                "confidence": 0.0,
+                "entry_price": None,
+                "stop_loss": None,
+                "take_profit": None,
+                "rationale": quant_report or "Quant analysis could not generate a structured decision.",
+                "analysis_mode": "quant",
+                "full_report": quant_report
+            }
+
+        # Include SMC levels for chart display (same as rule-based)
+        smc_levels = _extract_smc_levels_for_chart(smc_result)
+
+        return {
+            "status": "completed",
+            "symbol": request.symbol,
+            "timeframe": request.timeframe,
+            "current_price": round(current_price, 5),
+            "bid": round(bid, 5),
+            "ask": round(ask, 5),
+            "decision": decision,
+            "smc_levels": smc_levels,
+            "indicators": {
+                "rsi": round(rsi_value, 2) if not np.isnan(rsi_value) else None,
+                "macd": round(macd_value, 5) if not np.isnan(macd_value) else None,
+                "macd_signal": round(macd_signal, 5) if not np.isnan(macd_signal) else None,
+                "macd_histogram": round(macd_histogram, 5) if not np.isnan(macd_histogram) else None,
+                "ema20": round(ema20, 5) if not np.isnan(ema20) else None,
+                "ema50": round(ema50, 5) if not np.isnan(ema50) else None,
+                "atr": round(atr, 5) if not np.isnan(atr) else None,
+                "adx": round(adx, 2) if not np.isnan(adx) else None,
+                "bb_upper": round(bb_upper_val, 5) if not np.isnan(bb_upper_val) else None,
+                "bb_middle": round(bb_middle_val, 5) if not np.isnan(bb_middle_val) else None,
+                "bb_lower": round(bb_lower_val, 5) if not np.isnan(bb_lower_val) else None,
+            },
+            "regime": {
+                "market_regime": market_regime,
+                "volatility": volatility_regime,
+                "adx": round(adx, 2) if not np.isnan(adx) else None,
+                "atr": round(atr, 5) if not np.isnan(atr) else None
+            },
+            "analysis_mode": "quant",
+            "llm_used": True
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        return {
+            "status": "error",
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+
+def _format_smc_for_quant(smc_result: dict, current_price: float, atr: float) -> str:
+    """Format SMC analysis for quant analyst prompt."""
+    lines = ["## Smart Money Concepts Analysis\n"]
+
+    # Bias
+    bias = smc_result.get("bias", "neutral")
+    lines.append(f"**Overall Bias**: {bias.upper()}\n")
+
+    # Helper to safely get attribute
+    def safe_attr(obj, attr, default=None):
+        if obj is None:
+            return default
+        if isinstance(obj, dict):
+            return obj.get(attr, default)
+        return getattr(obj, attr, default)
+
+    # Order blocks
+    obs = smc_result.get("order_blocks", {})
+    bullish_obs = [ob for ob in (obs.get("bullish") or []) if ob and not safe_attr(ob, "mitigated", False)]
+    bearish_obs = [ob for ob in (obs.get("bearish") or []) if ob and not safe_attr(ob, "mitigated", False)]
+
+    if bullish_obs or bearish_obs:
+        lines.append("### Order Blocks (Unmitigated)")
+        for ob in bullish_obs[:3]:
+            top = safe_attr(ob, "top", 0)
+            bottom = safe_attr(ob, "bottom", 0)
+            strength = safe_attr(ob, "strength", 0.5)
+            lines.append(f"- BULLISH OB: {bottom:.5f} - {top:.5f} (strength: {strength:.0%})")
+        for ob in bearish_obs[:3]:
+            top = safe_attr(ob, "top", 0)
+            bottom = safe_attr(ob, "bottom", 0)
+            strength = safe_attr(ob, "strength", 0.5)
+            lines.append(f"- BEARISH OB: {bottom:.5f} - {top:.5f} (strength: {strength:.0%})")
+        lines.append("")
+
+    # FVGs
+    fvgs = smc_result.get("fair_value_gaps", {})
+    bullish_fvgs = [fvg for fvg in (fvgs.get("bullish") or []) if fvg and not safe_attr(fvg, "mitigated", False)]
+    bearish_fvgs = [fvg for fvg in (fvgs.get("bearish") or []) if fvg and not safe_attr(fvg, "mitigated", False)]
+
+    if bullish_fvgs or bearish_fvgs:
+        lines.append("### Fair Value Gaps")
+        for fvg in bullish_fvgs[:2]:
+            top = safe_attr(fvg, "top", 0)
+            bottom = safe_attr(fvg, "bottom", 0)
+            lines.append(f"- BULLISH FVG: {bottom:.5f} - {top:.5f}")
+        for fvg in bearish_fvgs[:2]:
+            top = safe_attr(fvg, "top", 0)
+            bottom = safe_attr(fvg, "bottom", 0)
+            lines.append(f"- BEARISH FVG: {bottom:.5f} - {top:.5f}")
+        lines.append("")
+
+    # Liquidity zones
+    liq_zones = smc_result.get("liquidity_zones", [])
+    if liq_zones:
+        lines.append("### Liquidity Zones")
+        zones_to_show = liq_zones[:4] if isinstance(liq_zones, list) else []
+        for zone in zones_to_show:
+            price = safe_attr(zone, "price", 0)
+            zone_type = safe_attr(zone, "type", "unknown")
+            strength = safe_attr(zone, "strength", 50)
+            lines.append(f"- {zone_type.upper()}: {price:.5f} (strength: {strength})")
+        lines.append("")
+
+    # Market structure
+    structure = smc_result.get("market_structure", {})
+    if structure:
+        lines.append("### Market Structure")
+        recent_bos = structure.get("recent_bos", [])
+        recent_choc = structure.get("recent_choc", [])
+        if recent_bos:
+            lines.append(f"- Recent BOS: {len(recent_bos)} detected")
+        if recent_choc:
+            lines.append(f"- Recent CHoCH: {len(recent_choc)} detected")
+        lines.append("")
+
+    lines.append(f"**Current Price**: {current_price:.5f}")
+    lines.append(f"**ATR**: {atr:.5f}")
+
+    return "\n".join(lines)
+
+
+def _extract_smc_levels_for_chart(smc_result: dict) -> list:
+    """Extract SMC levels for chart display."""
+    smc_levels = []
+
+    def safe_attr(obj, attr, default=None):
+        if obj is None:
+            return default
+        if isinstance(obj, dict):
+            return obj.get(attr, default)
+        return getattr(obj, attr, default)
+
+    # Order blocks
+    obs = smc_result.get("order_blocks", {})
+    for ob in (obs.get("bullish") or []):
+        if ob and not safe_attr(ob, "mitigated", False):
+            smc_levels.append({
+                "type": "order_block",
+                "price": (safe_attr(ob, "top", 0) + safe_attr(ob, "bottom", 0)) / 2,
+                "direction": "bullish",
+                "strength": safe_attr(ob, "strength", 0.5)
+            })
+    for ob in (obs.get("bearish") or []):
+        if ob and not safe_attr(ob, "mitigated", False):
+            smc_levels.append({
+                "type": "order_block",
+                "price": (safe_attr(ob, "top", 0) + safe_attr(ob, "bottom", 0)) / 2,
+                "direction": "bearish",
+                "strength": safe_attr(ob, "strength", 0.5)
+            })
+
+    # FVGs
+    fvgs = smc_result.get("fair_value_gaps", {})
+    for fvg in (fvgs.get("bullish") or []):
+        if fvg and not safe_attr(fvg, "mitigated", False):
+            smc_levels.append({
+                "type": "fvg",
+                "price": (safe_attr(fvg, "top", 0) + safe_attr(fvg, "bottom", 0)) / 2,
+                "direction": "bullish"
+            })
+    for fvg in (fvgs.get("bearish") or []):
+        if fvg and not safe_attr(fvg, "mitigated", False):
+            smc_levels.append({
+                "type": "fvg",
+                "price": (safe_attr(fvg, "top", 0) + safe_attr(fvg, "bottom", 0)) / 2,
+                "direction": "bearish"
+            })
+
+    # Liquidity
+    liq_zones = smc_result.get("liquidity_zones", [])
+    if isinstance(liq_zones, list):
+        for zone in liq_zones:
+            if zone:
+                zone_type = safe_attr(zone, "type", "")
+                direction = "bullish" if zone_type == "buy-side" else "bearish"
+                smc_levels.append({
+                    "type": "liquidity",
+                    "price": safe_attr(zone, "price", 0),
+                    "direction": direction
+                })
+
+    return smc_levels
+
+
+def _get_trading_session() -> str:
+    """Get current trading session based on UTC time."""
+    from datetime import datetime
+    hour = datetime.utcnow().hour
+
+    if 0 <= hour < 7:
+        return "asian"
+    elif 7 <= hour < 12:
+        return "london"
+    elif 12 <= hour < 16:
+        return "london_ny_overlap"
+    elif 16 <= hour < 21:
+        return "new_york"
+    else:
+        return "asian"
+
+
 # ----- WebSocket for Real-time Updates -----
 
 @app.websocket("/ws")
@@ -4497,12 +5953,10 @@ async def get_schema(schema_name: str):
 
 # ----- Daily Cycle (Prediction Tracking) -----
 
-DAILY_CYCLE_PID_FILE = Path("daily_cycle.pid")
-DAILY_CYCLE_STATE_FILE = Path(__file__).parent.parent.parent / "examples" / ".last_run_state.json"
-DAILY_CYCLE_PREDICTIONS_DIR = Path(__file__).parent.parent.parent / "examples" / "pending_predictions"
-
-
-DAILY_CYCLE_CONFIG_FILE = Path(__file__).parent.parent.parent / "examples" / ".daily_cycle_config.json"
+DAILY_CYCLE_PID_FILE = PROJECT_ROOT / "daily_cycle.pid"
+DAILY_CYCLE_STATE_FILE = PROJECT_ROOT / "examples" / ".last_run_state.json"
+DAILY_CYCLE_PREDICTIONS_DIR = PROJECT_ROOT / "examples" / "pending_predictions"
+DAILY_CYCLE_CONFIG_FILE = PROJECT_ROOT / "examples" / ".daily_cycle_config.json"
 
 
 @app.get("/api/daily-cycle/status")
@@ -4537,8 +5991,11 @@ async def get_daily_cycle_status():
             status["symbols"] = config.get("symbols", [])
             status["run_at"] = config.get("run_at")
             status["started_at"] = config.get("started_at")
-        except Exception:
-            pass
+            logging.debug(f"Daily cycle config loaded: symbols={status['symbols']}")
+        except Exception as e:
+            logging.error(f"Failed to load daily cycle config: {e}")
+    else:
+        logging.debug(f"Daily cycle config file not found: {DAILY_CYCLE_CONFIG_FILE}")
 
     # Load last run state
     if DAILY_CYCLE_STATE_FILE.exists():
@@ -4568,16 +6025,57 @@ async def get_daily_cycle_status():
     status["last_stop"] = persistent_state.get("last_stop")
     status["stop_reason"] = persistent_state.get("stop_reason")
 
-    # Use persisted symbols if config file doesn't have them
-    # This ensures symbol selection survives backend restarts
-    if not status["symbols"] and persistent_state.get("symbols"):
-        status["symbols"] = persistent_state["symbols"]
+    # Symbol selection logic:
+    # - When cycle is RUNNING: use config file symbols (what it's actually tracking)
+    # - When cycle is STOPPED: use SQLite-persisted symbols (user's saved selection)
+    # This ensures the user's selection survives page refreshes when not running
+    if status["running"]:
+        # Keep config file symbols (already loaded above)
+        # Fall back to persisted if config is empty
+        if not status["symbols"] and persistent_state.get("symbols"):
+            status["symbols"] = persistent_state["symbols"]
+    else:
+        # When stopped, always prefer persisted user selection
+        if persistent_state.get("symbols"):
+            status["symbols"] = persistent_state["symbols"]
 
     # Also use persisted run_at if not in config
     if status["run_at"] is None and persistent_state.get("run_at") is not None:
         status["run_at"] = persistent_state["run_at"]
 
+    # Debug info
+    status["_debug"] = {
+        "config_file_exists": DAILY_CYCLE_CONFIG_FILE.exists(),
+        "config_file_path": str(DAILY_CYCLE_CONFIG_FILE),
+        "persistent_symbols": persistent_state.get("symbols", []),
+        "config_file_symbols": status.get("symbols", []) if status["running"] else [],
+    }
+
     return status
+
+
+class SaveSelectedSymbolsRequest(BaseModel):
+    symbols: List[str]
+
+
+@app.post("/api/daily-cycle/save-symbols")
+async def save_daily_cycle_symbols(request: SaveSelectedSymbolsRequest):
+    """Save selected symbols for daily cycle without starting it.
+
+    This allows persisting the user's symbol selection so it survives
+    page refreshes even before the cycle is started.
+    """
+    try:
+        LearningCycleState.set_selected_symbols(request.symbols)
+        logging.info(f"Saved {len(request.symbols)} selected symbols for daily cycle")
+        return {
+            "success": True,
+            "symbols_saved": len(request.symbols),
+            "symbols": request.symbols
+        }
+    except Exception as e:
+        logging.error(f"Failed to save selected symbols: {e}")
+        return {"success": False, "error": str(e)}
 
 
 class DailyCycleStartRequest(BaseModel):
@@ -4629,10 +6127,21 @@ async def start_daily_cycle(request: DailyCycleStartRequest = None):
 
         if not symbols:
             return {"error": "No symbols found in MT5 market watch"}
-    elif request.symbols:
+    elif request.symbols and len(request.symbols) > 0:
         symbols = request.symbols
     else:
-        symbols = ["XAUUSD"]  # Default fallback
+        # Default to market watch symbols if none provided
+        try:
+            import MetaTrader5 as mt5
+            if mt5.initialize():
+                all_symbols = mt5.symbols_get()
+                if all_symbols:
+                    symbols = [s.name for s in all_symbols if s.visible]
+        except Exception:
+            pass
+
+        if not symbols:
+            return {"error": "No symbols provided and unable to get market watch symbols"}
 
     try:
         # Start the daily cycle as a subprocess
@@ -4667,8 +6176,7 @@ async def start_daily_cycle(request: DailyCycleStartRequest = None):
         DAILY_CYCLE_PID_FILE.write_text(str(process.pid))
 
         # Save symbols being tracked
-        state_file = Path(__file__).parent.parent.parent / "examples" / ".daily_cycle_config.json"
-        state_file.write_text(json.dumps({
+        DAILY_CYCLE_CONFIG_FILE.write_text(json.dumps({
             "symbols": symbols,
             "run_at": request.run_at,
             "started_at": datetime.now().isoformat()
@@ -4811,6 +6319,248 @@ async def get_pending_predictions(symbol: str = None):
     predictions.sort(key=lambda x: x.get("evaluation_due", ""), reverse=True)
 
     return {"predictions": predictions}
+
+
+# ----- Quant Automation -----
+
+# Global state for quant automation
+_quant_automation_instance = None
+_quant_automation_task = None
+
+
+class QuantAutomationConfigRequest(BaseModel):
+    """Request model for quant automation configuration."""
+    pipeline: str = "quant"  # "quant" or "multi_agent"
+    symbols: List[str] = ["XAUUSD"]
+    timeframe: str = "H1"
+    analysis_interval_seconds: int = 180
+    position_check_interval_seconds: int = 60
+    auto_execute: bool = False
+    min_confidence: float = 0.65
+    max_positions_per_symbol: int = 1
+    max_total_positions: int = 3
+    enable_trailing_stop: bool = True
+    trailing_stop_atr_multiplier: float = 1.5
+    move_to_breakeven_pct: float = 1.0
+    max_risk_per_trade_pct: float = 1.0
+    default_lot_size: float = 0.01
+    daily_loss_limit_pct: float = 3.0
+    max_consecutive_losses: int = 3
+
+
+@app.get("/api/automation/quant/status")
+async def get_quant_automation_status():
+    """Get quant automation status."""
+    global _quant_automation_instance
+
+    if _quant_automation_instance is None:
+        return {
+            "status": "stopped",
+            "running": False,
+            "error": None,
+            "config": None,
+        }
+
+    return _quant_automation_instance.get_status()
+
+
+@app.post("/api/automation/quant/start")
+async def start_quant_automation(config: QuantAutomationConfigRequest):
+    """Start quant automation with given configuration."""
+    global _quant_automation_instance, _quant_automation_task
+
+    if _quant_automation_instance and _quant_automation_instance._running:
+        raise HTTPException(status_code=400, detail="Automation already running")
+
+    try:
+        from tradingagents.automation.quant_automation import (
+            QuantAutomation,
+            QuantAutomationConfig,
+            PipelineType,
+        )
+
+        # Create configuration
+        auto_config = QuantAutomationConfig(
+            pipeline=PipelineType(config.pipeline),
+            symbols=config.symbols,
+            timeframe=config.timeframe,
+            analysis_interval_seconds=config.analysis_interval_seconds,
+            position_check_interval_seconds=config.position_check_interval_seconds,
+            auto_execute=config.auto_execute,
+            min_confidence=config.min_confidence,
+            max_positions_per_symbol=config.max_positions_per_symbol,
+            max_total_positions=config.max_total_positions,
+            enable_trailing_stop=config.enable_trailing_stop,
+            trailing_stop_atr_multiplier=config.trailing_stop_atr_multiplier,
+            move_to_breakeven_pct=config.move_to_breakeven_pct,
+            max_risk_per_trade_pct=config.max_risk_per_trade_pct,
+            default_lot_size=config.default_lot_size,
+            daily_loss_limit_pct=config.daily_loss_limit_pct,
+            max_consecutive_losses=config.max_consecutive_losses,
+        )
+
+        _quant_automation_instance = QuantAutomation(auto_config)
+
+        # Start in background
+        _quant_automation_task = asyncio.create_task(_quant_automation_instance.start())
+
+        # Give it time to start
+        await asyncio.sleep(0.5)
+
+        return {
+            "status": "started",
+            "config": auto_config.to_dict(),
+        }
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/automation/quant/stop")
+async def stop_quant_automation():
+    """Stop quant automation."""
+    global _quant_automation_instance, _quant_automation_task
+
+    if _quant_automation_instance is None:
+        raise HTTPException(status_code=400, detail="Automation not running")
+
+    _quant_automation_instance.stop()
+
+    if _quant_automation_task:
+        try:
+            await asyncio.wait_for(_quant_automation_task, timeout=5.0)
+        except asyncio.TimeoutError:
+            _quant_automation_task.cancel()
+        except Exception:
+            pass
+        _quant_automation_task = None
+
+    return {"status": "stopped"}
+
+
+@app.post("/api/automation/quant/pause")
+async def pause_quant_automation():
+    """Pause automation (disable auto-execute but continue monitoring)."""
+    global _quant_automation_instance
+
+    if _quant_automation_instance is None or not _quant_automation_instance._running:
+        raise HTTPException(status_code=400, detail="Automation not running")
+
+    _quant_automation_instance.pause()
+    return {"status": "paused"}
+
+
+@app.post("/api/automation/quant/resume")
+async def resume_quant_automation():
+    """Resume automation with auto-execute enabled."""
+    global _quant_automation_instance
+
+    if _quant_automation_instance is None or not _quant_automation_instance._running:
+        raise HTTPException(status_code=400, detail="Automation not running")
+
+    _quant_automation_instance.resume()
+    return {"status": "running"}
+
+
+@app.post("/api/automation/quant/config")
+async def update_quant_automation_config(updates: Dict[str, Any]):
+    """Update automation configuration dynamically."""
+    global _quant_automation_instance
+
+    if _quant_automation_instance is None:
+        raise HTTPException(status_code=400, detail="Automation not initialized")
+
+    _quant_automation_instance.update_config(updates)
+    return {
+        "status": "updated",
+        "config": _quant_automation_instance.config.to_dict(),
+    }
+
+
+@app.post("/api/automation/quant/test-analysis/{symbol}")
+async def test_quant_analysis(symbol: str):
+    """Run a single analysis cycle for testing (without execution)."""
+    try:
+        from tradingagents.automation.quant_automation import (
+            QuantAutomation,
+            QuantAutomationConfig,
+        )
+
+        # Create a temporary instance for testing
+        config = QuantAutomationConfig(
+            symbols=[symbol],
+            auto_execute=False,  # Never execute in test mode
+        )
+        automation = QuantAutomation(config)
+
+        # Run single analysis
+        result = await automation.run_single_analysis(symbol)
+
+        return {
+            "symbol": result.symbol,
+            "pipeline": result.pipeline,
+            "signal": result.signal,
+            "confidence": result.confidence,
+            "entry_price": result.entry_price,
+            "stop_loss": result.stop_loss,
+            "take_profit": result.take_profit,
+            "rationale": result.rationale,
+            "duration_seconds": result.duration_seconds,
+        }
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/automation/quant/history")
+async def get_quant_automation_history():
+    """Get recent analysis and position management history."""
+    global _quant_automation_instance
+
+    if _quant_automation_instance is None:
+        return {
+            "analysis_results": [],
+            "position_results": [],
+        }
+
+    return {
+        "analysis_results": [
+            {
+                "timestamp": r.timestamp.isoformat(),
+                "symbol": r.symbol,
+                "pipeline": r.pipeline,
+                "signal": r.signal,
+                "confidence": r.confidence,
+                "entry_price": r.entry_price,
+                "stop_loss": r.stop_loss,
+                "take_profit": r.take_profit,
+                "executed": r.executed,
+                "execution_ticket": r.execution_ticket,
+                "execution_error": r.execution_error,
+                "duration_seconds": r.duration_seconds,
+            }
+            for r in _quant_automation_instance._analysis_results
+        ],
+        "position_results": [
+            {
+                "timestamp": r.timestamp.isoformat(),
+                "ticket": r.ticket,
+                "symbol": r.symbol,
+                "action": r.action,
+                "old_sl": r.old_sl,
+                "new_sl": r.new_sl,
+                "old_tp": r.old_tp,
+                "new_tp": r.new_tp,
+                "close_reason": r.close_reason,
+                "pnl": r.pnl,
+            }
+            for r in _quant_automation_instance._position_results
+        ],
+    }
 
 
 # ----- Health Check -----

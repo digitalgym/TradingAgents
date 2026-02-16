@@ -27,6 +27,17 @@ from .reporting import (
 )
 from .portfolio_automation import PortfolioAutomation, run_deep_position_analysis
 from .daily_scheduler import DailyScheduler
+from .quant_automation import (
+    QuantAutomation,
+    QuantAutomationConfig,
+    PipelineType,
+    AutomationStatus,
+    AnalysisCycleResult,
+    PositionManagementResult,
+    get_automation_instance,
+    start_automation,
+    stop_automation,
+)
 
 __all__ = [
     # Config
@@ -49,4 +60,14 @@ __all__ = [
     "ReflectionReport",
     # Analysis functions
     "run_deep_position_analysis",
+    # Quant Automation
+    "QuantAutomation",
+    "QuantAutomationConfig",
+    "PipelineType",
+    "AutomationStatus",
+    "AnalysisCycleResult",
+    "PositionManagementResult",
+    "get_automation_instance",
+    "start_automation",
+    "stop_automation",
 ]

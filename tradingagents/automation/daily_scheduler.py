@@ -75,6 +75,9 @@ class DailyScheduler:
         # PID file for daemon management
         self._pid_file = Path("portfolio_scheduler.pid")
 
+        # Load previous state if available
+        self._load_last_run()
+
     def _get_current_time(self) -> datetime:
         """Get current time in configured timezone."""
         now = datetime.now()
@@ -189,7 +192,18 @@ class DailyScheduler:
                 # Check each cycle
                 for cycle in ["morning", "midday", "evening"]:
                     if self._should_run_cycle(cycle):
-                        await self._run_with_retry(cycle)
+                        try:
+                            result = await self._run_with_retry(cycle)
+                            if result is None:
+                                self.logger.warning(f"{cycle} cycle returned None (all retries failed)")
+                            else:
+                                self.logger.info(f"{cycle} cycle completed successfully")
+                        except Exception as e:
+                            # Catch any exception that bubbles up from retry logic
+                            self.logger.error(f"Unhandled exception in {cycle} cycle: {e}")
+                            import traceback
+                            self.logger.error(traceback.format_exc())
+                            # Continue to next cycle instead of crashing
 
                 # Sleep for 1 minute before checking again
                 try:
@@ -203,6 +217,11 @@ class DailyScheduler:
                     # Normal timeout, continue loop
                     pass
 
+        except Exception as e:
+            self.logger.error(f"Critical error in scheduler main loop: {e}")
+            import traceback
+            self.logger.error(traceback.format_exc())
+            raise
         finally:
             self._cleanup()
 
@@ -245,8 +264,9 @@ class DailyScheduler:
         try:
             with open(state_file, "w") as f:
                 json.dump(self._last_run, f)
-        except Exception:
-            pass
+            self.logger.debug(f"Saved scheduler state: {self._last_run}")
+        except Exception as e:
+            self.logger.warning(f"Failed to save scheduler state: {e}")
 
     def _load_last_run(self):
         """Load last run times."""
@@ -255,8 +275,11 @@ class DailyScheduler:
             if state_file.exists():
                 with open(state_file, "r") as f:
                     self._last_run = json.load(f)
-        except Exception:
-            pass
+                self.logger.debug(f"Loaded scheduler state: {self._last_run}")
+            else:
+                self.logger.debug("No scheduler state file found, starting fresh")
+        except Exception as e:
+            self.logger.warning(f"Failed to load scheduler state: {e}")
 
     async def trigger_manual(self, cycle: str) -> Any:
         """
@@ -321,18 +344,75 @@ def run_scheduler_daemon(config_path: Optional[str] = None):
         config_path: Path to portfolio configuration file
     """
     from .portfolio_config import load_portfolio_config, get_default_config
+    import traceback
 
-    # Load configuration
-    if config_path:
-        config = load_portfolio_config(config_path)
-    else:
-        config = get_default_config()
+    # Setup logging for daemon
+    logger = logging.getLogger("SchedulerDaemon")
 
-    # Initialize automation
-    automation = PortfolioAutomation(config)
+    logger.info("=" * 60)
+    logger.info("STARTING PORTFOLIO SCHEDULER DAEMON")
+    logger.info("=" * 60)
 
-    # Initialize scheduler
-    scheduler = DailyScheduler(automation)
+    try:
+        # Load configuration
+        logger.info(f"Loading configuration from: {config_path or 'default'}")
+        if config_path:
+            config = load_portfolio_config(config_path)
+        else:
+            config = get_default_config()
+        logger.info(f"Configuration loaded successfully. Execution mode: {config.execution_mode}")
+        logger.info(f"Symbols configured: {[s.symbol for s in config.symbols]}")
 
-    # Run
-    asyncio.run(scheduler.start())
+    except FileNotFoundError as e:
+        logger.error(f"Configuration file not found: {e}")
+        logger.error("Daemon cannot start without valid configuration")
+        return
+    except ValueError as e:
+        logger.error(f"Invalid configuration: {e}")
+        logger.error("Daemon cannot start with invalid configuration")
+        return
+    except Exception as e:
+        logger.error(f"Unexpected error loading configuration: {e}")
+        logger.error(traceback.format_exc())
+        return
+
+    try:
+        # Initialize automation
+        logger.info("Initializing PortfolioAutomation...")
+        automation = PortfolioAutomation(config)
+        logger.info("PortfolioAutomation initialized successfully")
+
+    except ValueError as e:
+        logger.error(f"Configuration validation failed: {e}")
+        return
+    except Exception as e:
+        logger.error(f"Failed to initialize PortfolioAutomation: {e}")
+        logger.error(traceback.format_exc())
+        return
+
+    try:
+        # Initialize scheduler
+        logger.info("Initializing DailyScheduler...")
+        scheduler = DailyScheduler(automation)
+        logger.info("DailyScheduler initialized successfully")
+
+    except Exception as e:
+        logger.error(f"Failed to initialize DailyScheduler: {e}")
+        logger.error(traceback.format_exc())
+        return
+
+    try:
+        # Run the scheduler
+        logger.info("Starting scheduler event loop...")
+        asyncio.run(scheduler.start())
+
+    except KeyboardInterrupt:
+        logger.info("Scheduler stopped by user (KeyboardInterrupt)")
+    except Exception as e:
+        logger.error(f"Scheduler crashed with unexpected error: {e}")
+        logger.error(traceback.format_exc())
+        raise
+    finally:
+        logger.info("=" * 60)
+        logger.info("PORTFOLIO SCHEDULER DAEMON STOPPED")
+        logger.info("=" * 60)

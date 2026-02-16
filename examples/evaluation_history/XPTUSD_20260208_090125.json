@@ -1,0 +1,14 @@
+{
+  "symbol": "XPTUSD",
+  "analysis_timestamp": "2026-02-03T10:11:57.420523",
+  "evaluation_timestamp": "2026-02-08T09:01:16.162031",
+  "price_at_analysis": 2174.2799999999997,
+  "price_at_evaluation": 2101.6000000000004,
+  "pct_change": -3.3427157495814424,
+  "expected_direction": "up",
+  "actual_direction": "down",
+  "signal": "BUY",
+  "prediction_correct": false,
+  "hypothetical_pnl": -3.3427157495814424,
+  "lesson": "Prediction was incorrect. Price moved -3.34%."
+}

@@ -1,0 +1,27 @@
+2026-02-02 17:55:13,581 - INFO - ==================================================
+2026-02-02 17:55:13,651 - INFO - STARTING MORNING ANALYSIS CYCLE
+2026-02-02 17:55:13,651 - INFO - ==================================================
+2026-02-02 17:55:14,038 - INFO - Current positions: 0
+2026-02-02 17:55:14,111 - INFO - Trades today: 0/3
+2026-02-02 17:55:14,111 - INFO - Analyzing XAGUSD...
+2026-02-02 18:01:02,938 - INFO -   Signal: HOLD
+2026-02-02 18:01:02,938 - INFO - Analyzing XAUUSD...
+2026-02-02 18:05:51,368 - INFO -   Signal: HOLD
+2026-02-02 18:05:51,384 - INFO - ==================================================
+MORNING ANALYSIS REPORT
+==================================================
+Time: 2026-02-02 17:55:13
+
+Portfolio Status:
+  Balance: $182.92
+  Equity: $182.92
+  Open Positions: 0
+
+Analysis Summary:
+  Symbols Analyzed: 2
+  Opportunities Found: 0
+  Skipped: 0
+  Errors: 0
+
+Duration: 637.8s
+==================================================

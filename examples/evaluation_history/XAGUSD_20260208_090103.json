@@ -1,0 +1,14 @@
+{
+  "symbol": "XAGUSD",
+  "analysis_timestamp": "2026-02-03T09:44:00.138880",
+  "evaluation_timestamp": "2026-02-08T09:00:54.186375",
+  "price_at_analysis": 81.37700000000001,
+  "price_at_evaluation": 77.94300000000001,
+  "pct_change": -4.219865563979991,
+  "expected_direction": "down",
+  "actual_direction": "down",
+  "signal": "SELL",
+  "prediction_correct": true,
+  "hypothetical_pnl": 4.219865563979991,
+  "lesson": "Prediction was correct. Price moved -4.22%."
+}

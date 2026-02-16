@@ -105,7 +105,8 @@ Volume-Based Indicators:
 
         report = ""
 
-        if len(result.tool_calls) == 0:
+        tool_calls = getattr(result, "tool_calls", None)
+        if not tool_calls:
             report = result.content
        
         return {

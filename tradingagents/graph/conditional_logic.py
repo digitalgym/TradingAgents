@@ -11,11 +11,16 @@ class ConditionalLogic:
         self.max_debate_rounds = max_debate_rounds
         self.max_risk_discuss_rounds = max_risk_discuss_rounds
 
+    def _has_tool_calls(self, message) -> bool:
+        """Safely check if a message has tool_calls."""
+        tool_calls = getattr(message, "tool_calls", None)
+        return bool(tool_calls)
+
     def should_continue_market(self, state: AgentState):
         """Determine if market analysis should continue."""
         messages = state["messages"]
         last_message = messages[-1]
-        if last_message.tool_calls:
+        if self._has_tool_calls(last_message):
             return "tools_market"
         return "Msg Clear Market"
 
@@ -23,7 +28,7 @@ class ConditionalLogic:
         """Determine if social media analysis should continue."""
         messages = state["messages"]
         last_message = messages[-1]
-        if last_message.tool_calls:
+        if self._has_tool_calls(last_message):
             return "tools_social"
         return "Msg Clear Social"
 
@@ -31,7 +36,7 @@ class ConditionalLogic:
         """Determine if news analysis should continue."""
         messages = state["messages"]
         last_message = messages[-1]
-        if last_message.tool_calls:
+        if self._has_tool_calls(last_message):
             return "tools_news"
         return "Msg Clear News"
 
@@ -39,9 +44,18 @@ class ConditionalLogic:
         """Determine if fundamentals analysis should continue."""
         messages = state["messages"]
         last_message = messages[-1]
-        if last_message.tool_calls:
+        if self._has_tool_calls(last_message):
             return "tools_fundamentals"
         return "Msg Clear Fundamentals"
+
+    def should_continue_quant(self, state: AgentState):
+        """Determine if quant analysis should continue.
+
+        The quant analyst is a single-prompt agent without tools,
+        so it always proceeds directly to the next step.
+        """
+        # Quant analyst has no tool calls - always proceed
+        return "Msg Clear Quant"
 
     def should_continue_debate(self, state: AgentState) -> str:
         """Determine if debate should continue."""

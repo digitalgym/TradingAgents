@@ -89,6 +89,24 @@ class SMCConstants:
     NY_OPEN_END = time(15, 0)
     NY_END = time(21, 0)
 
+    # Regime adjustment factors
+    # In trending markets: directional zones get boost, counter-trend zones get penalty
+    REGIME_TRENDING_ALIGNED_BOOST = 1.2  # 20% boost for trend-aligned zones
+    REGIME_TRENDING_COUNTER_PENALTY = 0.7  # 30% penalty for counter-trend zones
+    REGIME_RANGING_FVG_BOOST = 1.15  # FVGs more important in ranging markets
+    REGIME_RANGING_EQL_BOOST = 1.2  # Equal levels more important in ranging markets
+
+    # Time decay for zone strength (candles since formation)
+    TIME_DECAY_FRESH_THRESHOLD = 20  # < 20 candles = fresh (100%)
+    TIME_DECAY_AGING_THRESHOLD = 50  # 20-50 candles = aging (75%)
+    TIME_DECAY_OLD_THRESHOLD = 100  # 50-100 candles = old (50%)
+    TIME_DECAY_AGING_FACTOR = 0.75
+    TIME_DECAY_OLD_FACTOR = 0.50
+    TIME_DECAY_VERY_OLD_FACTOR = 0.25  # > 100 candles
+
+    # Confluence regime weight
+    CONFLUENCE_REGIME_ALIGNMENT_WEIGHT = 15
+
 
 @dataclass
 class OrderBlock:
@@ -396,7 +414,133 @@ class SmartMoneyAnalyzer:
             TradingSession.OFF_SESSION.value: 0.8,
         }
         return multipliers.get(session, 1.0)
-    
+
+    def get_regime_adjusted_strength(
+        self,
+        base_strength: float,
+        zone_type: str,
+        market_regime: Optional[str] = None,
+        zone_category: str = "ob"
+    ) -> float:
+        """
+        Adjust zone strength based on market regime.
+
+        In trending markets:
+        - Directional zones aligned with trend get boosted
+        - Counter-trend zones get penalized
+
+        In ranging markets:
+        - FVGs and Equal Highs/Lows get boosted (mean reversion)
+
+        Args:
+            base_strength: Original strength (0-1)
+            zone_type: "bullish" or "bearish"
+            market_regime: "trending-up", "trending-down", "ranging", or None
+            zone_category: "ob", "fvg", "liquidity", "eql" (equal level)
+
+        Returns:
+            Adjusted strength (clamped 0-1)
+        """
+        if not market_regime or base_strength <= 0:
+            return base_strength
+
+        adjusted = base_strength
+
+        if market_regime == "trending-up":
+            if zone_type == "bullish":
+                # Bullish zones align with uptrend
+                adjusted *= SMCConstants.REGIME_TRENDING_ALIGNED_BOOST
+            else:
+                # Bearish zones are counter-trend
+                adjusted *= SMCConstants.REGIME_TRENDING_COUNTER_PENALTY
+
+        elif market_regime == "trending-down":
+            if zone_type == "bearish":
+                # Bearish zones align with downtrend
+                adjusted *= SMCConstants.REGIME_TRENDING_ALIGNED_BOOST
+            else:
+                # Bullish zones are counter-trend
+                adjusted *= SMCConstants.REGIME_TRENDING_COUNTER_PENALTY
+
+        elif market_regime == "ranging":
+            # In ranging markets, FVGs and equal levels are more important
+            if zone_category == "fvg":
+                adjusted *= SMCConstants.REGIME_RANGING_FVG_BOOST
+            elif zone_category == "eql":
+                adjusted *= SMCConstants.REGIME_RANGING_EQL_BOOST
+
+        return min(max(adjusted, 0.0), 1.0)
+
+    def get_time_decay_factor(
+        self,
+        candles_since_formation: int
+    ) -> float:
+        """
+        Calculate time decay factor for zone strength.
+
+        Older zones are less reliable and should have reduced strength.
+        Fresh zones are more likely to produce reactions.
+
+        Args:
+            candles_since_formation: How many candles since zone formed
+
+        Returns:
+            Decay factor (0.25 to 1.0)
+        """
+        if candles_since_formation < SMCConstants.TIME_DECAY_FRESH_THRESHOLD:
+            return 1.0  # Fresh zone - full strength
+        elif candles_since_formation < SMCConstants.TIME_DECAY_AGING_THRESHOLD:
+            return SMCConstants.TIME_DECAY_AGING_FACTOR  # Aging - 75%
+        elif candles_since_formation < SMCConstants.TIME_DECAY_OLD_THRESHOLD:
+            return SMCConstants.TIME_DECAY_OLD_FACTOR  # Old - 50%
+        else:
+            return SMCConstants.TIME_DECAY_VERY_OLD_FACTOR  # Very old - 25%
+
+    def apply_zone_adjustments(
+        self,
+        zones: List[Any],
+        current_candle_index: int,
+        market_regime: Optional[str] = None,
+        zone_category: str = "ob"
+    ) -> List[Any]:
+        """
+        Apply regime and time adjustments to a list of zones.
+
+        Args:
+            zones: List of OrderBlock, FairValueGap, or similar zone objects
+            current_candle_index: Current candle index for time decay calculation
+            market_regime: Current market regime
+            zone_category: Type of zone ("ob", "fvg", "liquidity", "eql")
+
+        Returns:
+            Same zones with adjusted strength values
+        """
+        for zone in zones:
+            if not hasattr(zone, 'strength') or not hasattr(zone, 'type'):
+                continue
+
+            base_strength = zone.strength
+
+            # Apply time decay
+            if hasattr(zone, 'candle_index'):
+                candles_since = current_candle_index - zone.candle_index
+                time_factor = self.get_time_decay_factor(candles_since)
+                base_strength *= time_factor
+            elif hasattr(zone, 'start_index'):
+                candles_since = current_candle_index - zone.start_index
+                time_factor = self.get_time_decay_factor(candles_since)
+                base_strength *= time_factor
+
+            # Apply regime adjustment
+            zone_type = zone.type
+            adjusted = self.get_regime_adjusted_strength(
+                base_strength, zone_type, market_regime, zone_category
+            )
+
+            zone.strength = adjusted
+
+        return zones
+
     def detect_order_blocks(
         self,
         df: pd.DataFrame,
@@ -1740,7 +1884,9 @@ class SmartMoneyAnalyzer:
         self,
         price: float,
         analysis: Dict[str, Any],
-        tolerance_pct: float = 0.5
+        tolerance_pct: float = 0.5,
+        market_regime: Optional[str] = None,
+        trade_direction: Optional[str] = None
     ) -> ConfluenceScore:
         """
         Calculate confluence score at a specific price level.
@@ -1752,6 +1898,8 @@ class SmartMoneyAnalyzer:
             price: The price level to check
             analysis: Full SMC analysis dict from analyze_full_smc
             tolerance_pct: Price tolerance as percentage
+            market_regime: Current market regime ("trending-up", "trending-down", "ranging")
+            trade_direction: Proposed trade direction ("bullish" or "bearish")
 
         Returns:
             ConfluenceScore object
@@ -1761,6 +1909,27 @@ class SmartMoneyAnalyzer:
         bullish_factors = 0
         bearish_factors = 0
         tolerance = price * (tolerance_pct / 100)
+
+        # Add regime alignment bonus
+        if market_regime and trade_direction:
+            regime_aligned = False
+            if market_regime == "trending-up" and trade_direction == "bullish":
+                regime_aligned = True
+                factors.append("Regime aligned (bullish in uptrend)")
+            elif market_regime == "trending-down" and trade_direction == "bearish":
+                regime_aligned = True
+                factors.append("Regime aligned (bearish in downtrend)")
+            elif market_regime == "ranging":
+                # In ranging, both directions are valid at extremes
+                factors.append("Ranging market (mean reversion)")
+                regime_aligned = True
+
+            if regime_aligned:
+                score += SMCConstants.CONFLUENCE_REGIME_ALIGNMENT_WEIGHT
+                if trade_direction == "bullish":
+                    bullish_factors += 1
+                else:
+                    bearish_factors += 1
 
         # Check Order Blocks
         for ob in analysis['order_blocks']['bullish']:
@@ -1905,16 +2074,24 @@ class SmartMoneyAnalyzer:
         use_structural_obs: bool = True,
         include_equal_levels: bool = True,
         include_breakers: bool = True,
-        include_ote: bool = True
+        include_ote: bool = True,
+        include_sweeps: bool = True,
+        include_inducements: bool = True,
+        include_rejections: bool = True,
+        include_turtle_soup: bool = True
     ) -> Dict[str, Any]:
         """
-        Run extended full smart money analysis with all new features.
+        Run extended full smart money analysis with all features.
 
         This is an enhanced version of analyze_full_smc that includes:
         - Equal highs/lows detection
         - Breaker blocks
         - Premium/Discount zones
         - OTE zones
+        - Liquidity Sweeps (NEW)
+        - Inducement patterns (NEW)
+        - Rejection Blocks (NEW)
+        - Turtle Soup patterns (NEW)
         - Confluence scoring for key levels
 
         Args:
@@ -1924,6 +2101,10 @@ class SmartMoneyAnalyzer:
             include_equal_levels: Include equal highs/lows
             include_breakers: Include breaker block detection
             include_ote: Include OTE zone calculation
+            include_sweeps: Include liquidity sweep detection
+            include_inducements: Include inducement pattern detection
+            include_rejections: Include rejection block detection
+            include_turtle_soup: Include turtle soup detection
 
         Returns:
             Extended dict with all SMC analysis
@@ -1965,6 +2146,55 @@ class SmartMoneyAnalyzer:
             ote_zones = self.find_ote_zones(swing_points, current_price)
             analysis['ote_zones'] = ote_zones
 
+        # Add Liquidity Sweeps (NEW)
+        if include_sweeps:
+            sweeps = self.detect_liquidity_sweeps(df, swing_points)
+            recent_sweeps = [s for s in sweeps if s.sweep_candle_index >= len(df) - 10]
+            analysis['liquidity_sweeps'] = {
+                'total': len(sweeps),
+                'recent': recent_sweeps,
+                'bullish': [s for s in sweeps if s.type == 'bullish'],
+                'bearish': [s for s in sweeps if s.type == 'bearish'],
+                'strong_sweeps': [s for s in sweeps if s.is_strong]
+            }
+
+        # Add Inducements (NEW)
+        if include_inducements:
+            inducements = self.detect_inducements(df, swing_points)
+            recent_inducements = [ind for ind in inducements if ind.reversal_index >= len(df) - 15]
+            analysis['inducements'] = {
+                'total': len(inducements),
+                'recent': recent_inducements,
+                'bullish': [ind for ind in inducements if ind.type == 'bullish'],
+                'bearish': [ind for ind in inducements if ind.type == 'bearish']
+            }
+
+        # Add Rejection Blocks (NEW)
+        if include_rejections:
+            rejection_blocks = self.detect_rejection_blocks(df)
+            unmitigated_rejections = [rb for rb in rejection_blocks if not rb.mitigated]
+            analysis['rejection_blocks'] = {
+                'total': len(rejection_blocks),
+                'unmitigated': len(unmitigated_rejections),
+                'bullish': [rb for rb in rejection_blocks if rb.type == 'bullish'],
+                'bearish': [rb for rb in rejection_blocks if rb.type == 'bearish'],
+                'held': [rb for rb in rejection_blocks if rb.held]
+            }
+
+        # Add Turtle Soup (NEW)
+        if include_turtle_soup:
+            turtle_soups = self.detect_turtle_soup(df, swing_points)
+            recent_ts = [ts for ts in turtle_soups if ts.break_candle_index >= len(df) - 10]
+            analysis['turtle_soup'] = {
+                'total': len(turtle_soups),
+                'recent': recent_ts,
+                'bullish': [ts for ts in turtle_soups if ts.type == 'bullish'],
+                'bearish': [ts for ts in turtle_soups if ts.type == 'bearish']
+            }
+
+        # Generate alerts for actionable patterns
+        analysis['alerts'] = self._generate_pattern_alerts(analysis, current_price, df)
+
         # Calculate confluence for nearest support and resistance
         if analysis['nearest_support']:
             support_price = (analysis['nearest_support']['top'] + analysis['nearest_support']['bottom']) / 2
@@ -1978,3 +2208,637 @@ class SmartMoneyAnalyzer:
         analysis['current_confluence'] = self.calculate_confluence_score(current_price, analysis)
 
         return analysis
+
+    def _generate_pattern_alerts(
+        self,
+        analysis: Dict[str, Any],
+        current_price: float,
+        df: pd.DataFrame
+    ) -> List[Dict[str, Any]]:
+        """
+        Generate actionable alerts from detected patterns.
+
+        Args:
+            analysis: Full SMC analysis dict
+            current_price: Current market price
+            df: Price DataFrame
+
+        Returns:
+            List of alert dictionaries
+        """
+        alerts = []
+        last_candle_idx = len(df) - 1
+
+        # Alert on recent liquidity sweeps (high priority)
+        if 'liquidity_sweeps' in analysis:
+            for sweep in analysis['liquidity_sweeps'].get('recent', []):
+                if sweep.sweep_candle_index >= last_candle_idx - 3:
+                    alerts.append({
+                        'type': 'LIQUIDITY_SWEEP',
+                        'priority': 'HIGH' if sweep.is_strong else 'MEDIUM',
+                        'direction': sweep.signal_direction,
+                        'message': f"{'Strong ' if sweep.is_strong else ''}{sweep.type.upper()} sweep at {sweep.sweep_level:.5f}",
+                        'details': {
+                            'sweep_level': sweep.sweep_level,
+                            'rejection_strength': sweep.rejection_strength,
+                            'atr_penetration': sweep.atr_penetration,
+                            'session': sweep.session
+                        },
+                        'candle_index': sweep.sweep_candle_index,
+                        'timestamp': sweep.timestamp
+                    })
+
+        # Alert on recent inducements
+        if 'inducements' in analysis:
+            for ind in analysis['inducements'].get('recent', []):
+                if ind.reversal_index >= last_candle_idx - 5:
+                    alerts.append({
+                        'type': 'INDUCEMENT',
+                        'priority': 'HIGH',
+                        'direction': 'BUY' if ind.type == 'bullish' else 'SELL',
+                        'message': f"{ind.type.upper()} inducement - trapped {ind.trapped_direction}s at {ind.inducement_level:.5f}",
+                        'details': {
+                            'inducement_level': ind.inducement_level,
+                            'target_liquidity': ind.target_liquidity,
+                            'trapped_direction': ind.trapped_direction,
+                            'candles_to_reversal': ind.candles_to_reversal
+                        },
+                        'candle_index': ind.reversal_index,
+                        'timestamp': ind.timestamp
+                    })
+
+        # Alert on recent turtle soup patterns
+        if 'turtle_soup' in analysis:
+            for ts in analysis['turtle_soup'].get('recent', []):
+                if ts.break_candle_index >= last_candle_idx - 3:
+                    alerts.append({
+                        'type': 'TURTLE_SOUP',
+                        'priority': 'MEDIUM',
+                        'direction': ts.trade_direction,
+                        'message': f"{ts.type.upper()} Turtle Soup at {ts.level:.5f} (failed breakout)",
+                        'details': {
+                            'level': ts.level,
+                            'penetration_atr': ts.penetration_atr
+                        },
+                        'candle_index': ts.break_candle_index,
+                        'timestamp': ts.timestamp
+                    })
+
+        # Alert on strong rejection blocks that held
+        if 'rejection_blocks' in analysis:
+            for rb in analysis['rejection_blocks'].get('held', []):
+                if rb.candle_index >= last_candle_idx - 5 and not rb.mitigated:
+                    alerts.append({
+                        'type': 'REJECTION_BLOCK',
+                        'priority': 'MEDIUM' if rb.wick_atr_ratio < 1.5 else 'HIGH',
+                        'direction': 'BUY' if rb.type == 'bullish' else 'SELL',
+                        'message': f"{rb.type.upper()} rejection at {rb.rejection_price:.5f} ({rb.wick_atr_ratio:.1f}x ATR wick)",
+                        'details': {
+                            'rejection_price': rb.rejection_price,
+                            'zone_top': rb.zone_top,
+                            'zone_bottom': rb.zone_bottom,
+                            'wick_atr_ratio': rb.wick_atr_ratio,
+                            'session': rb.session
+                        },
+                        'candle_index': rb.candle_index,
+                        'timestamp': rb.timestamp
+                    })
+
+        # Alert on CHOCH (Change of Character) - trend reversal signal
+        if analysis['structure'].get('recent_choc'):
+            for choc in analysis['structure']['recent_choc']:
+                if choc.break_index and choc.break_index >= last_candle_idx - 10:
+                    direction = 'SELL' if choc.type == 'high' else 'BUY'
+                    alerts.append({
+                        'type': 'CHOCH',
+                        'priority': 'HIGH',
+                        'direction': direction,
+                        'message': f"Change of Character - broke {choc.type} at {choc.price:.5f}",
+                        'details': {
+                            'break_price': choc.price,
+                            'break_type': choc.break_type
+                        },
+                        'candle_index': choc.break_index,
+                        'timestamp': choc.timestamp
+                    })
+
+        # Sort alerts by priority and recency
+        priority_order = {'HIGH': 0, 'MEDIUM': 1, 'LOW': 2}
+        alerts.sort(key=lambda x: (priority_order.get(x['priority'], 2), -x['candle_index']))
+
+        return alerts
+
+    # =========================================================================
+    # LIQUIDITY SWEEPS & ADVANCED PATTERNS
+    # =========================================================================
+
+    def detect_liquidity_sweeps(
+        self,
+        df: pd.DataFrame,
+        swing_points: List[StructurePoint],
+        lookback: int = 30,
+        min_rejection_pct: float = 0.3
+    ) -> List['LiquiditySweep']:
+        """
+        Detect liquidity sweeps - price grabs stops then reverses.
+
+        A sweep is a high-probability reversal signal when:
+        1. Price breaks through a swing high/low (takes stops)
+        2. Price immediately reverses (rejection)
+        3. Candle closes back inside the previous range
+
+        Args:
+            df: DataFrame with OHLC data
+            swing_points: List of detected swing points
+            lookback: How many recent candles to check
+            min_rejection_pct: Minimum rejection (wick vs body ratio) to qualify
+
+        Returns:
+            List of LiquiditySweep objects
+        """
+        if len(df) < 10 or not swing_points:
+            return []
+
+        sweeps = []
+        atr_series = self._get_atr(df)
+
+        # Get recent swing highs and lows
+        recent_highs = [sp for sp in swing_points if sp.type == 'high']
+        recent_lows = [sp for sp in swing_points if sp.type == 'low']
+
+        start_idx = max(0, len(df) - lookback)
+
+        for i in range(start_idx, len(df)):
+            candle = df.iloc[i]
+            atr = atr_series.iloc[i] if i < len(atr_series) and pd.notna(atr_series.iloc[i]) else None
+            if atr is None or atr == 0:
+                continue
+
+            timestamp_str = str(candle.name) if hasattr(candle, 'name') else ''
+            session = self._identify_session(candle.name) if hasattr(candle, 'name') else None
+
+            # Check for bullish sweep (swept below swing low, closed above)
+            for sl in recent_lows:
+                if sl.index >= i:  # Can only sweep past swing points
+                    continue
+
+                # Check if this candle swept the low
+                if candle['low'] < sl.price and candle['close'] > sl.price:
+                    # Calculate rejection strength
+                    lower_wick = min(candle['open'], candle['close']) - candle['low']
+                    body_size = abs(candle['close'] - candle['open'])
+                    total_range = candle['high'] - candle['low']
+
+                    if total_range > 0:
+                        rejection_pct = lower_wick / total_range
+
+                        if rejection_pct >= min_rejection_pct:
+                            sweep = LiquiditySweep(
+                                type='bullish',
+                                sweep_level=sl.price,
+                                sweep_candle_index=i,
+                                sweep_low=candle['low'],
+                                sweep_high=candle['high'],
+                                close_price=candle['close'],
+                                rejection_strength=round(rejection_pct, 2),
+                                atr_penetration=round((sl.price - candle['low']) / atr, 2),
+                                timestamp=timestamp_str,
+                                session=session,
+                                swing_index=sl.index
+                            )
+                            sweeps.append(sweep)
+                            break  # Only count one sweep per candle
+
+            # Check for bearish sweep (swept above swing high, closed below)
+            for sh in recent_highs:
+                if sh.index >= i:
+                    continue
+
+                if candle['high'] > sh.price and candle['close'] < sh.price:
+                    upper_wick = candle['high'] - max(candle['open'], candle['close'])
+                    body_size = abs(candle['close'] - candle['open'])
+                    total_range = candle['high'] - candle['low']
+
+                    if total_range > 0:
+                        rejection_pct = upper_wick / total_range
+
+                        if rejection_pct >= min_rejection_pct:
+                            sweep = LiquiditySweep(
+                                type='bearish',
+                                sweep_level=sh.price,
+                                sweep_candle_index=i,
+                                sweep_low=candle['low'],
+                                sweep_high=candle['high'],
+                                close_price=candle['close'],
+                                rejection_strength=round(rejection_pct, 2),
+                                atr_penetration=round((candle['high'] - sh.price) / atr, 2),
+                                timestamp=timestamp_str,
+                                session=session,
+                                swing_index=sh.index
+                            )
+                            sweeps.append(sweep)
+                            break
+
+        return sweeps
+
+    def detect_inducements(
+        self,
+        df: pd.DataFrame,
+        swing_points: List[StructurePoint],
+        lookback: int = 50
+    ) -> List['Inducement']:
+        """
+        Detect inducement patterns - false breakouts to trap retail traders.
+
+        Inducement occurs when:
+        1. Price breaks a minor swing high/low
+        2. Traps traders in the wrong direction
+        3. Then reverses to take their stops
+
+        Often precedes a move to grab major liquidity.
+
+        Args:
+            df: DataFrame with OHLC data
+            swing_points: List of detected swing points
+            lookback: How many candles to analyze
+
+        Returns:
+            List of Inducement objects
+        """
+        if len(df) < 20 or len(swing_points) < 4:
+            return []
+
+        inducements = []
+        atr_series = self._get_atr(df)
+
+        # Sort swing points by recency
+        sorted_swings = sorted(swing_points, key=lambda x: x.index, reverse=True)
+
+        for i, sp in enumerate(sorted_swings[:-2]):  # Need at least 2 more swings after
+            if len(df) - sp.index > lookback:
+                continue
+
+            atr = atr_series.iloc[sp.index] if sp.index < len(atr_series) and pd.notna(atr_series.iloc[sp.index]) else None
+            if atr is None or atr == 0:
+                continue
+
+            timestamp_str = str(df.iloc[sp.index].name) if hasattr(df.iloc[sp.index], 'name') else ''
+
+            # Look for a break of this swing followed by reversal
+            if sp.type == 'high':
+                # Find if price broke above this high then reversed
+                broke_high = False
+                break_idx = None
+                reversal_idx = None
+
+                for j in range(sp.index + 1, min(sp.index + 15, len(df))):
+                    if df.iloc[j]['high'] > sp.price:
+                        broke_high = True
+                        break_idx = j
+                        break
+
+                if broke_high and break_idx:
+                    # Check for reversal within next 5 candles
+                    for k in range(break_idx + 1, min(break_idx + 6, len(df))):
+                        if df.iloc[k]['close'] < sp.price:
+                            reversal_idx = k
+
+                            # Find the low that was targeted (below current swing)
+                            target_lows = [s for s in swing_points if s.type == 'low' and s.index < sp.index]
+                            target_low = target_lows[-1].price if target_lows else None
+
+                            inducement = Inducement(
+                                type='bearish',  # Induces longs, then drops
+                                inducement_level=sp.price,
+                                inducement_index=sp.index,
+                                break_index=break_idx,
+                                reversal_index=reversal_idx,
+                                target_liquidity=target_low,
+                                timestamp=timestamp_str,
+                                trapped_direction='long'
+                            )
+                            inducements.append(inducement)
+                            break
+
+            elif sp.type == 'low':
+                # Find if price broke below this low then reversed
+                broke_low = False
+                break_idx = None
+                reversal_idx = None
+
+                for j in range(sp.index + 1, min(sp.index + 15, len(df))):
+                    if df.iloc[j]['low'] < sp.price:
+                        broke_low = True
+                        break_idx = j
+                        break
+
+                if broke_low and break_idx:
+                    for k in range(break_idx + 1, min(break_idx + 6, len(df))):
+                        if df.iloc[k]['close'] > sp.price:
+                            reversal_idx = k
+
+                            target_highs = [s for s in swing_points if s.type == 'high' and s.index < sp.index]
+                            target_high = target_highs[-1].price if target_highs else None
+
+                            inducement = Inducement(
+                                type='bullish',  # Induces shorts, then rallies
+                                inducement_level=sp.price,
+                                inducement_index=sp.index,
+                                break_index=break_idx,
+                                reversal_index=reversal_idx,
+                                target_liquidity=target_high,
+                                timestamp=timestamp_str,
+                                trapped_direction='short'
+                            )
+                            inducements.append(inducement)
+                            break
+
+        return inducements
+
+    def detect_rejection_blocks(
+        self,
+        df: pd.DataFrame,
+        lookback: int = 30,
+        min_wick_atr: float = 1.0,
+        min_wick_body_ratio: float = 2.0
+    ) -> List['RejectionBlock']:
+        """
+        Detect rejection blocks - strong rejection candles at key levels.
+
+        A rejection block forms when:
+        1. Price has a long wick (rejection)
+        2. Body is small relative to wick
+        3. Indicates strong buying/selling pressure
+
+        These often mark significant support/resistance levels.
+
+        Args:
+            df: DataFrame with OHLC data
+            lookback: How many candles to analyze
+            min_wick_atr: Minimum wick size in ATR multiples
+            min_wick_body_ratio: Minimum ratio of wick to body
+
+        Returns:
+            List of RejectionBlock objects
+        """
+        if len(df) < 10:
+            return []
+
+        rejection_blocks = []
+        atr_series = self._get_atr(df)
+
+        start_idx = max(0, len(df) - lookback)
+
+        for i in range(start_idx, len(df)):
+            candle = df.iloc[i]
+            atr = atr_series.iloc[i] if i < len(atr_series) and pd.notna(atr_series.iloc[i]) else None
+            if atr is None or atr == 0:
+                continue
+
+            timestamp_str = str(candle.name) if hasattr(candle, 'name') else ''
+            session = self._identify_session(candle.name) if hasattr(candle, 'name') else None
+
+            body_top = max(candle['open'], candle['close'])
+            body_bottom = min(candle['open'], candle['close'])
+            body_size = body_top - body_bottom
+
+            upper_wick = candle['high'] - body_top
+            lower_wick = body_bottom - candle['low']
+
+            # Bullish rejection (long lower wick)
+            if lower_wick >= atr * min_wick_atr:
+                if body_size > 0 and lower_wick / body_size >= min_wick_body_ratio:
+                    # Check if it held (next candle didn't break the low)
+                    held = True
+                    if i + 1 < len(df):
+                        held = df.iloc[i + 1]['low'] > candle['low']
+
+                    rb = RejectionBlock(
+                        type='bullish',
+                        rejection_price=candle['low'],
+                        body_top=body_top,
+                        body_bottom=body_bottom,
+                        wick_size=lower_wick,
+                        wick_atr_ratio=round(lower_wick / atr, 2),
+                        candle_index=i,
+                        timestamp=timestamp_str,
+                        session=session,
+                        held=held,
+                        mitigated=False
+                    )
+                    rejection_blocks.append(rb)
+
+            # Bearish rejection (long upper wick)
+            if upper_wick >= atr * min_wick_atr:
+                if body_size > 0 and upper_wick / body_size >= min_wick_body_ratio:
+                    held = True
+                    if i + 1 < len(df):
+                        held = df.iloc[i + 1]['high'] < candle['high']
+
+                    rb = RejectionBlock(
+                        type='bearish',
+                        rejection_price=candle['high'],
+                        body_top=body_top,
+                        body_bottom=body_bottom,
+                        wick_size=upper_wick,
+                        wick_atr_ratio=round(upper_wick / atr, 2),
+                        candle_index=i,
+                        timestamp=timestamp_str,
+                        session=session,
+                        held=held,
+                        mitigated=False
+                    )
+                    rejection_blocks.append(rb)
+
+        # Check for mitigation
+        for rb in rejection_blocks:
+            for j in range(rb.candle_index + 1, len(df)):
+                if rb.type == 'bullish' and df.iloc[j]['low'] < rb.rejection_price:
+                    rb.mitigated = True
+                    rb.mitigation_index = j
+                    break
+                elif rb.type == 'bearish' and df.iloc[j]['high'] > rb.rejection_price:
+                    rb.mitigated = True
+                    rb.mitigation_index = j
+                    break
+
+        return rejection_blocks
+
+    def detect_turtle_soup(
+        self,
+        df: pd.DataFrame,
+        swing_points: List[StructurePoint],
+        lookback: int = 30,
+        max_penetration_atr: float = 0.5
+    ) -> List['TurtleSoup']:
+        """
+        Detect Turtle Soup patterns - failed breakouts with quick reversals.
+
+        Named after the classic trading strategy, this pattern occurs when:
+        1. Price breaks a significant high/low
+        2. Fails to hold (reverses quickly)
+        3. Traps breakout traders
+
+        Similar to sweeps but focuses on the failure aspect.
+
+        Args:
+            df: DataFrame with OHLC data
+            swing_points: List of detected swing points
+            lookback: Candles to analyze
+            max_penetration_atr: Maximum break beyond level (in ATR)
+
+        Returns:
+            List of TurtleSoup objects
+        """
+        if len(df) < 20 or not swing_points:
+            return []
+
+        turtle_soups = []
+        atr_series = self._get_atr(df)
+
+        start_idx = max(0, len(df) - lookback)
+
+        for sp in swing_points:
+            if sp.index < start_idx or sp.index >= len(df) - 2:
+                continue
+
+            atr = atr_series.iloc[sp.index] if sp.index < len(atr_series) and pd.notna(atr_series.iloc[sp.index]) else None
+            if atr is None or atr == 0:
+                continue
+
+            timestamp_str = str(df.iloc[sp.index].name) if hasattr(df.iloc[sp.index], 'name') else ''
+
+            # Look for break and fail within next 3 candles
+            for i in range(sp.index + 1, min(sp.index + 4, len(df))):
+                candle = df.iloc[i]
+
+                if sp.type == 'high':
+                    # Bearish Turtle Soup: Breaks high, fails, reverses down
+                    penetration = candle['high'] - sp.price
+
+                    if penetration > 0 and penetration <= atr * max_penetration_atr:
+                        # Check if closed below the high (failed breakout)
+                        if candle['close'] < sp.price:
+                            ts = TurtleSoup(
+                                type='bearish',
+                                level=sp.price,
+                                break_candle_index=i,
+                                penetration=round(penetration, 5),
+                                penetration_atr=round(penetration / atr, 2),
+                                timestamp=timestamp_str,
+                                swing_index=sp.index
+                            )
+                            turtle_soups.append(ts)
+                            break
+
+                elif sp.type == 'low':
+                    # Bullish Turtle Soup: Breaks low, fails, reverses up
+                    penetration = sp.price - candle['low']
+
+                    if penetration > 0 and penetration <= atr * max_penetration_atr:
+                        if candle['close'] > sp.price:
+                            ts = TurtleSoup(
+                                type='bullish',
+                                level=sp.price,
+                                break_candle_index=i,
+                                penetration=round(penetration, 5),
+                                penetration_atr=round(penetration / atr, 2),
+                                timestamp=timestamp_str,
+                                swing_index=sp.index
+                            )
+                            turtle_soups.append(ts)
+                            break
+
+        return turtle_soups
+
+
+# =========================================================================
+# NEW DATACLASSES FOR ADVANCED PATTERNS
+# =========================================================================
+
+@dataclass
+class LiquiditySweep:
+    """A completed liquidity sweep (grab + reversal)"""
+    type: str  # "bullish" (swept lows, reversed up) or "bearish" (swept highs, reversed down)
+    sweep_level: float  # The swing high/low that was swept
+    sweep_candle_index: int
+    sweep_low: float  # Candle low
+    sweep_high: float  # Candle high
+    close_price: float  # Where candle closed
+    rejection_strength: float  # Wick to range ratio (0-1)
+    atr_penetration: float  # How far past the level in ATR multiples
+    timestamp: str
+    session: Optional[str] = None
+    swing_index: int = 0  # Index of the swing that was swept
+
+    @property
+    def is_strong(self) -> bool:
+        """Strong sweep has high rejection and penetration"""
+        return self.rejection_strength >= 0.5 and self.atr_penetration >= 0.2
+
+    @property
+    def signal_direction(self) -> str:
+        """Direction to trade after sweep"""
+        return "BUY" if self.type == "bullish" else "SELL"
+
+
+@dataclass
+class Inducement:
+    """Inducement pattern - false breakout to trap traders"""
+    type: str  # "bullish" (induces shorts then rallies) or "bearish"
+    inducement_level: float  # The level used to trap traders
+    inducement_index: int  # Candle index of the inducement swing
+    break_index: int  # When level was broken
+    reversal_index: int  # When reversal occurred
+    target_liquidity: Optional[float]  # The major liquidity target
+    timestamp: str
+    trapped_direction: str  # "long" or "short"
+
+    @property
+    def candles_to_reversal(self) -> int:
+        """How many candles from break to reversal"""
+        return self.reversal_index - self.break_index
+
+
+@dataclass
+class RejectionBlock:
+    """Strong rejection candle marking support/resistance"""
+    type: str  # "bullish" (rejection from below) or "bearish" (from above)
+    rejection_price: float  # The wick extreme
+    body_top: float
+    body_bottom: float
+    wick_size: float
+    wick_atr_ratio: float  # Wick size in ATR multiples
+    candle_index: int
+    timestamp: str
+    session: Optional[str] = None
+    held: bool = True  # Did the level hold on next candle
+    mitigated: bool = False
+    mitigation_index: Optional[int] = None
+
+    @property
+    def zone_top(self) -> float:
+        """Top of rejection zone (use for S/R)"""
+        return self.body_top if self.type == 'bullish' else self.rejection_price
+
+    @property
+    def zone_bottom(self) -> float:
+        """Bottom of rejection zone"""
+        return self.rejection_price if self.type == 'bullish' else self.body_bottom
+
+
+@dataclass
+class TurtleSoup:
+    """Turtle Soup - failed breakout pattern"""
+    type: str  # "bullish" (failed breakdown) or "bearish" (failed breakout)
+    level: float  # The level that was broken
+    break_candle_index: int
+    penetration: float  # How far price went past the level
+    penetration_atr: float  # Penetration in ATR multiples
+    timestamp: str
+    swing_index: int  # The swing that was broken
+
+    @property
+    def trade_direction(self) -> str:
+        """Direction to trade"""
+        return "BUY" if self.type == "bullish" else "SELL"

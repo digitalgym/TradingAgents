@@ -113,10 +113,11 @@ class GraphSetup:
 
         Args:
             selected_analysts (list): List of analyst types to include. Options are:
-                - "market": Market analyst
-                - "social": Social media analyst
-                - "news": News analyst
-                - "fundamentals": Fundamentals analyst
+                - "market": Market analyst (uses tools for indicators)
+                - "social": Social media analyst (uses tools for news)
+                - "news": News analyst (uses tools for news)
+                - "fundamentals": Fundamentals analyst (uses tools for financial data)
+                - "quant": Quant analyst (single-prompt, no tools, uses state data)
         """
         if len(selected_analysts) == 0:
             raise ValueError("Trading Agents Graph Setup Error: no analysts selected!")
@@ -160,6 +161,15 @@ class GraphSetup:
             delete_nodes["fundamentals"] = create_msg_delete()
             tool_nodes["fundamentals"] = self.tool_nodes["fundamentals"]
 
+        if "quant" in selected_analysts:
+            # Quant analyst is a single-prompt agent that uses structured output
+            # It receives all data via state (SMC, indicators, etc.) - no tools needed
+            analyst_nodes["quant"] = create_quant_analyst(
+                self.deep_thinking_llm, use_structured_output=True
+            )
+            delete_nodes["quant"] = create_msg_delete()
+            # No tool node for quant - it's a pure analysis agent
+
         # Create researcher and manager nodes
         bull_researcher_node = create_bull_researcher(
             self.quick_thinking_llm, self.bull_memory
@@ -192,7 +202,9 @@ class GraphSetup:
             workflow.add_node(
                 f"Msg Clear {analyst_type.capitalize()}", delete_nodes[analyst_type]
             )
-            workflow.add_node(f"tools_{analyst_type}", tool_nodes[analyst_type])
+            # Only add tool nodes for analysts that have them (quant doesn't)
+            if analyst_type in tool_nodes:
+                workflow.add_node(f"tools_{analyst_type}", tool_nodes[analyst_type])
 
         # Add other nodes
         workflow.add_node("Bull Researcher", bull_researcher_node)
@@ -212,16 +224,23 @@ class GraphSetup:
         # Connect analysts in sequence
         for i, analyst_type in enumerate(selected_analysts):
             current_analyst = f"{analyst_type.capitalize()} Analyst"
-            current_tools = f"tools_{analyst_type}"
             current_clear = f"Msg Clear {analyst_type.capitalize()}"
 
-            # Add conditional edges for current analyst
-            workflow.add_conditional_edges(
-                current_analyst,
-                getattr(self.conditional_logic, f"should_continue_{analyst_type}"),
-                [current_tools, current_clear],
-            )
-            workflow.add_edge(current_tools, current_analyst)
+            # Check if this analyst has tools (quant doesn't)
+            has_tools = analyst_type in tool_nodes
+
+            if has_tools:
+                current_tools = f"tools_{analyst_type}"
+                # Add conditional edges for current analyst (tool-using analysts)
+                workflow.add_conditional_edges(
+                    current_analyst,
+                    getattr(self.conditional_logic, f"should_continue_{analyst_type}"),
+                    [current_tools, current_clear],
+                )
+                workflow.add_edge(current_tools, current_analyst)
+            else:
+                # No-tool analysts (like quant) go directly to message clear
+                workflow.add_edge(current_analyst, current_clear)
 
             # Connect to next analyst or to Bull Researcher if this is the last analyst
             if i < len(selected_analysts) - 1:

@@ -1,0 +1,14 @@
+{
+  "symbol": "BTCUSD",
+  "analysis_timestamp": "2026-02-03T11:03:46.229471",
+  "evaluation_timestamp": "2026-02-08T09:02:00.898955",
+  "price_at_analysis": 79015.78,
+  "price_at_evaluation": 69349.67499999999,
+  "pct_change": -12.233132419878675,
+  "expected_direction": "sideways",
+  "actual_direction": "down",
+  "signal": "HOLD",
+  "prediction_correct": false,
+  "hypothetical_pnl": 0,
+  "lesson": "Prediction was incorrect. Price moved -12.23%."
+}

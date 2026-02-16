@@ -1,0 +1,14 @@
+{
+  "symbol": "COPPER-C",
+  "analysis_timestamp": "2026-02-03T10:37:05.103942",
+  "evaluation_timestamp": "2026-02-08T09:01:38.453717",
+  "price_at_analysis": 5.8607000000000005,
+  "price_at_evaluation": 5.841900000000001,
+  "pct_change": -0.3207807941030884,
+  "expected_direction": "up",
+  "actual_direction": "down",
+  "signal": "BUY",
+  "prediction_correct": false,
+  "hypothetical_pnl": -0.3207807941030884,
+  "lesson": "Prediction was incorrect. Price moved -0.32%."
+}

@@ -3,10 +3,12 @@
 import os
 from pathlib import Path
 import json
-from datetime import date
+from datetime import date, datetime, timedelta
 from typing import Dict, Any, Tuple, List, Optional
+import numpy as np
 
 from langchain_openai import ChatOpenAI
+from langchain_xai import ChatXAI
 from langchain_anthropic import ChatAnthropic
 from langchain_google_genai import ChatGoogleGenerativeAI
 
@@ -22,6 +24,7 @@ from tradingagents.agents.utils.agent_states import (
 )
 from tradingagents.dataflows.config import set_config
 from tradingagents.dataflows.mt5_data import get_asset_type, get_mt5_current_price
+from tradingagents.indicators.regime import RegimeDetector
 
 # Import the new abstract tool methods from agent_utils
 from tradingagents.agents.utils.agent_utils import (
@@ -85,15 +88,25 @@ class TradingAgentsGraph:
         )
 
         # Initialize LLMs
-        if self.config["llm_provider"].lower() in ["openai", "ollama", "openrouter", "xai", "grok"]:
-            # Get API key as plain string (NOT callable) to avoid async issues
-            if self.config["llm_provider"].lower() in ["xai", "grok"]:
-                api_key = os.environ.get("XAI_API_KEY") or ""
-            else:
-                api_key = os.environ.get("OPENAI_API_KEY") or ""
-
+        if self.config["llm_provider"].lower() in ["xai", "grok"]:
+            # Use dedicated ChatXAI for xAI/Grok models
+            api_key = os.environ.get("XAI_API_KEY") or ""
             if not api_key:
-                raise ValueError(f"API key not found for provider {self.config['llm_provider']}")
+                raise ValueError("XAI_API_KEY not found for xAI provider")
+
+            self.deep_thinking_llm = ChatXAI(
+                model=self.config["deep_think_llm"],
+                xai_api_key=api_key
+            )
+            self.quick_thinking_llm = ChatXAI(
+                model=self.config["quick_think_llm"],
+                xai_api_key=api_key
+            )
+        elif self.config["llm_provider"].lower() in ["openai", "ollama", "openrouter"]:
+            # Use ChatOpenAI for OpenAI-compatible providers
+            api_key = os.environ.get("OPENAI_API_KEY") or ""
+            if not api_key:
+                raise ValueError(f"OPENAI_API_KEY not found for provider {self.config['llm_provider']}")
 
             # Create OpenAI client explicitly for sync operations
             from openai import OpenAI
@@ -230,9 +243,17 @@ class TradingAgentsGraph:
         # Some brokers use different price formats (e.g., silver at 108.xx instead of 31.xx)
         current_price = self._get_current_price(company_name)
 
-        # Initialize state with current price
+        # Detect market regime for context-aware decisions
+        regime_info = self._detect_regime(company_name)
+
+        # Initialize state with current price and regime info
         init_agent_state = self.propagator.create_initial_state(
-            company_name, trade_date, current_price=current_price
+            company_name,
+            trade_date,
+            current_price=current_price,
+            market_regime=regime_info.get("market_regime"),
+            volatility_regime=regime_info.get("volatility_regime"),
+            regime_description=regime_info.get("regime_description"),
         )
 
         # Add SMC context to state if provided
@@ -296,6 +317,7 @@ class TradingAgentsGraph:
             "Social Analyst": ("social_analyst", "Social Sentiment", "Analyzing social media sentiment..."),
             "News Analyst": ("news_analyst", "News Analyst", "Analyzing market news..."),
             "Fundamentals Analyst": ("fundamentals_analyst", "Fundamentals Analyst", "Analyzing company fundamentals..."),
+            "Quant Analyst": ("quant_analyst", "Quant Analyst", "Generating systematic trade decision..."),
             "Bull Researcher": ("bull_researcher", "Bull Researcher", "Building bullish case..."),
             "Bear Researcher": ("bear_researcher", "Bear Researcher", "Building bearish case..."),
             "Research Manager": ("research_manager", "Research Manager", "Synthesizing research debate..."),
@@ -320,6 +342,7 @@ class TradingAgentsGraph:
             "social_analyst": 10,
             "news_analyst": 10,
             "fundamentals_analyst": 5,
+            "quant_analyst": 10,
             "bull_researcher": 10,
             "bear_researcher": 10,
             "research_manager": 10,
@@ -333,9 +356,17 @@ class TradingAgentsGraph:
         # Get current broker price FIRST - critical for accurate analysis
         current_price = self._get_current_price(company_name)
 
-        # Initialize state with current price
+        # Detect market regime for context-aware decisions
+        regime_info = self._detect_regime(company_name)
+
+        # Initialize state with current price and regime info
         init_agent_state = self.propagator.create_initial_state(
-            company_name, trade_date, current_price=current_price
+            company_name,
+            trade_date,
+            current_price=current_price,
+            market_regime=regime_info.get("market_regime"),
+            volatility_regime=regime_info.get("volatility_regime"),
+            regime_description=regime_info.get("regime_description"),
         )
         if smc_context:
             init_agent_state["smc_context"] = smc_context
@@ -524,6 +555,7 @@ class TradingAgentsGraph:
             "Social Analyst": "sentiment_report",
             "News Analyst": "news_report",
             "Fundamentals Analyst": "fundamentals_report",
+            "Quant Analyst": "quant_report",
             "Trader": "trader_investment_plan",
         }
 
@@ -589,6 +621,12 @@ class TradingAgentsGraph:
             agent_outputs["fundamentals_analyst"] = {
                 "title": "Fundamentals Analyst",
                 "output": final_state["fundamentals_report"][:1000]
+            }
+
+        if final_state.get("quant_report"):
+            agent_outputs["quant_analyst"] = {
+                "title": "Quant Analyst",
+                "output": final_state["quant_report"][:1000]
             }
 
         debate_state = final_state.get("investment_debate_state", {})
@@ -657,6 +695,8 @@ class TradingAgentsGraph:
             "sentiment_report": final_state["sentiment_report"],
             "news_report": final_state["news_report"],
             "fundamentals_report": final_state["fundamentals_report"],
+            "quant_report": final_state.get("quant_report"),
+            "quant_decision": final_state.get("quant_decision"),
             "investment_debate_state": {
                 "bull_history": final_state["investment_debate_state"]["bull_history"],
                 "bear_history": final_state["investment_debate_state"]["bear_history"],
@@ -872,3 +912,41 @@ class TradingAgentsGraph:
         except Exception:
             pass
         return None
+
+    def _detect_regime(self, symbol: str) -> Dict[str, str]:
+        """Detect current market regime for a symbol.
+
+        Returns:
+            Dict with market_regime, volatility_regime, regime_description
+        """
+        try:
+            import MetaTrader5 as mt5
+            from tradingagents.dataflows.mt5_data import _ensure_mt5_initialized, _resolve_symbol
+
+            _ensure_mt5_initialized()
+            mt5_symbol = _resolve_symbol(symbol)
+
+            # Get last 100 candles for regime detection (D1 timeframe)
+            rates = mt5.copy_rates_from_pos(mt5_symbol, mt5.TIMEFRAME_D1, 0, 150)
+
+            if rates is None or len(rates) < 50:
+                return {"market_regime": None, "volatility_regime": None, "regime_description": None}
+
+            # Extract OHLC arrays
+            high = np.array([r['high'] for r in rates])
+            low = np.array([r['low'] for r in rates])
+            close = np.array([r['close'] for r in rates])
+
+            # Detect regime
+            detector = RegimeDetector()
+            regime = detector.get_full_regime(high, low, close)
+            regime_description = detector.get_regime_description(regime)
+
+            return {
+                "market_regime": regime.get("market_regime"),
+                "volatility_regime": regime.get("volatility_regime"),
+                "regime_description": regime_description,
+            }
+        except Exception as e:
+            # Silently fail - regime detection is optional
+            return {"market_regime": None, "volatility_regime": None, "regime_description": None}
