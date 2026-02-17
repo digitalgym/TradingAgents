@@ -28,7 +28,6 @@ from tradingagents.dataflows.mt5_data import (
     execute_trade_signal,
     get_mt5_symbol_info,
     check_mt5_autotrading,
-    get_atr_for_symbol,
 )
 
 # Risk management
@@ -36,6 +35,7 @@ from tradingagents.risk import (
     RiskGuardrails,
     DynamicStopLoss,
     PositionSizer,
+    get_atr_for_symbol,
 )
 
 # Trade decision tracking

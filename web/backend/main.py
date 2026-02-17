@@ -5572,6 +5572,39 @@ async def run_quant_analysis(request: QuantAnalysisRequest):
         else:
             market_regime = "ranging"
 
+        # === Volume Analysis ===
+        volume_col = 'tick_volume' if 'tick_volume' in df.columns else 'real_volume'
+        if volume_col in df.columns:
+            current_volume = df[volume_col].iloc[-1]
+            avg_volume_20 = df[volume_col].rolling(20).mean().iloc[-1]
+            volume_ratio = current_volume / avg_volume_20 if avg_volume_20 > 0 else 1.0
+
+            # Volume trend (last 5 bars)
+            recent_volumes = df[volume_col].iloc[-5:]
+            volume_trend = "increasing" if recent_volumes.iloc[-1] > recent_volumes.iloc[0] else "decreasing"
+
+            # Volume spike detection (>1.5x average)
+            volume_spike = current_volume > avg_volume_20 * 1.5
+
+            # Volume profile description
+            if volume_ratio > 2.0:
+                volume_profile = "Very High (spike)"
+            elif volume_ratio > 1.5:
+                volume_profile = "High"
+            elif volume_ratio > 0.8:
+                volume_profile = "Normal"
+            elif volume_ratio > 0.5:
+                volume_profile = "Low"
+            else:
+                volume_profile = "Very Low"
+        else:
+            current_volume = 0
+            avg_volume_20 = 0
+            volume_ratio = 1.0
+            volume_trend = "unknown"
+            volume_spike = False
+            volume_profile = "N/A"
+
         # === STEP 2: Run SMC Analysis ===
         from tradingagents.indicators.smart_money import SmartMoneyAnalyzer
 
@@ -5604,6 +5637,13 @@ async def run_quant_analysis(request: QuantAnalysisRequest):
 - **Volatility**: {volatility_regime}
 - **Bollinger Bands**: Upper={bb_upper_val:.5f} | Middle={bb_middle_val:.5f} | Lower={bb_lower_val:.5f}
   - {"Price near upper band" if current_price > bb_upper_val * 0.99 else "Price near lower band" if current_price < bb_lower_val * 1.01 else "Price within bands"}
+
+### Volume
+- **Current Bar Volume**: {current_volume:,.0f} ticks
+- **20-bar Avg Volume**: {avg_volume_20:,.0f} ticks
+- **Volume Ratio**: {volume_ratio:.2f}x average {"⚠️ SPIKE" if volume_spike else ""}
+- **Volume Profile**: {volume_profile}
+- **Volume Trend (5 bars)**: {volume_trend}
 """
 
         # === STEP 4: Call Quant Analyst LLM ===

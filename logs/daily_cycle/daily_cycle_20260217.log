@@ -1,0 +1,778 @@
+2026-02-17 22:40:43,967 - INFO - Daily Cycle starting...
+2026-02-17 22:40:43,973 - INFO - Arguments: symbols=['XAUUSD', 'XAGUSD', 'XPTUSD', 'COPPER-C', 'BTCUSD'], run_at=9, run_once=False
+2026-02-17 22:40:43,973 - INFO - Analyzing multiple symbols: XAUUSD, XAGUSD, XPTUSD, COPPER-C, BTCUSD
+2026-02-17 22:40:43,973 - INFO - Starting multi-symbol scheduler with symbols: ['XAUUSD', 'XAGUSD', 'XPTUSD', 'COPPER-C', 'BTCUSD']
+2026-02-17 22:40:44,004 - INFO - ======================================================================
+2026-02-17 22:40:44,004 - INFO - MULTI-SYMBOL ANALYSIS SCHEDULER STARTED
+2026-02-17 22:40:44,004 - INFO - ======================================================================
+2026-02-17 22:40:44,004 - INFO - Symbols: XAUUSD, XAGUSD, XPTUSD, COPPER-C, BTCUSD
+2026-02-17 22:40:44,004 - INFO - Start time: 09:00 daily
+2026-02-17 22:40:44,004 - INFO - Stagger: 5 minutes between symbols
+2026-02-17 22:40:44,004 - INFO - Evaluation window: 24 hours
+2026-02-17 22:40:44,004 - INFO - Min hours between runs: 12
+2026-02-17 22:40:44,004 - INFO - Press Ctrl+C to stop
+2026-02-17 22:40:44,004 - INFO - ======================================================================
+2026-02-17 22:40:44,004 - INFO - [XAUUSD] Scheduled at 09:00
+2026-02-17 22:40:44,042 - INFO - [XAUUSD] Running initial cycle... (Last run was 325.4 hours ago)
+2026-02-17 22:40:44,042 - INFO - ======================================================================
+2026-02-17 22:40:44,042 - INFO - ANALYSIS CYCLE - XAUUSD
+2026-02-17 22:40:44,043 - INFO - Time: 2026-02-17 22:40:44
+2026-02-17 22:40:44,043 - INFO - Evaluation window: 24 hours
+2026-02-17 22:40:44,043 - INFO - ======================================================================
+2026-02-17 22:40:44,043 - INFO - Initializing TradingAgentsGraph...
+2026-02-17 22:40:49,300 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2026-02-17 22:41:05,573 - INFO - TradingAgentsGraph initialized successfully
+2026-02-17 22:41:06,834 - INFO - No pending predictions to evaluate for XAUUSD
+2026-02-17 22:41:07,301 - INFO - Running analysis for XAUUSD on 2026-02-17...
+2026-02-17 22:41:07,317 - INFO - Running Smart Money Concepts analysis...
+2026-02-17 22:41:10,041 - INFO - SMC Analysis: 1/3 timeframes bullish
+2026-02-17 22:41:10,041 - INFO - Running main analysis with graph.propagate()...
+2026-02-17 22:41:11,355 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-02-17 22:41:11,355 - INFO - Retrying request to /chat/completions in 0.398342 seconds
+2026-02-17 22:41:12,007 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-02-17 22:41:12,007 - INFO - Retrying request to /chat/completions in 0.822542 seconds
+2026-02-17 22:41:13,341 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-02-17 22:41:13,341 - ERROR - Graph propagation failed: Error code: 429 - {'code': 'Some resource has been exhausted', 'error': 'Your team b78a669a-bf41-44e6-9868-e359af3f5b8a has either used all available credits or reached its monthly spending limit. To continue making API requests, please purchase more credits or raise your spending limit.'}
+2026-02-17 22:41:13,708 - ERROR - Traceback (most recent call last):
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 779, in _run_analysis
+    final_state, signal = self.graph.propagate(self.symbol, trade_date)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\graph\trading_graph.py", line 278, in propagate
+    final_state = self.graph.invoke(init_agent_state, **args)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\main.py", line 3068, in invoke
+    for chunk in self.stream(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\main.py", line 2643, in stream
+    for _ in runner.tick(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\_runner.py", line 167, in tick
+    run_with_retry(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\_retry.py", line 42, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 656, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 400, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\agents\analysts\market_analyst.py", line 104, in market_analyst_node
+    result = chain.invoke(state["messages"])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\runnables\base.py", line 3151, in invoke
+    input_ = context.run(step.invoke, input_, config)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\runnables\base.py", line 5557, in invoke
+    return self.bound.invoke(
+           ^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 402, in invoke
+    self.generate_prompt(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 1121, in generate_prompt
+    return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 931, in generate
+    self._generate_with_cache(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 1233, in _generate_with_cache
+    result = self._generate(
+             ^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_openai\chat_models\base.py", line 1386, in _generate
+    raise e
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_openai\chat_models\base.py", line 1381, in _generate
+    raw_response = self.client.with_raw_response.create(**payload)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_legacy_response.py", line 364, in wrapped
+    return cast(LegacyAPIResponse[R], func(*args, **kwargs))
+                                      ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_utils\_utils.py", line 286, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 1192, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_base_client.py", line 1259, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_base_client.py", line 1047, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.RateLimitError: Error code: 429 - {'code': 'Some resource has been exhausted', 'error': 'Your team b78a669a-bf41-44e6-9868-e359af3f5b8a has either used all available credits or reached its monthly spending limit. To continue making API requests, please purchase more credits or raise your spending limit.'}
+During task with name 'Market Analyst' and id '09df30a1-33f8-d456-a2d6-8d882e73f73d'
+
+2026-02-17 22:41:13,708 - ERROR - [XAUUSD] Error in initial cycle: Error code: 429 - {'code': 'Some resource has been exhausted', 'error': 'Your team b78a669a-bf41-44e6-9868-e359af3f5b8a has either used all available credits or reached its monthly spending limit. To continue making API requests, please purchase more credits or raise your spending limit.'}
+2026-02-17 22:41:13,708 - ERROR - Traceback (most recent call last):
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 1301, in run_multi_symbol_scheduler
+    cycle.run_cycle()
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 640, in run_cycle
+    final_state, signal, smc_analysis = self._run_analysis()
+                                        ^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 779, in _run_analysis
+    final_state, signal = self.graph.propagate(self.symbol, trade_date)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\graph\trading_graph.py", line 278, in propagate
+    final_state = self.graph.invoke(init_agent_state, **args)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\main.py", line 3068, in invoke
+    for chunk in self.stream(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\main.py", line 2643, in stream
+    for _ in runner.tick(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\_runner.py", line 167, in tick
+    run_with_retry(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\_retry.py", line 42, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 656, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 400, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\agents\analysts\market_analyst.py", line 104, in market_analyst_node
+    result = chain.invoke(state["messages"])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\runnables\base.py", line 3151, in invoke
+    input_ = context.run(step.invoke, input_, config)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\runnables\base.py", line 5557, in invoke
+    return self.bound.invoke(
+           ^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 402, in invoke
+    self.generate_prompt(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 1121, in generate_prompt
+    return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 931, in generate
+    self._generate_with_cache(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 1233, in _generate_with_cache
+    result = self._generate(
+             ^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_openai\chat_models\base.py", line 1386, in _generate
+    raise e
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_openai\chat_models\base.py", line 1381, in _generate
+    raw_response = self.client.with_raw_response.create(**payload)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_legacy_response.py", line 364, in wrapped
+    return cast(LegacyAPIResponse[R], func(*args, **kwargs))
+                                      ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_utils\_utils.py", line 286, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 1192, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_base_client.py", line 1259, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_base_client.py", line 1047, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.RateLimitError: Error code: 429 - {'code': 'Some resource has been exhausted', 'error': 'Your team b78a669a-bf41-44e6-9868-e359af3f5b8a has either used all available credits or reached its monthly spending limit. To continue making API requests, please purchase more credits or raise your spending limit.'}
+During task with name 'Market Analyst' and id '09df30a1-33f8-d456-a2d6-8d882e73f73d'
+
+2026-02-17 22:41:13,708 - INFO - [XAGUSD] Scheduled at 09:05
+2026-02-17 22:41:13,724 - INFO - [XAGUSD] Running initial cycle... (Last run was 349.0 hours ago)
+2026-02-17 22:41:13,724 - INFO - ======================================================================
+2026-02-17 22:41:13,724 - INFO - ANALYSIS CYCLE - XAGUSD
+2026-02-17 22:41:13,724 - INFO - Time: 2026-02-17 22:41:13
+2026-02-17 22:41:13,724 - INFO - Evaluation window: 24 hours
+2026-02-17 22:41:13,724 - INFO - ======================================================================
+2026-02-17 22:41:13,724 - INFO - Initializing TradingAgentsGraph...
+2026-02-17 22:41:25,953 - INFO - TradingAgentsGraph initialized successfully
+2026-02-17 22:41:25,980 - INFO - No pending predictions to evaluate for XAGUSD
+2026-02-17 22:41:25,987 - INFO - Running analysis for XAGUSD on 2026-02-17...
+2026-02-17 22:41:25,987 - INFO - Running Smart Money Concepts analysis...
+2026-02-17 22:41:28,111 - INFO - SMC Analysis: 2/3 timeframes bearish
+2026-02-17 22:41:28,111 - INFO - Running main analysis with graph.propagate()...
+2026-02-17 22:41:28,390 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-02-17 22:41:28,390 - INFO - Retrying request to /chat/completions in 0.398086 seconds
+2026-02-17 22:41:29,024 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-02-17 22:41:29,024 - INFO - Retrying request to /chat/completions in 0.832976 seconds
+2026-02-17 22:41:30,124 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-02-17 22:41:30,124 - ERROR - Graph propagation failed: Error code: 429 - {'code': 'Some resource has been exhausted', 'error': 'Your team b78a669a-bf41-44e6-9868-e359af3f5b8a has either used all available credits or reached its monthly spending limit. To continue making API requests, please purchase more credits or raise your spending limit.'}
+2026-02-17 22:41:30,124 - ERROR - Traceback (most recent call last):
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 779, in _run_analysis
+    final_state, signal = self.graph.propagate(self.symbol, trade_date)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\graph\trading_graph.py", line 278, in propagate
+    final_state = self.graph.invoke(init_agent_state, **args)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\main.py", line 3068, in invoke
+    for chunk in self.stream(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\main.py", line 2643, in stream
+    for _ in runner.tick(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\_runner.py", line 167, in tick
+    run_with_retry(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\_retry.py", line 42, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 656, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 400, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\agents\analysts\market_analyst.py", line 104, in market_analyst_node
+    result = chain.invoke(state["messages"])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\runnables\base.py", line 3151, in invoke
+    input_ = context.run(step.invoke, input_, config)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\runnables\base.py", line 5557, in invoke
+    return self.bound.invoke(
+           ^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 402, in invoke
+    self.generate_prompt(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 1121, in generate_prompt
+    return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 931, in generate
+    self._generate_with_cache(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 1233, in _generate_with_cache
+    result = self._generate(
+             ^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_openai\chat_models\base.py", line 1386, in _generate
+    raise e
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_openai\chat_models\base.py", line 1381, in _generate
+    raw_response = self.client.with_raw_response.create(**payload)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_legacy_response.py", line 364, in wrapped
+    return cast(LegacyAPIResponse[R], func(*args, **kwargs))
+                                      ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_utils\_utils.py", line 286, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 1192, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_base_client.py", line 1259, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_base_client.py", line 1047, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.RateLimitError: Error code: 429 - {'code': 'Some resource has been exhausted', 'error': 'Your team b78a669a-bf41-44e6-9868-e359af3f5b8a has either used all available credits or reached its monthly spending limit. To continue making API requests, please purchase more credits or raise your spending limit.'}
+During task with name 'Market Analyst' and id '6a443c2f-af21-a86d-91fe-53a3181b1d90'
+
+2026-02-17 22:41:30,124 - ERROR - [XAGUSD] Error in initial cycle: Error code: 429 - {'code': 'Some resource has been exhausted', 'error': 'Your team b78a669a-bf41-44e6-9868-e359af3f5b8a has either used all available credits or reached its monthly spending limit. To continue making API requests, please purchase more credits or raise your spending limit.'}
+2026-02-17 22:41:30,124 - ERROR - Traceback (most recent call last):
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 1301, in run_multi_symbol_scheduler
+    cycle.run_cycle()
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 640, in run_cycle
+    final_state, signal, smc_analysis = self._run_analysis()
+                                        ^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 779, in _run_analysis
+    final_state, signal = self.graph.propagate(self.symbol, trade_date)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\graph\trading_graph.py", line 278, in propagate
+    final_state = self.graph.invoke(init_agent_state, **args)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\main.py", line 3068, in invoke
+    for chunk in self.stream(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\main.py", line 2643, in stream
+    for _ in runner.tick(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\_runner.py", line 167, in tick
+    run_with_retry(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\_retry.py", line 42, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 656, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 400, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\agents\analysts\market_analyst.py", line 104, in market_analyst_node
+    result = chain.invoke(state["messages"])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\runnables\base.py", line 3151, in invoke
+    input_ = context.run(step.invoke, input_, config)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\runnables\base.py", line 5557, in invoke
+    return self.bound.invoke(
+           ^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 402, in invoke
+    self.generate_prompt(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 1121, in generate_prompt
+    return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 931, in generate
+    self._generate_with_cache(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 1233, in _generate_with_cache
+    result = self._generate(
+             ^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_openai\chat_models\base.py", line 1386, in _generate
+    raise e
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_openai\chat_models\base.py", line 1381, in _generate
+    raw_response = self.client.with_raw_response.create(**payload)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_legacy_response.py", line 364, in wrapped
+    return cast(LegacyAPIResponse[R], func(*args, **kwargs))
+                                      ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_utils\_utils.py", line 286, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 1192, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_base_client.py", line 1259, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_base_client.py", line 1047, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.RateLimitError: Error code: 429 - {'code': 'Some resource has been exhausted', 'error': 'Your team b78a669a-bf41-44e6-9868-e359af3f5b8a has either used all available credits or reached its monthly spending limit. To continue making API requests, please purchase more credits or raise your spending limit.'}
+During task with name 'Market Analyst' and id '6a443c2f-af21-a86d-91fe-53a3181b1d90'
+
+2026-02-17 22:41:30,124 - INFO - [XPTUSD] Scheduled at 09:10
+2026-02-17 22:41:30,124 - INFO - [XPTUSD] Running initial cycle... (Last run was 348.5 hours ago)
+2026-02-17 22:41:30,124 - INFO - ======================================================================
+2026-02-17 22:41:30,124 - INFO - ANALYSIS CYCLE - XPTUSD
+2026-02-17 22:41:30,124 - INFO - Time: 2026-02-17 22:41:30
+2026-02-17 22:41:30,124 - INFO - Evaluation window: 24 hours
+2026-02-17 22:41:30,124 - INFO - ======================================================================
+2026-02-17 22:41:30,124 - INFO - Initializing TradingAgentsGraph...
+2026-02-17 22:41:44,005 - INFO - TradingAgentsGraph initialized successfully
+2026-02-17 22:41:44,026 - INFO - No pending predictions to evaluate for XPTUSD
+2026-02-17 22:41:44,031 - INFO - Running analysis for XPTUSD on 2026-02-17...
+2026-02-17 22:41:44,031 - INFO - Running Smart Money Concepts analysis...
+2026-02-17 22:41:46,281 - INFO - SMC Analysis: 2/3 timeframes bearish
+2026-02-17 22:41:46,281 - INFO - Running main analysis with graph.propagate()...
+2026-02-17 22:41:46,581 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-02-17 22:41:46,581 - INFO - Retrying request to /chat/completions in 0.466984 seconds
+2026-02-17 22:41:47,291 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-02-17 22:41:47,292 - INFO - Retrying request to /chat/completions in 0.820372 seconds
+2026-02-17 22:41:48,350 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-02-17 22:41:48,350 - ERROR - Graph propagation failed: Error code: 429 - {'code': 'Some resource has been exhausted', 'error': 'Your team b78a669a-bf41-44e6-9868-e359af3f5b8a has either used all available credits or reached its monthly spending limit. To continue making API requests, please purchase more credits or raise your spending limit.'}
+2026-02-17 22:41:48,350 - ERROR - Traceback (most recent call last):
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 779, in _run_analysis
+    final_state, signal = self.graph.propagate(self.symbol, trade_date)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\graph\trading_graph.py", line 278, in propagate
+    final_state = self.graph.invoke(init_agent_state, **args)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\main.py", line 3068, in invoke
+    for chunk in self.stream(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\main.py", line 2643, in stream
+    for _ in runner.tick(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\_runner.py", line 167, in tick
+    run_with_retry(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\_retry.py", line 42, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 656, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 400, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\agents\analysts\market_analyst.py", line 104, in market_analyst_node
+    result = chain.invoke(state["messages"])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\runnables\base.py", line 3151, in invoke
+    input_ = context.run(step.invoke, input_, config)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\runnables\base.py", line 5557, in invoke
+    return self.bound.invoke(
+           ^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 402, in invoke
+    self.generate_prompt(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 1121, in generate_prompt
+    return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 931, in generate
+    self._generate_with_cache(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 1233, in _generate_with_cache
+    result = self._generate(
+             ^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_openai\chat_models\base.py", line 1386, in _generate
+    raise e
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_openai\chat_models\base.py", line 1381, in _generate
+    raw_response = self.client.with_raw_response.create(**payload)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_legacy_response.py", line 364, in wrapped
+    return cast(LegacyAPIResponse[R], func(*args, **kwargs))
+                                      ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_utils\_utils.py", line 286, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 1192, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_base_client.py", line 1259, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_base_client.py", line 1047, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.RateLimitError: Error code: 429 - {'code': 'Some resource has been exhausted', 'error': 'Your team b78a669a-bf41-44e6-9868-e359af3f5b8a has either used all available credits or reached its monthly spending limit. To continue making API requests, please purchase more credits or raise your spending limit.'}
+During task with name 'Market Analyst' and id '71a13603-48e8-50b7-6efa-e6f75bdb7250'
+
+2026-02-17 22:41:48,350 - ERROR - [XPTUSD] Error in initial cycle: Error code: 429 - {'code': 'Some resource has been exhausted', 'error': 'Your team b78a669a-bf41-44e6-9868-e359af3f5b8a has either used all available credits or reached its monthly spending limit. To continue making API requests, please purchase more credits or raise your spending limit.'}
+2026-02-17 22:41:48,350 - ERROR - Traceback (most recent call last):
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 1301, in run_multi_symbol_scheduler
+    cycle.run_cycle()
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 640, in run_cycle
+    final_state, signal, smc_analysis = self._run_analysis()
+                                        ^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 779, in _run_analysis
+    final_state, signal = self.graph.propagate(self.symbol, trade_date)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\graph\trading_graph.py", line 278, in propagate
+    final_state = self.graph.invoke(init_agent_state, **args)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\main.py", line 3068, in invoke
+    for chunk in self.stream(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\main.py", line 2643, in stream
+    for _ in runner.tick(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\_runner.py", line 167, in tick
+    run_with_retry(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\_retry.py", line 42, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 656, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 400, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\agents\analysts\market_analyst.py", line 104, in market_analyst_node
+    result = chain.invoke(state["messages"])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\runnables\base.py", line 3151, in invoke
+    input_ = context.run(step.invoke, input_, config)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\runnables\base.py", line 5557, in invoke
+    return self.bound.invoke(
+           ^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 402, in invoke
+    self.generate_prompt(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 1121, in generate_prompt
+    return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 931, in generate
+    self._generate_with_cache(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 1233, in _generate_with_cache
+    result = self._generate(
+             ^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_openai\chat_models\base.py", line 1386, in _generate
+    raise e
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_openai\chat_models\base.py", line 1381, in _generate
+    raw_response = self.client.with_raw_response.create(**payload)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_legacy_response.py", line 364, in wrapped
+    return cast(LegacyAPIResponse[R], func(*args, **kwargs))
+                                      ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_utils\_utils.py", line 286, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 1192, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_base_client.py", line 1259, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_base_client.py", line 1047, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.RateLimitError: Error code: 429 - {'code': 'Some resource has been exhausted', 'error': 'Your team b78a669a-bf41-44e6-9868-e359af3f5b8a has either used all available credits or reached its monthly spending limit. To continue making API requests, please purchase more credits or raise your spending limit.'}
+During task with name 'Market Analyst' and id '71a13603-48e8-50b7-6efa-e6f75bdb7250'
+
+2026-02-17 22:41:48,350 - INFO - [COPPER-C] Scheduled at 09:15
+2026-02-17 22:41:48,350 - INFO - [COPPER-C] Running initial cycle... (Last run was 348.1 hours ago)
+2026-02-17 22:41:48,350 - INFO - ======================================================================
+2026-02-17 22:41:48,350 - INFO - ANALYSIS CYCLE - COPPER-C
+2026-02-17 22:41:48,350 - INFO - Time: 2026-02-17 22:41:48
+2026-02-17 22:41:48,350 - INFO - Evaluation window: 24 hours
+2026-02-17 22:41:48,350 - INFO - ======================================================================
+2026-02-17 22:41:48,350 - INFO - Initializing TradingAgentsGraph...
+2026-02-17 22:42:02,991 - INFO - TradingAgentsGraph initialized successfully
+2026-02-17 22:42:03,024 - INFO - No pending predictions to evaluate for COPPER-C
+2026-02-17 22:42:03,024 - INFO - Running analysis for COPPER-C on 2026-02-17...
+2026-02-17 22:42:03,024 - INFO - Running Smart Money Concepts analysis...
+2026-02-17 22:42:05,293 - INFO - SMC Analysis: 2/3 timeframes bearish
+2026-02-17 22:42:05,293 - INFO - Running main analysis with graph.propagate()...
+2026-02-17 22:42:05,668 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-02-17 22:42:05,668 - INFO - Retrying request to /chat/completions in 0.424352 seconds
+2026-02-17 22:42:06,343 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-02-17 22:42:06,343 - INFO - Retrying request to /chat/completions in 0.874590 seconds
+2026-02-17 22:42:07,462 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-02-17 22:42:07,462 - ERROR - Graph propagation failed: Error code: 429 - {'code': 'Some resource has been exhausted', 'error': 'Your team b78a669a-bf41-44e6-9868-e359af3f5b8a has either used all available credits or reached its monthly spending limit. To continue making API requests, please purchase more credits or raise your spending limit.'}
+2026-02-17 22:42:07,593 - ERROR - Traceback (most recent call last):
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 779, in _run_analysis
+    final_state, signal = self.graph.propagate(self.symbol, trade_date)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\graph\trading_graph.py", line 278, in propagate
+    final_state = self.graph.invoke(init_agent_state, **args)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\main.py", line 3068, in invoke
+    for chunk in self.stream(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\main.py", line 2643, in stream
+    for _ in runner.tick(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\_runner.py", line 167, in tick
+    run_with_retry(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\_retry.py", line 42, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 656, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 400, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\agents\analysts\market_analyst.py", line 104, in market_analyst_node
+    result = chain.invoke(state["messages"])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\runnables\base.py", line 3151, in invoke
+    input_ = context.run(step.invoke, input_, config)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\runnables\base.py", line 5557, in invoke
+    return self.bound.invoke(
+           ^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 402, in invoke
+    self.generate_prompt(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 1121, in generate_prompt
+    return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 931, in generate
+    self._generate_with_cache(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 1233, in _generate_with_cache
+    result = self._generate(
+             ^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_openai\chat_models\base.py", line 1386, in _generate
+    raise e
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_openai\chat_models\base.py", line 1381, in _generate
+    raw_response = self.client.with_raw_response.create(**payload)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_legacy_response.py", line 364, in wrapped
+    return cast(LegacyAPIResponse[R], func(*args, **kwargs))
+                                      ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_utils\_utils.py", line 286, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 1192, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_base_client.py", line 1259, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_base_client.py", line 1047, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.RateLimitError: Error code: 429 - {'code': 'Some resource has been exhausted', 'error': 'Your team b78a669a-bf41-44e6-9868-e359af3f5b8a has either used all available credits or reached its monthly spending limit. To continue making API requests, please purchase more credits or raise your spending limit.'}
+During task with name 'Market Analyst' and id '15380419-849e-090b-113e-762c0cabaad1'
+
+2026-02-17 22:42:07,593 - ERROR - [COPPER-C] Error in initial cycle: Error code: 429 - {'code': 'Some resource has been exhausted', 'error': 'Your team b78a669a-bf41-44e6-9868-e359af3f5b8a has either used all available credits or reached its monthly spending limit. To continue making API requests, please purchase more credits or raise your spending limit.'}
+2026-02-17 22:42:07,597 - ERROR - Traceback (most recent call last):
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 1301, in run_multi_symbol_scheduler
+    cycle.run_cycle()
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 640, in run_cycle
+    final_state, signal, smc_analysis = self._run_analysis()
+                                        ^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 779, in _run_analysis
+    final_state, signal = self.graph.propagate(self.symbol, trade_date)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\graph\trading_graph.py", line 278, in propagate
+    final_state = self.graph.invoke(init_agent_state, **args)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\main.py", line 3068, in invoke
+    for chunk in self.stream(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\main.py", line 2643, in stream
+    for _ in runner.tick(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\_runner.py", line 167, in tick
+    run_with_retry(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\_retry.py", line 42, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 656, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 400, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\agents\analysts\market_analyst.py", line 104, in market_analyst_node
+    result = chain.invoke(state["messages"])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\runnables\base.py", line 3151, in invoke
+    input_ = context.run(step.invoke, input_, config)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\runnables\base.py", line 5557, in invoke
+    return self.bound.invoke(
+           ^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 402, in invoke
+    self.generate_prompt(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 1121, in generate_prompt
+    return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 931, in generate
+    self._generate_with_cache(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 1233, in _generate_with_cache
+    result = self._generate(
+             ^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_openai\chat_models\base.py", line 1386, in _generate
+    raise e
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_openai\chat_models\base.py", line 1381, in _generate
+    raw_response = self.client.with_raw_response.create(**payload)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_legacy_response.py", line 364, in wrapped
+    return cast(LegacyAPIResponse[R], func(*args, **kwargs))
+                                      ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_utils\_utils.py", line 286, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 1192, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_base_client.py", line 1259, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_base_client.py", line 1047, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.RateLimitError: Error code: 429 - {'code': 'Some resource has been exhausted', 'error': 'Your team b78a669a-bf41-44e6-9868-e359af3f5b8a has either used all available credits or reached its monthly spending limit. To continue making API requests, please purchase more credits or raise your spending limit.'}
+During task with name 'Market Analyst' and id '15380419-849e-090b-113e-762c0cabaad1'
+
+2026-02-17 22:42:07,597 - INFO - [BTCUSD] Scheduled at 09:20
+2026-02-17 22:42:07,598 - INFO - [BTCUSD] Running initial cycle... (Last run was 347.6 hours ago)
+2026-02-17 22:42:07,598 - INFO - ======================================================================
+2026-02-17 22:42:07,598 - INFO - ANALYSIS CYCLE - BTCUSD
+2026-02-17 22:42:07,598 - INFO - Time: 2026-02-17 22:42:07
+2026-02-17 22:42:07,598 - INFO - Evaluation window: 24 hours
+2026-02-17 22:42:07,598 - INFO - ======================================================================
+2026-02-17 22:42:07,598 - INFO - Initializing TradingAgentsGraph...
+2026-02-17 22:42:19,948 - INFO - TradingAgentsGraph initialized successfully
+2026-02-17 22:42:19,964 - INFO - No pending predictions to evaluate for BTCUSD
+2026-02-17 22:42:19,974 - INFO - Running analysis for BTCUSD on 2026-02-17...
+2026-02-17 22:42:19,974 - INFO - Running Smart Money Concepts analysis...
+2026-02-17 22:42:22,644 - INFO - SMC Analysis: All timeframes aligned BEARISH
+2026-02-17 22:42:22,644 - INFO - Running main analysis with graph.propagate()...
+2026-02-17 22:42:22,995 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-02-17 22:42:22,995 - INFO - Retrying request to /chat/completions in 0.488307 seconds
+2026-02-17 22:42:23,729 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-02-17 22:42:23,729 - INFO - Retrying request to /chat/completions in 0.993721 seconds
+2026-02-17 22:42:25,458 - INFO - HTTP Request: POST https://api.x.ai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-02-17 22:42:25,459 - ERROR - Graph propagation failed: Error code: 429 - {'code': 'Some resource has been exhausted', 'error': 'Your team b78a669a-bf41-44e6-9868-e359af3f5b8a has either used all available credits or reached its monthly spending limit. To continue making API requests, please purchase more credits or raise your spending limit.'}
+2026-02-17 22:42:25,461 - ERROR - Traceback (most recent call last):
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 779, in _run_analysis
+    final_state, signal = self.graph.propagate(self.symbol, trade_date)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\graph\trading_graph.py", line 278, in propagate
+    final_state = self.graph.invoke(init_agent_state, **args)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\main.py", line 3068, in invoke
+    for chunk in self.stream(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\main.py", line 2643, in stream
+    for _ in runner.tick(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\_runner.py", line 167, in tick
+    run_with_retry(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\_retry.py", line 42, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 656, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 400, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\agents\analysts\market_analyst.py", line 104, in market_analyst_node
+    result = chain.invoke(state["messages"])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\runnables\base.py", line 3151, in invoke
+    input_ = context.run(step.invoke, input_, config)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\runnables\base.py", line 5557, in invoke
+    return self.bound.invoke(
+           ^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 402, in invoke
+    self.generate_prompt(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 1121, in generate_prompt
+    return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 931, in generate
+    self._generate_with_cache(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 1233, in _generate_with_cache
+    result = self._generate(
+             ^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_openai\chat_models\base.py", line 1386, in _generate
+    raise e
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_openai\chat_models\base.py", line 1381, in _generate
+    raw_response = self.client.with_raw_response.create(**payload)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_legacy_response.py", line 364, in wrapped
+    return cast(LegacyAPIResponse[R], func(*args, **kwargs))
+                                      ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_utils\_utils.py", line 286, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 1192, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_base_client.py", line 1259, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_base_client.py", line 1047, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.RateLimitError: Error code: 429 - {'code': 'Some resource has been exhausted', 'error': 'Your team b78a669a-bf41-44e6-9868-e359af3f5b8a has either used all available credits or reached its monthly spending limit. To continue making API requests, please purchase more credits or raise your spending limit.'}
+During task with name 'Market Analyst' and id '9e9370f6-b2c8-e0e8-d91b-db8d8bb1ffc0'
+
+2026-02-17 22:42:25,461 - ERROR - [BTCUSD] Error in initial cycle: Error code: 429 - {'code': 'Some resource has been exhausted', 'error': 'Your team b78a669a-bf41-44e6-9868-e359af3f5b8a has either used all available credits or reached its monthly spending limit. To continue making API requests, please purchase more credits or raise your spending limit.'}
+2026-02-17 22:42:25,464 - ERROR - Traceback (most recent call last):
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 1301, in run_multi_symbol_scheduler
+    cycle.run_cycle()
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 640, in run_cycle
+    final_state, signal, smc_analysis = self._run_analysis()
+                                        ^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\examples\daily_cycle.py", line 779, in _run_analysis
+    final_state, signal = self.graph.propagate(self.symbol, trade_date)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\graph\trading_graph.py", line 278, in propagate
+    final_state = self.graph.invoke(init_agent_state, **args)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\main.py", line 3068, in invoke
+    for chunk in self.stream(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\main.py", line 2643, in stream
+    for _ in runner.tick(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\_runner.py", line 167, in tick
+    run_with_retry(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\pregel\_retry.py", line 42, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 656, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 400, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\tradingagents\agents\analysts\market_analyst.py", line 104, in market_analyst_node
+    result = chain.invoke(state["messages"])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\runnables\base.py", line 3151, in invoke
+    input_ = context.run(step.invoke, input_, config)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\runnables\base.py", line 5557, in invoke
+    return self.bound.invoke(
+           ^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 402, in invoke
+    self.generate_prompt(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 1121, in generate_prompt
+    return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 931, in generate
+    self._generate_with_cache(
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_core\language_models\chat_models.py", line 1233, in _generate_with_cache
+    result = self._generate(
+             ^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_openai\chat_models\base.py", line 1386, in _generate
+    raise e
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\langchain_openai\chat_models\base.py", line 1381, in _generate
+    raw_response = self.client.with_raw_response.create(**payload)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_legacy_response.py", line 364, in wrapped
+    return cast(LegacyAPIResponse[R], func(*args, **kwargs))
+                                      ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_utils\_utils.py", line 286, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 1192, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_base_client.py", line 1259, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\TradingAgents\.venv\Lib\site-packages\openai\_base_client.py", line 1047, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.RateLimitError: Error code: 429 - {'code': 'Some resource has been exhausted', 'error': 'Your team b78a669a-bf41-44e6-9868-e359af3f5b8a has either used all available credits or reached its monthly spending limit. To continue making API requests, please purchase more credits or raise your spending limit.'}
+During task with name 'Market Analyst' and id '9e9370f6-b2c8-e0e8-d91b-db8d8bb1ffc0'
+
+2026-02-17 22:42:25,464 - INFO - ======================================================================
+2026-02-17 22:42:25,464 - INFO - All symbols initialized. Running on schedule...
+2026-02-17 22:42:25,464 - INFO - ======================================================================
