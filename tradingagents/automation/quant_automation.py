@@ -238,12 +238,16 @@ class QuantAutomation:
         try:
             import MetaTrader5 as mt5
             if not mt5.initialize():
+                self.logger.warning("MT5 not initialized, using default balance 10000.0")
                 return 10000.0
             account_info = mt5.account_info()
             if account_info:
+                self.logger.debug(f"Account balance: {account_info.balance}")
                 return account_info.balance
+            self.logger.warning("MT5 account_info returned None, using default balance 10000.0")
             return 10000.0
-        except Exception:
+        except Exception as e:
+            self.logger.warning(f"Failed to get account balance: {e}, using default 10000.0")
             return 10000.0
 
     async def _run_quant_analysis(self, symbol: str) -> AnalysisCycleResult:
@@ -279,10 +283,22 @@ class QuantAutomation:
 
                     result = await response.json()
 
+            # Log full API response for debugging
+            self.logger.info(f"API response status: {result.get('status')}")
+            self.logger.info(f"API response keys: {list(result.keys())}")
+
+            # Log the prompt that was sent to the LLM
+            prompt_sent = result.get("prompt_sent")
+            if prompt_sent:
+                self.logger.info(f"\n{'='*80}\nPROMPT SENT TO LLM for {symbol}\n{'='*80}\n{prompt_sent}\n{'='*80}")
+            else:
+                self.logger.warning(f"No prompt_sent field in API response for {symbol}")
+
             # Extract decision from API response
             decision = result.get("decision", {})
 
             if not decision:
+                self.logger.warning(f"No decision in API response for {symbol}. Full response: {json.dumps(result, default=str)[:500]}")
                 return AnalysisCycleResult(
                     timestamp=datetime.now(),
                     symbol=symbol,
@@ -292,6 +308,16 @@ class QuantAutomation:
                     rationale="No decision from analysis",
                     duration_seconds=time.time() - start_time,
                 )
+
+            # Log the decision received
+            self.logger.info(
+                f"Decision received for {symbol}: signal={decision.get('signal')}, "
+                f"confidence={decision.get('confidence')}, "
+                f"entry={decision.get('entry_price')}, "
+                f"sl={decision.get('stop_loss')}, tp={decision.get('take_profit')}"
+            )
+            if decision.get("rationale"):
+                self.logger.info(f"Rationale: {str(decision.get('rationale', ''))[:200]}")
 
             # Extract signal - handle both string and dict formats
             signal = decision.get("signal", "HOLD")
@@ -305,6 +331,8 @@ class QuantAutomation:
                 signal = "SELL"
             else:
                 signal = "HOLD"
+
+            self.logger.info(f"Mapped signal for {symbol}: {signal}")
 
             return AnalysisCycleResult(
                 timestamp=datetime.now(),
@@ -402,42 +430,56 @@ class QuantAutomation:
 
     async def _execute_trade(self, result: AnalysisCycleResult) -> AnalysisCycleResult:
         """Execute a trade based on analysis result."""
+        self.logger.info(
+            f"--- TRADE EXECUTION CHECK for {result.symbol} ---"
+            f" signal={result.signal}, confidence={result.confidence:.2f}"
+        )
+
         if not self.config.auto_execute:
             self.logger.info(f"Auto-execute disabled, skipping trade for {result.symbol}")
             return result
 
         if result.signal == "HOLD":
+            self.logger.info(f"Signal is HOLD, no trade for {result.symbol}")
             return result
 
         if result.confidence < self.config.min_confidence:
             self.logger.info(
                 f"Confidence {result.confidence:.2f} below threshold "
-                f"{self.config.min_confidence} for {result.symbol}"
+                f"{self.config.min_confidence} for {result.symbol}, skipping"
             )
             return result
 
         # Check position limits
         positions = get_open_positions()
         symbol_positions = [p for p in positions if p.get("symbol") == result.symbol]
+        self.logger.info(
+            f"Position check: {len(symbol_positions)}/{self.config.max_positions_per_symbol} "
+            f"for {result.symbol}, {len(positions)}/{self.config.max_total_positions} total"
+        )
 
         if len(symbol_positions) >= self.config.max_positions_per_symbol:
-            self.logger.info(f"Max positions reached for {result.symbol}")
+            self.logger.info(f"Max positions reached for {result.symbol}, skipping")
             return result
 
         if len(positions) >= self.config.max_total_positions:
-            self.logger.info(f"Max total positions reached")
+            self.logger.info(f"Max total positions reached ({len(positions)}), skipping")
             return result
 
         # Check guardrails
-        can_trade, reason = self.guardrails.check_can_trade(self._get_account_balance())
+        balance = self._get_account_balance()
+        can_trade, reason = self.guardrails.check_can_trade(balance)
         if not can_trade:
-            self.logger.warning(f"Trading blocked: {reason}")
+            self.logger.warning(f"Trading blocked by guardrails: {reason} (balance={balance})")
             return result
+
+        self.logger.info(f"All pre-trade checks passed for {result.symbol} {result.signal}")
 
         try:
             # Get current price
             price_info = get_mt5_current_price(result.symbol)
             entry_price = price_info.get("ask") if result.signal == "BUY" else price_info.get("bid")
+            self.logger.info(f"Current price for {result.symbol}: bid={price_info.get('bid')}, ask={price_info.get('ask')}, using={entry_price}")
 
             # Use provided SL/TP or calculate defaults
             stop_loss = result.stop_loss
@@ -446,6 +488,7 @@ class QuantAutomation:
             if not stop_loss or not take_profit:
                 # Calculate ATR-based levels
                 atr = get_atr_for_symbol(result.symbol, period=14)
+                self.logger.info(f"ATR for {result.symbol}: {atr}, calculating default SL/TP")
                 if result.signal == "BUY":
                     stop_loss = stop_loss or (entry_price - 2 * atr)
                     take_profit = take_profit or (entry_price + 3 * atr)
@@ -453,11 +496,18 @@ class QuantAutomation:
                     stop_loss = stop_loss or (entry_price + 2 * atr)
                     take_profit = take_profit or (entry_price - 3 * atr)
 
+            self.logger.info(
+                f"Trade params: {result.symbol} {result.signal} "
+                f"entry={entry_price}, sl={stop_loss}, tp={take_profit}"
+            )
+
             # Calculate position size
             symbol_info = get_mt5_symbol_info(result.symbol)
             lot_size = self.config.default_lot_size
+            self.logger.info(f"Lot size: {lot_size}")
 
             # Execute trade
+            self.logger.info(f"Sending order to MT5...")
             trade_result = execute_trade_signal(
                 symbol=result.symbol,
                 signal=result.signal,
@@ -467,6 +517,7 @@ class QuantAutomation:
                 volume=lot_size,
                 comment=f"QuantAuto {result.pipeline}",
             )
+            self.logger.info(f"MT5 trade result: {trade_result}")
 
             if trade_result.get("success"):
                 result.executed = True
@@ -490,25 +541,36 @@ class QuantAutomation:
                 )
 
                 self.logger.info(
-                    f"Trade executed: {result.symbol} {result.signal} "
-                    f"{lot_size} lots @ {result.entry_price}"
+                    f"TRADE EXECUTED: {result.symbol} {result.signal} "
+                    f"{lot_size} lots @ {result.entry_price}, "
+                    f"ticket={result.execution_ticket}, sl={stop_loss}, tp={take_profit}"
                 )
             else:
                 result.execution_error = trade_result.get("error", "Unknown error")
-                self.logger.error(f"Trade failed: {result.execution_error}")
+                self.logger.error(
+                    f"TRADE FAILED: {result.symbol} {result.signal} - {result.execution_error}. "
+                    f"Full result: {trade_result}"
+                )
 
         except Exception as e:
             result.execution_error = str(e)
-            self.logger.error(f"Trade execution error: {e}")
+            import traceback
+            self.logger.error(f"TRADE EXECUTION ERROR: {e}\n{traceback.format_exc()}")
 
         return result
 
     async def _manage_positions(self) -> List[PositionManagementResult]:
         """Manage existing positions - trailing stops, breakeven, close signals."""
         results = []
+        self.logger.debug("--- Position management cycle start ---")
 
         try:
             positions = get_open_positions()
+            managed_positions = [p for p in positions if p.get("symbol") in self.config.symbols]
+            self.logger.info(
+                f"Position check: {len(positions)} total open, "
+                f"{len(managed_positions)} managed ({', '.join(self.config.symbols)})"
+            )
 
             for position in positions:
                 symbol = position.get("symbol")
@@ -526,6 +588,12 @@ class QuantAutomation:
                 current_sl = position.get("sl", 0)
                 current_tp = position.get("tp", 0)
                 profit = position.get("profit", 0)
+
+                self.logger.info(
+                    f"Managing position #{ticket} {symbol} {direction}: "
+                    f"entry={entry_price}, current={current_price}, "
+                    f"sl={current_sl}, tp={current_tp}, profit={profit:.2f}"
+                )
 
                 # Calculate P&L percentage
                 if entry_price > 0:
@@ -548,30 +616,41 @@ class QuantAutomation:
                 try:
                     # Get ATR for stop calculations
                     atr = get_atr_for_symbol(symbol, period=14)
+                    self.logger.debug(f"  ATR={atr:.5f}, pnl_pct={pnl_pct:.2f}%")
 
                     # Check breakeven condition
                     if pnl_pct >= self.config.move_to_breakeven_pct and current_sl != 0:
-                        breakeven_sl = self.stop_loss_manager.calculate_breakeven_stop(
+                        self.logger.info(f"  Breakeven check: pnl {pnl_pct:.2f}% >= threshold {self.config.move_to_breakeven_pct}%")
+                        breakeven_sl, is_eligible = self.stop_loss_manager.calculate_breakeven_stop(
                             entry_price=entry_price,
                             current_price=current_price,
-                            current_sl=current_sl,
                             direction=direction,
+                            atr=atr,
                         )
+                        self.logger.info(f"  Breakeven SL={breakeven_sl}, eligible={is_eligible}")
 
-                        if breakeven_sl:
+                        if is_eligible and breakeven_sl:
                             is_better = (
                                 (direction == "BUY" and breakeven_sl > current_sl) or
                                 (direction == "SELL" and breakeven_sl < current_sl)
                             )
 
                             if is_better and self.config.auto_execute:
+                                self.logger.info(f"  Modifying SL to breakeven: {current_sl:.5f} -> {breakeven_sl:.5f}")
                                 modify_result = modify_position(ticket, sl=breakeven_sl)
+                                self.logger.info(f"  Modify result: {modify_result}")
                                 if modify_result.get("success"):
                                     result.action = "adjusted_sl"
                                     result.new_sl = breakeven_sl
                                     self.logger.info(
-                                        f"Breakeven set for {symbol}: {current_sl:.5f} -> {breakeven_sl:.5f}"
+                                        f"  BREAKEVEN SET for {symbol} #{ticket}: {current_sl:.5f} -> {breakeven_sl:.5f}"
                                     )
+                                else:
+                                    self.logger.error(f"  Failed to set breakeven for #{ticket}: {modify_result}")
+                            elif not self.config.auto_execute:
+                                self.logger.info(f"  Breakeven eligible but auto_execute=False, skipping")
+                            else:
+                                self.logger.debug(f"  Breakeven not better: current_sl={current_sl}, breakeven_sl={breakeven_sl}")
 
                     # Check trailing stop condition
                     elif self.config.enable_trailing_stop and pnl_pct > 0:
@@ -581,43 +660,67 @@ class QuantAutomation:
                             atr=atr,
                             direction=direction,
                         )
+                        self.logger.debug(f"  Trailing stop check: new_sl={new_sl}, should_trail={should_trail}")
 
                         if should_trail and new_sl and self.config.auto_execute:
+                            self.logger.info(f"  Trailing SL: {current_sl:.5f} -> {new_sl:.5f}")
                             modify_result = modify_position(ticket, sl=new_sl)
+                            self.logger.info(f"  Modify result: {modify_result}")
                             if modify_result.get("success"):
                                 result.action = "adjusted_sl"
                                 result.new_sl = new_sl
                                 self.logger.info(
-                                    f"Trailing stop for {symbol}: {current_sl:.5f} -> {new_sl:.5f}"
+                                    f"  TRAILING STOP for {symbol} #{ticket}: {current_sl:.5f} -> {new_sl:.5f}"
                                 )
+                            else:
+                                self.logger.error(f"  Failed to trail stop for #{ticket}: {modify_result}")
+                        elif should_trail and not self.config.auto_execute:
+                            self.logger.info(f"  Trailing stop eligible but auto_execute=False, skipping")
+                    else:
+                        self.logger.debug(f"  No SL adjustment needed: pnl_pct={pnl_pct:.2f}%, trailing={self.config.enable_trailing_stop}")
 
                     # Run quick analysis to check for close signal
                     if self.config.pipeline == PipelineType.QUANT:
+                        self.logger.info(f"  Running reversal check analysis for #{ticket} {symbol}...")
                         analysis = await self._run_quant_analysis(symbol)
+                        self.logger.info(f"  Reversal check result: signal={analysis.signal}, confidence={analysis.confidence:.2f}")
+
                         if analysis.signal == "CLOSE" or (
                             analysis.signal != "HOLD" and
                             analysis.signal != direction and
                             analysis.confidence > 0.7
                         ):
+                            self.logger.warning(
+                                f"  REVERSAL SIGNAL for #{ticket} {symbol}: "
+                                f"signal={analysis.signal} (position={direction}), confidence={analysis.confidence:.2f}"
+                            )
                             # Strong reversal signal
                             if self.config.auto_execute:
                                 close_result = close_position(ticket)
+                                self.logger.info(f"  Close result: {close_result}")
                                 if close_result.get("success"):
                                     result.action = "closed"
                                     result.close_reason = f"Reversal signal: {analysis.signal}"
                                     result.pnl = profit
                                     self.logger.info(
-                                        f"Position closed for {symbol}: {result.close_reason}"
+                                        f"  POSITION CLOSED #{ticket} {symbol}: {result.close_reason}, pnl={profit:.2f}"
                                     )
+                                else:
+                                    self.logger.error(f"  Failed to close position #{ticket}: {close_result}")
+                            else:
+                                self.logger.info(f"  Reversal detected but auto_execute=False, skipping close")
 
                 except Exception as e:
-                    self.logger.error(f"Error managing position {ticket}: {e}")
+                    import traceback
+                    self.logger.error(f"Error managing position #{ticket}: {e}\n{traceback.format_exc()}")
 
                 results.append(result)
 
         except Exception as e:
-            self.logger.error(f"Position management error: {e}")
+            import traceback
+            self.logger.error(f"Position management error: {e}\n{traceback.format_exc()}")
 
+        self.logger.debug(f"--- Position management cycle end ({len(results)} positions checked) ---")
         return results
 
     async def _analysis_loop(self):
@@ -677,6 +780,7 @@ class QuantAutomation:
 
     async def _position_loop(self):
         """Position management loop."""
+        self.logger.info("Position management loop started")
         while self._running:
             try:
                 results = await self._manage_positions()
@@ -688,8 +792,17 @@ class QuantAutomation:
 
                 self._last_position_check = datetime.now()
 
+                # Log summary
+                actions = [r for r in results if r.action != "no_change"]
+                if actions:
+                    for a in actions:
+                        self.logger.info(f"Position action: #{a.ticket} {a.symbol} -> {a.action}")
+                else:
+                    self.logger.debug(f"Position check complete: {len(results)} positions, no changes")
+
             except Exception as e:
-                self.logger.error(f"Position loop error: {e}")
+                import traceback
+                self.logger.error(f"Position loop error: {e}\n{traceback.format_exc()}")
 
             # Wait for next cycle or shutdown
             try:
@@ -766,10 +879,13 @@ class QuantAutomation:
         """Update configuration dynamically."""
         for key, value in updates.items():
             if hasattr(self.config, key):
+                old_value = getattr(self.config, key)
                 if key == "pipeline" and isinstance(value, str):
                     value = PipelineType(value)
                 setattr(self.config, key, value)
-                self.logger.info(f"Config updated: {key} = {value}")
+                self.logger.info(f"Config updated: {key} = {old_value} -> {value}")
+            else:
+                self.logger.warning(f"Config update ignored: unknown key '{key}'")
         self._save_state()
 
     def get_status(self) -> Dict[str, Any]:
@@ -778,8 +894,8 @@ class QuantAutomation:
         try:
             all_positions = get_open_positions()
             positions = [p for p in all_positions if p.get("symbol") in self.config.symbols]
-        except Exception:
-            pass
+        except Exception as e:
+            self.logger.error(f"Failed to get positions for status: {e}")
 
         return {
             "status": self._status.value,
@@ -831,13 +947,18 @@ async def start_automation(config: Optional[Dict[str, Any]] = None) -> QuantAuto
     """Start the global automation instance."""
     global _automation_instance, _automation_task
 
+    logger = logging.getLogger("QuantAutomation")
+
     if _automation_instance and _automation_instance._running:
+        logger.warning("start_automation called but automation already running")
         raise RuntimeError("Automation already running")
 
     # Create config from dict if provided
     if config:
+        logger.info(f"Starting automation with config: {config}")
         auto_config = QuantAutomationConfig.from_dict(config)
     else:
+        logger.info("Starting automation with default config")
         auto_config = QuantAutomationConfig()
 
     _automation_instance = QuantAutomation(auto_config)
@@ -848,6 +969,7 @@ async def start_automation(config: Optional[Dict[str, Any]] = None) -> QuantAuto
     # Give it a moment to start
     await asyncio.sleep(0.5)
 
+    logger.info(f"Automation started, status={_automation_instance._status.value}")
     return _automation_instance
 
 
@@ -855,12 +977,19 @@ async def stop_automation():
     """Stop the global automation instance."""
     global _automation_instance, _automation_task
 
+    logger = logging.getLogger("QuantAutomation")
+    logger.info("stop_automation called")
+
     if _automation_instance:
         _automation_instance.stop()
+    else:
+        logger.warning("stop_automation called but no instance exists")
 
     if _automation_task:
         try:
             await asyncio.wait_for(_automation_task, timeout=5.0)
+            logger.info("Automation task completed cleanly")
         except asyncio.TimeoutError:
+            logger.warning("Automation task did not stop in 5s, cancelling")
             _automation_task.cancel()
         _automation_task = None

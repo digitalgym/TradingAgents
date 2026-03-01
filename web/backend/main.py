@@ -46,6 +46,9 @@ from tradingagents.schemas import (
     generate_json_schemas,
 )
 
+# Setup logger for the backend
+logger = logging.getLogger("tradingagents.backend")
+
 # Helper to safely get attribute from dict or dataclass object
 def safe_attr(obj, attr, default=None):
     """Safely get attribute from dict or dataclass object."""
@@ -5478,6 +5481,9 @@ async def run_quant_analysis(request: QuantAnalysisRequest):
 
     Returns structured trade decision compatible with trade execution modal.
     """
+    import time as _time
+    _endpoint_start = _time.time()
+    logger.info(f"[QUANT API] Request: symbol={request.symbol}, timeframe={request.timeframe}")
     try:
         import MetaTrader5 as mt5
         import pandas as pd
@@ -5605,6 +5611,27 @@ async def run_quant_analysis(request: QuantAnalysisRequest):
             volume_spike = False
             volume_profile = "N/A"
 
+        # === Key Price Levels (PDH/PDL, PWH/PWL, Previous H4) ===
+        key_levels = {}
+        level_timeframes = {
+            "H4": mt5.TIMEFRAME_H4,
+            "D1": mt5.TIMEFRAME_D1,
+            "W1": mt5.TIMEFRAME_W1,
+        }
+        for tf_name, tf_val in level_timeframes.items():
+            try:
+                tf_rates = mt5.copy_rates_from_pos(request.symbol, tf_val, 0, 2)
+                if tf_rates is not None and len(tf_rates) >= 2:
+                    prev_bar = tf_rates[0]  # Previous completed candle
+                    key_levels[tf_name] = {
+                        "high": float(prev_bar['high']),
+                        "low": float(prev_bar['low']),
+                        "open": float(prev_bar['open']),
+                        "close": float(prev_bar['close']),
+                    }
+            except Exception as e:
+                logger.warning(f"[QUANT API] Failed to get {tf_name} key levels: {e}")
+
         # === STEP 2: Run SMC Analysis ===
         from tradingagents.indicators.smart_money import SmartMoneyAnalyzer
 
@@ -5646,6 +5673,37 @@ async def run_quant_analysis(request: QuantAnalysisRequest):
 - **Volume Trend (5 bars)**: {volume_trend}
 """
 
+        # Append key price levels to indicators context
+        if key_levels:
+            level_lines = ["\n## Key Price Levels\n"]
+            tf_labels = {
+                "H4": ("Previous H4", "PH4H", "PH4L"),
+                "D1": ("Previous Day", "PDH", "PDL"),
+                "W1": ("Previous Week", "PWH", "PWL"),
+            }
+            for tf_name in ["D1", "W1", "H4"]:  # Most important first
+                if tf_name not in key_levels:
+                    continue
+                levels = key_levels[tf_name]
+                label, high_abbr, low_abbr = tf_labels[tf_name]
+                candle_range = levels["high"] - levels["low"]
+                dist_high = current_price - levels["high"]
+                dist_low = current_price - levels["low"]
+                level_lines.append(f"### {label}")
+                level_lines.append(f"- **{high_abbr}** (High): {levels['high']:.5f} (price is {dist_high:+.5f} from it)")
+                level_lines.append(f"- **{low_abbr}** (Low): {levels['low']:.5f} (price is {dist_low:+.5f} from it)")
+                level_lines.append(f"- **Open**: {levels['open']:.5f} | **Close**: {levels['close']:.5f}")
+                level_lines.append(f"- **Range**: {candle_range:.5f}")
+                # Context: is price above/below/inside the previous range?
+                if current_price > levels["high"]:
+                    level_lines.append(f"- Price is **ABOVE** {label} range")
+                elif current_price < levels["low"]:
+                    level_lines.append(f"- Price is **BELOW** {label} range")
+                else:
+                    level_lines.append(f"- Price is **INSIDE** {label} range")
+                level_lines.append("")
+            indicators_context += "\n".join(level_lines)
+
         # === STEP 4: Call Quant Analyst LLM ===
         from tradingagents.agents.analysts.quant_analyst import create_quant_analyst
         from tradingagents.default_config import DEFAULT_CONFIG
@@ -5686,12 +5744,29 @@ async def run_quant_analysis(request: QuantAnalysisRequest):
             "trading_session": _get_trading_session(),
         }
 
+        # Build the full prompt for logging/debugging
+        from tradingagents.agents.analysts.quant_analyst import _build_data_context, _build_quant_prompt
+        debug_data_context = _build_data_context(
+            ticker=request.symbol,
+            current_price=current_price,
+            smc_context=smc_context,
+            smc_analysis=smc_result,
+            market_report=indicators_context,
+            market_regime=market_regime,
+            volatility_regime=volatility_regime,
+            trading_session=_get_trading_session(),
+            current_date=quant_state["trade_date"],
+        )
+        full_prompt = _build_quant_prompt(debug_data_context)
+
         # Run quant analyst
+        logger.info(f"[QUANT API] Running quant analyst for {request.symbol}...")
         quant_analyst = create_quant_analyst(llm, use_structured_output=True)
         result = quant_analyst(quant_state)
 
         quant_report = result.get("quant_report", "")
         quant_decision = result.get("quant_decision")
+        logger.info(f"[QUANT API] Analyst returned: quant_decision={'present' if quant_decision else 'None'}")
 
         # === STEP 5: Build Response ===
         if quant_decision:
@@ -5738,6 +5813,14 @@ async def run_quant_analysis(request: QuantAnalysisRequest):
         # Include SMC levels for chart display (same as rule-based)
         smc_levels = _extract_smc_levels_for_chart(smc_result)
 
+        _endpoint_duration = _time.time() - _endpoint_start
+        logger.info(
+            f"[QUANT API] Response: {request.symbol} signal={decision.get('signal')} "
+            f"confidence={decision.get('confidence')} "
+            f"entry={decision.get('entry_price')} sl={decision.get('stop_loss')} tp={decision.get('take_profit')} "
+            f"[took {_endpoint_duration:.1f}s]"
+        )
+
         return {
             "status": "completed",
             "symbol": request.symbol,
@@ -5767,13 +5850,16 @@ async def run_quant_analysis(request: QuantAnalysisRequest):
                 "atr": round(atr, 5) if not np.isnan(atr) else None
             },
             "analysis_mode": "quant",
-            "llm_used": True
+            "llm_used": True,
+            "prompt_sent": full_prompt,
         }
 
     except HTTPException:
         raise
     except Exception as e:
         import traceback
+        _endpoint_duration = _time.time() - _endpoint_start
+        logger.error(f"[QUANT API] ERROR for {request.symbol} after {_endpoint_duration:.1f}s: {e}\n{traceback.format_exc()}")
         return {
             "status": "error",
             "error": str(e),
@@ -5856,9 +5942,6 @@ def _format_smc_for_quant(smc_result: dict, current_price: float, atr: float) ->
         if recent_choc:
             lines.append(f"- Recent CHoCH: {len(recent_choc)} detected")
         lines.append("")
-
-    lines.append(f"**Current Price**: {current_price:.5f}")
-    lines.append(f"**ATR**: {atr:.5f}")
 
     return "\n".join(lines)
 
@@ -6444,17 +6527,29 @@ async def start_quant_automation(config: QuantAutomationConfigRequest):
         # Start in background
         _quant_automation_task = asyncio.create_task(_quant_automation_instance.start())
 
-        # Give it time to start
-        await asyncio.sleep(0.5)
+        # Give it time to start and check for immediate failures
+        await asyncio.sleep(1.0)
+
+        # Check if the task failed during startup
+        if _quant_automation_task.done():
+            exc = _quant_automation_task.exception()
+            if exc:
+                _quant_automation_instance = None
+                _quant_automation_task = None
+                raise HTTPException(status_code=500, detail=f"Automation failed to start: {exc}")
 
         return {
             "status": "started",
             "config": auto_config.to_dict(),
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         import traceback
         traceback.print_exc()
+        _quant_automation_instance = None
+        _quant_automation_task = None
         raise HTTPException(status_code=500, detail=str(e))
 
 

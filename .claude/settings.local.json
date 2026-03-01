@@ -34,7 +34,11 @@
       "Bash(pip show:*)",
       "Bash(.venv/Scripts/python -m pytest:*)",
       "Bash(sqlite3:*)",
-      "Bash(wmic process:*)"
+      "Bash(wmic process:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(npx next build:*)",
+      "Bash(npx next dev --port 3000)"
     ]
   }
 }

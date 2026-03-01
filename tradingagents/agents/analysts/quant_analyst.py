@@ -120,37 +120,52 @@ def create_quant_analyst(llm, use_structured_output: bool = True):
 
         if structured_llm is not None:
             try:
+                import time as _time
+                _llm_start = _time.time()
                 decision: QuantAnalystDecision = structured_llm.invoke(system_prompt)
+                _llm_duration = _time.time() - _llm_start
 
                 # Log the structured response
-                logger.info(f"--- LLM RESPONSE (Structured) ---")
+                logger.info(f"--- LLM RESPONSE (Structured) [took {_llm_duration:.1f}s] ---")
                 logger.info(f"Signal: {decision.signal}")
                 logger.info(f"Confidence: {decision.confidence}")
                 logger.info(f"Entry: {decision.entry_price} | SL: {decision.stop_loss} | TP: {decision.profit_target}")
                 logger.info(f"Justification: {decision.justification}")
                 logger.info(f"Invalidation: {decision.invalidation_condition}")
+
+                # Log raw decision dict for debugging
+                decision_dict = decision.model_dump()
+                logger.info(f"Raw decision dict: {decision_dict}")
                 logger.info(f"\n{'='*80}\n")
 
                 # Generate human-readable report
                 report = _format_quant_report(decision)
 
+                logger.info(f"Structured output SUCCESS - returning quant_decision with signal={decision.signal}")
                 return {
                     "quant_report": report,
-                    "quant_decision": decision.model_dump(),
+                    "quant_decision": decision_dict,
                 }
             except Exception as e:
+                import traceback as _tb
                 logger.error(f"Structured output failed: {e}")
+                logger.error(f"Traceback:\n{_tb.format_exc()}")
                 print(f"Structured output failed for quant analyst: {e}")
 
         # Fallback to unstructured output
+        logger.info(f"--- Falling back to unstructured LLM call ---")
+        import time as _time
+        _llm_start = _time.time()
         response = llm.invoke(system_prompt)
+        _llm_duration = _time.time() - _llm_start
         report = response.content if hasattr(response, 'content') else str(response)
 
         # Log unstructured response
-        logger.info(f"--- LLM RESPONSE (Unstructured) ---")
+        logger.info(f"--- LLM RESPONSE (Unstructured) [took {_llm_duration:.1f}s] ---")
         logger.info(f"{report[:2000]}...")  # Truncate if very long
         logger.info(f"\n{'='*80}\n")
 
+        logger.warning(f"Returning quant_decision=None (unstructured fallback)")
         return {
             "quant_report": report,
             "quant_decision": None,
@@ -193,25 +208,13 @@ def _build_data_context(
 - **Volatility Regime**: {volatility_regime}
 """)
 
-    # SMC Analysis
+    # SMC Analysis (smc_context already has its own header)
     if smc_context:
-        sections.append(f"""## SMART MONEY CONCEPTS (SMC) ANALYSIS
-{smc_context}
-""")
+        sections.append(smc_context)
 
-    # Extract key SMC levels if available
-    if smc_analysis:
-        levels_text = _extract_smc_levels(smc_analysis, current_price)
-        if levels_text:
-            sections.append(f"""## KEY SMC LEVELS
-{levels_text}
-""")
-
-    # Technical indicators from market report
+    # Technical indicators (market_report already has its own header)
     if market_report:
-        sections.append(f"""## TECHNICAL ANALYSIS (Indicators)
-{market_report}
-""")
+        sections.append(market_report)
 
     return "\n".join(sections)
 
@@ -301,7 +304,6 @@ def _build_quant_prompt(data_context: str) -> str:
 - For SELL orders: Stop loss MUST be ABOVE entry price
 - If you cannot identify a valid stop loss placement, output "hold"
 
-## CURRENT MARKET DATA
 {data_context}
 
 ## YOUR TASK
@@ -315,7 +317,11 @@ Think step-by-step:
 4. What would invalidate this setup?
 5. What is your confidence level based on confluence?
 
-Then provide your decision. For "hold" or "close", explain why in the justification.
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when price is at a high-probability bullish zone (bullish OB, bullish FVG, demand zone) with confluence from indicators. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when price is at a high-probability bearish zone (bearish OB, bearish FVG, supply zone) with confluence from indicators. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when no clear edge exists, price is between zones, or conditions are ambiguous.
+- **close** - Close existing position. Use when the original thesis is invalidated.
 
 Remember:
 - Only enter trades with clear edge
@@ -326,14 +332,16 @@ Remember:
 
 def _format_quant_report(decision: QuantAnalystDecision) -> str:
     """Format the quant decision into a human-readable report."""
+    # decision.signal is already a string due to use_enum_values=True in BaseSchema
+    signal_str = decision.signal if isinstance(decision.signal, str) else decision.signal.value
     lines = [
-        f"## QUANT ANALYST DECISION: **{decision.signal.value.upper()}**",
+        f"## QUANT ANALYST DECISION: **{signal_str.upper()}**",
         f"**Symbol**: {decision.symbol}",
         f"**Confidence**: {decision.confidence:.0%}",
         "",
     ]
 
-    if decision.signal.value in ["buy_to_enter", "sell_to_enter"]:
+    if signal_str in ["buy_to_enter", "sell_to_enter"]:
         lines.append("### Trade Parameters")
         if decision.entry_price:
             lines.append(f"- **Entry Price**: {decision.entry_price}")
