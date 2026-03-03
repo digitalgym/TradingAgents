@@ -5632,15 +5632,29 @@ async def run_quant_analysis(request: QuantAnalysisRequest):
             except Exception as e:
                 logger.warning(f"[QUANT API] Failed to get {tf_name} key levels: {e}")
 
-        # === STEP 2: Run SMC Analysis ===
+        # === STEP 2: Run SMC Analysis (Extended) ===
         from tradingagents.indicators.smart_money import SmartMoneyAnalyzer
 
         analyzer = SmartMoneyAnalyzer()
-        smc_result = analyzer.analyze_full_smc(
+        smc_result = analyzer.analyze_full_smc_extended(
             df,
             current_price=current_price,
-            use_structural_obs=True
+            use_structural_obs=True,
+            include_equal_levels=True,
+            include_breakers=True,
+            include_ote=True,
+            include_sweeps=True,
+            include_inducements=False,  # Can be noisy
+            include_rejections=False,   # Can be noisy
+            include_turtle_soup=False   # Can be noisy
         )
+
+        # === STEP 2b: Calculate Volume Profile ===
+        from tradingagents.indicators.volume_profile import VolumeProfileAnalyzer
+
+        vp_analyzer = VolumeProfileAnalyzer()
+        vp_result = vp_analyzer.calculate_volume_profile(df, num_bins=50, lookback=100)
+        volume_profile_context = vp_analyzer.format_for_prompt(vp_result, current_price)
 
         # Format SMC context for LLM
         smc_context = _format_smc_for_quant(smc_result, current_price, atr)
@@ -5703,6 +5717,9 @@ async def run_quant_analysis(request: QuantAnalysisRequest):
                     level_lines.append(f"- Price is **INSIDE** {label} range")
                 level_lines.append("")
             indicators_context += "\n".join(level_lines)
+
+        # Add Volume Profile analysis
+        indicators_context += "\n" + volume_profile_context
 
         # === STEP 4: Call Quant Analyst LLM ===
         from tradingagents.agents.analysts.quant_analyst import create_quant_analyst
@@ -5868,12 +5885,18 @@ async def run_quant_analysis(request: QuantAnalysisRequest):
 
 
 def _format_smc_for_quant(smc_result: dict, current_price: float, atr: float) -> str:
-    """Format SMC analysis for quant analyst prompt."""
-    lines = ["## Smart Money Concepts Analysis\n"]
+    """
+    Format SMC analysis for quant analyst prompt.
 
-    # Bias
-    bias = smc_result.get("bias", "neutral")
-    lines.append(f"**Overall Bias**: {bias.upper()}\n")
+    Improvements:
+    - Shows BOTH bullish AND bearish levels regardless of bias
+    - Includes BOS/CHoCH with direction context
+    - Shows mitigation status (fill percentage for FVGs)
+    - Includes breaker blocks, premium/discount zones
+    - Adds liquidity sweep alerts
+    - Provides actionable context for each level
+    """
+    lines = ["## Smart Money Concepts Analysis\n"]
 
     # Helper to safely get attribute
     def safe_attr(obj, attr, default=None):
@@ -5883,65 +5906,232 @@ def _format_smc_for_quant(smc_result: dict, current_price: float, atr: float) ->
             return obj.get(attr, default)
         return getattr(obj, attr, default)
 
-    # Order blocks
+    # === MARKET STRUCTURE & BIAS ===
+    bias = smc_result.get("bias", "neutral")
+    structure = smc_result.get("structure", {})  # Fixed: was "market_structure"
+    recent_bos = structure.get("recent_bos", [])
+    recent_choc = structure.get("recent_choc", [])
+
+    # Build structure context
+    structure_context = []
+    if recent_choc:
+        last_choc = recent_choc[-1]
+        choc_type = safe_attr(last_choc, "type", "")
+        if choc_type == "high":
+            structure_context.append("CHoCH (bearish reversal signal)")
+        else:
+            structure_context.append("CHoCH (bullish reversal signal)")
+    if recent_bos:
+        last_bos = recent_bos[-1]
+        bos_type = safe_attr(last_bos, "type", "")
+        if bos_type == "high":
+            structure_context.append("BOS (bullish continuation)")
+        else:
+            structure_context.append("BOS (bearish continuation)")
+
+    lines.append(f"### Market Structure")
+    lines.append(f"**Bias**: {bias.upper()}")
+    if structure_context:
+        lines.append(f"**Recent Structure**: {', '.join(structure_context)}")
+    else:
+        lines.append("**Recent Structure**: No recent BOS/CHoCH")
+    lines.append("")
+
+    # === PREMIUM/DISCOUNT ZONE ===
+    premium_discount = smc_result.get("premium_discount")
+    if premium_discount:
+        # Handle both dict and dataclass (PremiumDiscountZone)
+        zone = safe_attr(premium_discount, "zone", "equilibrium")
+        position_pct = safe_attr(premium_discount, "position_pct", 50)
+        equilibrium = safe_attr(premium_discount, "equilibrium", 0)
+
+        zone_advice = ""
+        if zone == "premium":
+            zone_advice = "(favor SELLS - price is expensive)"
+        elif zone == "discount":
+            zone_advice = "(favor BUYS - price is cheap)"
+        else:
+            zone_advice = "(neutral - wait for extremes)"
+
+        lines.append(f"### Price Position")
+        lines.append(f"**Zone**: {zone.upper()} ({position_pct:.0f}% of range) {zone_advice}")
+        if equilibrium and equilibrium > 0:
+            lines.append(f"**Equilibrium**: {equilibrium:.5f}")
+        lines.append("")
+
+    # === ORDER BLOCKS (Both bullish AND bearish) ===
     obs = smc_result.get("order_blocks", {})
-    bullish_obs = [ob for ob in (obs.get("bullish") or []) if ob and not safe_attr(ob, "mitigated", False)]
-    bearish_obs = [ob for ob in (obs.get("bearish") or []) if ob and not safe_attr(ob, "mitigated", False)]
+    bullish_obs = obs.get("bullish") or []
+    bearish_obs = obs.get("bearish") or []
 
-    if bullish_obs or bearish_obs:
+    # Filter to unmitigated only
+    bullish_obs_active = [ob for ob in bullish_obs if ob and not safe_attr(ob, "mitigated", False)]
+    bearish_obs_active = [ob for ob in bearish_obs if ob and not safe_attr(ob, "mitigated", False)]
+
+    if bullish_obs_active or bearish_obs_active:
         lines.append("### Order Blocks (Unmitigated)")
-        for ob in bullish_obs[:3]:
+
+        # Sort by proximity to current price
+        def ob_distance(ob):
+            mid = (safe_attr(ob, "top", 0) + safe_attr(ob, "bottom", 0)) / 2
+            return abs(mid - current_price)
+
+        # Show bullish OBs (support zones - below price for buys)
+        for ob in sorted(bullish_obs_active, key=ob_distance)[:3]:
             top = safe_attr(ob, "top", 0)
             bottom = safe_attr(ob, "bottom", 0)
             strength = safe_attr(ob, "strength", 0.5)
-            lines.append(f"- BULLISH OB: {bottom:.5f} - {top:.5f} (strength: {strength:.0%})")
-        for ob in bearish_obs[:3]:
+            method = safe_attr(ob, "detection_method", "candle")
+            dist_pct = ((current_price - top) / current_price * 100) if current_price > top else 0
+
+            method_tag = "[STRUCTURAL]" if method == "structural" else ""
+            if dist_pct > 0:
+                lines.append(f"- BULLISH OB {method_tag}: {bottom:.5f} - {top:.5f} (strength: {strength:.0%}) | -{dist_pct:.2f}% from price")
+            else:
+                lines.append(f"- BULLISH OB {method_tag}: {bottom:.5f} - {top:.5f} (strength: {strength:.0%}) | AT PRICE")
+
+        # Show bearish OBs (resistance zones - above price for sells)
+        for ob in sorted(bearish_obs_active, key=ob_distance)[:3]:
             top = safe_attr(ob, "top", 0)
             bottom = safe_attr(ob, "bottom", 0)
             strength = safe_attr(ob, "strength", 0.5)
-            lines.append(f"- BEARISH OB: {bottom:.5f} - {top:.5f} (strength: {strength:.0%})")
+            method = safe_attr(ob, "detection_method", "candle")
+            dist_pct = ((bottom - current_price) / current_price * 100) if current_price < bottom else 0
+
+            method_tag = "[STRUCTURAL]" if method == "structural" else ""
+            if dist_pct > 0:
+                lines.append(f"- BEARISH OB {method_tag}: {bottom:.5f} - {top:.5f} (strength: {strength:.0%}) | +{dist_pct:.2f}% from price")
+            else:
+                lines.append(f"- BEARISH OB {method_tag}: {bottom:.5f} - {top:.5f} (strength: {strength:.0%}) | AT PRICE")
+
+        if not bullish_obs_active:
+            lines.append("- No unmitigated BULLISH OBs (no demand zones)")
+        if not bearish_obs_active:
+            lines.append("- No unmitigated BEARISH OBs (no supply zones)")
         lines.append("")
 
-    # FVGs
+    # === FAIR VALUE GAPS (with fill percentage) ===
     fvgs = smc_result.get("fair_value_gaps", {})
-    bullish_fvgs = [fvg for fvg in (fvgs.get("bullish") or []) if fvg and not safe_attr(fvg, "mitigated", False)]
-    bearish_fvgs = [fvg for fvg in (fvgs.get("bearish") or []) if fvg and not safe_attr(fvg, "mitigated", False)]
+    bullish_fvgs = fvgs.get("bullish") or []
+    bearish_fvgs = fvgs.get("bearish") or []
 
-    if bullish_fvgs or bearish_fvgs:
+    # Include partially filled FVGs (not fully mitigated)
+    bullish_fvgs_active = [fvg for fvg in bullish_fvgs if fvg and not safe_attr(fvg, "mitigated", False)]
+    bearish_fvgs_active = [fvg for fvg in bearish_fvgs if fvg and not safe_attr(fvg, "mitigated", False)]
+
+    if bullish_fvgs_active or bearish_fvgs_active:
         lines.append("### Fair Value Gaps")
-        for fvg in bullish_fvgs[:2]:
+
+        for fvg in bullish_fvgs_active[:3]:
             top = safe_attr(fvg, "top", 0)
             bottom = safe_attr(fvg, "bottom", 0)
-            lines.append(f"- BULLISH FVG: {bottom:.5f} - {top:.5f}")
-        for fvg in bearish_fvgs[:2]:
+            fill_pct = safe_attr(fvg, "fill_percentage", 0)
+            dist_pct = ((current_price - top) / current_price * 100) if current_price > top else 0
+
+            fill_status = f"({fill_pct:.0f}% filled)" if fill_pct > 0 else "(unfilled)"
+            if dist_pct > 0:
+                lines.append(f"- BULLISH FVG: {bottom:.5f} - {top:.5f} {fill_status} | -{dist_pct:.2f}% from price")
+            else:
+                lines.append(f"- BULLISH FVG: {bottom:.5f} - {top:.5f} {fill_status} | AT PRICE")
+
+        for fvg in bearish_fvgs_active[:3]:
             top = safe_attr(fvg, "top", 0)
             bottom = safe_attr(fvg, "bottom", 0)
-            lines.append(f"- BEARISH FVG: {bottom:.5f} - {top:.5f}")
+            fill_pct = safe_attr(fvg, "fill_percentage", 0)
+            dist_pct = ((bottom - current_price) / current_price * 100) if current_price < bottom else 0
+
+            fill_status = f"({fill_pct:.0f}% filled)" if fill_pct > 0 else "(unfilled)"
+            if dist_pct > 0:
+                lines.append(f"- BEARISH FVG: {bottom:.5f} - {top:.5f} {fill_status} | +{dist_pct:.2f}% from price")
+            else:
+                lines.append(f"- BEARISH FVG: {bottom:.5f} - {top:.5f} {fill_status} | AT PRICE")
+
         lines.append("")
 
-    # Liquidity zones
+    # === BREAKER BLOCKS ===
+    breakers = smc_result.get("breaker_blocks", {})
+    bullish_breakers = breakers.get("bullish") or []
+    bearish_breakers = breakers.get("bearish") or []
+
+    # Filter to unmitigated
+    active_breakers = []
+    for bb in bullish_breakers:
+        if bb and not safe_attr(bb, "mitigated", False):
+            active_breakers.append(("BULLISH", bb))
+    for bb in bearish_breakers:
+        if bb and not safe_attr(bb, "mitigated", False):
+            active_breakers.append(("BEARISH", bb))
+
+    if active_breakers:
+        lines.append("### Breaker Blocks (Failed OBs - Strong Reversal Zones)")
+        for bb_type, bb in active_breakers[:3]:
+            top = safe_attr(bb, "top", 0)
+            bottom = safe_attr(bb, "bottom", 0)
+            original = safe_attr(bb, "original_type", "unknown")
+            lines.append(f"- {bb_type} BREAKER: {bottom:.5f} - {top:.5f} (was {original} OB)")
+        lines.append("")
+
+    # === LIQUIDITY ZONES ===
     liq_zones = smc_result.get("liquidity_zones", [])
-    if liq_zones:
-        lines.append("### Liquidity Zones")
-        zones_to_show = liq_zones[:4] if isinstance(liq_zones, list) else []
-        for zone in zones_to_show:
+    if liq_zones and isinstance(liq_zones, list):
+        lines.append("### Liquidity Zones (Stop Loss Clusters)")
+
+        buy_side = [z for z in liq_zones if safe_attr(z, "type", "") == "buy-side"]
+        sell_side = [z for z in liq_zones if safe_attr(z, "type", "") == "sell-side"]
+
+        for zone in buy_side[:2]:
             price = safe_attr(zone, "price", 0)
-            zone_type = safe_attr(zone, "type", "unknown")
             strength = safe_attr(zone, "strength", 50)
-            lines.append(f"- {zone_type.upper()}: {price:.5f} (strength: {strength})")
+            dist_pct = ((price - current_price) / current_price * 100) if price > current_price else 0
+            lines.append(f"- BUY-SIDE (above): {price:.5f} (strength: {strength:.1f}) | +{dist_pct:.2f}% - target for shorts")
+
+        for zone in sell_side[:2]:
+            price = safe_attr(zone, "price", 0)
+            strength = safe_attr(zone, "strength", 50)
+            dist_pct = ((current_price - price) / current_price * 100) if price < current_price else 0
+            lines.append(f"- SELL-SIDE (below): {price:.5f} (strength: {strength:.1f}) | -{dist_pct:.2f}% - target for longs")
+
         lines.append("")
 
-    # Market structure
-    structure = smc_result.get("market_structure", {})
-    if structure:
-        lines.append("### Market Structure")
-        recent_bos = structure.get("recent_bos", [])
-        recent_choc = structure.get("recent_choc", [])
-        if recent_bos:
-            lines.append(f"- Recent BOS: {len(recent_bos)} detected")
-        if recent_choc:
-            lines.append(f"- Recent CHoCH: {len(recent_choc)} detected")
+    # === LIQUIDITY SWEEPS (Recent) ===
+    sweeps = smc_result.get("liquidity_sweeps", {})
+    recent_sweeps = sweeps.get("recent", [])
+    if recent_sweeps:
+        lines.append("### Recent Liquidity Sweeps (Last 10 candles)")
+        for sweep in recent_sweeps[:2]:
+            sweep_type = safe_attr(sweep, "type", "unknown")
+            level_price = safe_attr(sweep, "level_price", 0)
+            is_strong = safe_attr(sweep, "is_strong", False)
+            strong_tag = "[STRONG]" if is_strong else ""
+
+            if sweep_type == "bullish":
+                lines.append(f"- BULLISH SWEEP {strong_tag}: Swept lows at {level_price:.5f} - look for reversal UP")
+            else:
+                lines.append(f"- BEARISH SWEEP {strong_tag}: Swept highs at {level_price:.5f} - look for reversal DOWN")
         lines.append("")
+
+    # === OTE ZONES ===
+    ote_zones = smc_result.get("ote_zones", {})
+    bullish_ote = ote_zones.get("bullish", []) if isinstance(ote_zones, dict) else []
+    bearish_ote = ote_zones.get("bearish", []) if isinstance(ote_zones, dict) else []
+
+    if bullish_ote or bearish_ote:
+        lines.append("### OTE Zones (Optimal Trade Entry - Fib 61.8%-79%)")
+        for ote in bullish_ote[:1]:
+            fib_618 = safe_attr(ote, "fib_618", 0)
+            fib_79 = safe_attr(ote, "fib_79", 0)
+            if fib_618 and fib_79:
+                lines.append(f"- BULLISH OTE: {fib_79:.5f} - {fib_618:.5f} (buy zone)")
+        for ote in bearish_ote[:1]:
+            fib_618 = safe_attr(ote, "fib_618", 0)
+            fib_79 = safe_attr(ote, "fib_79", 0)
+            if fib_618 and fib_79:
+                lines.append(f"- BEARISH OTE: {fib_618:.5f} - {fib_79:.5f} (sell zone)")
+        lines.append("")
+
+    # === SUMMARY LINE ===
+    lines.append(f"**Current Price**: {current_price:.5f}")
+    lines.append(f"**ATR**: {atr:.5f}")
 
     return "\n".join(lines)
 
