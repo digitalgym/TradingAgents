@@ -236,7 +236,6 @@ def generate_quant_prompt(symbol: str, timeframe: str = "H1") -> tuple[str, dict
 - For SELL orders: Stop loss MUST be ABOVE entry price
 - If you cannot identify a valid stop loss placement, output "hold"
 
-## CURRENT MARKET DATA
 {data_context}
 
 ## YOUR TASK
