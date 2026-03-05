@@ -5884,6 +5884,281 @@ async def run_quant_analysis(request: QuantAnalysisRequest):
         }
 
 
+class VPQuantAnalysisRequest(BaseModel):
+    """Request model for Volume Profile quant analysis."""
+    symbol: str
+    timeframe: str = "H1"
+
+
+@app.post("/api/analysis/vp-quant")
+async def run_vp_quant_analysis(request: VPQuantAnalysisRequest):
+    """
+    Run quantitative Volume Profile analysis using a single LLM call.
+
+    This quant focuses on Volume Profile concepts:
+    - POC (Point of Control) as price magnet
+    - Value Area for fair value determination
+    - HVN (High Volume Nodes) for support/resistance
+    - LVN (Low Volume Nodes) for fast-move zones
+
+    Returns structured trade decision compatible with trade execution modal.
+    """
+    import time as _time
+    _endpoint_start = _time.time()
+    logger.info(f"[VP QUANT API] Request: symbol={request.symbol}, timeframe={request.timeframe}")
+    try:
+        import MetaTrader5 as mt5
+        import pandas as pd
+        import numpy as np
+
+        if not mt5.initialize():
+            raise HTTPException(status_code=500, detail="MT5 not initialized")
+
+        # Get symbol info for current price
+        symbol_info = mt5.symbol_info_tick(request.symbol)
+        if symbol_info is None:
+            raise HTTPException(status_code=400, detail=f"Symbol {request.symbol} not found")
+
+        current_price = (symbol_info.bid + symbol_info.ask) / 2
+        bid = symbol_info.bid
+        ask = symbol_info.ask
+
+        # Map timeframe
+        tf_map = {
+            "M1": mt5.TIMEFRAME_M1, "M5": mt5.TIMEFRAME_M5, "M15": mt5.TIMEFRAME_M15,
+            "M30": mt5.TIMEFRAME_M30, "H1": mt5.TIMEFRAME_H1, "H4": mt5.TIMEFRAME_H4,
+            "D1": mt5.TIMEFRAME_D1, "W1": mt5.TIMEFRAME_W1
+        }
+        tf = tf_map.get(request.timeframe.upper(), mt5.TIMEFRAME_H1)
+
+        # Get price data (more for VP analysis)
+        rates = mt5.copy_rates_from_pos(request.symbol, tf, 0, 300)
+        if rates is None or len(rates) == 0:
+            raise HTTPException(status_code=400, detail="Failed to get price data")
+
+        df = pd.DataFrame(rates)
+        df['time'] = pd.to_datetime(df['time'], unit='s')
+
+        # === STEP 1: Calculate Volume Profile ===
+        from tradingagents.indicators.volume_profile import VolumeProfileAnalyzer
+        from tradingagents.agents.analysts.volume_profile_quant import (
+            create_volume_profile_quant,
+            analyze_volume_profile_for_quant,
+        )
+
+        vp_data = analyze_volume_profile_for_quant(df, current_price, num_bins=50, lookback=150)
+        volume_profile = vp_data["volume_profile"]
+        volume_profile_context = vp_data["volume_profile_context"]
+
+        # === STEP 2: Calculate Technical Indicators ===
+        # ATR
+        high_low = df['high'] - df['low']
+        atr = high_low.rolling(14).mean().iloc[-1]
+
+        # RSI
+        delta = df['close'].diff()
+        gain = (delta.where(delta > 0, 0)).rolling(14).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
+        rs = gain / (loss + 0.0001)
+        rsi = 100 - (100 / (1 + rs))
+        rsi_value = rsi.iloc[-1]
+
+        # MACD
+        ema12 = df['close'].ewm(span=12, adjust=False).mean()
+        ema26 = df['close'].ewm(span=26, adjust=False).mean()
+        macd_line = ema12 - ema26
+        signal_line = macd_line.ewm(span=9, adjust=False).mean()
+        macd_value = macd_line.iloc[-1]
+        macd_signal = signal_line.iloc[-1]
+        macd_histogram = (macd_line - signal_line).iloc[-1]
+
+        # EMA
+        ema20 = df['close'].ewm(span=20, adjust=False).mean().iloc[-1]
+        ema50 = df['close'].ewm(span=50, adjust=False).mean().iloc[-1]
+
+        # ADX
+        plus_dm = df['high'].diff()
+        minus_dm = -df['low'].diff()
+        plus_dm[plus_dm < 0] = 0
+        minus_dm[minus_dm < 0] = 0
+        tr = high_low.copy()
+        atr_14 = tr.rolling(14).mean()
+        plus_di = 100 * (plus_dm.rolling(14).mean() / atr_14)
+        minus_di = 100 * (minus_dm.rolling(14).mean() / atr_14)
+        dx = 100 * abs(plus_di - minus_di) / (plus_di + minus_di + 0.0001)
+        adx = dx.rolling(14).mean().iloc[-1]
+
+        # Market regime
+        avg_atr = high_low.rolling(50).mean().iloc[-1]
+        if not np.isnan(atr) and not np.isnan(avg_atr) and avg_atr > 0:
+            vol_ratio = atr / avg_atr
+            if vol_ratio > 1.5:
+                volatility_regime = "high"
+            elif vol_ratio < 0.7:
+                volatility_regime = "low"
+            else:
+                volatility_regime = "normal"
+        else:
+            volatility_regime = "normal"
+
+        if adx > 25:
+            if ema20 > ema50:
+                market_regime = "trending-up"
+            else:
+                market_regime = "trending-down"
+        else:
+            market_regime = "ranging"
+
+        # Volume stats
+        current_volume = df['tick_volume'].iloc[-1] if 'tick_volume' in df.columns else df.get('volume', pd.Series([0])).iloc[-1]
+        avg_volume_20 = df['tick_volume'].rolling(20).mean().iloc[-1] if 'tick_volume' in df.columns else 0
+        volume_ratio = current_volume / avg_volume_20 if avg_volume_20 > 0 else 1.0
+
+        # Build indicator context
+        indicators_context = f"""### Momentum
+- **RSI(14)**: {rsi_value:.1f} {"(Overbought)" if rsi_value > 70 else "(Oversold)" if rsi_value < 30 else "(Neutral)"}
+- **MACD**: {macd_value:.5f} | Signal: {macd_signal:.5f}
+  - {"Bullish (MACD > Signal)" if macd_value > macd_signal else "Bearish (MACD < Signal)"}
+
+### Trend
+- **EMA20**: {ema20:.5f} {"(Price above)" if current_price > ema20 else "(Price below)"}
+- **EMA50**: {ema50:.5f} {"(Price above)" if current_price > ema50 else "(Price below)"}
+- **ADX**: {adx:.1f} {"(Strong trend)" if adx > 25 else "(Weak/No trend)"}
+- **Regime**: {market_regime}
+
+### Volatility
+- **ATR(14)**: {atr:.5f}
+- **Volatility**: {volatility_regime}
+
+### Volume
+- **Current Volume**: {current_volume:,.0f}
+- **Avg Volume (20)**: {avg_volume_20:,.0f}
+- **Volume Ratio**: {volume_ratio:.2f}x average
+"""
+
+        # === STEP 3: Call VP Quant Analyst LLM ===
+        from tradingagents.default_config import DEFAULT_CONFIG
+        import os
+
+        config = DEFAULT_CONFIG.copy()
+
+        # Create LLM
+        if config["llm_provider"].lower() in ["xai", "grok"]:
+            from langchain_xai import ChatXAI
+            api_key = os.environ.get("XAI_API_KEY") or ""
+            llm = ChatXAI(model=config["deep_think_llm"], xai_api_key=api_key)
+        elif config["llm_provider"].lower() in ["openai", "ollama", "openrouter"]:
+            from langchain_openai import ChatOpenAI
+            from openai import OpenAI
+            api_key = os.environ.get("OPENAI_API_KEY") or ""
+            sync_client = OpenAI(api_key=api_key, base_url=config["backend_url"])
+            llm = ChatOpenAI(
+                model=config["deep_think_llm"],
+                base_url=config["backend_url"],
+                api_key=api_key,
+                root_client=sync_client
+            )
+        else:
+            raise HTTPException(status_code=500, detail=f"Unsupported LLM provider: {config['llm_provider']}")
+
+        # Create state for VP quant
+        vp_quant_state = {
+            "company_of_interest": request.symbol,
+            "trade_date": pd.Timestamp.now().strftime("%Y-%m-%d"),
+            "current_price": current_price,
+            "volume_profile": volume_profile,
+            "volume_profile_context": volume_profile_context,
+            "market_report": indicators_context,
+            "market_regime": market_regime,
+            "volatility_regime": volatility_regime,
+            "trading_session": _get_trading_session(),
+        }
+
+        # Run VP quant analyst
+        logger.info(f"[VP QUANT API] Running VP quant analyst for {request.symbol}...")
+        vp_quant_analyst = create_volume_profile_quant(llm, use_structured_output=True)
+        result = vp_quant_analyst(vp_quant_state)
+
+        vp_quant_report = result.get("vp_quant_report", "")
+        vp_quant_decision = result.get("vp_quant_decision")
+        logger.info(f"[VP QUANT API] Analyst returned: vp_quant_decision={'present' if vp_quant_decision else 'None'}")
+
+        # Build response
+        _endpoint_duration = _time.time() - _endpoint_start
+        logger.info(f"[VP QUANT API] Completed for {request.symbol} in {_endpoint_duration:.1f}s")
+
+        if vp_quant_decision:
+            signal_map = {
+                "buy_to_enter": "BUY",
+                "sell_to_enter": "SELL",
+                "hold": "HOLD",
+                "close": "HOLD",
+            }
+            raw_signal = vp_quant_decision.get("signal", "hold")
+            if isinstance(raw_signal, dict):
+                raw_signal = raw_signal.get("value", "hold")
+
+            return {
+                "status": "success",
+                "symbol": request.symbol,
+                "signal": signal_map.get(raw_signal, "HOLD"),
+                "raw_signal": raw_signal,
+                "entry_price": vp_quant_decision.get("entry_price"),
+                "stop_loss": vp_quant_decision.get("stop_loss"),
+                "take_profit": vp_quant_decision.get("profit_target"),
+                "confidence": vp_quant_decision.get("confidence", 0.5),
+                "justification": vp_quant_decision.get("justification", ""),
+                "invalidation": vp_quant_decision.get("invalidation_condition", ""),
+                "risk_level": vp_quant_decision.get("risk_level", "Medium"),
+                "risk_reward_ratio": vp_quant_decision.get("risk_reward_ratio"),
+                "report": vp_quant_report,
+                "current_price": current_price,
+                "bid": bid,
+                "ask": ask,
+                "volume_profile": {
+                    "poc": volume_profile.poc,
+                    "poc_volume_pct": volume_profile.poc_volume_pct,
+                    "value_area_high": volume_profile.value_area_high,
+                    "value_area_low": volume_profile.value_area_low,
+                    "hvn_count": len(volume_profile.high_volume_nodes),
+                    "lvn_count": len(volume_profile.low_volume_nodes),
+                },
+                "market_context": {
+                    "regime": market_regime,
+                    "volatility": volatility_regime,
+                    "adx": round(adx, 2) if not np.isnan(adx) else None,
+                    "atr": round(atr, 5) if not np.isnan(atr) else None
+                },
+                "analysis_mode": "vp_quant",
+                "llm_used": True,
+            }
+        else:
+            return {
+                "status": "success",
+                "symbol": request.symbol,
+                "signal": "HOLD",
+                "raw_signal": "hold",
+                "confidence": 0.5,
+                "justification": "VP quant analysis did not return a structured decision",
+                "report": vp_quant_report,
+                "current_price": current_price,
+                "analysis_mode": "vp_quant",
+                "llm_used": True,
+            }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        _endpoint_duration = _time.time() - _endpoint_start
+        logger.error(f"[VP QUANT API] ERROR for {request.symbol} after {_endpoint_duration:.1f}s: {e}\n{traceback.format_exc()}")
+        return {
+            "status": "error",
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+
 def _format_smc_for_quant(smc_result: dict, current_price: float, atr: float) -> str:
     """
     Format SMC analysis for quant analyst prompt.
