@@ -1,0 +1,1024 @@
+2026-03-09 07:44:50,206 | 
+================================================================================
+QUANT ANALYSIS REQUEST - ETHUSD
+================================================================================
+2026-03-09 07:44:50,207 | Symbol: ETHUSD | Date: 2026-03-09 | Price: 1954.6350000000002
+2026-03-09 07:44:50,208 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: ETHUSD
+- **Current Price (Broker)**: 1954.63500
+- **Date**: 2026-03-09
+- **Trading Session**: asian
+- **Market Regime**: trending-up
+- **Volatility Regime**: normal
+
+## Smart Money Concepts Analysis
+
+### Market Structure
+**Bias**: BEARISH
+**Recent Structure**: BOS (bearish continuation)
+
+### Price Position
+**Zone**: DISCOUNT (42% of range) (favor BUYS - price is cheap)
+**Equilibrium**: 1959.83000
+
+### Fair Value Gaps
+- BULLISH FVG: 1936.12000 - 1952.57000 (54% filled) | -0.11% from price
+
+### Liquidity Zones (Stop Loss Clusters)
+- BUY-SIDE (above): 1973.73000 (strength: 69.3) | +0.98% - target for shorts
+- BUY-SIDE (above): 1976.35000 (strength: 56.9) | +1.11% - target for shorts
+- SELL-SIDE (below): 1954.97000 (strength: 70.2) | -0.00% - target for longs
+- SELL-SIDE (below): 1947.45000 (strength: 58.3) | -0.37% - target for longs
+
+### Recent Liquidity Sweeps (Last 10 candles)
+- BULLISH SWEEP : Swept lows at 0.00000 - look for reversal UP
+- BULLISH SWEEP [STRONG]: Swept lows at 0.00000 - look for reversal UP
+
+**Current Price**: 1954.63500
+**ATR**: 18.76286
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 53.9 (Neutral)
+- **MACD**: -6.90803 | Signal: -9.90430 | Histogram: 2.99626
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 1952.27704 (Price above)
+- **EMA50**: 1973.47989 (Price below)
+- **ADX**: 39.3 (Strong trend)
+- **Regime**: trending-up
+
+### Volatility
+- **ATR(14)**: 18.76286
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=1973.84671 | Middle=1949.79250 | Lower=1925.73829
+  - Price near upper band
+
+### Volume
+- **Current Bar Volume**: 3,868 ticks
+- **20-bar Avg Volume**: 5,168 ticks
+- **Volume Ratio**: 0.75x average 
+- **Volume Profile**: Low
+- **Volume Trend (5 bars)**: decreasing
+
+## Key Price Levels
+
+### Previous Day
+- **PDH** (High): 1976.35000 (price is -21.71500 from it)
+- **PDL** (Low): 1924.25000 (price is +30.38500 from it)
+- **Open**: 1969.88000 | **Close**: 1958.28000
+- **Range**: 52.10000
+- Price is **INSIDE** Previous Day range
+
+### Previous Week
+- **PWH** (High): 2198.35000 (price is -243.71500 from it)
+- **PWL** (Low): 1906.79000 (price is +47.84500 from it)
+- **Open**: 1957.88000 | **Close**: 1969.79000
+- **Range**: 291.56000
+- Price is **INSIDE** Previous Week range
+
+### Previous H4
+- **PH4H** (High): 1970.62000 (price is -15.98500 from it)
+- **PH4L** (Low): 1927.11000 (price is +27.52500 from it)
+- **Open**: 1936.68000 | **Close**: 1958.28000
+- **Range**: 43.51000
+- Price is **INSIDE** Previous H4 range
+
+### Volume Profile
+**POC (Point of Control)**: 1976.32900 (6.4% of volume)
+  - Price is -1.11% below POC - POC acts as magnet
+**Value Area**: 1924.25000 - 2110.63800 (71% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 1976.32900 (6.4% vol) | +1.11% above
+  - HVN at 1981.81100 (6.1% vol) | +1.39% above
+  - HVN at 1970.84700 (4.9% vol) | +0.83% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 1926.99100 | -1.41% - price may move fast through this level
+  - LVN at 1998.25700 | +2.23% - price may move fast through this level
+  - LVN at 2003.73900 | +2.51% - price may move fast through this level
+
+2026-03-09 07:44:50,216 | 
+--- FULL PROMPT ---
+You are a systematic quant trader with strict risk discipline. Your only goal is to maximize long-term PnL while surviving drawdowns.
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account value per trade** (risk_usd = position size × distance to stop-loss)
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and one clear invalidation condition before entry**
+5. **Hold only when current plan remains valid; never flip-flop without new high-conviction signal**
+6. **Ignore narratives; trade only price, volume, and the provided technical indicators**
+7. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+8. **Leverage is a tool, not a goal - default 5-20x, higher only with extreme conviction**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- If you cannot identify a valid stop loss placement, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: ETHUSD
+- **Current Price (Broker)**: 1954.63500
+- **Date**: 2026-03-09
+- **Trading Session**: asian
+- **Market Regime**: trending-up
+- **Volatility Regime**: normal
+
+## Smart Money Concepts Analysis
+
+### Market Structure
+**Bias**: BEARISH
+**Recent Structure**: BOS (bearish continuation)
+
+### Price Position
+**Zone**: DISCOUNT (42% of range) (favor BUYS - price is cheap)
+**Equilibrium**: 1959.83000
+
+### Fair Value Gaps
+- BULLISH FVG: 1936.12000 - 1952.57000 (54% filled) | -0.11% from price
+
+### Liquidity Zones (Stop Loss Clusters)
+- BUY-SIDE (above): 1973.73000 (strength: 69.3) | +0.98% - target for shorts
+- BUY-SIDE (above): 1976.35000 (strength: 56.9) | +1.11% - target for shorts
+- SELL-SIDE (below): 1954.97000 (strength: 70.2) | -0.00% - target for longs
+- SELL-SIDE (below): 1947.45000 (strength: 58.3) | -0.37% - target for longs
+
+### Recent Liquidity Sweeps (Last 10 candles)
+- BULLISH SWEEP : Swept lows at 0.00000 - look for reversal UP
+- BULLISH SWEEP [STRONG]: Swept lows at 0.00000 - look for reversal UP
+
+**Current Price**: 1954.63500
+**ATR**: 18.76286
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 53.9 (Neutral)
+- **MACD**: -6.90803 | Signal: -9.90430 | Histogram: 2.99626
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 1952.27704 (Price above)
+- **EMA50**: 1973.47989 (Price below)
+- **ADX**: 39.3 (Strong trend)
+- **Regime**: trending-up
+
+### Volatility
+- **ATR(14)**: 18.76286
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=1973.84671 | Middle=1949.79250 | Lower=1925.73829
+  - Price near upper band
+
+### Volume
+- **Current Bar Volume**: 3,868 ticks
+- **20-bar Avg Volume**: 5,168 ticks
+- **Volume Ratio**: 0.75x average 
+- **Volume Profile**: Low
+- **Volume Trend (5 bars)**: decreasing
+
+## Key Price Levels
+
+### Previous Day
+- **PDH** (High): 1976.35000 (price is -21.71500 from it)
+- **PDL** (Low): 1924.25000 (price is +30.38500 from it)
+- **Open**: 1969.88000 | **Close**: 1958.28000
+- **Range**: 52.10000
+- Price is **INSIDE** Previous Day range
+
+### Previous Week
+- **PWH** (High): 2198.35000 (price is -243.71500 from it)
+- **PWL** (Low): 1906.79000 (price is +47.84500 from it)
+- **Open**: 1957.88000 | **Close**: 1969.79000
+- **Range**: 291.56000
+- Price is **INSIDE** Previous Week range
+
+### Previous H4
+- **PH4H** (High): 1970.62000 (price is -15.98500 from it)
+- **PH4L** (Low): 1927.11000 (price is +27.52500 from it)
+- **Open**: 1936.68000 | **Close**: 1958.28000
+- **Range**: 43.51000
+- Price is **INSIDE** Previous H4 range
+
+### Volume Profile
+**POC (Point of Control)**: 1976.32900 (6.4% of volume)
+  - Price is -1.11% below POC - POC acts as magnet
+**Value Area**: 1924.25000 - 2110.63800 (71% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 1976.32900 (6.4% vol) | +1.11% above
+  - HVN at 1981.81100 (6.1% vol) | +1.39% above
+  - HVN at 1970.84700 (4.9% vol) | +0.83% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 1926.99100 | -1.41% - price may move fast through this level
+  - LVN at 1998.25700 | +2.23% - price may move fast through this level
+  - LVN at 2003.73900 | +2.51% - price may move fast through this level
+
+
+## YOUR TASK
+
+Analyze the provided technical data and make a systematic trading decision.
+
+Think step-by-step:
+1. What is the overall market structure and bias?
+2. Are there high-probability entry zones (OB, FVG) near current price?
+3. Where would stop loss be placed? Is the R:R acceptable (>1.5:1)?
+4. What would invalidate this setup?
+5. What is your confidence level based on confluence?
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when price is at a high-probability bullish zone (bullish OB, bullish FVG, demand zone) with confluence from indicators. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when price is at a high-probability bearish zone (bearish OB, bearish FVG, supply zone) with confluence from indicators. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when no clear edge exists, price is between zones, or conditions are ambiguous.
+- **close** - Close existing position. Use when the original thesis is invalidated.
+
+Remember:
+- Only enter trades with clear edge
+- Wait for price to come to your levels
+- No FOMO entries
+- Discipline > prediction
+2026-03-09 07:44:50,228 | 
+================================================================================
+
+2026-03-09 07:45:02,796 | --- LLM RESPONSE (Structured) [took 12.6s] ---
+2026-03-09 07:45:02,796 | Signal: hold
+2026-03-09 07:45:02,796 | Confidence: 0.4
+2026-03-09 07:45:02,797 | Entry: None | SL: None | TP: None
+2026-03-09 07:45:02,797 | Justification: Mixed signals with bearish SMC bias conflicting against bullish MACD crossover, discount zone, and recent bullish liquidity sweeps; low volume and neutral RSI suggest no edge for entry.
+2026-03-09 07:45:02,797 | Invalidation: No clear high-probability entry zone with multi-confluence alignment
+2026-03-09 07:45:02,797 | Raw decision dict: {'symbol': 'ETHUSD', 'signal': 'hold', 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'No clear high-probability entry zone with multi-confluence alignment', 'justification': 'Mixed signals with bearish SMC bias conflicting against bullish MACD crossover, discount zone, and recent bullish liquidity sweeps; low volume and neutral RSI suggest no edge for entry.', 'confidence': 0.4, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-09 07:45:02,797 | 
+================================================================================
+
+2026-03-09 07:45:02,798 | Structured output SUCCESS - returning quant_decision with signal=hold
+2026-03-09 07:45:04,842 | 
+================================================================================
+QUANT ANALYSIS REQUEST - ETHUSD
+================================================================================
+2026-03-09 07:45:04,842 | Symbol: ETHUSD | Date: 2026-03-09 | Price: 1954.2649999999999
+2026-03-09 07:45:04,842 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: ETHUSD
+- **Current Price (Broker)**: 1954.26500
+- **Date**: 2026-03-09
+- **Trading Session**: asian
+- **Market Regime**: trending-up
+- **Volatility Regime**: normal
+
+## Smart Money Concepts Analysis
+
+### Market Structure
+**Bias**: BEARISH
+**Recent Structure**: BOS (bearish continuation)
+
+### Price Position
+**Zone**: DISCOUNT (41% of range) (favor BUYS - price is cheap)
+**Equilibrium**: 1959.83000
+
+### Fair Value Gaps
+- BULLISH FVG: 1936.12000 - 1952.57000 (54% filled) | -0.09% from price
+
+### Liquidity Zones (Stop Loss Clusters)
+- BUY-SIDE (above): 1973.73000 (strength: 69.3) | +1.00% - target for shorts
+- BUY-SIDE (above): 1976.35000 (strength: 56.9) | +1.13% - target for shorts
+- SELL-SIDE (below): 1954.97000 (strength: 70.2) | -0.00% - target for longs
+- SELL-SIDE (below): 1947.45000 (strength: 58.3) | -0.35% - target for longs
+
+### Recent Liquidity Sweeps (Last 10 candles)
+- BULLISH SWEEP : Swept lows at 0.00000 - look for reversal UP
+- BULLISH SWEEP [STRONG]: Swept lows at 0.00000 - look for reversal UP
+
+**Current Price**: 1954.26500
+**ATR**: 18.76286
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 53.7 (Neutral)
+- **MACD**: -6.93675 | Signal: -9.91004 | Histogram: 2.97329
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 1952.24276 (Price above)
+- **EMA50**: 1973.46577 (Price below)
+- **ADX**: 39.3 (Strong trend)
+- **Regime**: trending-up
+
+### Volatility
+- **ATR(14)**: 18.76286
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=1973.81637 | Middle=1949.77450 | Lower=1925.73263
+  - Price near upper band
+
+### Volume
+- **Current Bar Volume**: 3,881 ticks
+- **20-bar Avg Volume**: 5,169 ticks
+- **Volume Ratio**: 0.75x average 
+- **Volume Profile**: Low
+- **Volume Trend (5 bars)**: decreasing
+
+## Key Price Levels
+
+### Previous Day
+- **PDH** (High): 1976.35000 (price is -22.08500 from it)
+- **PDL** (Low): 1924.25000 (price is +30.01500 from it)
+- **Open**: 1969.88000 | **Close**: 1958.28000
+- **Range**: 52.10000
+- Price is **INSIDE** Previous Day range
+
+### Previous Week
+- **PWH** (High): 2198.35000 (price is -244.08500 from it)
+- **PWL** (Low): 1906.79000 (price is +47.47500 from it)
+- **Open**: 1957.88000 | **Close**: 1969.79000
+- **Range**: 291.56000
+- Price is **INSIDE** Previous Week range
+
+### Previous H4
+- **PH4H** (High): 1970.62000 (price is -16.35500 from it)
+- **PH4L** (Low): 1927.11000 (price is +27.15500 from it)
+- **Open**: 1936.68000 | **Close**: 1958.28000
+- **Range**: 43.51000
+- Price is **INSIDE** Previous H4 range
+
+### Volume Profile
+**POC (Point of Control)**: 1976.32900 (6.4% of volume)
+  - Price is -1.13% below POC - POC acts as magnet
+**Value Area**: 1924.25000 - 2110.63800 (71% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 1976.32900 (6.4% vol) | +1.13% above
+  - HVN at 1981.81100 (6.1% vol) | +1.41% above
+  - HVN at 1970.84700 (4.9% vol) | +0.85% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 1926.99100 | -1.40% - price may move fast through this level
+  - LVN at 1998.25700 | +2.25% - price may move fast through this level
+  - LVN at 2003.73900 | +2.53% - price may move fast through this level
+
+2026-03-09 07:45:04,850 | 
+--- FULL PROMPT ---
+You are a systematic quant trader with strict risk discipline. Your only goal is to maximize long-term PnL while surviving drawdowns.
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account value per trade** (risk_usd = position size × distance to stop-loss)
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and one clear invalidation condition before entry**
+5. **Hold only when current plan remains valid; never flip-flop without new high-conviction signal**
+6. **Ignore narratives; trade only price, volume, and the provided technical indicators**
+7. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+8. **Leverage is a tool, not a goal - default 5-20x, higher only with extreme conviction**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- If you cannot identify a valid stop loss placement, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: ETHUSD
+- **Current Price (Broker)**: 1954.26500
+- **Date**: 2026-03-09
+- **Trading Session**: asian
+- **Market Regime**: trending-up
+- **Volatility Regime**: normal
+
+## Smart Money Concepts Analysis
+
+### Market Structure
+**Bias**: BEARISH
+**Recent Structure**: BOS (bearish continuation)
+
+### Price Position
+**Zone**: DISCOUNT (41% of range) (favor BUYS - price is cheap)
+**Equilibrium**: 1959.83000
+
+### Fair Value Gaps
+- BULLISH FVG: 1936.12000 - 1952.57000 (54% filled) | -0.09% from price
+
+### Liquidity Zones (Stop Loss Clusters)
+- BUY-SIDE (above): 1973.73000 (strength: 69.3) | +1.00% - target for shorts
+- BUY-SIDE (above): 1976.35000 (strength: 56.9) | +1.13% - target for shorts
+- SELL-SIDE (below): 1954.97000 (strength: 70.2) | -0.00% - target for longs
+- SELL-SIDE (below): 1947.45000 (strength: 58.3) | -0.35% - target for longs
+
+### Recent Liquidity Sweeps (Last 10 candles)
+- BULLISH SWEEP : Swept lows at 0.00000 - look for reversal UP
+- BULLISH SWEEP [STRONG]: Swept lows at 0.00000 - look for reversal UP
+
+**Current Price**: 1954.26500
+**ATR**: 18.76286
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 53.7 (Neutral)
+- **MACD**: -6.93675 | Signal: -9.91004 | Histogram: 2.97329
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 1952.24276 (Price above)
+- **EMA50**: 1973.46577 (Price below)
+- **ADX**: 39.3 (Strong trend)
+- **Regime**: trending-up
+
+### Volatility
+- **ATR(14)**: 18.76286
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=1973.81637 | Middle=1949.77450 | Lower=1925.73263
+  - Price near upper band
+
+### Volume
+- **Current Bar Volume**: 3,881 ticks
+- **20-bar Avg Volume**: 5,169 ticks
+- **Volume Ratio**: 0.75x average 
+- **Volume Profile**: Low
+- **Volume Trend (5 bars)**: decreasing
+
+## Key Price Levels
+
+### Previous Day
+- **PDH** (High): 1976.35000 (price is -22.08500 from it)
+- **PDL** (Low): 1924.25000 (price is +30.01500 from it)
+- **Open**: 1969.88000 | **Close**: 1958.28000
+- **Range**: 52.10000
+- Price is **INSIDE** Previous Day range
+
+### Previous Week
+- **PWH** (High): 2198.35000 (price is -244.08500 from it)
+- **PWL** (Low): 1906.79000 (price is +47.47500 from it)
+- **Open**: 1957.88000 | **Close**: 1969.79000
+- **Range**: 291.56000
+- Price is **INSIDE** Previous Week range
+
+### Previous H4
+- **PH4H** (High): 1970.62000 (price is -16.35500 from it)
+- **PH4L** (Low): 1927.11000 (price is +27.15500 from it)
+- **Open**: 1936.68000 | **Close**: 1958.28000
+- **Range**: 43.51000
+- Price is **INSIDE** Previous H4 range
+
+### Volume Profile
+**POC (Point of Control)**: 1976.32900 (6.4% of volume)
+  - Price is -1.13% below POC - POC acts as magnet
+**Value Area**: 1924.25000 - 2110.63800 (71% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 1976.32900 (6.4% vol) | +1.13% above
+  - HVN at 1981.81100 (6.1% vol) | +1.41% above
+  - HVN at 1970.84700 (4.9% vol) | +0.85% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 1926.99100 | -1.40% - price may move fast through this level
+  - LVN at 1998.25700 | +2.25% - price may move fast through this level
+  - LVN at 2003.73900 | +2.53% - price may move fast through this level
+
+
+## YOUR TASK
+
+Analyze the provided technical data and make a systematic trading decision.
+
+Think step-by-step:
+1. What is the overall market structure and bias?
+2. Are there high-probability entry zones (OB, FVG) near current price?
+3. Where would stop loss be placed? Is the R:R acceptable (>1.5:1)?
+4. What would invalidate this setup?
+5. What is your confidence level based on confluence?
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when price is at a high-probability bullish zone (bullish OB, bullish FVG, demand zone) with confluence from indicators. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when price is at a high-probability bearish zone (bearish OB, bearish FVG, supply zone) with confluence from indicators. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when no clear edge exists, price is between zones, or conditions are ambiguous.
+- **close** - Close existing position. Use when the original thesis is invalidated.
+
+Remember:
+- Only enter trades with clear edge
+- Wait for price to come to your levels
+- No FOMO entries
+- Discipline > prediction
+2026-03-09 07:45:04,863 | 
+================================================================================
+
+2026-03-09 07:45:15,566 | --- LLM RESPONSE (Structured) [took 10.7s] ---
+2026-03-09 07:45:15,566 | Signal: hold
+2026-03-09 07:45:15,566 | Confidence: 0.85
+2026-03-09 07:45:15,567 | Entry: None | SL: None | TP: None
+2026-03-09 07:45:15,567 | Justification: Mixed signals with bearish SMC bias and BOS but conflicting bullish MACD, trending-up regime, discount zone, and recent bullish liquidity sweeps create no clear high-probability edge for entry.
+2026-03-09 07:45:15,567 | Invalidation: Price breaks and closes above 1976.35000 (PDH and POC) on increased volume, confirming bullish structure shift.
+2026-03-09 07:45:15,568 | Raw decision dict: {'symbol': 'ETHUSD', 'signal': 'hold', 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price breaks and closes above 1976.35000 (PDH and POC) on increased volume, confirming bullish structure shift.', 'justification': 'Mixed signals with bearish SMC bias and BOS but conflicting bullish MACD, trending-up regime, discount zone, and recent bullish liquidity sweeps create no clear high-probability edge for entry.', 'confidence': 0.85, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-09 07:45:15,568 | 
+================================================================================
+
+2026-03-09 07:45:15,569 | Structured output SUCCESS - returning quant_decision with signal=hold
+2026-03-09 07:46:18,090 | 
+================================================================================
+QUANT ANALYSIS REQUEST - ETHUSD
+================================================================================
+2026-03-09 07:46:18,091 | Symbol: ETHUSD | Date: 2026-03-09 | Price: 1955.09
+2026-03-09 07:46:18,091 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: ETHUSD
+- **Current Price (Broker)**: 1955.09000
+- **Date**: 2026-03-09
+- **Trading Session**: asian
+- **Market Regime**: trending-up
+- **Volatility Regime**: normal
+
+## Smart Money Concepts Analysis
+
+### Market Structure
+**Bias**: BEARISH
+**Recent Structure**: BOS (bearish continuation)
+
+### Price Position
+**Zone**: DISCOUNT (42% of range) (favor BUYS - price is cheap)
+**Equilibrium**: 1959.83000
+
+### Fair Value Gaps
+- BULLISH FVG: 1936.12000 - 1952.57000 (54% filled) | -0.13% from price
+
+### Liquidity Zones (Stop Loss Clusters)
+- BUY-SIDE (above): 1973.73000 (strength: 69.3) | +0.95% - target for shorts
+- BUY-SIDE (above): 1976.35000 (strength: 56.9) | +1.09% - target for shorts
+- SELL-SIDE (below): 1954.97000 (strength: 70.2) | -0.01% - target for longs
+- SELL-SIDE (below): 1947.45000 (strength: 58.3) | -0.39% - target for longs
+
+### Recent Liquidity Sweeps (Last 10 candles)
+- BULLISH SWEEP : Swept lows at 0.00000 - look for reversal UP
+- BULLISH SWEEP [STRONG]: Swept lows at 0.00000 - look for reversal UP
+
+**Current Price**: 1955.09000
+**ATR**: 18.76286
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 54.2 (Neutral)
+- **MACD**: -6.87054 | Signal: -9.89680 | Histogram: 3.02626
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 1952.32181 (Price above)
+- **EMA50**: 1973.49832 (Price below)
+- **ADX**: 39.3 (Strong trend)
+- **Regime**: trending-up
+
+### Volatility
+- **ATR(14)**: 18.76286
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=1973.88793 | Middle=1949.81600 | Lower=1925.74407
+  - Price near upper band
+
+### Volume
+- **Current Bar Volume**: 3,937 ticks
+- **20-bar Avg Volume**: 5,172 ticks
+- **Volume Ratio**: 0.76x average 
+- **Volume Profile**: Low
+- **Volume Trend (5 bars)**: decreasing
+
+## Key Price Levels
+
+### Previous Day
+- **PDH** (High): 1976.35000 (price is -21.26000 from it)
+- **PDL** (Low): 1924.25000 (price is +30.84000 from it)
+- **Open**: 1969.88000 | **Close**: 1958.28000
+- **Range**: 52.10000
+- Price is **INSIDE** Previous Day range
+
+### Previous Week
+- **PWH** (High): 2198.35000 (price is -243.26000 from it)
+- **PWL** (Low): 1906.79000 (price is +48.30000 from it)
+- **Open**: 1957.88000 | **Close**: 1969.79000
+- **Range**: 291.56000
+- Price is **INSIDE** Previous Week range
+
+### Previous H4
+- **PH4H** (High): 1970.62000 (price is -15.53000 from it)
+- **PH4L** (Low): 1927.11000 (price is +27.98000 from it)
+- **Open**: 1936.68000 | **Close**: 1958.28000
+- **Range**: 43.51000
+- Price is **INSIDE** Previous H4 range
+
+### Volume Profile
+**POC (Point of Control)**: 1976.32900 (6.4% of volume)
+  - Price is -1.09% below POC - POC acts as magnet
+**Value Area**: 1924.25000 - 2110.63800 (71% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 1976.32900 (6.4% vol) | +1.09% above
+  - HVN at 1981.81100 (6.1% vol) | +1.37% above
+  - HVN at 1970.84700 (4.9% vol) | +0.81% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 1926.99100 | -1.44% - price may move fast through this level
+  - LVN at 1998.25700 | +2.21% - price may move fast through this level
+  - LVN at 2003.73900 | +2.49% - price may move fast through this level
+
+2026-03-09 07:46:18,099 | 
+--- FULL PROMPT ---
+You are a systematic quant trader with strict risk discipline. Your only goal is to maximize long-term PnL while surviving drawdowns.
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account value per trade** (risk_usd = position size × distance to stop-loss)
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and one clear invalidation condition before entry**
+5. **Hold only when current plan remains valid; never flip-flop without new high-conviction signal**
+6. **Ignore narratives; trade only price, volume, and the provided technical indicators**
+7. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+8. **Leverage is a tool, not a goal - default 5-20x, higher only with extreme conviction**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- If you cannot identify a valid stop loss placement, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: ETHUSD
+- **Current Price (Broker)**: 1955.09000
+- **Date**: 2026-03-09
+- **Trading Session**: asian
+- **Market Regime**: trending-up
+- **Volatility Regime**: normal
+
+## Smart Money Concepts Analysis
+
+### Market Structure
+**Bias**: BEARISH
+**Recent Structure**: BOS (bearish continuation)
+
+### Price Position
+**Zone**: DISCOUNT (42% of range) (favor BUYS - price is cheap)
+**Equilibrium**: 1959.83000
+
+### Fair Value Gaps
+- BULLISH FVG: 1936.12000 - 1952.57000 (54% filled) | -0.13% from price
+
+### Liquidity Zones (Stop Loss Clusters)
+- BUY-SIDE (above): 1973.73000 (strength: 69.3) | +0.95% - target for shorts
+- BUY-SIDE (above): 1976.35000 (strength: 56.9) | +1.09% - target for shorts
+- SELL-SIDE (below): 1954.97000 (strength: 70.2) | -0.01% - target for longs
+- SELL-SIDE (below): 1947.45000 (strength: 58.3) | -0.39% - target for longs
+
+### Recent Liquidity Sweeps (Last 10 candles)
+- BULLISH SWEEP : Swept lows at 0.00000 - look for reversal UP
+- BULLISH SWEEP [STRONG]: Swept lows at 0.00000 - look for reversal UP
+
+**Current Price**: 1955.09000
+**ATR**: 18.76286
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 54.2 (Neutral)
+- **MACD**: -6.87054 | Signal: -9.89680 | Histogram: 3.02626
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 1952.32181 (Price above)
+- **EMA50**: 1973.49832 (Price below)
+- **ADX**: 39.3 (Strong trend)
+- **Regime**: trending-up
+
+### Volatility
+- **ATR(14)**: 18.76286
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=1973.88793 | Middle=1949.81600 | Lower=1925.74407
+  - Price near upper band
+
+### Volume
+- **Current Bar Volume**: 3,937 ticks
+- **20-bar Avg Volume**: 5,172 ticks
+- **Volume Ratio**: 0.76x average 
+- **Volume Profile**: Low
+- **Volume Trend (5 bars)**: decreasing
+
+## Key Price Levels
+
+### Previous Day
+- **PDH** (High): 1976.35000 (price is -21.26000 from it)
+- **PDL** (Low): 1924.25000 (price is +30.84000 from it)
+- **Open**: 1969.88000 | **Close**: 1958.28000
+- **Range**: 52.10000
+- Price is **INSIDE** Previous Day range
+
+### Previous Week
+- **PWH** (High): 2198.35000 (price is -243.26000 from it)
+- **PWL** (Low): 1906.79000 (price is +48.30000 from it)
+- **Open**: 1957.88000 | **Close**: 1969.79000
+- **Range**: 291.56000
+- Price is **INSIDE** Previous Week range
+
+### Previous H4
+- **PH4H** (High): 1970.62000 (price is -15.53000 from it)
+- **PH4L** (Low): 1927.11000 (price is +27.98000 from it)
+- **Open**: 1936.68000 | **Close**: 1958.28000
+- **Range**: 43.51000
+- Price is **INSIDE** Previous H4 range
+
+### Volume Profile
+**POC (Point of Control)**: 1976.32900 (6.4% of volume)
+  - Price is -1.09% below POC - POC acts as magnet
+**Value Area**: 1924.25000 - 2110.63800 (71% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 1976.32900 (6.4% vol) | +1.09% above
+  - HVN at 1981.81100 (6.1% vol) | +1.37% above
+  - HVN at 1970.84700 (4.9% vol) | +0.81% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 1926.99100 | -1.44% - price may move fast through this level
+  - LVN at 1998.25700 | +2.21% - price may move fast through this level
+  - LVN at 2003.73900 | +2.49% - price may move fast through this level
+
+
+## YOUR TASK
+
+Analyze the provided technical data and make a systematic trading decision.
+
+Think step-by-step:
+1. What is the overall market structure and bias?
+2. Are there high-probability entry zones (OB, FVG) near current price?
+3. Where would stop loss be placed? Is the R:R acceptable (>1.5:1)?
+4. What would invalidate this setup?
+5. What is your confidence level based on confluence?
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when price is at a high-probability bullish zone (bullish OB, bullish FVG, demand zone) with confluence from indicators. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when price is at a high-probability bearish zone (bearish OB, bearish FVG, supply zone) with confluence from indicators. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when no clear edge exists, price is between zones, or conditions are ambiguous.
+- **close** - Close existing position. Use when the original thesis is invalidated.
+
+Remember:
+- Only enter trades with clear edge
+- Wait for price to come to your levels
+- No FOMO entries
+- Discipline > prediction
+2026-03-09 07:46:18,112 | 
+================================================================================
+
+2026-03-09 07:46:32,172 | --- LLM RESPONSE (Structured) [took 14.1s] ---
+2026-03-09 07:46:32,172 | Signal: hold
+2026-03-09 07:46:32,173 | Confidence: 0.75
+2026-03-09 07:46:32,173 | Entry: None | SL: None | TP: None
+2026-03-09 07:46:32,173 | Justification: Bearish market structure bias conflicts with bullish MACD crossover, trending-up regime, discount zone favoring buys, and recent bullish liquidity sweeps; no high-conviction setup with R:R >1.5:1.
+2026-03-09 07:46:32,174 | Invalidation: Bullish BOS or price breaks above EMA50 with volume increase
+2026-03-09 07:46:32,174 | Raw decision dict: {'symbol': 'ETHUSD', 'signal': 'hold', 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Bullish BOS or price breaks above EMA50 with volume increase', 'justification': 'Bearish market structure bias conflicts with bullish MACD crossover, trending-up regime, discount zone favoring buys, and recent bullish liquidity sweeps; no high-conviction setup with R:R >1.5:1.', 'confidence': 0.75, 'risk_level': 'Low', 'risk_reward_ratio': None}
+2026-03-09 07:46:32,174 | 
+================================================================================
+
+2026-03-09 07:46:32,175 | Structured output SUCCESS - returning quant_decision with signal=hold
+2026-03-09 07:47:34,564 | 
+================================================================================
+QUANT ANALYSIS REQUEST - ETHUSD
+================================================================================
+2026-03-09 07:47:34,565 | Symbol: ETHUSD | Date: 2026-03-09 | Price: 1954.915
+2026-03-09 07:47:34,565 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: ETHUSD
+- **Current Price (Broker)**: 1954.91500
+- **Date**: 2026-03-09
+- **Trading Session**: asian
+- **Market Regime**: trending-up
+- **Volatility Regime**: normal
+
+## Smart Money Concepts Analysis
+
+### Market Structure
+**Bias**: BEARISH
+**Recent Structure**: BOS (bearish continuation)
+
+### Price Position
+**Zone**: DISCOUNT (42% of range) (favor BUYS - price is cheap)
+**Equilibrium**: 1959.83000
+
+### Fair Value Gaps
+- BULLISH FVG: 1936.12000 - 1952.57000 (54% filled) | -0.12% from price
+
+### Liquidity Zones (Stop Loss Clusters)
+- BUY-SIDE (above): 1973.73000 (strength: 69.3) | +0.96% - target for shorts
+- BUY-SIDE (above): 1976.35000 (strength: 56.9) | +1.10% - target for shorts
+- SELL-SIDE (below): 1954.97000 (strength: 70.2) | -0.00% - target for longs
+- SELL-SIDE (below): 1947.45000 (strength: 58.3) | -0.38% - target for longs
+
+### Recent Liquidity Sweeps (Last 10 candles)
+- BULLISH SWEEP : Swept lows at 0.00000 - look for reversal UP
+- BULLISH SWEEP [STRONG]: Swept lows at 0.00000 - look for reversal UP
+
+**Current Price**: 1954.91500
+**ATR**: 18.76286
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 54.1 (Neutral)
+- **MACD**: -6.88410 | Signal: -9.89951 | Histogram: 3.01541
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 1952.30562 (Price above)
+- **EMA50**: 1973.49165 (Price below)
+- **ADX**: 39.3 (Strong trend)
+- **Regime**: trending-up
+
+### Volatility
+- **ATR(14)**: 18.76286
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=1973.87281 | Middle=1949.80750 | Lower=1925.74219
+  - Price near upper band
+
+### Volume
+- **Current Bar Volume**: 4,046 ticks
+- **20-bar Avg Volume**: 5,177 ticks
+- **Volume Ratio**: 0.78x average 
+- **Volume Profile**: Low
+- **Volume Trend (5 bars)**: decreasing
+
+## Key Price Levels
+
+### Previous Day
+- **PDH** (High): 1976.35000 (price is -21.43500 from it)
+- **PDL** (Low): 1924.25000 (price is +30.66500 from it)
+- **Open**: 1969.88000 | **Close**: 1958.28000
+- **Range**: 52.10000
+- Price is **INSIDE** Previous Day range
+
+### Previous Week
+- **PWH** (High): 2198.35000 (price is -243.43500 from it)
+- **PWL** (Low): 1906.79000 (price is +48.12500 from it)
+- **Open**: 1957.88000 | **Close**: 1969.79000
+- **Range**: 291.56000
+- Price is **INSIDE** Previous Week range
+
+### Previous H4
+- **PH4H** (High): 1970.62000 (price is -15.70500 from it)
+- **PH4L** (Low): 1927.11000 (price is +27.80500 from it)
+- **Open**: 1936.68000 | **Close**: 1958.28000
+- **Range**: 43.51000
+- Price is **INSIDE** Previous H4 range
+
+### Volume Profile
+**POC (Point of Control)**: 1976.32900 (6.4% of volume)
+  - Price is -1.10% below POC - POC acts as magnet
+**Value Area**: 1924.25000 - 2110.63800 (71% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 1976.32900 (6.4% vol) | +1.10% above
+  - HVN at 1981.81100 (6.1% vol) | +1.38% above
+  - HVN at 1970.84700 (4.9% vol) | +0.81% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 1926.99100 | -1.43% - price may move fast through this level
+  - LVN at 1998.25700 | +2.22% - price may move fast through this level
+  - LVN at 2003.73900 | +2.50% - price may move fast through this level
+
+2026-03-09 07:47:34,572 | 
+--- FULL PROMPT ---
+You are a systematic quant trader with strict risk discipline. Your only goal is to maximize long-term PnL while surviving drawdowns.
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account value per trade** (risk_usd = position size × distance to stop-loss)
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and one clear invalidation condition before entry**
+5. **Hold only when current plan remains valid; never flip-flop without new high-conviction signal**
+6. **Ignore narratives; trade only price, volume, and the provided technical indicators**
+7. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+8. **Leverage is a tool, not a goal - default 5-20x, higher only with extreme conviction**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- If you cannot identify a valid stop loss placement, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: ETHUSD
+- **Current Price (Broker)**: 1954.91500
+- **Date**: 2026-03-09
+- **Trading Session**: asian
+- **Market Regime**: trending-up
+- **Volatility Regime**: normal
+
+## Smart Money Concepts Analysis
+
+### Market Structure
+**Bias**: BEARISH
+**Recent Structure**: BOS (bearish continuation)
+
+### Price Position
+**Zone**: DISCOUNT (42% of range) (favor BUYS - price is cheap)
+**Equilibrium**: 1959.83000
+
+### Fair Value Gaps
+- BULLISH FVG: 1936.12000 - 1952.57000 (54% filled) | -0.12% from price
+
+### Liquidity Zones (Stop Loss Clusters)
+- BUY-SIDE (above): 1973.73000 (strength: 69.3) | +0.96% - target for shorts
+- BUY-SIDE (above): 1976.35000 (strength: 56.9) | +1.10% - target for shorts
+- SELL-SIDE (below): 1954.97000 (strength: 70.2) | -0.00% - target for longs
+- SELL-SIDE (below): 1947.45000 (strength: 58.3) | -0.38% - target for longs
+
+### Recent Liquidity Sweeps (Last 10 candles)
+- BULLISH SWEEP : Swept lows at 0.00000 - look for reversal UP
+- BULLISH SWEEP [STRONG]: Swept lows at 0.00000 - look for reversal UP
+
+**Current Price**: 1954.91500
+**ATR**: 18.76286
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 54.1 (Neutral)
+- **MACD**: -6.88410 | Signal: -9.89951 | Histogram: 3.01541
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 1952.30562 (Price above)
+- **EMA50**: 1973.49165 (Price below)
+- **ADX**: 39.3 (Strong trend)
+- **Regime**: trending-up
+
+### Volatility
+- **ATR(14)**: 18.76286
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=1973.87281 | Middle=1949.80750 | Lower=1925.74219
+  - Price near upper band
+
+### Volume
+- **Current Bar Volume**: 4,046 ticks
+- **20-bar Avg Volume**: 5,177 ticks
+- **Volume Ratio**: 0.78x average 
+- **Volume Profile**: Low
+- **Volume Trend (5 bars)**: decreasing
+
+## Key Price Levels
+
+### Previous Day
+- **PDH** (High): 1976.35000 (price is -21.43500 from it)
+- **PDL** (Low): 1924.25000 (price is +30.66500 from it)
+- **Open**: 1969.88000 | **Close**: 1958.28000
+- **Range**: 52.10000
+- Price is **INSIDE** Previous Day range
+
+### Previous Week
+- **PWH** (High): 2198.35000 (price is -243.43500 from it)
+- **PWL** (Low): 1906.79000 (price is +48.12500 from it)
+- **Open**: 1957.88000 | **Close**: 1969.79000
+- **Range**: 291.56000
+- Price is **INSIDE** Previous Week range
+
+### Previous H4
+- **PH4H** (High): 1970.62000 (price is -15.70500 from it)
+- **PH4L** (Low): 1927.11000 (price is +27.80500 from it)
+- **Open**: 1936.68000 | **Close**: 1958.28000
+- **Range**: 43.51000
+- Price is **INSIDE** Previous H4 range
+
+### Volume Profile
+**POC (Point of Control)**: 1976.32900 (6.4% of volume)
+  - Price is -1.10% below POC - POC acts as magnet
+**Value Area**: 1924.25000 - 2110.63800 (71% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 1976.32900 (6.4% vol) | +1.10% above
+  - HVN at 1981.81100 (6.1% vol) | +1.38% above
+  - HVN at 1970.84700 (4.9% vol) | +0.81% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 1926.99100 | -1.43% - price may move fast through this level
+  - LVN at 1998.25700 | +2.22% - price may move fast through this level
+  - LVN at 2003.73900 | +2.50% - price may move fast through this level
+
+
+## YOUR TASK
+
+Analyze the provided technical data and make a systematic trading decision.
+
+Think step-by-step:
+1. What is the overall market structure and bias?
+2. Are there high-probability entry zones (OB, FVG) near current price?
+3. Where would stop loss be placed? Is the R:R acceptable (>1.5:1)?
+4. What would invalidate this setup?
+5. What is your confidence level based on confluence?
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when price is at a high-probability bullish zone (bullish OB, bullish FVG, demand zone) with confluence from indicators. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when price is at a high-probability bearish zone (bearish OB, bearish FVG, supply zone) with confluence from indicators. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when no clear edge exists, price is between zones, or conditions are ambiguous.
+- **close** - Close existing position. Use when the original thesis is invalidated.
+
+Remember:
+- Only enter trades with clear edge
+- Wait for price to come to your levels
+- No FOMO entries
+- Discipline > prediction
+2026-03-09 07:47:34,583 | 
+================================================================================
+
+2026-03-09 07:48:05,162 | --- LLM RESPONSE (Structured) [took 30.6s] ---
+2026-03-09 07:48:05,163 | Signal: buy_to_enter
+2026-03-09 07:48:05,163 | Confidence: 0.65
+2026-03-09 07:48:05,163 | Entry: 1954.92 | SL: 1947.0 | TP: 1976.35
+2026-03-09 07:48:05,163 | Justification: Discount zone favoring buys, price adjacent to bullish FVG, bullish MACD and liquidity sweeps, price above EMA20, targeting buy-side liquidity at 1976 with favorable R:R.
+2026-03-09 07:48:05,164 | Invalidation: Close below 1947.45 sell-side liquidity zone
+2026-03-09 07:48:05,164 | Raw decision dict: {'symbol': 'ETHUSD', 'signal': 'buy_to_enter', 'quantity': None, 'leverage': 10, 'risk_usd': None, 'profit_target': 1976.35, 'stop_loss': 1947.0, 'entry_price': 1954.92, 'invalidation_condition': 'Close below 1947.45 sell-side liquidity zone', 'justification': 'Discount zone favoring buys, price adjacent to bullish FVG, bullish MACD and liquidity sweeps, price above EMA20, targeting buy-side liquidity at 1976 with favorable R:R.', 'confidence': 0.65, 'risk_level': 'Medium', 'risk_reward_ratio': 2.7}
+2026-03-09 07:48:05,164 | 
+================================================================================
+
+2026-03-09 07:48:05,165 | Structured output SUCCESS - returning quant_decision with signal=buy_to_enter

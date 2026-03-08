@@ -28,6 +28,7 @@ from tradingagents.dataflows.mt5_data import (
     execute_trade_signal,
     get_mt5_symbol_info,
     check_mt5_autotrading,
+    is_market_open,
 )
 
 # Risk management
@@ -49,6 +50,7 @@ from tradingagents.trade_decisions import (
 class PipelineType(str, Enum):
     """Available analysis pipelines."""
     QUANT = "quant"
+    VOLUME_PROFILE = "volume_profile"
     MULTI_AGENT = "multi_agent"
 
 
@@ -361,6 +363,104 @@ class QuantAutomation:
                 duration_seconds=time.time() - start_time,
             )
 
+    async def _run_vp_analysis(self, symbol: str) -> AnalysisCycleResult:
+        """Run volume profile quant analysis for a symbol."""
+        start_time = time.time()
+
+        try:
+            import aiohttp
+
+            async with aiohttp.ClientSession() as session:
+                payload = {
+                    "symbol": symbol,
+                    "timeframe": self.config.timeframe,
+                }
+                async with session.post(
+                    "http://localhost:8000/api/analysis/vp-quant",
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=120)
+                ) as response:
+                    if response.status != 200:
+                        error_text = await response.text()
+                        self.logger.error(f"VP quant API error: {error_text}")
+                        return AnalysisCycleResult(
+                            timestamp=datetime.now(),
+                            symbol=symbol,
+                            pipeline="volume_profile",
+                            signal="HOLD",
+                            confidence=0.0,
+                            rationale=f"API Error: {response.status}",
+                            duration_seconds=time.time() - start_time,
+                        )
+
+                    result = await response.json()
+
+            self.logger.info(f"[VP] API response status: {result.get('status')}")
+
+            if result.get("status") == "error":
+                self.logger.warning(f"[VP] API returned error for {symbol}: {result.get('error')}")
+                return AnalysisCycleResult(
+                    timestamp=datetime.now(),
+                    symbol=symbol,
+                    pipeline="volume_profile",
+                    signal="HOLD",
+                    confidence=0.0,
+                    rationale=f"API error: {result.get('error', 'unknown')}",
+                    duration_seconds=time.time() - start_time,
+                )
+
+            # VP endpoint returns flat structure (signal, entry_price, etc. at top level)
+            self.logger.info(
+                f"[VP] Decision for {symbol}: signal={result.get('signal')}, "
+                f"confidence={result.get('confidence')}, "
+                f"entry={result.get('entry_price')}, sl={result.get('stop_loss')}, tp={result.get('take_profit')}"
+            )
+            if result.get("justification"):
+                self.logger.info(f"[VP] Justification: {str(result.get('justification', ''))[:200]}")
+
+            signal = result.get("signal", "HOLD")
+            if isinstance(signal, dict):
+                signal = signal.get("value", "HOLD")
+            signal = signal.upper()
+
+            if signal in ["BUY_TO_ENTER", "BUY"]:
+                signal = "BUY"
+            elif signal in ["SELL_TO_ENTER", "SELL"]:
+                signal = "SELL"
+            else:
+                signal = "HOLD"
+
+            justification = result.get("justification", "")
+            invalidation = result.get("invalidation", "")
+            rationale = f"{justification}\n\n**Invalidation**: {invalidation}" if invalidation else justification
+
+            return AnalysisCycleResult(
+                timestamp=datetime.now(),
+                symbol=symbol,
+                pipeline="volume_profile",
+                signal=signal,
+                confidence=result.get("confidence", 0.5),
+                entry_price=result.get("entry_price"),
+                stop_loss=result.get("stop_loss"),
+                take_profit=result.get("take_profit"),
+                rationale=rationale,
+                duration_seconds=time.time() - start_time,
+            )
+
+        except Exception as e:
+            self.logger.error(f"VP analysis error for {symbol}: {e}")
+            import traceback
+            self.logger.error(traceback.format_exc())
+            return AnalysisCycleResult(
+                timestamp=datetime.now(),
+                symbol=symbol,
+                pipeline="volume_profile",
+                signal="HOLD",
+                confidence=0.0,
+                rationale=f"Error: {str(e)}",
+                duration_seconds=time.time() - start_time,
+            )
+
     async def _run_multi_agent_analysis(self, symbol: str) -> AnalysisCycleResult:
         """Run multi-agent pipeline analysis for a symbol."""
         start_time = time.time()
@@ -552,6 +652,26 @@ class QuantAutomation:
                     f"Full result: {trade_result}"
                 )
 
+                # Store failed decision for manual retry
+                error_detail = f"{result.execution_error} (retcode: {trade_result.get('retcode', 'N/A')})"
+                try:
+                    store_decision(
+                        symbol=result.symbol,
+                        decision_type="OPEN",
+                        action=result.signal,
+                        rationale=result.rationale[:500],
+                        source=f"quant_automation_{result.pipeline}",
+                        entry_price=entry_price,
+                        stop_loss=stop_loss,
+                        take_profit=take_profit,
+                        volume=lot_size,
+                        status="failed",
+                        execution_error=error_detail,
+                    )
+                    self.logger.info(f"Failed trade saved as decision for manual retry")
+                except Exception as store_err:
+                    self.logger.error(f"Could not store failed decision: {store_err}")
+
         except Exception as e:
             result.execution_error = str(e)
             import traceback
@@ -565,6 +685,14 @@ class QuantAutomation:
         self.logger.debug("--- Position management cycle start ---")
 
         try:
+            # Verify MT5 is connected before proceeding
+            import MetaTrader5 as _mt5
+            if not _mt5.terminal_info():
+                if not _mt5.initialize():
+                    err = _mt5.last_error()
+                    self.logger.warning(f"MT5 not connected (skipping position check): {err}")
+                    return results
+
             positions = get_open_positions()
             managed_positions = [p for p in positions if p.get("symbol") in self.config.symbols]
             self.logger.info(
@@ -716,6 +844,8 @@ class QuantAutomation:
 
                 results.append(result)
 
+        except ConnectionError as e:
+            self.logger.warning(f"MT5 connection lost during position management: {e}")
         except Exception as e:
             import traceback
             self.logger.error(f"Position management error: {e}\n{traceback.format_exc()}")
@@ -737,11 +867,24 @@ class QuantAutomation:
                         if elapsed < self.config.analysis_interval_seconds:
                             continue
 
+                    # Check if market is open before running analysis
+                    try:
+                        market_status = is_market_open(symbol)
+                        if not market_status["open"]:
+                            self.logger.info(
+                                f"Market closed for {symbol}: {market_status['reason']}, skipping analysis"
+                            )
+                            continue
+                    except Exception as mkt_err:
+                        self.logger.warning(f"Could not check market status for {symbol}: {mkt_err}")
+
                     self.logger.info(f"Running {self.config.pipeline.value} analysis for {symbol}...")
 
                     # Run analysis based on pipeline
                     if self.config.pipeline == PipelineType.QUANT:
                         result = await self._run_quant_analysis(symbol)
+                    elif self.config.pipeline == PipelineType.VOLUME_PROFILE:
+                        result = await self._run_vp_analysis(symbol)
                     else:
                         result = await self._run_multi_agent_analysis(symbol)
 
@@ -929,6 +1072,8 @@ class QuantAutomation:
         """Run a single analysis cycle for testing."""
         if self.config.pipeline == PipelineType.QUANT:
             return await self._run_quant_analysis(symbol)
+        elif self.config.pipeline == PipelineType.VOLUME_PROFILE:
+            return await self._run_vp_analysis(symbol)
         else:
             return await self._run_multi_agent_analysis(symbol)
 

@@ -2,7 +2,7 @@
 
 from enum import Enum
 from typing import Optional, List, Dict, Any
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from .base import (
     BaseSchema,
@@ -264,6 +264,14 @@ class QuantAnalystDecision(BaseSchema):
     risk_reward_ratio: Optional[float] = Field(
         None, ge=0, description="Calculated risk-to-reward ratio"
     )
+
+    @field_validator("risk_level", mode="before")
+    @classmethod
+    def coerce_null_risk_level(cls, v):
+        """LLMs sometimes return the string 'null' instead of JSON null."""
+        if isinstance(v, str) and v.lower() in ("null", "none", ""):
+            return None
+        return v
 
     def to_trade_modal_format(self) -> dict:
         """Convert to format expected by TradeExecutionWizard."""

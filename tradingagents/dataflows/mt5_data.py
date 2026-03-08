@@ -207,7 +207,70 @@ def get_mt5_symbol_info(
         "spread": info.spread,
         "bid": info.bid,
         "ask": info.ask,
+        "trade_mode": info.trade_mode,
+        "trade_tick_size": info.trade_tick_size,
     }
+
+
+def is_market_open(
+    symbol: Annotated[str, "MT5 symbol or alias"],
+) -> dict:
+    """
+    Check if the market is currently open for a symbol.
+
+    Uses MT5's trade_mode and tick data to determine market status.
+    Returns dict with 'open' (bool), 'reason' (str), and 'trade_mode' (int).
+    """
+    _ensure_mt5_initialized()
+
+    mt5_symbol = _resolve_symbol(symbol)
+
+    # Quick weekend check for forex/metals (closed Friday ~22:00 UTC to Sunday ~22:00 UTC)
+    # Skip for crypto symbols which trade 24/7
+    _crypto_bases = ("BTC", "ETH", "LTC", "XRP", "BCH", "BNB", "ADA", "DOT", "DOGE", "SOL", "AVAX", "LINK", "MATIC")
+    is_crypto = any(mt5_symbol.upper().startswith(c) for c in _crypto_bases)
+    if not is_crypto:
+        from datetime import datetime as _dt
+        now_utc = _dt.utcnow()
+        weekday = now_utc.weekday()  # 0=Mon, 5=Sat, 6=Sun
+        hour = now_utc.hour
+        if weekday == 5:  # Saturday - always closed
+            return {"open": False, "reason": "Weekend (Saturday)", "trade_mode": -1}
+        if weekday == 6 and hour < 22:  # Sunday before 22:00 UTC
+            return {"open": False, "reason": "Weekend (Sunday, market opens ~22:00 UTC)", "trade_mode": -1}
+        if weekday == 4 and hour >= 22:  # Friday after 22:00 UTC
+            return {"open": False, "reason": "Weekend (Friday close)", "trade_mode": -1}
+
+    if not mt5.symbol_select(mt5_symbol, True):
+        return {"open": False, "reason": f"Symbol '{mt5_symbol}' not found", "trade_mode": -1}
+
+    info = mt5.symbol_info(mt5_symbol)
+    if info is None:
+        return {"open": False, "reason": f"Could not get info for '{mt5_symbol}'", "trade_mode": -1}
+
+    # MT5 trade_mode constants:
+    # SYMBOL_TRADE_MODE_DISABLED (0) - trade disabled
+    # SYMBOL_TRADE_MODE_LONGONLY (1) - only buy allowed
+    # SYMBOL_TRADE_MODE_SHORTONLY (2) - only sell allowed
+    # SYMBOL_TRADE_MODE_CLOSEONLY (3) - only close allowed
+    # SYMBOL_TRADE_MODE_FULL (4) - full trading allowed
+    if info.trade_mode == 0:
+        return {"open": False, "reason": "Trading disabled for this symbol", "trade_mode": info.trade_mode}
+    if info.trade_mode == 3:
+        return {"open": False, "reason": "Close-only mode (market closing)", "trade_mode": info.trade_mode}
+
+    # Check for valid quotes - if bid/ask are 0, no quotes available
+    tick = mt5.symbol_info_tick(mt5_symbol)
+    if tick is None or (tick.bid == 0 and tick.ask == 0):
+        return {"open": False, "reason": "No quotes available (market likely closed)", "trade_mode": info.trade_mode}
+
+    # Check if tick is stale (more than 5 minutes old)
+    from time import time as _time
+    tick_age = _time() - tick.time
+    if tick_age > 300:
+        return {"open": False, "reason": f"Stale quotes ({int(tick_age)}s old, market likely closed)", "trade_mode": info.trade_mode}
+
+    return {"open": True, "reason": "Market open", "trade_mode": info.trade_mode}
 
 
 def get_mt5_current_price(
@@ -705,20 +768,23 @@ def place_limit_order(
         tick = mt5.symbol_info_tick(mt5_symbol)
         if tick is None:
             return {"success": False, "error": f"Could not get current price for '{mt5_symbol}'"}
-        
+
+        # Calculate offset: 2x spread with a minimum of 20 ticks
+        spread = tick.ask - tick.bid
+        min_offset = symbol_info.trade_tick_size * 20
+        offset = max(spread * 2, min_offset)
+
         # For BUY_LIMIT, price must be below current ask
         if order_type.upper() == "BUY_LIMIT":
             if price >= tick.ask:
-                # Adjust price to be below ask
-                price = tick.ask - (symbol_info.trade_tick_size * 5)  # 5 ticks below
+                price = tick.ask - offset
                 if price < 0:
                     return {"success": False, "error": f"Cannot place BUY_LIMIT at {price} - price too low"}
-        
+
         # For SELL_LIMIT, price must be above current bid
         elif order_type.upper() == "SELL_LIMIT":
             if price <= tick.bid:
-                # Adjust price to be above bid
-                price = tick.bid + (symbol_info.trade_tick_size * 5)  # 5 ticks above
+                price = tick.bid + offset
     
     # Determine order type
     if order_type.upper() == "BUY_LIMIT":
@@ -904,13 +970,34 @@ def execute_trade_signal(
         tp=take_profit,
         comment=comment,
     )
-    
+
+    # Fallback to market order if limit fails with invalid price
+    if not result.get("success") and use_limit_order and result.get("retcode") == 10015:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(
+            f"Limit order failed with invalid price, falling back to market order for {signal} {mt5_symbol}"
+        )
+        # Fetch fresh price for market order
+        tick = mt5.symbol_info_tick(mt5_symbol)
+        market_price = tick.ask if signal == "BUY" else tick.bid
+        result = place_limit_order(
+            symbol=mt5_symbol,
+            order_type=signal,  # "BUY" or "SELL" = market order
+            volume=volume,
+            price=market_price,
+            sl=stop_loss,
+            tp=take_profit,
+            comment=comment,
+        )
+        result["fallback_to_market"] = True
+
     result["signal"] = signal
     result["entry_price"] = entry_price
     result["stop_loss"] = stop_loss
     result["take_profit"] = take_profit
     result["volume"] = volume
-    
+
     return result
 
 
