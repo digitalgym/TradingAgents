@@ -10,7 +10,7 @@ from typing import Optional, List, Any, Dict
 from contextlib import asynccontextmanager
 import json
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks, Request
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -2253,6 +2253,49 @@ async def get_symbol_info(symbol: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/api/trade/market-status/{symbol}")
+async def get_market_status(symbol: str):
+    """Check if market is open for a symbol"""
+    try:
+        from tradingagents.dataflows.mt5_data import is_market_open
+        status = is_market_open(symbol)
+
+        # Add session info
+        session = _get_trading_session()
+
+        return {
+            "symbol": symbol,
+            "open": status["open"],
+            "reason": status["reason"],
+            "trade_mode": status["trade_mode"],
+            "session": session,
+        }
+    except Exception as e:
+        return {
+            "symbol": symbol,
+            "open": False,
+            "reason": f"Error checking market status: {str(e)}",
+            "trade_mode": -1,
+            "session": "unknown",
+        }
+
+
+@app.get("/api/trade/market-status")
+async def get_market_status_multi(symbols: str = "XAUUSD"):
+    """Check market status for multiple symbols (comma-separated)"""
+    from tradingagents.dataflows.mt5_data import is_market_open
+    symbol_list = [s.strip() for s in symbols.split(",") if s.strip()]
+    results = {}
+    for sym in symbol_list:
+        try:
+            status = is_market_open(sym)
+            results[sym] = {"open": status["open"], "reason": status["reason"]}
+        except Exception as e:
+            results[sym] = {"open": False, "reason": str(e)}
+
+    return {"symbols": results, "session": _get_trading_session()}
+
+
 @app.get("/api/trade/swing-levels/{symbol}")
 async def get_swing_levels(symbol: str, direction: str = "BUY", timeframe: str = "H1", lookback: int = 100):
     """
@@ -2541,11 +2584,14 @@ async def list_decisions(
         decisions = trade_decisions.list_active_decisions(symbol=symbol)
     elif status == "closed":
         decisions = trade_decisions.list_closed_decisions(symbol=symbol, limit=limit)
+    elif status == "failed":
+        decisions = trade_decisions.list_failed_decisions(symbol=symbol, limit=limit)
     else:
         # Get all
         active = trade_decisions.list_active_decisions(symbol=symbol)
         closed = trade_decisions.list_closed_decisions(symbol=symbol, limit=limit)
-        decisions = active + closed
+        failed = trade_decisions.list_failed_decisions(symbol=symbol, limit=limit)
+        decisions = active + closed + failed
         decisions = sorted(decisions, key=lambda d: d.get("created_at", ""), reverse=True)[:limit]
 
     # Transform to match frontend expected format
@@ -2567,6 +2613,7 @@ async def list_decisions(
             "volatility_regime": d.get("volatility_regime"),
             "market_regime": d.get("market_regime"),
             "key_factors": d.get("confluence_factors", []),
+            "execution_error": d.get("execution_error"),
             "outcome": {
                 "status": d.get("status", "active"),
                 "pnl": d.get("pnl"),
@@ -2607,6 +2654,7 @@ async def get_decision(decision_id: str):
         "market_regime": decision.get("market_regime"),
         "session": decision.get("session"),
         "key_factors": decision.get("confluence_factors", []),
+        "execution_error": decision.get("execution_error"),
         "outcome": {
             "status": decision.get("status", "active"),
             "pnl": decision.get("pnl"),
@@ -2710,6 +2758,65 @@ async def close_decision(decision_id: str, request: CloseDecisionRequest):
         raise HTTPException(status_code=404, detail="Decision not found")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/decisions/{decision_id}/retry-info")
+async def get_retry_info(decision_id: str):
+    """Get failed decision info + current market price for retry"""
+    try:
+        decision = trade_decisions.load_decision(decision_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Decision not found")
+
+    if decision.get("status") not in ("failed", "retried"):
+        raise HTTPException(status_code=400, detail="Only failed decisions can be retried")
+
+    symbol = decision.get("symbol", "")
+    current_price = None
+    try:
+        from tradingagents.dataflows.mt5_data import get_mt5_current_price
+        price_info = get_mt5_current_price(symbol)
+        current_price = {
+            "bid": price_info.get("bid"),
+            "ask": price_info.get("ask"),
+        }
+    except Exception:
+        pass
+
+    return {
+        "decision_id": decision_id,
+        "symbol": symbol,
+        "signal": decision.get("action"),
+        "original_entry": decision.get("entry_price"),
+        "stop_loss": decision.get("stop_loss"),
+        "take_profit": decision.get("take_profit"),
+        "volume": decision.get("volume"),
+        "rationale": decision.get("rationale"),
+        "execution_error": decision.get("execution_error"),
+        "failed_at": decision.get("created_at"),
+        "current_price": current_price,
+    }
+
+
+@app.post("/api/decisions/{decision_id}/mark-retried")
+async def mark_decision_retried(decision_id: str):
+    """Mark a failed decision as retried after successful re-execution"""
+    try:
+        decision = trade_decisions.load_decision(decision_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Decision not found")
+
+    if decision.get("status") != "failed":
+        raise HTTPException(status_code=400, detail="Only failed decisions can be marked as retried")
+
+    decision["status"] = "retried"
+    decision["retried_at"] = datetime.now().isoformat()
+
+    decision_file = Path(trade_decisions.DECISIONS_DIR) / f"{decision_id}.json"
+    with open(decision_file, "w") as f:
+        json.dump(decision, f, indent=2, default=str)
+
+    return {"success": True, "message": f"Decision {decision_id} marked as retried"}
 
 
 # ----- Analysis -----
@@ -6074,6 +6181,21 @@ async def run_vp_quant_analysis(request: VPQuantAnalysisRequest):
             "trading_session": _get_trading_session(),
         }
 
+        # Build the full prompt for logging/debugging
+        from tradingagents.agents.analysts.volume_profile_quant import _build_vp_data_context, _build_vp_quant_prompt
+        debug_data_context = _build_vp_data_context(
+            ticker=request.symbol,
+            current_price=current_price,
+            volume_profile=volume_profile,
+            volume_profile_context=volume_profile_context,
+            market_report=indicators_context,
+            market_regime=market_regime,
+            volatility_regime=volatility_regime,
+            trading_session=_get_trading_session(),
+            current_date=pd.Timestamp.now().strftime("%Y-%m-%d"),
+        )
+        full_vp_prompt = _build_vp_quant_prompt(debug_data_context)
+
         # Run VP quant analyst
         logger.info(f"[VP QUANT API] Running VP quant analyst for {request.symbol}...")
         vp_quant_analyst = create_volume_profile_quant(llm, use_structured_output=True)
@@ -6131,6 +6253,7 @@ async def run_vp_quant_analysis(request: VPQuantAnalysisRequest):
                 },
                 "analysis_mode": "vp_quant",
                 "llm_used": True,
+                "prompt_sent": full_vp_prompt,
             }
         else:
             return {
@@ -6144,6 +6267,7 @@ async def run_vp_quant_analysis(request: VPQuantAnalysisRequest):
                 "current_price": current_price,
                 "analysis_mode": "vp_quant",
                 "llm_used": True,
+                "prompt_sent": full_vp_prompt,
             }
 
     except HTTPException:
@@ -6911,14 +7035,36 @@ async def get_pending_predictions(symbol: str = None):
 
 # ----- Quant Automation -----
 
-# Global state for quant automation
-_quant_automation_instance = None
-_quant_automation_task = None
+# Global state: keyed by instance_name (e.g. "quant", "volume_profile")
+_automation_instances: Dict[str, Any] = {}
+_automation_tasks: Dict[str, Any] = {}
+
+# Persist automation configs to disk so they survive restarts/refreshes
+_AUTOMATION_CONFIGS_FILE = PROJECT_ROOT / "automation_configs.json"
+
+def _load_saved_configs() -> Dict[str, dict]:
+    """Load saved automation configs from disk."""
+    try:
+        if _AUTOMATION_CONFIGS_FILE.exists():
+            with open(_AUTOMATION_CONFIGS_FILE, "r") as f:
+                return json.load(f)
+    except Exception as e:
+        logger.warning(f"Failed to load automation configs: {e}")
+    return {}
+
+def _save_config(instance_name: str, config: dict):
+    """Save an automation config to disk. Raises on failure."""
+    configs = _load_saved_configs()
+    configs[instance_name] = config
+    with open(_AUTOMATION_CONFIGS_FILE, "w") as f:
+        json.dump(configs, f, indent=2)
+    logger.info(f"Saved automation config for '{instance_name}' to {_AUTOMATION_CONFIGS_FILE}")
 
 
 class QuantAutomationConfigRequest(BaseModel):
     """Request model for quant automation configuration."""
-    pipeline: str = "quant"  # "quant" or "multi_agent"
+    instance_name: str = "quant"  # Unique identifier for this automation instance
+    pipeline: str = "quant"  # "quant", "volume_profile", or "multi_agent"
     symbols: List[str] = ["XAUUSD"]
     timeframe: str = "H1"
     analysis_interval_seconds: int = 180
@@ -6936,29 +7082,138 @@ class QuantAutomationConfigRequest(BaseModel):
     max_consecutive_losses: int = 3
 
 
-@app.get("/api/automation/quant/status")
-async def get_quant_automation_status():
-    """Get quant automation status."""
-    global _quant_automation_instance
+def _get_automation_instance(instance_name: str):
+    """Get an automation instance by name, or None if not found."""
+    return _automation_instances.get(instance_name)
 
-    if _quant_automation_instance is None:
+
+@app.get("/api/automation/quant/status")
+async def get_quant_automation_status(instance: str = "quant"):
+    """Get quant automation status for a specific instance."""
+    automation = _get_automation_instance(instance)
+
+    if automation is None:
+        # Return last-saved config so UI can restore form values
+        saved_configs = _load_saved_configs()
+        saved_config = saved_configs.get(instance)
         return {
             "status": "stopped",
             "running": False,
             "error": None,
-            "config": None,
+            "config": saved_config,
+            "instance_name": instance,
         }
 
-    return _quant_automation_instance.get_status()
+    status = automation.get_status()
+    status["instance_name"] = instance
+    return status
+
+
+@app.get("/api/automation/quant/instances")
+async def list_automation_instances():
+    """List all automation instances (saved configs + running status)."""
+    saved_configs = _load_saved_configs()
+    result = {}
+
+    # Include all saved configs
+    for name, cfg in saved_configs.items():
+        automation = _automation_instances.get(name)
+        if automation:
+            status = automation.get_status()
+        else:
+            status = {
+                "status": "stopped",
+                "running": False,
+                "error": None,
+                "config": cfg,
+            }
+        status["instance_name"] = name
+        result[name] = status
+
+    # Include running instances not in saved configs (shouldn't happen but be safe)
+    for name, instance in _automation_instances.items():
+        if name not in result:
+            status = instance.get_status()
+            status["instance_name"] = name
+            result[name] = status
+
+    return {"instances": result}
+
+
+@app.delete("/api/automation/quant/config/{instance_name}")
+async def delete_automation_config(instance_name: str):
+    """Delete a saved automation config. Must be stopped first."""
+    automation = _automation_instances.get(instance_name)
+    if automation and automation._running:
+        raise HTTPException(status_code=400, detail=f"Instance '{instance_name}' is still running. Stop it first.")
+
+    # Remove from saved configs
+    try:
+        configs = _load_saved_configs()
+        if instance_name in configs:
+            del configs[instance_name]
+            with open(_AUTOMATION_CONFIGS_FILE, "w") as f:
+                json.dump(configs, f, indent=2)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete config: {e}")
+
+    # Clean up any stale references
+    _automation_instances.pop(instance_name, None)
+    _automation_tasks.pop(instance_name, None)
+
+    return {"status": "deleted", "instance_name": instance_name}
+
+
+@app.put("/api/automation/quant/config/{instance_name}/rename")
+async def rename_automation_config(instance_name: str, new_name: str = Query(...)):
+    """Rename a saved automation config. Must be stopped first."""
+    if not new_name or not new_name.strip():
+        raise HTTPException(status_code=400, detail="New name cannot be empty.")
+
+    new_name = new_name.strip()
+
+    # Cannot rename a running instance
+    automation = _automation_instances.get(instance_name)
+    if automation and automation._running:
+        raise HTTPException(status_code=400, detail=f"Instance '{instance_name}' is still running. Stop it first.")
+
+    configs = _load_saved_configs()
+    if instance_name not in configs:
+        # Instance might exist only in memory (never saved) - grab its config
+        mem_instance = _automation_instances.get(instance_name)
+        if mem_instance:
+            configs[instance_name] = mem_instance.config.to_dict()
+        else:
+            raise HTTPException(status_code=404, detail=f"Instance '{instance_name}' not found.")
+    if new_name in configs:
+        raise HTTPException(status_code=409, detail=f"Instance '{new_name}' already exists.")
+
+    # Move config under new name
+    config = configs.pop(instance_name)
+    config["instance_name"] = new_name
+    configs[new_name] = config
+    try:
+        with open(_AUTOMATION_CONFIGS_FILE, "w") as f:
+            json.dump(configs, f, indent=2)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save renamed config: {e}")
+
+    # Clean up stale references under old name
+    _automation_instances.pop(instance_name, None)
+    _automation_tasks.pop(instance_name, None)
+
+    logger.info(f"Renamed automation instance '{instance_name}' -> '{new_name}'")
+    return {"status": "renamed", "old_name": instance_name, "new_name": new_name}
 
 
 @app.post("/api/automation/quant/start")
 async def start_quant_automation(config: QuantAutomationConfigRequest):
     """Start quant automation with given configuration."""
-    global _quant_automation_instance, _quant_automation_task
+    instance_name = config.instance_name
 
-    if _quant_automation_instance and _quant_automation_instance._running:
-        raise HTTPException(status_code=400, detail="Automation already running")
+    existing = _get_automation_instance(instance_name)
+    if existing and existing._running:
+        raise HTTPException(status_code=400, detail=f"Instance '{instance_name}' is already running")
 
     try:
         from tradingagents.automation.quant_automation import (
@@ -6987,24 +7242,30 @@ async def start_quant_automation(config: QuantAutomationConfigRequest):
             max_consecutive_losses=config.max_consecutive_losses,
         )
 
-        _quant_automation_instance = QuantAutomation(auto_config)
+        automation = QuantAutomation(auto_config)
+        _automation_instances[instance_name] = automation
+
+        # Persist config to disk so it survives page refreshes
+        _save_config(instance_name, auto_config.to_dict())
 
         # Start in background
-        _quant_automation_task = asyncio.create_task(_quant_automation_instance.start())
+        task = asyncio.create_task(automation.start())
+        _automation_tasks[instance_name] = task
 
         # Give it time to start and check for immediate failures
         await asyncio.sleep(1.0)
 
         # Check if the task failed during startup
-        if _quant_automation_task.done():
-            exc = _quant_automation_task.exception()
+        if task.done():
+            exc = task.exception()
             if exc:
-                _quant_automation_instance = None
-                _quant_automation_task = None
+                del _automation_instances[instance_name]
+                del _automation_tasks[instance_name]
                 raise HTTPException(status_code=500, detail=f"Automation failed to start: {exc}")
 
         return {
             "status": "started",
+            "instance_name": instance_name,
             "config": auto_config.to_dict(),
         }
 
@@ -7013,89 +7274,106 @@ async def start_quant_automation(config: QuantAutomationConfigRequest):
     except Exception as e:
         import traceback
         traceback.print_exc()
-        _quant_automation_instance = None
-        _quant_automation_task = None
+        _automation_instances.pop(instance_name, None)
+        _automation_tasks.pop(instance_name, None)
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/api/automation/quant/stop")
-async def stop_quant_automation():
-    """Stop quant automation."""
-    global _quant_automation_instance, _quant_automation_task
+async def stop_quant_automation(instance: str = Query(default="quant")):
+    """Stop a quant automation instance."""
+    automation = _get_automation_instance(instance)
 
-    if _quant_automation_instance is None:
-        raise HTTPException(status_code=400, detail="Automation not running")
+    if automation is None:
+        raise HTTPException(status_code=400, detail=f"Instance '{instance}' not found")
 
-    _quant_automation_instance.stop()
+    # Save config before stopping so it persists across restarts
+    _save_config(instance, automation.config.to_dict())
 
-    if _quant_automation_task:
+    automation.stop()
+
+    task = _automation_tasks.get(instance)
+    if task:
         try:
-            await asyncio.wait_for(_quant_automation_task, timeout=5.0)
+            await asyncio.wait_for(task, timeout=5.0)
         except asyncio.TimeoutError:
-            _quant_automation_task.cancel()
+            task.cancel()
         except Exception:
             pass
-        _quant_automation_task = None
+        _automation_tasks.pop(instance, None)
 
-    return {"status": "stopped"}
+    _automation_instances.pop(instance, None)
+    return {"status": "stopped", "instance_name": instance}
 
 
 @app.post("/api/automation/quant/pause")
-async def pause_quant_automation():
+async def pause_quant_automation(instance: str = Query(default="quant")):
     """Pause automation (disable auto-execute but continue monitoring)."""
-    global _quant_automation_instance
+    automation = _get_automation_instance(instance)
 
-    if _quant_automation_instance is None or not _quant_automation_instance._running:
-        raise HTTPException(status_code=400, detail="Automation not running")
+    if automation is None or not automation._running:
+        raise HTTPException(status_code=400, detail=f"Instance '{instance}' not running")
 
-    _quant_automation_instance.pause()
-    return {"status": "paused"}
+    automation.pause()
+    return {"status": "paused", "instance_name": instance}
 
 
 @app.post("/api/automation/quant/resume")
-async def resume_quant_automation():
+async def resume_quant_automation(instance: str = Query(default="quant")):
     """Resume automation with auto-execute enabled."""
-    global _quant_automation_instance
+    automation = _get_automation_instance(instance)
 
-    if _quant_automation_instance is None or not _quant_automation_instance._running:
-        raise HTTPException(status_code=400, detail="Automation not running")
+    if automation is None or not automation._running:
+        raise HTTPException(status_code=400, detail=f"Instance '{instance}' not running")
 
-    _quant_automation_instance.resume()
-    return {"status": "running"}
+    automation.resume()
+    return {"status": "running", "instance_name": instance}
 
 
 @app.post("/api/automation/quant/config")
-async def update_quant_automation_config(updates: Dict[str, Any]):
-    """Update automation configuration dynamically."""
-    global _quant_automation_instance
+async def update_quant_automation_config(updates: Dict[str, Any], instance: str = Query(default="quant")):
+    """Update automation configuration dynamically. Works for running or stopped instances."""
+    automation = _get_automation_instance(instance)
 
-    if _quant_automation_instance is None:
-        raise HTTPException(status_code=400, detail="Automation not initialized")
+    if automation is not None:
+        # Running instance: update live config
+        automation.update_config(updates)
+        config_dict = automation.config.to_dict()
+    else:
+        # No running instance: merge updates into saved config
+        saved_configs = _load_saved_configs()
+        config_dict = saved_configs.get(instance, {})
+        config_dict.update(updates)
 
-    _quant_automation_instance.update_config(updates)
+    try:
+        _save_config(instance, config_dict)
+    except Exception as e:
+        logger.error(f"Failed to save config for '{instance}': {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to save config: {e}")
     return {
         "status": "updated",
-        "config": _quant_automation_instance.config.to_dict(),
+        "instance_name": instance,
+        "config": config_dict,
     }
 
 
 @app.post("/api/automation/quant/test-analysis/{symbol}")
-async def test_quant_analysis(symbol: str):
+async def test_quant_analysis(symbol: str, pipeline: str = Query(default="quant")):
     """Run a single analysis cycle for testing (without execution)."""
     try:
         from tradingagents.automation.quant_automation import (
             QuantAutomation,
             QuantAutomationConfig,
+            PipelineType,
         )
 
-        # Create a temporary instance for testing
         config = QuantAutomationConfig(
+            pipeline=PipelineType(pipeline),
             symbols=[symbol],
-            auto_execute=False,  # Never execute in test mode
+            auto_execute=False,
         )
         automation = QuantAutomation(config)
 
-        # Run single analysis
         result = await automation.run_single_analysis(symbol)
 
         return {
@@ -7117,17 +7395,19 @@ async def test_quant_analysis(symbol: str):
 
 
 @app.get("/api/automation/quant/history")
-async def get_quant_automation_history():
-    """Get recent analysis and position management history."""
-    global _quant_automation_instance
+async def get_quant_automation_history(instance: str = Query(default="quant")):
+    """Get recent analysis and position management history for an instance."""
+    automation = _get_automation_instance(instance)
 
-    if _quant_automation_instance is None:
+    if automation is None:
         return {
+            "instance_name": instance,
             "analysis_results": [],
             "position_results": [],
         }
 
     return {
+        "instance_name": instance,
         "analysis_results": [
             {
                 "timestamp": r.timestamp.isoformat(),
@@ -7143,7 +7423,7 @@ async def get_quant_automation_history():
                 "execution_error": r.execution_error,
                 "duration_seconds": r.duration_seconds,
             }
-            for r in _quant_automation_instance._analysis_results
+            for r in automation._analysis_results
         ],
         "position_results": [
             {
@@ -7158,7 +7438,7 @@ async def get_quant_automation_history():
                 "close_reason": r.close_reason,
                 "pnl": r.pnl,
             }
-            for r in _quant_automation_instance._position_results
+            for r in automation._position_results
         ],
     }
 

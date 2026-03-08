@@ -284,6 +284,8 @@ def store_decision(
     mt5_ticket: Optional[int] = None,
     analysis_context: Optional[Dict[str, Any]] = None,
     position_sizing: Optional[Dict[str, Any]] = None,
+    status: str = "active",  # active, failed, closed, cancelled
+    execution_error: Optional[str] = None,  # Error message if trade failed
 ) -> str:
     """
     Store a trade decision for later outcome tracking.
@@ -323,7 +325,8 @@ def store_decision(
         "volume": volume,
         "mt5_ticket": mt5_ticket,
         "created_at": timestamp.isoformat(),
-        "status": "active",  # active, closed, cancelled
+        "status": status,  # active, failed, closed, cancelled, retried
+        "execution_error": execution_error,
         
         # Setup classification
         "setup_type": None,  # "fvg_bounce", "ob_bounce", "liquidity_sweep", "choch", "bos", "trend_continuation"
@@ -618,6 +621,26 @@ def list_active_decisions(symbol: Optional[str] = None) -> List[Dict[str, Any]]:
                 continue
     
     return sorted(decisions, key=lambda d: d["created_at"], reverse=True)
+
+
+def list_failed_decisions(symbol: Optional[str] = None, limit: int = 50) -> List[Dict[str, Any]]:
+    """List failed trade decisions."""
+    if not os.path.exists(DECISIONS_DIR):
+        return []
+
+    decisions = []
+    for f in os.listdir(DECISIONS_DIR):
+        if f.endswith(".json"):
+            decision_id = f.replace(".json", "")
+            try:
+                decision = load_decision(decision_id)
+                if decision["status"] in ("failed", "retried"):
+                    if symbol is None or decision["symbol"] == symbol:
+                        decisions.append(decision)
+            except Exception:
+                continue
+
+    return sorted(decisions, key=lambda d: d.get("created_at", ""), reverse=True)[:limit]
 
 
 def list_closed_decisions(
