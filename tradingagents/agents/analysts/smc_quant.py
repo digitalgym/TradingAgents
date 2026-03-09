@@ -484,6 +484,16 @@ Think step-by-step:
 - **hold** - No action. Use when: no clear structure, price at equilibrium, no unmitigated zones nearby, or conflicting signals.
 - **close** - Close existing position. Use when: price reaches liquidity target, OB/FVG invalidated, or CHoCH against position.
 
+## ORDER TYPE (you MUST pick one for buy/sell signals)
+- **market** - Execute immediately at current market price. Use when:
+  - Price is ALREADY AT the OB/FVG zone (within 0.1%)
+  - Liquidity sweep just happened and you want immediate entry
+  - Setup is confirmed and you don't want to miss it
+- **limit** - Place pending order at entry_price. Use when:
+  - Price is NOT YET at the zone (waiting for retracement)
+  - You want better entry at the OB/FVG level
+  - Zone is nearby but price hasn't reached it yet
+
 Remember:
 - Smart money leaves footprints (OBs, FVGs)
 - Structure (BOS/CHoCH) tells you the trend
@@ -508,6 +518,9 @@ def _format_smc_quant_report(decision: QuantAnalystDecision) -> str:
 
     if signal_str in ["buy_to_enter", "sell_to_enter"]:
         lines.append("### Trade Parameters")
+        if decision.order_type:
+            order_type_str = decision.order_type if isinstance(decision.order_type, str) else decision.order_type.value
+            lines.append(f"- **Order Type**: {order_type_str.upper()}")
         if decision.entry_price:
             lines.append(f"- **Entry Price**: {decision.entry_price}")
         if decision.stop_loss:
@@ -565,9 +578,15 @@ def get_smc_quant_decision_for_modal(smc_quant_decision: dict) -> dict:
     if isinstance(signal, dict):
         signal = signal.get("value", "hold")
 
+    # Extract order_type
+    order_type = smc_quant_decision.get("order_type", "market")
+    if isinstance(order_type, dict):
+        order_type = order_type.get("value", "market")
+
     return {
         "symbol": smc_quant_decision.get("symbol", ""),
         "signal": signal_map.get(signal, "HOLD"),
+        "orderType": order_type,  # "market" or "limit"
         "suggestedEntry": smc_quant_decision.get("entry_price"),
         "suggestedStopLoss": smc_quant_decision.get("stop_loss"),
         "suggestedTakeProfit": smc_quant_decision.get("profit_target"),
