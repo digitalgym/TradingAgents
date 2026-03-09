@@ -46,6 +46,7 @@ from .trade_analysis import (
     SMCAnalysis,
     PredictionLesson,
     QuantSignalType,
+    OrderType,
     QuantAnalystDecision,
 )
 
@@ -126,6 +127,7 @@ __all__ = [
     "VolatilityRegime",
     "Urgency",
     "QuantSignalType",
+    "OrderType",
     # Base
     "BaseSchema",
     "PriceLevel",

@@ -199,6 +199,13 @@ class QuantSignalType(str, Enum):
     CLOSE = "close"
 
 
+class OrderType(str, Enum):
+    """Order execution type."""
+
+    MARKET = "market"  # Execute immediately at current price
+    LIMIT = "limit"  # Pending order at specified entry price
+
+
 class QuantAnalystDecision(BaseSchema):
     """
     Structured output from the Quant Analyst.
@@ -218,6 +225,12 @@ class QuantAnalystDecision(BaseSchema):
     # Core signal - maps to trade modal
     signal: QuantSignalType = Field(
         ..., description="Signal: buy_to_enter, sell_to_enter, hold, or close"
+    )
+
+    # Order type - market vs limit
+    order_type: Optional[OrderType] = Field(
+        None,
+        description="Order type: 'market' for immediate execution at current price, 'limit' for pending order at entry_price. Use market when price is already at the zone; use limit when waiting for price to reach the zone."
     )
 
     # Position parameters
