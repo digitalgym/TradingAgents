@@ -1,8 +1,41 @@
 {
   "last_analysis_time": {
-    "XAUUSD": "2026-03-08T17:01:22.115930",
+    "XAUUSD": "2026-03-09T18:10:37.514657",
     "ETHUSD": "2026-03-09T07:44:45.445271"
   },
-  "last_updated": "2026-03-09T07:48:32.286873",
-  "status": "running"
+  "last_updated": "2026-03-09T18:15:47.043997",
+  "status": "running",
+  "analysis_results": [
+    {
+      "timestamp": "2026-03-09T17:55:33.431737",
+      "symbol": "XAUUSD",
+      "pipeline": "volume_profile",
+      "signal": "HOLD",
+      "confidence": 0.85,
+      "entry_price": null,
+      "stop_loss": null,
+      "take_profit": null,
+      "rationale": "Price is inside Value Area at fair value with no clear setup for mean reversion, VA edge, breakout, or HVN bounce; bearish MACD and position below EMAs suggest waiting for better confirmation.\n\n**Invalidation**: Price breaks below VAL at 5047.03520 with increasing volume",
+      "executed": false,
+      "execution_ticket": null,
+      "execution_error": null,
+      "duration_seconds": 8.453509330749512
+    },
+    {
+      "timestamp": "2026-03-09T18:10:46.729172",
+      "symbol": "XAUUSD",
+      "pipeline": "volume_profile",
+      "signal": "HOLD",
+      "confidence": 0.85,
+      "entry_price": null,
+      "stop_loss": null,
+      "take_profit": null,
+      "rationale": "Price is inside Value Area at fair value, below POC but not at a significant discount or VA edge for mean reversion entry, with low volume and neutral momentum in a ranging market.\n\n**Invalidation**: Price closes outside Value Area (above 5233.13760 or below 5047.03520) with above-average volume",
+      "executed": false,
+      "execution_ticket": null,
+      "execution_error": null,
+      "duration_seconds": 9.21351671218872
+    }
+  ],
+  "position_results": []
 }

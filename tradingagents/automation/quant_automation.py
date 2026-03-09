@@ -11,6 +11,7 @@ Supports:
 
 import asyncio
 import logging
+import os
 import time
 import json
 from datetime import datetime
@@ -44,7 +45,11 @@ from tradingagents.trade_decisions import (
     store_decision,
     list_active_decisions,
     close_decision,
+    find_decision_by_ticket,
+    DECISIONS_DIR,
 )
+
+from tradingagents.dataflows.mt5_data import get_closed_deal_by_ticket
 
 
 class PipelineType(str, Enum):
@@ -216,6 +221,19 @@ class QuantAutomation:
                     k: datetime.fromisoformat(v)
                     for k, v in state.get("last_analysis_time", {}).items()
                 }
+                # Restore persisted results history
+                for item in state.get("analysis_results", []):
+                    try:
+                        item["timestamp"] = datetime.fromisoformat(item["timestamp"])
+                        self._analysis_results.append(AnalysisCycleResult(**item))
+                    except Exception:
+                        continue
+                for item in state.get("position_results", []):
+                    try:
+                        item["timestamp"] = datetime.fromisoformat(item["timestamp"])
+                        self._position_results.append(PositionManagementResult(**item))
+                    except Exception:
+                        continue
             except Exception as e:
                 self.logger.warning(f"Could not load state: {e}")
 
@@ -224,12 +242,19 @@ class QuantAutomation:
         state_file = Path(self.config.state_file)
         state_file.parent.mkdir(parents=True, exist_ok=True)
 
+        def _serialize_result(r):
+            d = asdict(r)
+            d["timestamp"] = r.timestamp.isoformat()
+            return d
+
         state = {
             "last_analysis_time": {
                 k: v.isoformat() for k, v in self._last_analysis_time.items()
             },
             "last_updated": datetime.now().isoformat(),
             "status": self._status.value,
+            "analysis_results": [_serialize_result(r) for r in self._analysis_results[-100:]],
+            "position_results": [_serialize_result(r) for r in self._position_results[-100:]],
         }
 
         with open(state_file, "w") as f:
@@ -622,7 +647,7 @@ class QuantAutomation:
             if trade_result.get("success"):
                 result.executed = True
                 result.execution_ticket = trade_result.get("order_id")
-                result.entry_price = trade_result.get("price", entry_price)
+                result.entry_price = trade_result.get("price") or trade_result.get("entry_price") or entry_price
                 result.stop_loss = stop_loss
                 result.take_profit = take_profit
 
@@ -678,6 +703,56 @@ class QuantAutomation:
             self.logger.error(f"TRADE EXECUTION ERROR: {e}\n{traceback.format_exc()}")
 
         return result
+
+    def _infer_exit_reason(self, exit_price: float, entry: float, sl: float, tp: float, direction: str) -> str:
+        """Infer how a trade exited based on exit price vs SL/TP levels."""
+        if not exit_price:
+            return "unknown"
+        tolerance = abs(entry * 0.0005) if entry else 0.5  # 0.05% tolerance
+        if tp and abs(exit_price - tp) <= tolerance:
+            return "tp_hit"
+        if sl and abs(exit_price - sl) <= tolerance:
+            return "sl_hit"
+        return "manual_close"
+
+    def _close_decision_for_ticket(self, ticket: int, exit_price: float, profit: float,
+                                     exit_reason: str, notes: str) -> None:
+        """Find and close the trade decision linked to an MT5 ticket."""
+        try:
+            decision = find_decision_by_ticket(ticket)
+            if not decision or decision.get("status") != "active":
+                return
+
+            # Backfill entry_price if it was stored as 0
+            if not decision.get("entry_price"):
+                # Try to get entry price from open position or deal history
+                positions = get_open_positions(decision.get("symbol"))
+                pos_entry = None
+                for p in positions:
+                    if p.get("ticket") == ticket:
+                        pos_entry = p.get("price_open")
+                        break
+                if pos_entry:
+                    decision["entry_price"] = pos_entry
+                    # Persist fix to file
+                    dec_file = os.path.join(DECISIONS_DIR, f"{decision['decision_id']}.json")
+                    if os.path.exists(dec_file):
+                        with open(dec_file, "r") as f:
+                            data = json.load(f)
+                        data["entry_price"] = pos_entry
+                        with open(dec_file, "w") as f:
+                            json.dump(data, f, indent=2, default=str)
+                    self.logger.info(f"  Backfilled entry_price={pos_entry} for decision {decision['decision_id']}")
+
+            close_decision(
+                decision["decision_id"],
+                exit_price=exit_price,
+                outcome_notes=f"{notes}. MT5 profit: {profit:.2f}",
+                exit_reason=exit_reason,
+            )
+            self.logger.info(f"  Decision {decision['decision_id']} closed: {exit_reason}, pnl={profit:.2f}")
+        except Exception as e:
+            self.logger.error(f"  Failed to close decision for #{ticket}: {e}")
 
     async def _manage_positions(self) -> List[PositionManagementResult]:
         """Manage existing positions - trailing stops, breakeven, close signals."""
@@ -833,6 +908,13 @@ class QuantAutomation:
                                     self.logger.info(
                                         f"  POSITION CLOSED #{ticket} {symbol}: {result.close_reason}, pnl={profit:.2f}"
                                     )
+                                    # Close the linked trade decision
+                                    deal_info = get_closed_deal_by_ticket(ticket, days_back=7)
+                                    exit_px = deal_info["price"] if deal_info else current_price
+                                    self._close_decision_for_ticket(
+                                        ticket, exit_px, profit, "reversal_signal",
+                                        f"Reversal signal: {analysis.signal}"
+                                    )
                                 else:
                                     self.logger.error(f"  Failed to close position #{ticket}: {close_result}")
                             else:
@@ -843,6 +925,38 @@ class QuantAutomation:
                     self.logger.error(f"Error managing position #{ticket}: {e}\n{traceback.format_exc()}")
 
                 results.append(result)
+
+            # Detect positions that disappeared (SL/TP hit externally)
+            open_tickets = {p.get("ticket") for p in managed_positions}
+            try:
+                active_decisions = list_active_decisions()
+                for dec in active_decisions:
+                    dec_ticket = dec.get("mt5_ticket")
+                    dec_symbol = dec.get("symbol", "")
+                    if not dec_ticket or dec_ticket in open_tickets or dec_symbol not in self.config.symbols:
+                        continue
+                    # This decision's position is gone - close it
+                    deal_info = get_closed_deal_by_ticket(dec_ticket, days_back=14)
+                    if deal_info:
+                        exit_price = deal_info["price"]
+                        mt5_profit = deal_info.get("profit", 0)
+                        exit_reason = self._infer_exit_reason(
+                            exit_price, dec.get("entry_price", 0),
+                            dec.get("stop_loss"), dec.get("take_profit"),
+                            dec.get("action", "BUY")
+                        )
+                        self._close_decision_for_ticket(
+                            dec_ticket, exit_price, mt5_profit, exit_reason,
+                            f"Position closed externally ({exit_reason})"
+                        )
+                        results.append(PositionManagementResult(
+                            timestamp=datetime.now(), ticket=dec_ticket, symbol=dec_symbol,
+                            action="closed", close_reason=exit_reason, pnl=mt5_profit,
+                        ))
+                    else:
+                        self.logger.debug(f"  Decision {dec['decision_id']} ticket #{dec_ticket} gone but no deal history found")
+            except Exception as e:
+                self.logger.error(f"Error detecting closed positions: {e}")
 
         except ConnectionError as e:
             self.logger.warning(f"MT5 connection lost during position management: {e}")

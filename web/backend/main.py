@@ -5,7 +5,7 @@ import asyncio
 import logging
 import sys
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional, List, Any, Dict
 from contextlib import asynccontextmanager
 import json
@@ -2627,6 +2627,203 @@ async def list_decisions(
     return {"decisions": formatted, "count": len(formatted)}
 
 
+@app.get("/api/decisions/performance")
+async def get_performance_stats(
+    symbol: Optional[str] = None,
+    days: Optional[int] = None,
+):
+    """Get comprehensive performance statistics for trade evaluation."""
+    try:
+        closed = trade_decisions.list_closed_decisions(symbol=symbol, limit=1000)
+        active = trade_decisions.list_active_decisions(symbol=symbol)
+
+        # Filter by time period if specified
+        if days:
+            cutoff = (datetime.now() - timedelta(days=days)).isoformat()
+            closed = [d for d in closed if d.get("exit_date", "") >= cutoff]
+
+        if not closed:
+            return {
+                "total_closed": 0, "active": len(active),
+                "wins": 0, "losses": 0,
+                "win_rate": 0, "total_pnl": 0, "avg_pnl": 0,
+                "avg_win": 0, "avg_loss": 0,
+                "best_trade": None, "worst_trade": None,
+                "by_symbol": {}, "by_exit_reason": {},
+                "equity_curve": [],
+                "streaks": {"current_streak": 0, "max_win_streak": 0, "max_loss_streak": 0},
+                "quality": {"sl_placement": {}, "tp_placement": {}},
+            }
+
+        wins = [d for d in closed if d.get("was_correct")]
+        losses = [d for d in closed if not d.get("was_correct")]
+        total_pnl = sum(d.get("pnl", 0) for d in closed)
+
+        # By symbol breakdown
+        by_symbol = {}
+        for d in closed:
+            sym = d.get("symbol", "UNKNOWN")
+            if sym not in by_symbol:
+                by_symbol[sym] = {"trades": 0, "wins": 0, "pnl": 0}
+            by_symbol[sym]["trades"] += 1
+            if d.get("was_correct"):
+                by_symbol[sym]["wins"] += 1
+            by_symbol[sym]["pnl"] += d.get("pnl", 0)
+        for sym in by_symbol:
+            s = by_symbol[sym]
+            s["win_rate"] = s["wins"] / s["trades"] * 100 if s["trades"] else 0
+
+        # By exit reason
+        by_exit_reason = {}
+        for d in closed:
+            reason = d.get("exit_reason") or "unknown"
+            if reason not in by_exit_reason:
+                by_exit_reason[reason] = {"count": 0, "pnl": 0}
+            by_exit_reason[reason]["count"] += 1
+            by_exit_reason[reason]["pnl"] += d.get("pnl", 0)
+
+        # Equity curve (cumulative P/L over time)
+        equity_curve = []
+        cum_pnl = 0
+        for d in sorted(closed, key=lambda x: x.get("exit_date", "")):
+            cum_pnl += d.get("pnl", 0)
+            equity_curve.append({
+                "date": d.get("exit_date", "")[:10],
+                "pnl": round(cum_pnl, 2),
+                "symbol": d.get("symbol"),
+                "trade_pnl": round(d.get("pnl", 0), 2),
+            })
+
+        # Win/loss streaks
+        sorted_decs = sorted(closed, key=lambda d: d.get("exit_date", ""))
+        current_streak = 0
+        max_win = 0
+        max_loss = 0
+        temp_streak = 0
+        for d in sorted_decs:
+            if d.get("was_correct"):
+                temp_streak = temp_streak + 1 if temp_streak > 0 else 1
+                max_win = max(max_win, temp_streak)
+            else:
+                temp_streak = temp_streak - 1 if temp_streak < 0 else -1
+                max_loss = max(max_loss, abs(temp_streak))
+            current_streak = temp_streak
+
+        # Trade quality from structured outcome
+        sl_placement = {"too_tight": 0, "appropriate": 0, "too_wide": 0}
+        tp_placement = {"too_ambitious": 0, "appropriate": 0, "too_conservative": 0}
+        for d in closed:
+            outcome = d.get("structured_outcome", {}) or {}
+            sl_p = outcome.get("sl_placement")
+            tp_p = outcome.get("tp_placement")
+            if sl_p in sl_placement:
+                sl_placement[sl_p] += 1
+            if tp_p in tp_placement:
+                tp_placement[tp_p] += 1
+
+        def _trade_summary(d):
+            return {
+                "decision_id": d.get("decision_id"),
+                "symbol": d.get("symbol"),
+                "action": d.get("action"),
+                "pnl": d.get("pnl"),
+                "pnl_percent": d.get("pnl_percent"),
+                "exit_reason": d.get("exit_reason"),
+                "exit_date": d.get("exit_date"),
+            }
+
+        return {
+            "total_closed": len(closed),
+            "active": len(active),
+            "wins": len(wins),
+            "losses": len(losses),
+            "win_rate": len(wins) / len(closed) * 100,
+            "total_pnl": round(total_pnl, 2),
+            "avg_pnl": round(total_pnl / len(closed), 2),
+            "avg_win": round(sum(d.get("pnl", 0) for d in wins) / len(wins), 2) if wins else 0,
+            "avg_loss": round(sum(d.get("pnl", 0) for d in losses) / len(losses), 2) if losses else 0,
+            "best_trade": _trade_summary(max(closed, key=lambda d: d.get("pnl", 0))),
+            "worst_trade": _trade_summary(min(closed, key=lambda d: d.get("pnl", 0))),
+            "by_symbol": by_symbol,
+            "by_exit_reason": by_exit_reason,
+            "equity_curve": equity_curve,
+            "streaks": {
+                "current_streak": current_streak,
+                "max_win_streak": max_win,
+                "max_loss_streak": max_loss,
+            },
+            "quality": {
+                "sl_placement": sl_placement,
+                "tp_placement": tp_placement,
+            },
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/decisions/stats")
+async def get_decision_stats():
+    """Get decision statistics"""
+    try:
+        all_decisions = trade_decisions.list_decisions(limit=1000)
+
+        total = len(all_decisions)
+        closed = [d for d in all_decisions if d.get("status") == "closed" or d.get("outcome")]
+        open_decisions = [d for d in all_decisions if d.get("status") == "active" or not d.get("outcome")]
+
+        wins = sum(1 for d in closed if d.get("was_correct") or (d.get("outcome") and d.get("outcome", {}).get("was_correct")))
+        losses = len(closed) - wins
+
+        by_symbol = {}
+        for d in all_decisions:
+            sym = d.get("symbol", "UNKNOWN")
+            if sym not in by_symbol:
+                by_symbol[sym] = {"total": 0, "wins": 0, "pnl": 0}
+            by_symbol[sym]["total"] += 1
+            if d.get("was_correct") or (d.get("outcome") and d.get("outcome", {}).get("was_correct")):
+                by_symbol[sym]["wins"] += 1
+            pnl = d.get("pnl") or (d.get("outcome", {}).get("pnl") if d.get("outcome") else 0) or 0
+            by_symbol[sym]["pnl"] += pnl
+
+        total_pnl = sum(d.get("pnl") or (d.get("outcome", {}).get("pnl") if d.get("outcome") else 0) or 0 for d in closed)
+
+        return {
+            "total_decisions": total,
+            "open_decisions": len(open_decisions),
+            "closed_decisions": len(closed),
+            "wins": wins,
+            "losses": losses,
+            "win_rate": (wins / len(closed) * 100) if closed else 0,
+            "total_pnl": total_pnl,
+            "avg_pnl": total_pnl / len(closed) if closed else 0,
+            "by_symbol": by_symbol,
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/decisions/reconcile")
+async def reconcile_decisions_endpoint():
+    """Reconcile active decisions against MT5 closed positions."""
+    try:
+        from tradingagents.trade_decisions import reconcile_decisions
+        reconciled = reconcile_decisions(days_back=14)
+        return {
+            "reconciled_count": len(reconciled),
+            "reconciled": [
+                {
+                    "decision_id": d.get("decision_id"),
+                    "symbol": d.get("symbol"),
+                    "pnl": d.get("pnl"),
+                    "exit_reason": d.get("exit_reason"),
+                }
+                for d in reconciled
+            ],
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/decisions/{decision_id}")
 async def get_decision(decision_id: str):
     """Get a specific decision"""
@@ -2673,49 +2870,6 @@ async def get_decision(decision_id: str):
             "pattern_tags": decision.get("pattern_tags", [])
         }
     }
-
-
-@app.get("/api/decisions/stats")
-async def get_decision_stats():
-    """Get decision statistics"""
-    try:
-        all_decisions = trade_decisions.list_decisions(limit=1000)
-
-        # Calculate stats
-        total = len(all_decisions)
-        closed = [d for d in all_decisions if d.get("status") == "closed" or d.get("outcome")]
-        open_decisions = [d for d in all_decisions if d.get("status") == "active" or not d.get("outcome")]
-
-        wins = sum(1 for d in closed if d.get("was_correct") or (d.get("outcome") and d.get("outcome", {}).get("was_correct")))
-        losses = len(closed) - wins
-
-        # Calculate by symbol
-        by_symbol = {}
-        for d in all_decisions:
-            sym = d.get("symbol", "UNKNOWN")
-            if sym not in by_symbol:
-                by_symbol[sym] = {"total": 0, "wins": 0, "pnl": 0}
-            by_symbol[sym]["total"] += 1
-            if d.get("was_correct") or (d.get("outcome") and d.get("outcome", {}).get("was_correct")):
-                by_symbol[sym]["wins"] += 1
-            pnl = d.get("pnl") or (d.get("outcome", {}).get("pnl") if d.get("outcome") else 0) or 0
-            by_symbol[sym]["pnl"] += pnl
-
-        total_pnl = sum(d.get("pnl") or (d.get("outcome", {}).get("pnl") if d.get("outcome") else 0) or 0 for d in closed)
-
-        return {
-            "total_decisions": total,
-            "open_decisions": len(open_decisions),
-            "closed_decisions": len(closed),
-            "wins": wins,
-            "losses": losses,
-            "win_rate": (wins / len(closed) * 100) if closed else 0,
-            "total_pnl": total_pnl,
-            "avg_pnl": total_pnl / len(closed) if closed else 0,
-            "by_symbol": by_symbol
-        }
-    except Exception as e:
-        return {"error": str(e)}
 
 
 class CloseDecisionRequest(BaseModel):
@@ -2817,6 +2971,8 @@ async def mark_decision_retried(decision_id: str):
         json.dump(decision, f, indent=2, default=str)
 
     return {"success": True, "message": f"Decision {decision_id} marked as retried"}
+
+
 
 
 # ----- Analysis -----

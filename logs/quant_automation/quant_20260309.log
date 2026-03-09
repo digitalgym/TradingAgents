@@ -651,3 +651,1100 @@ Remember:
 2026-03-09 07:48:32,227 - INFO - Position check: 1 total open, 0 managed (XAUUSD)
 2026-03-09 07:48:32,228 - INFO - Position check: 1 total open, 0 managed (XAUUSD)
 2026-03-09 07:48:32,285 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-09 07:49:05,311 - INFO - Position check: 1 total open, 1 managed (ETHUSD)
+2026-03-09 07:49:05,311 - INFO - Managing position #1525074 ETHUSD BUY: entry=1931.86, current=0, sl=1924.25, tp=1976.33, profit=0.32
+2026-03-09 07:49:05,314 - INFO -   Running reversal check analysis for #1525074 ETHUSD...
+2026-03-09 17:39:13,931 - INFO - ==================================================
+2026-03-09 17:39:13,948 - INFO - QUANT AUTOMATION STARTED
+2026-03-09 17:39:13,948 - INFO - ==================================================
+2026-03-09 17:39:13,949 - INFO - Pipeline: volume_profile
+2026-03-09 17:39:13,950 - INFO - Symbols: XAUUSD
+2026-03-09 17:39:13,950 - INFO - Analysis interval: 900s
+2026-03-09 17:39:13,951 - INFO - Auto-execute: True
+2026-03-09 17:39:13,951 - INFO - ==================================================
+2026-03-09 17:39:13,953 - INFO - Running volume_profile analysis for XAUUSD...
+2026-03-09 17:39:13,954 - INFO - Position management loop started
+2026-03-09 17:39:13,971 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:39:14,020 - INFO -   Decision XAUUSD_20260306_011150 closed: tp_hit, pnl=80.72
+2026-03-09 17:39:14,020 - INFO - Position action: #1483601 XAUUSD -> closed
+2026-03-09 17:39:14,282 - INFO - ==================================================
+2026-03-09 17:39:14,283 - INFO - QUANT AUTOMATION STARTED
+2026-03-09 17:39:14,283 - INFO - ==================================================
+2026-03-09 17:39:14,284 - INFO - Pipeline: quant
+2026-03-09 17:39:14,284 - INFO - Symbols: XAUUSD
+2026-03-09 17:39:14,285 - INFO - Analysis interval: 900s
+2026-03-09 17:39:14,285 - INFO - Auto-execute: True
+2026-03-09 17:39:14,286 - INFO - ==================================================
+2026-03-09 17:39:14,297 - INFO - Running quant analysis for XAUUSD...
+2026-03-09 17:39:14,298 - INFO - Position management loop started
+2026-03-09 17:39:14,299 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:39:14,425 - INFO - ==================================================
+2026-03-09 17:39:14,426 - INFO - QUANT AUTOMATION STARTED
+2026-03-09 17:39:14,426 - INFO - ==================================================
+2026-03-09 17:39:14,427 - INFO - Pipeline: quant
+2026-03-09 17:39:14,427 - INFO - Symbols: ETHUSD
+2026-03-09 17:39:14,428 - INFO - Analysis interval: 900s
+2026-03-09 17:39:14,428 - INFO - Auto-execute: True
+2026-03-09 17:39:14,429 - INFO - ==================================================
+2026-03-09 17:39:14,698 - INFO - Running quant analysis for ETHUSD...
+2026-03-09 17:39:14,708 - INFO - Position management loop started
+2026-03-09 17:39:14,714 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 17:39:14,803 - INFO -   Decision ETHUSD_20260309_040211 closed: sl_hit, pnl=-0.11
+2026-03-09 17:39:14,856 - INFO -   Decision ETHUSD_20260309_024442 closed: manual_close, pnl=0.21
+2026-03-09 17:39:14,874 - INFO -   Decision ETHUSD_20260309_003840 closed: manual_close, pnl=0.17
+2026-03-09 17:39:14,898 - INFO -   Decision ETHUSD_20260308_225032 closed: sl_hit, pnl=-0.07
+2026-03-09 17:39:14,899 - INFO - Position action: #1525074 ETHUSD -> closed
+2026-03-09 17:39:14,903 - INFO - Position action: #1525061 ETHUSD -> closed
+2026-03-09 17:39:14,904 - INFO - Position action: #1525041 ETHUSD -> closed
+2026-03-09 17:39:14,905 - INFO - Position action: #1525007 ETHUSD -> closed
+2026-03-09 17:39:26,915 - INFO - [VP] API response status: success
+2026-03-09 17:39:26,916 - INFO - [VP] Decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-09 17:39:26,916 - INFO - [VP] Justification: Price is inside the Value Area (fair value zone), below POC but not at a discount extreme, with no clear mean reversion, edge, breakout, or HVN bounce setup in a ranging market.
+2026-03-09 17:39:26,917 - INFO - XAUUSD: HOLD (confidence: 0.85)
+2026-03-09 17:40:18,283 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:40:18,290 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:40:18,296 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 17:40:18,316 - INFO - API response status: completed
+2026-03-09 17:40:18,317 - INFO - API response keys: ['status', 'symbol', 'timeframe', 'current_price', 'bid', 'ask', 'decision', 'smc_levels', 'indicators', 'regime', 'analysis_mode', 'llm_used', 'prompt_sent']
+2026-03-09 17:40:18,318 - INFO - 
+================================================================================
+PROMPT SENT TO LLM for ETHUSD
+================================================================================
+You are a systematic quant trader with strict risk discipline. Your only goal is to maximize long-term PnL while surviving drawdowns.
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account value per trade** (risk_usd = position size × distance to stop-loss)
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and one clear invalidation condition before entry**
+5. **Hold only when current plan remains valid; never flip-flop without new high-conviction signal**
+6. **Ignore narratives; trade only price, volume, and the provided technical indicators**
+7. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+8. **Leverage is a tool, not a goal - default 5-20x, higher only with extreme conviction**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- If you cannot identify a valid stop loss placement, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: ETHUSD
+- **Current Price (Broker)**: 1978.64000
+- **Date**: 2026-03-09
+- **Trading Session**: london
+- **Market Regime**: ranging
+- **Volatility Regime**: high
+
+## Smart Money Concepts Analysis
+
+### Market Structure
+**Bias**: BEARISH
+**Recent Structure**: CHoCH (bearish reversal signal), BOS (bullish continuation)
+
+### Price Position
+**Zone**: PREMIUM (65% of range) (favor SELLS - price is expensive)
+**Equilibrium**: 1962.07500
+
+### Order Blocks (Unmitigated)
+- BEARISH OB [STRUCTURAL]: 2128.03500 - 2163.01000 (strength: 80%) | +7.55% from price
+- No unmitigated BULLISH OBs (no demand zones)
+
+### Fair Value Gaps
+- BULLISH FVG: 1962.49000 - 1972.58000 (99% filled) | -0.31% from price
+
+### Liquidity Zones (Stop Loss Clusters)
+- BUY-SIDE (above): 1976.35000 (strength: 48.5) | +0.00% - target for shorts
+- BUY-SIDE (above): 1973.73000 (strength: 57.4) | +0.00% - target for shorts
+- SELL-SIDE (below): 1963.79000 (strength: 65.8) | -0.75% - target for longs
+
+### Recent Liquidity Sweeps (Last 10 candles)
+- BULLISH SWEEP [STRONG]: Swept lows at 0.00000 - look for reversal UP
+- BULLISH SWEEP : Swept lows at 0.00000 - look for reversal UP
+
+**Current Price**: 1978.64000
+**ATR**: 27.35786
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 61.5 (Neutral)
+- **MACD**: 5.91756 | Signal: 0.01980 | Histogram: 5.89776
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 1964.11668 (Price above)
+- **EMA50**: 1971.68493 (Price above)
+- **ADX**: 17.9 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 27.35786
+- **Volatility**: high
+- **Bollinger Bands**: Upper=1996.63972 | Middle=1955.56850 | Lower=1914.49728
+  - Price near upper band
+
+### Volume
+- **Current Bar Volume**: 6,971 ticks
+- **20-bar Avg Volume**: 8,460 ticks
+- **Volume Ratio**: 0.82x average 
+- **Volume Profile**: Normal
+- **Volume Trend (5 bars)**: decreasing
+
+## Key Price Levels
+
+### Previous Day
+- **PDH** (High): 1976.35000 (price is +2.29000 from it)
+- **PDL** (Low): 1924.25000 (price is +54.39000 from it)
+- **Open**: 1969.88000 | **Close**: 1958.28000
+- **Range**: 52.10000
+- Price is **ABOVE** Previous Day range
+
+### Previous Week
+- **PWH** (High): 2198.35000 (price is -219.71000 from it)
+- **PWL** (Low): 1906.79000 (price is +71.85000 from it)
+- **Open**: 1957.88000 | **Close**: 1969.79000
+- **Range**: 291.56000
+- Price is **INSIDE** Previous Week range
+
+### Previous H4
+- **PH4H** (High): 2004.40000 (price is -25.76000 from it)
+- **PH4L** (Low): 1937.44000 (price is +41.20000 from it)
+- **Open**: 1950.22000 | **Close**: 1976.60000
+- **Range**: 66.96000
+- Price is **INSIDE** Previous H4 range
+
+### Volume Profile
+**POC (Point of Control)**: 1978.71420 (7.3% of volume)
+  - Price is -0.00% below POC - POC acts as magnet
+**Value Area**: 1910.55000 - 2082.22280 (74% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 1978.71420 (7.3% vol) | AT PRICE
+  - HVN at 1983.76340 (5.7% vol) | +0.26% above
+  - HVN at 1973.66500 (5.5% vol) | -0.25% below
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 1913.07460 | -3.31% - price may move fast through this level
+  - LVN at 1918.12380 | -3.06% - price may move fast through this level
+  - LVN at 1923.17300 | -2.80% - price may move fast through this level
+
+
+## YOUR TASK
+
+Analyze the provided technical data and make a systematic trading decision.
+
+Think step-by-step:
+1. What is the overall market structure and bias?
+2. Are there high-probability entry zones (OB, FVG) near current price?
+3. Where would stop loss be placed? Is the R:R acceptable (>1.5:1)?
+4. What would invalidate this setup?
+5. What is your confidence level based on confluence?
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when price is at a high-probability bullish zone (bullish OB, bullish FVG, demand zone) with confluence from indicators. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when price is at a high-probability bearish zone (bearish OB, bearish FVG, supply zone) with confluence from indicators. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when no clear edge exists, price is between zones, or conditions are ambiguous.
+- **close** - Close existing position. Use when the original thesis is invalidated.
+
+Remember:
+- Only enter trades with clear edge
+- Wait for price to come to your levels
+- No FOMO entries
+- Discipline > prediction
+================================================================================
+2026-03-09 17:40:18,343 - INFO - Decision received for ETHUSD: signal=HOLD, confidence=0.65, entry=None, sl=None, tp=None
+2026-03-09 17:40:18,344 - INFO - Rationale: Ranging market with bearish bias but no unmitigated supply OB near price, mixed indicator confluence (bullish MACD vs premium positioning), and bullish liquidity sweeps suggest waiting for clearer edg
+2026-03-09 17:40:18,345 - INFO - Mapped signal for ETHUSD: HOLD
+2026-03-09 17:40:18,346 - INFO - ETHUSD: HOLD (confidence: 0.65)
+2026-03-09 17:40:18,351 - INFO - API response status: completed
+2026-03-09 17:40:18,351 - INFO - API response keys: ['status', 'symbol', 'timeframe', 'current_price', 'bid', 'ask', 'decision', 'smc_levels', 'indicators', 'regime', 'analysis_mode', 'llm_used', 'prompt_sent']
+2026-03-09 17:40:18,352 - INFO - 
+================================================================================
+PROMPT SENT TO LLM for XAUUSD
+================================================================================
+You are a systematic quant trader with strict risk discipline. Your only goal is to maximize long-term PnL while surviving drawdowns.
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account value per trade** (risk_usd = position size × distance to stop-loss)
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and one clear invalidation condition before entry**
+5. **Hold only when current plan remains valid; never flip-flop without new high-conviction signal**
+6. **Ignore narratives; trade only price, volume, and the provided technical indicators**
+7. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+8. **Leverage is a tool, not a goal - default 5-20x, higher only with extreme conviction**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- If you cannot identify a valid stop loss placement, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price (Broker)**: 5103.85000
+- **Date**: 2026-03-09
+- **Trading Session**: london
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## Smart Money Concepts Analysis
+
+### Market Structure
+**Bias**: BEARISH
+**Recent Structure**: CHoCH (bearish reversal signal), BOS (bearish continuation)
+
+### Price Position
+**Zone**: DISCOUNT (49% of range) (favor BUYS - price is cheap)
+**Equilibrium**: 5106.49500
+
+### Order Blocks (Unmitigated)
+- BEARISH OB [STRUCTURAL]: 5151.16500 - 5198.01000 (strength: 80%) | +0.93% from price
+- No unmitigated BULLISH OBs (no demand zones)
+
+### Fair Value Gaps
+- BEARISH FVG: 5135.64000 - 5150.91000 (32% filled) | +0.62% from price
+
+### Liquidity Zones (Stop Loss Clusters)
+- BUY-SIDE (above): 5143.24000 (strength: 83.2) | +0.77% - target for shorts
+- SELL-SIDE (below): 5109.44000 (strength: 58.8) | -0.00% - target for longs
+- SELL-SIDE (below): 5120.95000 (strength: 73.8) | -0.00% - target for longs
+
+### Recent Liquidity Sweeps (Last 10 candles)
+- BULLISH SWEEP : Swept lows at 0.00000 - look for reversal UP
+- BULLISH SWEEP : Swept lows at 0.00000 - look for reversal UP
+
+**Current Price**: 5103.85000
+**ATR**: 41.77357
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 43.8 (Neutral)
+- **MACD**: -5.83098 | Signal: -4.60847 | Histogram: -1.22251
+  - Bearish (MACD < Signal)
+
+### Trend
+- **EMA20**: 5108.07927 (Price below)
+- **EMA50**: 5121.33933 (Price below)
+- **ADX**: 12.2 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 41.77357
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=5186.54724 | Middle=5115.28100 | Lower=5044.01476
+  - Price within bands
+
+### Volume
+- **Current Bar Volume**: 10,797 ticks
+- **20-bar Avg Volume**: 17,616 ticks
+- **Volume Ratio**: 0.61x average 
+- **Volume Profile**: Low
+- **Volume Trend (5 bars)**: decreasing
+
+## Key Price Levels
+
+### Previous Day
+- **PDH** (High): 5174.93000 (price is -71.08000 from it)
+- **PDL** (Low): 5062.97000 (price is +40.88000 from it)
+- **Open**: 5084.26000 | **Close**: 5174.75000
+- **Range**: 111.96000
+- Price is **INSIDE** Previous Day range
+
+### Previous Week
+- **PWH** (High): 5419.24000 (price is -315.39000 from it)
+- **PWL** (Low): 4996.28000 (price is +107.57000 from it)
+- **Open**: 5302.13000 | **Close**: 5174.75000
+- **Range**: 422.96000
+- Price is **INSIDE** Previous Week range
+
+### Previous H4
+- **PH4H** (High): 5102.35000 (price is +1.50000 from it)
+- **PH4L** (Low): 5014.98000 (price is +88.87000 from it)
+- **Open**: 5049.92000 | **Close**: 5090.25000
+- **Range**: 87.37000
+- Price is **ABOVE** Previous H4 range
+
+### Volume Profile
+**POC (Point of Control)**: 5161.21510 (7.8% of volume)
+  - Price is -1.12% below POC - POC acts as magnet
+**Value Area**: 5080.66540 - 5180.39360 (70% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 5161.21510 (7.8% vol) | +1.12% above
+  - HVN at 5168.88650 (6.6% vol) | +1.27% above
+  - HVN at 5130.52950 (6.3% vol) | +0.52% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 5000.11570 | -2.03% - price may move fast through this level
+  - LVN at 5007.78710 | -1.88% - price may move fast through this level
+  - LVN at 5015.45850 | -1.73% - price may move fast through this level
+
+
+## YOUR TASK
+
+Analyze the provided technical data and make a systematic trading decision.
+
+Think step-by-step:
+1. What is the overall market structure and bias?
+2. Are there high-probability entry zones (OB, FVG) near current price?
+3. Where would stop loss be placed? Is the R:R acceptable (>1.5:1)?
+4. What would invalidate this setup?
+5. What is your confidence level based on confluence?
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when price is at a high-probability bullish zone (bullish OB, bullish FVG, demand zone) with confluence from indicators. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when price is at a high-probability bearish zone (bearish OB, bearish FVG, supply zone) with confluence from indicators. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when no clear edge exists, price is between zones, or conditions are ambiguous.
+- **close** - Close existing position. Use when the original thesis is invalidated.
+
+Remember:
+- Only enter trades with clear edge
+- Wait for price to come to your levels
+- No FOMO entries
+- Discipline > prediction
+================================================================================
+2026-03-09 17:40:18,376 - INFO - Decision received for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-09 17:40:18,377 - INFO - Rationale: Bearish bias present but price in discount zone with bullish liquidity sweeps and no unmitigated bullish OBs or clear entry confluence; ranging market with low volume favors no action.
+
+**Invalidation
+2026-03-09 17:40:18,377 - INFO - Mapped signal for XAUUSD: HOLD
+2026-03-09 17:40:18,378 - INFO - XAUUSD: HOLD (confidence: 0.85)
+2026-03-09 17:41:18,316 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:41:18,326 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:41:18,334 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 17:42:18,311 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:42:18,318 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:42:18,343 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 17:43:18,323 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:43:18,332 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:43:18,339 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 17:43:38,844 - INFO - Quant automation stopped
+2026-03-09 17:43:38,845 - INFO - Quant automation stopped
+2026-03-09 17:43:38,845 - INFO - Quant automation stopped
+2026-03-09 17:49:11,589 - INFO - ==================================================
+2026-03-09 17:49:11,629 - INFO - QUANT AUTOMATION STARTED
+2026-03-09 17:49:11,630 - INFO - ==================================================
+2026-03-09 17:49:11,631 - INFO - Pipeline: quant
+2026-03-09 17:49:11,631 - INFO - Symbols: XAUUSD
+2026-03-09 17:49:11,632 - INFO - Analysis interval: 900s
+2026-03-09 17:49:11,633 - INFO - Auto-execute: True
+2026-03-09 17:49:11,633 - INFO - ==================================================
+2026-03-09 17:49:11,637 - INFO - Position management loop started
+2026-03-09 17:49:11,639 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:49:12,029 - INFO - ==================================================
+2026-03-09 17:49:12,029 - INFO - QUANT AUTOMATION STARTED
+2026-03-09 17:49:12,030 - INFO - ==================================================
+2026-03-09 17:49:12,030 - INFO - Pipeline: volume_profile
+2026-03-09 17:49:12,031 - INFO - Symbols: XAUUSD
+2026-03-09 17:49:12,031 - INFO - Analysis interval: 900s
+2026-03-09 17:49:12,032 - INFO - Auto-execute: True
+2026-03-09 17:49:12,032 - INFO - ==================================================
+2026-03-09 17:49:12,058 - INFO - Position management loop started
+2026-03-09 17:49:12,060 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:49:12,154 - INFO - ==================================================
+2026-03-09 17:49:12,154 - INFO - QUANT AUTOMATION STARTED
+2026-03-09 17:49:12,155 - INFO - ==================================================
+2026-03-09 17:49:12,155 - INFO - Pipeline: quant
+2026-03-09 17:49:12,156 - INFO - Symbols: ETHUSD
+2026-03-09 17:49:12,157 - INFO - Analysis interval: 900s
+2026-03-09 17:49:12,157 - INFO - Auto-execute: True
+2026-03-09 17:49:12,158 - INFO - ==================================================
+2026-03-09 17:49:12,191 - INFO - Running quant analysis for ETHUSD...
+2026-03-09 17:49:12,192 - INFO - Position management loop started
+2026-03-09 17:49:12,194 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 17:49:37,605 - INFO - API response status: completed
+2026-03-09 17:49:37,606 - INFO - API response keys: ['status', 'symbol', 'timeframe', 'current_price', 'bid', 'ask', 'decision', 'smc_levels', 'indicators', 'regime', 'analysis_mode', 'llm_used', 'prompt_sent']
+2026-03-09 17:49:37,606 - INFO - 
+================================================================================
+PROMPT SENT TO LLM for ETHUSD
+================================================================================
+You are a systematic quant trader with strict risk discipline. Your only goal is to maximize long-term PnL while surviving drawdowns.
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account value per trade** (risk_usd = position size × distance to stop-loss)
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and one clear invalidation condition before entry**
+5. **Hold only when current plan remains valid; never flip-flop without new high-conviction signal**
+6. **Ignore narratives; trade only price, volume, and the provided technical indicators**
+7. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+8. **Leverage is a tool, not a goal - default 5-20x, higher only with extreme conviction**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- If you cannot identify a valid stop loss placement, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: ETHUSD
+- **Current Price (Broker)**: 1982.59000
+- **Date**: 2026-03-09
+- **Trading Session**: london
+- **Market Regime**: ranging
+- **Volatility Regime**: high
+
+## Smart Money Concepts Analysis
+
+### Market Structure
+**Bias**: BEARISH
+**Recent Structure**: CHoCH (bearish reversal signal), BOS (bullish continuation)
+
+### Price Position
+**Zone**: PREMIUM (69% of range) (favor SELLS - price is expensive)
+**Equilibrium**: 1962.07500
+
+### Order Blocks (Unmitigated)
+- BEARISH OB [STRUCTURAL]: 2128.03500 - 2163.01000 (strength: 80%) | +7.34% from price
+- No unmitigated BULLISH OBs (no demand zones)
+
+### Fair Value Gaps
+- BULLISH FVG: 1962.49000 - 1972.58000 (99% filled) | -0.50% from price
+
+### Liquidity Zones (Stop Loss Clusters)
+- BUY-SIDE (above): 1976.35000 (strength: 48.5) | +0.00% - target for shorts
+- BUY-SIDE (above): 1973.73000 (strength: 57.4) | +0.00% - target for shorts
+- SELL-SIDE (below): 1963.79000 (strength: 65.8) | -0.95% - target for longs
+
+### Recent Liquidity Sweeps (Last 10 candles)
+- BULLISH SWEEP [STRONG]: Swept lows at 0.00000 - look for reversal UP
+- BULLISH SWEEP : Swept lows at 0.00000 - look for reversal UP
+
+**Current Price**: 1982.59000
+**ATR**: 27.35786
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 62.9 (Neutral)
+- **MACD**: 6.23585 | Signal: 0.08346 | Histogram: 6.15239
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 1964.49668 (Price above)
+- **EMA50**: 1971.84140 (Price above)
+- **ADX**: 17.9 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 27.35786
+- **Volatility**: high
+- **Bollinger Bands**: Upper=1997.33116 | Middle=1955.76800 | Lower=1914.20484
+  - Price near upper band
+
+### Volume
+- **Current Bar Volume**: 8,092 ticks
+- **20-bar Avg Volume**: 8,516 ticks
+- **Volume Ratio**: 0.95x average 
+- **Volume Profile**: Normal
+- **Volume Trend (5 bars)**: decreasing
+
+## Key Price Levels
+
+### Previous Day
+- **PDH** (High): 1976.35000 (price is +6.24000 from it)
+- **PDL** (Low): 1924.25000 (price is +58.34000 from it)
+- **Open**: 1969.88000 | **Close**: 1958.28000
+- **Range**: 52.10000
+- Price is **ABOVE** Previous Day range
+
+### Previous Week
+- **PWH** (High): 2198.35000 (price is -215.76000 from it)
+- **PWL** (Low): 1906.79000 (price is +75.80000 from it)
+- **Open**: 1957.88000 | **Close**: 1969.79000
+- **Range**: 291.56000
+- Price is **INSIDE** Previous Week range
+
+### Previous H4
+- **PH4H** (High): 2004.40000 (price is -21.81000 from it)
+- **PH4L** (Low): 1937.44000 (price is +45.15000 from it)
+- **Open**: 1950.22000 | **Close**: 1976.60000
+- **Range**: 66.96000
+- Price is **INSIDE** Previous H4 range
+
+### Volume Profile
+**POC (Point of Control)**: 1978.71420 (7.3% of volume)
+  - Price is +0.20% above POC - POC acts as magnet
+**Value Area**: 1910.55000 - 2082.22280 (74% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 1978.71420 (7.3% vol) | -0.20% below
+  - HVN at 1983.76340 (5.8% vol) | AT PRICE
+  - HVN at 1973.66500 (5.6% vol) | -0.45% below
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 1913.07460 | -3.51% - price may move fast through this level
+  - LVN at 1918.12380 | -3.25% - price may move fast through this level
+  - LVN at 1923.17300 | -3.00% - price may move fast through this level
+
+
+## YOUR TASK
+
+Analyze the provided technical data and make a systematic trading decision.
+
+Think step-by-step:
+1. What is the overall market structure and bias?
+2. Are there high-probability entry zones (OB, FVG) near current price?
+3. Where would stop loss be placed? Is the R:R acceptable (>1.5:1)?
+4. What would invalidate this setup?
+5. What is your confidence level based on confluence?
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when price is at a high-probability bullish zone (bullish OB, bullish FVG, demand zone) with confluence from indicators. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when price is at a high-probability bearish zone (bearish OB, bearish FVG, supply zone) with confluence from indicators. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when no clear edge exists, price is between zones, or conditions are ambiguous.
+- **close** - Close existing position. Use when the original thesis is invalidated.
+
+Remember:
+- Only enter trades with clear edge
+- Wait for price to come to your levels
+- No FOMO entries
+- Discipline > prediction
+================================================================================
+2026-03-09 17:49:37,633 - INFO - Decision received for ETHUSD: signal=HOLD, confidence=0.4, entry=None, sl=None, tp=None
+2026-03-09 17:49:37,634 - INFO - Rationale: Bearish bias with price in premium zone favoring sells but no unmitigated bearish OB or FVG near current price; mixed indicators with bullish MACD and price above EMAs in ranging market; recent bullis
+2026-03-09 17:49:37,635 - INFO - Mapped signal for ETHUSD: HOLD
+2026-03-09 17:49:37,635 - INFO - ETHUSD: HOLD (confidence: 0.40)
+2026-03-09 17:50:11,946 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:50:12,087 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:50:12,230 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 17:51:11,970 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:51:12,098 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:51:12,232 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 17:52:11,985 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:52:12,113 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:52:12,251 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 17:53:12,003 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:53:12,115 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:53:12,289 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 17:54:12,016 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:54:12,126 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:54:12,299 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 17:55:11,728 - INFO - Running quant analysis for XAUUSD...
+2026-03-09 17:55:24,961 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:55:24,971 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:55:24,977 - INFO - Running volume_profile analysis for XAUUSD...
+2026-03-09 17:55:24,979 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 17:55:24,987 - INFO - API response status: completed
+2026-03-09 17:55:24,988 - INFO - API response keys: ['status', 'symbol', 'timeframe', 'current_price', 'bid', 'ask', 'decision', 'smc_levels', 'indicators', 'regime', 'analysis_mode', 'llm_used', 'prompt_sent']
+2026-03-09 17:55:24,988 - INFO - 
+================================================================================
+PROMPT SENT TO LLM for XAUUSD
+================================================================================
+You are a systematic quant trader with strict risk discipline. Your only goal is to maximize long-term PnL while surviving drawdowns.
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account value per trade** (risk_usd = position size × distance to stop-loss)
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and one clear invalidation condition before entry**
+5. **Hold only when current plan remains valid; never flip-flop without new high-conviction signal**
+6. **Ignore narratives; trade only price, volume, and the provided technical indicators**
+7. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+8. **Leverage is a tool, not a goal - default 5-20x, higher only with extreme conviction**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- If you cannot identify a valid stop loss placement, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price (Broker)**: 5095.35000
+- **Date**: 2026-03-09
+- **Trading Session**: london
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## Smart Money Concepts Analysis
+
+### Market Structure
+**Bias**: BEARISH
+**Recent Structure**: CHoCH (bearish reversal signal), BOS (bearish continuation)
+
+### Price Position
+**Zone**: DISCOUNT (44% of range) (favor BUYS - price is cheap)
+**Equilibrium**: 5106.49500
+
+### Order Blocks (Unmitigated)
+- BEARISH OB [STRUCTURAL]: 5151.16500 - 5198.01000 (strength: 80%) | +1.10% from price
+- No unmitigated BULLISH OBs (no demand zones)
+
+### Fair Value Gaps
+- BEARISH FVG: 5135.64000 - 5150.91000 (32% filled) | +0.79% from price
+
+### Liquidity Zones (Stop Loss Clusters)
+- BUY-SIDE (above): 5143.24000 (strength: 83.2) | +0.94% - target for shorts
+- SELL-SIDE (below): 5109.44000 (strength: 58.8) | -0.00% - target for longs
+- SELL-SIDE (below): 5120.95000 (strength: 73.8) | -0.00% - target for longs
+
+### Recent Liquidity Sweeps (Last 10 candles)
+- BULLISH SWEEP : Swept lows at 0.00000 - look for reversal UP
+- BULLISH SWEEP : Swept lows at 0.00000 - look for reversal UP
+
+**Current Price**: 5095.35000
+**ATR**: 41.77357
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 42.2 (Neutral)
+- **MACD**: -6.50904 | Signal: -4.74408 | Histogram: -1.76496
+  - Bearish (MACD < Signal)
+
+### Trend
+- **EMA20**: 5107.26975 (Price below)
+- **EMA50**: 5121.00599 (Price below)
+- **ADX**: 12.2 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 41.77357
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=5186.51185 | Middle=5114.85600 | Lower=5043.20015
+  - Price within bands
+
+### Volume
+- **Current Bar Volume**: 14,584 ticks
+- **20-bar Avg Volume**: 17,805 ticks
+- **Volume Ratio**: 0.82x average 
+- **Volume Profile**: Normal
+- **Volume Trend (5 bars)**: decreasing
+
+## Key Price Levels
+
+### Previous Day
+- **PDH** (High): 5174.93000 (price is -79.58000 from it)
+- **PDL** (Low): 5062.97000 (price is +32.38000 from it)
+- **Open**: 5084.26000 | **Close**: 5174.75000
+- **Range**: 111.96000
+- Price is **INSIDE** Previous Day range
+
+### Previous Week
+- **PWH** (High): 5419.24000 (price is -323.89000 from it)
+- **PWL** (Low): 4996.28000 (price is +99.07000 from it)
+- **Open**: 5302.13000 | **Close**: 5174.75000
+- **Range**: 422.96000
+- Price is **INSIDE** Previous Week range
+
+### Previous H4
+- **PH4H** (High): 5102.35000 (price is -7.00000 from it)
+- **PH4L** (Low): 5014.98000 (price is +80.37000 from it)
+- **Open**: 5049.92000 | **Close**: 5090.25000
+- **Range**: 87.37000
+- Price is **INSIDE** Previous H4 range
+
+### Volume Profile
+**POC (Point of Control)**: 5161.21510 (7.8% of volume)
+  - Price is -1.29% below POC - POC acts as magnet
+**Value Area**: 5080.66540 - 5180.39360 (70% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 5161.21510 (7.8% vol) | +1.29% above
+  - HVN at 5168.88650 (6.6% vol) | +1.44% above
+  - HVN at 5130.52950 (6.3% vol) | +0.69% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 5000.11570 | -1.87% - price may move fast through this level
+  - LVN at 5007.78710 | -1.72% - price may move fast through this level
+  - LVN at 5015.45850 | -1.57% - price may move fast through this level
+
+
+## YOUR TASK
+
+Analyze the provided technical data and make a systematic trading decision.
+
+Think step-by-step:
+1. What is the overall market structure and bias?
+2. Are there high-probability entry zones (OB, FVG) near current price?
+3. Where would stop loss be placed? Is the R:R acceptable (>1.5:1)?
+4. What would invalidate this setup?
+5. What is your confidence level based on confluence?
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when price is at a high-probability bullish zone (bullish OB, bullish FVG, demand zone) with confluence from indicators. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when price is at a high-probability bearish zone (bearish OB, bearish FVG, supply zone) with confluence from indicators. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when no clear edge exists, price is between zones, or conditions are ambiguous.
+- **close** - Close existing position. Use when the original thesis is invalidated.
+
+Remember:
+- Only enter trades with clear edge
+- Wait for price to come to your levels
+- No FOMO entries
+- Discipline > prediction
+================================================================================
+2026-03-09 17:55:25,018 - INFO - Decision received for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-09 17:55:25,019 - INFO - Rationale: Bearish market structure bias with unmitigated bearish OB and FVG above price, but no unmitigated bullish OBs at current discount zone; ranging regime with neutral RSI and decreasing volume provides n
+2026-03-09 17:55:25,020 - INFO - Mapped signal for XAUUSD: HOLD
+2026-03-09 17:55:25,020 - INFO - XAUUSD: HOLD (confidence: 0.85)
+2026-03-09 17:55:33,429 - INFO - [VP] API response status: success
+2026-03-09 17:55:33,430 - INFO - [VP] Decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-09 17:55:33,431 - INFO - [VP] Justification: Price is inside Value Area at fair value with no clear setup for mean reversion, VA edge, breakout, or HVN bounce; bearish MACD and position below EMAs suggest waiting for better confirmation.
+2026-03-09 17:55:33,431 - INFO - XAUUSD: HOLD (confidence: 0.85)
+2026-03-09 17:56:24,989 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:56:24,996 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:56:25,004 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 17:57:24,993 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:57:25,000 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:57:25,007 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 17:58:25,001 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:58:25,008 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:58:25,018 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 17:59:25,030 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:59:25,038 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 17:59:25,045 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 18:00:25,043 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:00:25,051 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:00:25,058 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 18:01:25,069 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:01:25,076 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:01:25,083 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 18:02:25,070 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:02:25,078 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 18:02:25,085 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:03:25,073 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:03:25,080 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 18:03:25,088 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:04:25,068 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:04:25,076 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:04:25,082 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 18:04:37,842 - INFO - Running quant analysis for ETHUSD...
+2026-03-09 18:04:53,995 - INFO - API response status: completed
+2026-03-09 18:04:53,995 - INFO - API response keys: ['status', 'symbol', 'timeframe', 'current_price', 'bid', 'ask', 'decision', 'smc_levels', 'indicators', 'regime', 'analysis_mode', 'llm_used', 'prompt_sent']
+2026-03-09 18:04:53,996 - INFO - 
+================================================================================
+PROMPT SENT TO LLM for ETHUSD
+================================================================================
+You are a systematic quant trader with strict risk discipline. Your only goal is to maximize long-term PnL while surviving drawdowns.
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account value per trade** (risk_usd = position size × distance to stop-loss)
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and one clear invalidation condition before entry**
+5. **Hold only when current plan remains valid; never flip-flop without new high-conviction signal**
+6. **Ignore narratives; trade only price, volume, and the provided technical indicators**
+7. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+8. **Leverage is a tool, not a goal - default 5-20x, higher only with extreme conviction**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- If you cannot identify a valid stop loss placement, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: ETHUSD
+- **Current Price (Broker)**: 1981.18500
+- **Date**: 2026-03-09
+- **Trading Session**: london
+- **Market Regime**: ranging
+- **Volatility Regime**: high
+
+## Smart Money Concepts Analysis
+
+### Market Structure
+**Bias**: BEARISH
+**Recent Structure**: CHoCH (bearish reversal signal), BOS (bullish continuation)
+
+### Price Position
+**Zone**: PREMIUM (68% of range) (favor SELLS - price is expensive)
+**Equilibrium**: 1962.07500
+
+### Order Blocks (Unmitigated)
+- BEARISH OB [STRUCTURAL]: 2128.03500 - 2163.01000 (strength: 80%) | +7.41% from price
+- No unmitigated BULLISH OBs (no demand zones)
+
+### Fair Value Gaps
+- BULLISH FVG: 1962.49000 - 1972.58000 (99% filled) | -0.43% from price
+
+### Liquidity Zones (Stop Loss Clusters)
+- BUY-SIDE (above): 1976.35000 (strength: 48.4) | +0.00% - target for shorts
+- BUY-SIDE (above): 1973.73000 (strength: 57.4) | +0.00% - target for shorts
+- SELL-SIDE (below): 1963.79000 (strength: 65.7) | -0.88% - target for longs
+
+### Recent Liquidity Sweeps (Last 10 candles)
+- BULLISH SWEEP : Swept lows at 0.00000 - look for reversal UP
+- BEARISH SWEEP [STRONG]: Swept highs at 0.00000 - look for reversal DOWN
+
+**Current Price**: 1981.18500
+**ATR**: 27.17357
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 64.4 (Neutral)
+- **MACD**: 6.70701 | Signal: 1.42796 | Histogram: 5.27906
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 1966.15056 (Price above)
+- **EMA50**: 1972.23533 (Price above)
+- **ADX**: 16.4 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 27.17357
+- **Volatility**: high
+- **Bollinger Bands**: Upper=2000.45433 | Middle=1957.60000 | Lower=1914.74567
+  - Price near upper band
+
+### Volume
+- **Current Bar Volume**: 1,010 ticks
+- **20-bar Avg Volume**: 8,237 ticks
+- **Volume Ratio**: 0.12x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+## Key Price Levels
+
+### Previous Day
+- **PDH** (High): 1976.35000 (price is +4.83500 from it)
+- **PDL** (Low): 1924.25000 (price is +56.93500 from it)
+- **Open**: 1969.88000 | **Close**: 1958.28000
+- **Range**: 52.10000
+- Price is **ABOVE** Previous Day range
+
+### Previous Week
+- **PWH** (High): 2198.35000 (price is -217.16500 from it)
+- **PWL** (Low): 1906.79000 (price is +74.39500 from it)
+- **Open**: 1957.88000 | **Close**: 1969.79000
+- **Range**: 291.56000
+- Price is **INSIDE** Previous Week range
+
+### Previous H4
+- **PH4H** (High): 2004.40000 (price is -23.21500 from it)
+- **PH4L** (Low): 1937.44000 (price is +43.74500 from it)
+- **Open**: 1950.22000 | **Close**: 1976.60000
+- **Range**: 66.96000
+- Price is **INSIDE** Previous H4 range
+
+### Volume Profile
+**POC (Point of Control)**: 1978.71420 (7.4% of volume)
+  - Price is +0.12% above POC - POC acts as magnet
+**Value Area**: 1910.55000 - 2077.17360 (71% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 1978.71420 (7.4% vol) | -0.12% below
+  - HVN at 1983.76340 (5.9% vol) | +0.13% above
+  - HVN at 1973.66500 (5.7% vol) | -0.38% below
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 1913.07460 | -3.44% - price may move fast through this level
+  - LVN at 1918.12380 | -3.18% - price may move fast through this level
+  - LVN at 1923.17300 | -2.93% - price may move fast through this level
+
+
+## YOUR TASK
+
+Analyze the provided technical data and make a systematic trading decision.
+
+Think step-by-step:
+1. What is the overall market structure and bias?
+2. Are there high-probability entry zones (OB, FVG) near current price?
+3. Where would stop loss be placed? Is the R:R acceptable (>1.5:1)?
+4. What would invalidate this setup?
+5. What is your confidence level based on confluence?
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when price is at a high-probability bullish zone (bullish OB, bullish FVG, demand zone) with confluence from indicators. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when price is at a high-probability bearish zone (bearish OB, bearish FVG, supply zone) with confluence from indicators. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when no clear edge exists, price is between zones, or conditions are ambiguous.
+- **close** - Close existing position. Use when the original thesis is invalidated.
+
+Remember:
+- Only enter trades with clear edge
+- Wait for price to come to your levels
+- No FOMO entries
+- Discipline > prediction
+================================================================================
+2026-03-09 18:04:54,023 - INFO - Decision received for ETHUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-09 18:04:54,024 - INFO - Rationale: Bearish bias and premium pricing favor sells but no unmitigated bearish OB or FVG near current price, mixed indicators (bullish MACD, neutral RSI), low volume in ranging market provide no clear edge f
+2026-03-09 18:04:54,024 - INFO - Mapped signal for ETHUSD: HOLD
+2026-03-09 18:04:54,025 - INFO - ETHUSD: HOLD (confidence: 0.85)
+2026-03-09 18:05:25,072 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:05:25,079 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:05:25,086 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 18:06:25,091 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:06:25,098 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:06:25,104 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 18:07:25,089 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:07:25,121 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 18:07:25,128 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:08:25,075 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:08:25,138 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 18:08:25,146 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:09:25,081 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:09:25,145 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 18:09:25,153 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:10:25,089 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:10:25,168 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:10:25,175 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 18:10:25,181 - INFO - Running quant analysis for XAUUSD...
+2026-03-09 18:10:37,515 - INFO - Running volume_profile analysis for XAUUSD...
+2026-03-09 18:10:37,516 - INFO - API response status: completed
+2026-03-09 18:10:37,516 - INFO - API response keys: ['status', 'symbol', 'timeframe', 'current_price', 'bid', 'ask', 'decision', 'smc_levels', 'indicators', 'regime', 'analysis_mode', 'llm_used', 'prompt_sent']
+2026-03-09 18:10:37,517 - INFO - 
+================================================================================
+PROMPT SENT TO LLM for XAUUSD
+================================================================================
+You are a systematic quant trader with strict risk discipline. Your only goal is to maximize long-term PnL while surviving drawdowns.
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account value per trade** (risk_usd = position size × distance to stop-loss)
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and one clear invalidation condition before entry**
+5. **Hold only when current plan remains valid; never flip-flop without new high-conviction signal**
+6. **Ignore narratives; trade only price, volume, and the provided technical indicators**
+7. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+8. **Leverage is a tool, not a goal - default 5-20x, higher only with extreme conviction**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- If you cannot identify a valid stop loss placement, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price (Broker)**: 5102.41000
+- **Date**: 2026-03-09
+- **Trading Session**: london
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## Smart Money Concepts Analysis
+
+### Market Structure
+**Bias**: BEARISH
+**Recent Structure**: CHoCH (bearish reversal signal), BOS (bearish continuation)
+
+### Price Position
+**Zone**: DISCOUNT (48% of range) (favor BUYS - price is cheap)
+**Equilibrium**: 5106.49500
+
+### Order Blocks (Unmitigated)
+- BEARISH OB [STRUCTURAL]: 5151.16500 - 5198.01000 (strength: 80%) | +0.96% from price
+- No unmitigated BULLISH OBs (no demand zones)
+
+### Fair Value Gaps
+- BEARISH FVG: 5135.64000 - 5150.91000 (32% filled) | +0.65% from price
+
+### Liquidity Zones (Stop Loss Clusters)
+- BUY-SIDE (above): 5143.24000 (strength: 83.9) | +0.80% - target for shorts
+- SELL-SIDE (below): 5109.44000 (strength: 59.6) | -0.00% - target for longs
+- SELL-SIDE (below): 5120.95000 (strength: 74.3) | -0.00% - target for longs
+
+### Recent Liquidity Sweeps (Last 10 candles)
+- BULLISH SWEEP : Swept lows at 0.00000 - look for reversal UP
+- BULLISH SWEEP : Swept lows at 0.00000 - look for reversal UP
+
+**Current Price**: 5102.41000
+**ATR**: 40.53714
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 39.2 (Neutral)
+- **MACD**: -5.85272 | Signal: -4.91655 | Histogram: -0.93617
+  - Bearish (MACD < Signal)
+
+### Trend
+- **EMA20**: 5107.13095 (Price below)
+- **EMA50**: 5120.42591 (Price below)
+- **ADX**: 12.6 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 40.53714
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=5186.13671 | Middle=5116.03350 | Lower=5045.93029
+  - Price within bands
+
+### Volume
+- **Current Bar Volume**: 3,149 ticks
+- **20-bar Avg Volume**: 17,260 ticks
+- **Volume Ratio**: 0.18x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+## Key Price Levels
+
+### Previous Day
+- **PDH** (High): 5174.93000 (price is -72.52000 from it)
+- **PDL** (Low): 5062.97000 (price is +39.44000 from it)
+- **Open**: 5084.26000 | **Close**: 5174.75000
+- **Range**: 111.96000
+- Price is **INSIDE** Previous Day range
+
+### Previous Week
+- **PWH** (High): 5419.24000 (price is -316.83000 from it)
+- **PWL** (Low): 4996.28000 (price is +106.13000 from it)
+- **Open**: 5302.13000 | **Close**: 5174.75000
+- **Range**: 422.96000
+- Price is **INSIDE** Previous Week range
+
+### Previous H4
+- **PH4H** (High): 5102.35000 (price is +0.06000 from it)
+- **PH4L** (Low): 5014.98000 (price is +87.43000 from it)
+- **Open**: 5049.92000 | **Close**: 5090.25000
+- **Range**: 87.37000
+- Price is **ABOVE** Previous H4 range
+
+### Volume Profile
+**POC (Point of Control)**: 5159.39190 (7.5% of volume)
+  - Price is -1.12% below POC - POC acts as magnet
+**Value Area**: 5079.73260 - 5178.35840 (71% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 5159.39190 (7.5% vol) | +1.12% above
+  - HVN at 5166.97850 (7.0% vol) | +1.27% above
+  - HVN at 5129.04550 (6.2% vol) | +0.52% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 5000.07330 | -2.01% - price may move fast through this level
+  - LVN at 5007.65990 | -1.86% - price may move fast through this level
+  - LVN at 5015.24650 | -1.71% - price may move fast through this level
+
+
+## YOUR TASK
+
+Analyze the provided technical data and make a systematic trading decision.
+
+Think step-by-step:
+1. What is the overall market structure and bias?
+2. Are there high-probability entry zones (OB, FVG) near current price?
+3. Where would stop loss be placed? Is the R:R acceptable (>1.5:1)?
+4. What would invalidate this setup?
+5. What is your confidence level based on confluence?
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when price is at a high-probability bullish zone (bullish OB, bullish FVG, demand zone) with confluence from indicators. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when price is at a high-probability bearish zone (bearish OB, bearish FVG, supply zone) with confluence from indicators. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when no clear edge exists, price is between zones, or conditions are ambiguous.
+- **close** - Close existing position. Use when the original thesis is invalidated.
+
+Remember:
+- Only enter trades with clear edge
+- Wait for price to come to your levels
+- No FOMO entries
+- Discipline > prediction
+================================================================================
+2026-03-09 18:10:37,540 - INFO - Decision received for XAUUSD: signal=HOLD, confidence=0.45, entry=None, sl=None, tp=None
+2026-03-09 18:10:37,541 - INFO - Rationale: Bearish market structure with CHoCH and BOS, but price in discount zone with no unmitigated bullish OBs or FVGs nearby; ranging regime, low volume, neutral RSI, no high-conviction entry edge.
+
+**Inval
+2026-03-09 18:10:37,542 - INFO - Mapped signal for XAUUSD: HOLD
+2026-03-09 18:10:37,542 - INFO - XAUUSD: HOLD (confidence: 0.45)
+2026-03-09 18:10:46,727 - INFO - [VP] API response status: success
+2026-03-09 18:10:46,728 - INFO - [VP] Decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-09 18:10:46,728 - INFO - [VP] Justification: Price is inside Value Area at fair value, below POC but not at a significant discount or VA edge for mean reversion entry, with low volume and neutral momentum in a ranging market.
+2026-03-09 18:10:46,729 - INFO - XAUUSD: HOLD (confidence: 0.85)
+2026-03-09 18:11:25,096 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:11:25,174 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:11:25,182 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 18:12:25,125 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:12:25,204 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 18:12:25,211 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:13:25,146 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:13:25,212 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 18:13:25,222 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:14:25,174 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:14:25,206 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 18:14:25,238 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:15:25,182 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-09 18:15:25,231 - INFO - Position check: 0 total open, 0 managed (ETHUSD)
+2026-03-09 18:15:25,261 - INFO - Position check: 0 total open, 0 managed (XAUUSD)

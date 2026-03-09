@@ -603,6 +603,25 @@ def close_decision(
     return decision
 
 
+def list_decisions(symbol: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
+    """List all decisions regardless of status."""
+    if not os.path.exists(DECISIONS_DIR):
+        return []
+
+    decisions = []
+    for f in os.listdir(DECISIONS_DIR):
+        if f.endswith(".json"):
+            decision_id = f.replace(".json", "")
+            try:
+                decision = load_decision(decision_id)
+                if symbol is None or decision.get("symbol") == symbol:
+                    decisions.append(decision)
+            except Exception:
+                continue
+
+    return sorted(decisions, key=lambda d: d.get("created_at", ""), reverse=True)[:limit]
+
+
 def list_active_decisions(symbol: Optional[str] = None) -> List[Dict[str, Any]]:
     """List all active (unclosed) decisions."""
     if not os.path.exists(DECISIONS_DIR):
@@ -1076,3 +1095,134 @@ def _generate_key_insight(direction_accuracy: float, sl_tight_pct: float, tp_amb
         insights.append("Good direction accuracy with appropriate stops. Focus on TP optimization.")
 
     return " ".join(insights) if insights else "Not enough data for key insights yet."
+
+
+def _get_entry_price_from_history(ticket: int, days_back: int = 30) -> Optional[float]:
+    """Get the entry price for a position from MT5 deal history (opening deal)."""
+    try:
+        import MetaTrader5 as mt5
+        from datetime import timedelta
+        from_date = datetime.now() - timedelta(days=days_back)
+        to_date = datetime.now() + timedelta(days=1)
+        deals = mt5.history_deals_get(from_date, to_date)
+        if deals is None:
+            return None
+        for deal in deals:
+            if deal.position_id == ticket and deal.entry == 0:  # entry=0 means opening deal
+                return deal.price
+    except Exception:
+        pass
+    return None
+
+
+def reconcile_decisions(days_back: int = 14) -> List[Dict[str, Any]]:
+    """
+    Reconcile active decisions against MT5 closed positions.
+    Finds decisions with mt5_ticket whose positions are no longer open and closes them.
+    Returns list of decisions that were reconciled.
+    """
+    from tradingagents.dataflows.mt5_data import get_open_positions, get_closed_deal_by_ticket
+
+    active = list_active_decisions()
+    if not active:
+        return []
+
+    # Get all currently open tickets
+    try:
+        positions = get_open_positions()
+        open_tickets = {p.get("ticket") for p in positions}
+    except Exception:
+        return []  # Can't reconcile without MT5
+
+    reconciled = []
+    for dec in active:
+        ticket = dec.get("mt5_ticket")
+        if not ticket or ticket in open_tickets:
+            continue  # No ticket or still open
+
+        # Position is gone — try to get exit info from MT5 deal history
+        deal_info = get_closed_deal_by_ticket(ticket, days_back=days_back)
+        if not deal_info:
+            continue
+
+        exit_price = deal_info["price"]
+        profit = deal_info.get("profit", 0)
+        entry = dec.get("entry_price", 0)
+        sl = dec.get("stop_loss")
+        tp = dec.get("take_profit")
+
+        # Backfill entry_price if stored as 0
+        if not entry:
+            entry = _get_entry_price_from_history(ticket, days_back)
+            if entry:
+                dec["entry_price"] = entry
+                # Persist fix to decision file
+                dec_file = os.path.join(DECISIONS_DIR, f"{dec['decision_id']}.json")
+                if os.path.exists(dec_file):
+                    with open(dec_file, "r") as f:
+                        data = json.load(f)
+                    data["entry_price"] = entry
+                    with open(dec_file, "w") as f:
+                        json.dump(data, f, indent=2, default=str)
+
+        # Infer exit reason
+        tolerance = abs(entry * 0.0005) if entry else 0.5
+        if tp and abs(exit_price - tp) <= tolerance:
+            exit_reason = "tp_hit"
+        elif sl and abs(exit_price - sl) <= tolerance:
+            exit_reason = "sl_hit"
+        else:
+            exit_reason = "unknown"
+
+        try:
+            result = close_decision(
+                dec["decision_id"],
+                exit_price=exit_price,
+                outcome_notes=f"Reconciled from MT5 history. Profit: {profit:.2f}",
+                exit_reason=exit_reason,
+            )
+            reconciled.append(result)
+        except Exception:
+            continue
+
+    # Also backfill entry_price for already-closed decisions that have entry_price=0
+    _backfill_entry_prices(days_back)
+
+    return reconciled
+
+
+def _backfill_entry_prices(days_back: int = 30) -> int:
+    """Fix closed decisions that have entry_price=0 by looking up MT5 deal history."""
+    if not os.path.exists(DECISIONS_DIR):
+        return 0
+    fixed = 0
+    for f in os.listdir(DECISIONS_DIR):
+        if not f.endswith(".json"):
+            continue
+        filepath = os.path.join(DECISIONS_DIR, f)
+        try:
+            with open(filepath, "r") as fh:
+                dec = json.load(fh)
+            if dec.get("entry_price") or not dec.get("mt5_ticket"):
+                continue  # Already has entry price or no ticket
+            ticket = dec["mt5_ticket"]
+            entry = _get_entry_price_from_history(ticket, days_back)
+            if entry:
+                dec["entry_price"] = entry
+                # Recalculate P/L if we have exit_price
+                exit_price = dec.get("exit_price")
+                action = dec.get("action", "").upper()
+                if exit_price and exit_price > 0:
+                    volume = dec.get("volume", 0.01)
+                    if action in ["BUY", "LONG"]:
+                        dec["pnl"] = (exit_price - entry) * volume * 100
+                        dec["pnl_percent"] = ((exit_price - entry) / entry) * 100
+                    elif action in ["SELL", "SHORT"]:
+                        dec["pnl"] = (entry - exit_price) * volume * 100
+                        dec["pnl_percent"] = ((entry - exit_price) / entry) * 100
+                with open(filepath, "w") as fh:
+                    json.dump(dec, fh, indent=2, default=str)
+                fixed += 1
+        except Exception:
+            continue
+    return fixed
