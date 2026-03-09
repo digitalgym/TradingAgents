@@ -132,7 +132,9 @@ def create_volume_profile_quant(llm, use_structured_output: bool = True):
         )
 
         # Build the VP quant analyst prompt
-        system_prompt = _build_vp_quant_prompt(data_context)
+        # Build prompt with trade memories if available
+        trade_memories = state.get("trade_memories") or ""
+        system_prompt = _build_vp_quant_prompt(data_context, trade_memories=trade_memories)
 
         # Log the prompt being sent to LLM
         logger = _get_vp_quant_logger()
@@ -334,8 +336,19 @@ def _format_volume_profile_for_prompt(
     return "\n".join(lines)
 
 
-def _build_vp_quant_prompt(data_context: str) -> str:
+def _build_vp_quant_prompt(data_context: str, trade_memories: str = None) -> str:
     """Build the complete Volume Profile quant analyst prompt."""
+
+    memories_section = ""
+    if trade_memories:
+        memories_section = f"""
+
+{trade_memories}
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+"""
 
     return f"""You are a systematic Volume Profile trader with strict risk discipline. You trade based on volume-at-price analysis to identify high-probability entries.
 
@@ -405,7 +418,7 @@ def _build_vp_quant_prompt(data_context: str) -> str:
 - If you cannot identify a valid stop loss placement, output "hold"
 
 {data_context}
-
+{memories_section}
 ## YOUR TASK
 
 Analyze the Volume Profile data and make a systematic trading decision.

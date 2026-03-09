@@ -24,6 +24,7 @@ from enum import Enum
 from tradingagents.dataflows.mt5_data import (
     get_mt5_current_price,
     get_open_positions,
+    get_pending_orders,
     modify_position,
     close_position,
     execute_trade_signal,
@@ -575,20 +576,25 @@ class QuantAutomation:
             )
             return result
 
-        # Check position limits
+        # Check position limits (count both open positions AND pending orders)
         positions = get_open_positions()
+        pending = get_pending_orders()
         symbol_positions = [p for p in positions if p.get("symbol") == result.symbol]
+        symbol_pending = [o for o in pending if o.get("symbol") == result.symbol]
+        symbol_total = len(symbol_positions) + len(symbol_pending)
+        all_total = len(positions) + len(pending)
         self.logger.info(
-            f"Position check: {len(symbol_positions)}/{self.config.max_positions_per_symbol} "
-            f"for {result.symbol}, {len(positions)}/{self.config.max_total_positions} total"
+            f"Position check: {symbol_total}/{self.config.max_positions_per_symbol} "
+            f"for {result.symbol} ({len(symbol_positions)} open + {len(symbol_pending)} pending), "
+            f"{all_total}/{self.config.max_total_positions} total"
         )
 
-        if len(symbol_positions) >= self.config.max_positions_per_symbol:
-            self.logger.info(f"Max positions reached for {result.symbol}, skipping")
+        if symbol_total >= self.config.max_positions_per_symbol:
+            self.logger.info(f"Max positions reached for {result.symbol} ({len(symbol_positions)} open + {len(symbol_pending)} pending), skipping")
             return result
 
-        if len(positions) >= self.config.max_total_positions:
-            self.logger.info(f"Max total positions reached ({len(positions)}), skipping")
+        if all_total >= self.config.max_total_positions:
+            self.logger.info(f"Max total positions reached ({all_total}: {len(positions)} open + {len(pending)} pending), skipping")
             return result
 
         # Check guardrails

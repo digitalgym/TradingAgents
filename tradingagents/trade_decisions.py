@@ -1226,3 +1226,129 @@ def _backfill_entry_prices(days_back: int = 30) -> int:
         except Exception:
             continue
     return fixed
+
+
+def get_trade_memories(symbol: str, limit: int = 10) -> str:
+    """
+    Build a concise text summary of past trade outcomes for a symbol,
+    suitable for injection into the LLM analysis prompt.
+
+    Returns empty string if no closed trades exist for the symbol.
+    """
+    closed = list_closed_decisions(symbol, limit=limit)
+    if not closed:
+        return ""
+
+    # --- Aggregate stats ---
+    total = len(closed)
+    wins = sum(1 for d in closed if d.get("pnl", 0) > 0)
+    losses = total - wins
+    win_rate = wins / total if total else 0
+    total_pnl = sum(d.get("pnl", 0) for d in closed)
+    avg_pnl = total_pnl / total if total else 0
+
+    # Direction accuracy (from structured outcomes)
+    with_direction = [d for d in closed if d.get("direction_correct") is not None]
+    dir_correct = sum(1 for d in with_direction if d["direction_correct"])
+    dir_accuracy = dir_correct / len(with_direction) if with_direction else None
+
+    # SL/TP placement stats
+    sl_stats = {}
+    tp_stats = {}
+    for d in closed:
+        sl_p = d.get("sl_placement")
+        tp_p = d.get("tp_placement")
+        if sl_p:
+            sl_stats[sl_p] = sl_stats.get(sl_p, 0) + 1
+        if tp_p:
+            tp_stats[tp_p] = tp_stats.get(tp_p, 0) + 1
+
+    # --- Build text ---
+    lines = [f"## LESSONS FROM YOUR PAST TRADES ({symbol})", ""]
+    lines.append(f"### Performance (last {total} trades)")
+    lines.append(f"- Win rate: {win_rate:.0%} ({wins}/{total}) | Total P/L: ${total_pnl:.2f} | Avg: ${avg_pnl:.2f}")
+
+    if dir_accuracy is not None:
+        lines.append(f"- Direction accuracy: {dir_accuracy:.0%} ({dir_correct}/{len(with_direction)})"
+                      + (" — you often get direction right but lose on execution" if dir_accuracy > 0.5 and win_rate < 0.5 else ""))
+
+    # SL placement issues
+    if sl_stats:
+        dominant_sl = max(sl_stats, key=sl_stats.get)
+        sl_pct = sl_stats[dominant_sl] / sum(sl_stats.values())
+        if dominant_sl == "too_tight" and sl_pct >= 0.3:
+            lines.append(f"- SL placement: {sl_pct:.0%} too tight — stops get hit before the move plays out")
+        elif dominant_sl == "too_wide" and sl_pct >= 0.3:
+            lines.append(f"- SL placement: {sl_pct:.0%} too wide — giving back too much on losers")
+
+    # TP placement issues
+    if tp_stats:
+        dominant_tp = max(tp_stats, key=tp_stats.get)
+        tp_pct = tp_stats[dominant_tp] / sum(tp_stats.values())
+        if dominant_tp == "too_ambitious" and tp_pct >= 0.3:
+            lines.append(f"- TP placement: {tp_pct:.0%} too ambitious — price reverses before reaching target")
+        elif dominant_tp == "too_conservative" and tp_pct >= 0.3:
+            lines.append(f"- TP placement: {tp_pct:.0%} too conservative — leaving profit on the table")
+
+    # Key insight
+    outcome_stats = get_structured_outcome_stats(symbol)
+    if isinstance(outcome_stats, dict) and outcome_stats.get("key_insight"):
+        lines.append("")
+        lines.append(f"### Key Insight")
+        lines.append(outcome_stats["key_insight"])
+
+    # Recent trade details (last 5)
+    lines.append("")
+    lines.append("### Recent Outcomes")
+    for i, d in enumerate(closed[:5], 1):
+        action = d.get("action", "?")
+        entry = d.get("entry_price", 0)
+        exit_p = d.get("exit_price", 0)
+        sl = d.get("stop_loss", 0)
+        tp = d.get("take_profit", 0)
+        pnl = d.get("pnl", 0)
+        reason = d.get("exit_reason", "unknown")
+
+        # Format exit reason
+        reason_text = {
+            "tp_hit": "TP hit",
+            "sl_hit": "SL hit",
+            "manual_close": "Manual close",
+            "reversal_signal": "Reversal signal",
+        }.get(reason, reason)
+
+        line = f"{i}. {action} @ {entry:.2f}" if entry else f"{i}. {action}"
+        line += f" -> {reason_text} @ {exit_p:.2f}" if exit_p else ""
+        line += f" | {'+'if pnl>=0 else ''}{pnl:.2f}"
+
+        # Add lesson if available
+        lessons = d.get("outcome_lessons", [])
+        sl_placement = d.get("sl_placement")
+        tp_placement = d.get("tp_placement")
+        if sl_placement and sl_placement != "appropriate":
+            line += f" | SL {sl_placement.replace('_', ' ')}"
+        elif tp_placement and tp_placement != "appropriate":
+            line += f" | TP {tp_placement.replace('_', ' ')}"
+        elif entry and sl:
+            sl_dist_pct = abs(entry - sl) / entry * 100
+            line += f" | SL was {sl_dist_pct:.1f}% from entry"
+
+        lines.append(line)
+
+    # Top lessons from structured outcomes
+    all_lessons = []
+    for d in closed:
+        all_lessons.extend(d.get("outcome_lessons", []))
+    if all_lessons:
+        # Count and deduplicate
+        lesson_counts: Dict[str, int] = {}
+        for lesson in all_lessons:
+            key = lesson[:80]
+            lesson_counts[key] = lesson_counts.get(key, 0) + 1
+        top = sorted(lesson_counts.items(), key=lambda x: x[1], reverse=True)[:3]
+        lines.append("")
+        lines.append("### Apply These Lessons")
+        for lesson, count in top:
+            lines.append(f"- {lesson}" + (f" (occurred {count}x)" if count > 1 else ""))
+
+    return "\n".join(lines)

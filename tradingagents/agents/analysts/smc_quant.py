@@ -122,8 +122,9 @@ def create_smc_quant(llm, use_structured_output: bool = True):
             current_date=current_date,
         )
 
-        # Build the SMC quant analyst prompt
-        system_prompt = _build_smc_quant_prompt(data_context)
+        # Build the SMC quant analyst prompt (with trade memories if available)
+        trade_memories = state.get("trade_memories") or ""
+        system_prompt = _build_smc_quant_prompt(data_context, trade_memories=trade_memories)
 
         # Log the prompt being sent to LLM
         logger = _get_smc_quant_logger()
@@ -379,8 +380,19 @@ def _format_smc_analysis_for_prompt(
     return "\n".join(lines)
 
 
-def _build_smc_quant_prompt(data_context: str) -> str:
+def _build_smc_quant_prompt(data_context: str, trade_memories: str = None) -> str:
     """Build the complete SMC quant analyst prompt."""
+
+    memories_section = ""
+    if trade_memories:
+        memories_section = f"""
+
+{trade_memories}
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+"""
 
     return f"""You are a systematic Smart Money Concepts (SMC) trader with strict risk discipline. You trade based on institutional order flow analysis to identify high-probability entries.
 
@@ -463,7 +475,7 @@ def _build_smc_quant_prompt(data_context: str) -> str:
 - If you cannot identify a valid stop loss placement, output "hold"
 
 {data_context}
-
+{memories_section}
 ## YOUR TASK
 
 Analyze the SMC data and make a systematic trading decision.

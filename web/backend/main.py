@@ -5920,7 +5920,7 @@ async def run_quant_analysis(request: QuantAnalysisRequest):
         volume_profile_context = vp_analyzer.format_for_prompt(vp_result, current_price)
 
         # Format SMC context for LLM
-        smc_context = _format_smc_for_quant(smc_result, current_price, atr)
+        smc_context = _format_smc_for_quant(smc_result, current_price, atr, timeframe=request.timeframe)
 
         # === STEP 3: Build Indicator Context ===
         indicators_context = f"""## Technical Indicators
@@ -6011,6 +6011,12 @@ async def run_quant_analysis(request: QuantAnalysisRequest):
         else:
             raise HTTPException(status_code=500, detail=f"Unsupported LLM provider: {config['llm_provider']}")
 
+        # Fetch trade memories for this symbol (lessons from past trades)
+        from tradingagents.trade_decisions import get_trade_memories
+        trade_memories = get_trade_memories(request.symbol)
+        if trade_memories:
+            logger.info(f"[QUANT API] Injecting trade memories for {request.symbol} ({len(trade_memories)} chars)")
+
         # Create mock state with all the data
         quant_state = {
             "company_of_interest": request.symbol,
@@ -6022,6 +6028,7 @@ async def run_quant_analysis(request: QuantAnalysisRequest):
             "market_regime": market_regime,
             "volatility_regime": volatility_regime,
             "trading_session": _get_trading_session(),
+            "trade_memories": trade_memories,
         }
 
         # Build the full prompt for logging/debugging
@@ -6037,7 +6044,7 @@ async def run_quant_analysis(request: QuantAnalysisRequest):
             trading_session=_get_trading_session(),
             current_date=quant_state["trade_date"],
         )
-        full_prompt = _build_quant_prompt(debug_data_context)
+        full_prompt = _build_quant_prompt(debug_data_context, trade_memories=trade_memories)
 
         # Run quant analyst
         logger.info(f"[QUANT API] Running quant analyst for {request.symbol}...")
@@ -6324,6 +6331,12 @@ async def run_vp_quant_analysis(request: VPQuantAnalysisRequest):
         else:
             raise HTTPException(status_code=500, detail=f"Unsupported LLM provider: {config['llm_provider']}")
 
+        # Fetch trade memories for this symbol
+        from tradingagents.trade_decisions import get_trade_memories as get_vp_trade_memories
+        vp_trade_memories = get_vp_trade_memories(request.symbol)
+        if vp_trade_memories:
+            logger.info(f"[VP QUANT API] Injecting trade memories for {request.symbol} ({len(vp_trade_memories)} chars)")
+
         # Create state for VP quant
         vp_quant_state = {
             "company_of_interest": request.symbol,
@@ -6335,6 +6348,7 @@ async def run_vp_quant_analysis(request: VPQuantAnalysisRequest):
             "market_regime": market_regime,
             "volatility_regime": volatility_regime,
             "trading_session": _get_trading_session(),
+            "trade_memories": vp_trade_memories,
         }
 
         # Build the full prompt for logging/debugging
@@ -6350,7 +6364,7 @@ async def run_vp_quant_analysis(request: VPQuantAnalysisRequest):
             trading_session=_get_trading_session(),
             current_date=pd.Timestamp.now().strftime("%Y-%m-%d"),
         )
-        full_vp_prompt = _build_vp_quant_prompt(debug_data_context)
+        full_vp_prompt = _build_vp_quant_prompt(debug_data_context, trade_memories=vp_trade_memories)
 
         # Run VP quant analyst
         logger.info(f"[VP QUANT API] Running VP quant analyst for {request.symbol}...")
@@ -6439,7 +6453,7 @@ async def run_vp_quant_analysis(request: VPQuantAnalysisRequest):
         }
 
 
-def _format_smc_for_quant(smc_result: dict, current_price: float, atr: float) -> str:
+def _format_smc_for_quant(smc_result: dict, current_price: float, atr: float, timeframe: str = "H1") -> str:
     """
     Format SMC analysis for quant analyst prompt.
 
@@ -6472,24 +6486,39 @@ def _format_smc_for_quant(smc_result: dict, current_price: float, atr: float) ->
     if recent_choc:
         last_choc = recent_choc[-1]
         choc_type = safe_attr(last_choc, "type", "")
+        choc_price = safe_attr(last_choc, "price", "")
+        choc_ts = safe_attr(last_choc, "timestamp", "")
         if choc_type == "high":
-            structure_context.append("CHoCH (bearish reversal signal)")
+            label = f"CHoCH (bearish reversal signal) on {timeframe}"
         else:
-            structure_context.append("CHoCH (bullish reversal signal)")
+            label = f"CHoCH (bullish reversal signal) on {timeframe}"
+        if choc_ts:
+            label += f" at {choc_ts}"
+        if choc_price:
+            label += f" @ {choc_price}"
+        structure_context.append(label)
     if recent_bos:
         last_bos = recent_bos[-1]
         bos_type = safe_attr(last_bos, "type", "")
+        bos_price = safe_attr(last_bos, "price", "")
+        bos_ts = safe_attr(last_bos, "timestamp", "")
         if bos_type == "high":
-            structure_context.append("BOS (bullish continuation)")
+            label = f"BOS (bullish continuation) on {timeframe}"
         else:
-            structure_context.append("BOS (bearish continuation)")
+            label = f"BOS (bearish continuation) on {timeframe}"
+        if bos_ts:
+            label += f" at {bos_ts}"
+        if bos_price:
+            label += f" @ {bos_price}"
+        structure_context.append(label)
 
     lines.append(f"### Market Structure")
+    lines.append(f"**Timeframe**: {timeframe}")
     lines.append(f"**Bias**: {bias.upper()}")
     if structure_context:
         lines.append(f"**Recent Structure**: {', '.join(structure_context)}")
     else:
-        lines.append("**Recent Structure**: No recent BOS/CHoCH")
+        lines.append(f"**Recent Structure**: No recent BOS/CHoCH on {timeframe}")
     lines.append("")
 
     # === PREMIUM/DISCOUNT ZONE ===
@@ -7379,6 +7408,10 @@ async def start_quant_automation(config: QuantAutomationConfigRequest):
         )
 
         # Create configuration
+        # Each instance gets its own state file to prevent race conditions
+        # when multiple automations run concurrently
+        instance_state_file = f"quant_automation_state_{instance_name}.json"
+
         auto_config = QuantAutomationConfig(
             pipeline=PipelineType(config.pipeline),
             symbols=config.symbols,
@@ -7396,6 +7429,7 @@ async def start_quant_automation(config: QuantAutomationConfigRequest):
             default_lot_size=config.default_lot_size,
             daily_loss_limit_pct=config.daily_loss_limit_pct,
             max_consecutive_losses=config.max_consecutive_losses,
+            state_file=instance_state_file,
         )
 
         automation = QuantAutomation(auto_config)
