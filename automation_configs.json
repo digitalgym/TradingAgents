@@ -64,5 +64,27 @@
     "max_consecutive_losses": 3,
     "state_file": "quant_automation_state_volume_quant_xauusd.json",
     "logs_dir": "logs/quant_automation"
+  },
+  "new_smc_quant": {
+    "pipeline": "smc_quant",
+    "symbols": [
+      "XAUUSD"
+    ],
+    "timeframe": "H1",
+    "analysis_interval_seconds": 900,
+    "position_check_interval_seconds": 60,
+    "auto_execute": true,
+    "min_confidence": 0.65,
+    "max_positions_per_symbol": 1,
+    "max_total_positions": 3,
+    "enable_trailing_stop": true,
+    "trailing_stop_atr_multiplier": 1.5,
+    "move_to_breakeven_pct": 1.0,
+    "max_risk_per_trade_pct": 1.0,
+    "default_lot_size": 0.01,
+    "daily_loss_limit_pct": 3.0,
+    "max_consecutive_losses": 3,
+    "state_file": "quant_automation_state_new_smc_quant.json",
+    "logs_dir": "logs/quant_automation"
   }
 }

@@ -1300,6 +1300,8 @@ def get_trade_memories(symbol: str, limit: int = 10) -> str:
     # Recent trade details (last 5)
     lines.append("")
     lines.append("### Recent Outcomes")
+    tight_sl_count = 0
+    tight_tp_count = 0
     for i, d in enumerate(closed[:5], 1):
         action = d.get("action", "?")
         entry = d.get("entry_price", 0)
@@ -1329,11 +1331,38 @@ def get_trade_memories(symbol: str, limit: int = 10) -> str:
             line += f" | SL {sl_placement.replace('_', ' ')}"
         elif tp_placement and tp_placement != "appropriate":
             line += f" | TP {tp_placement.replace('_', ' ')}"
-        elif entry and sl:
+
+        # Always show SL/TP distance and flag if too tight
+        if entry and sl:
             sl_dist_pct = abs(entry - sl) / entry * 100
-            line += f" | SL was {sl_dist_pct:.1f}% from entry"
+            sl_dist_label = ""
+            if sl_dist_pct < 0.3:
+                sl_dist_label = " ⚠️ EXTREMELY TIGHT"
+                tight_sl_count += 1
+            elif sl_dist_pct < 0.5:
+                sl_dist_label = " ⚠️ VERY TIGHT"
+                tight_sl_count += 1
+            elif sl_dist_pct < 1.0:
+                sl_dist_label = " (tight)"
+                tight_sl_count += 1
+            line += f" | SL {sl_dist_pct:.1f}% from entry{sl_dist_label}"
+
+        if entry and tp:
+            tp_dist_pct = abs(tp - entry) / entry * 100
+            if tp_dist_pct < 0.3:
+                line += f" | TP {tp_dist_pct:.1f}% from entry ⚠️ TOO CLOSE"
+                tight_tp_count += 1
 
         lines.append(line)
+
+    # Add explicit warning if SL/TP placement is a pattern
+    if tight_sl_count >= 2:
+        lines.append("")
+        lines.append(f"⚠️ **CRITICAL PATTERN**: {tight_sl_count}/5 recent trades had SL too tight (<1% from entry).")
+        lines.append("Your stops are getting hit or positions closed at a loss because SL is too close to entry.")
+        lines.append("**ACTION REQUIRED**: Place SL at least 1-1.5x ATR from entry, or beyond the nearest OB/FVG zone. Do NOT use SL within 0.5% of entry.")
+    if tight_tp_count >= 2:
+        lines.append(f"⚠️ **PATTERN**: {tight_tp_count}/5 recent trades had TP too close (<0.3% from entry). Use wider targets.")
 
     # Top lessons from structured outcomes
     all_lessons = []

@@ -56,6 +56,7 @@ from tradingagents.dataflows.mt5_data import get_closed_deal_by_ticket
 class PipelineType(str, Enum):
     """Available analysis pipelines."""
     QUANT = "quant"
+    SMC_QUANT = "smc_quant"
     VOLUME_PROFILE = "volume_profile"
     MULTI_AGENT = "multi_agent"
 
@@ -383,6 +384,110 @@ class QuantAutomation:
                 timestamp=datetime.now(),
                 symbol=symbol,
                 pipeline="quant",
+                signal="HOLD",
+                confidence=0.0,
+                rationale=f"Error: {str(e)}",
+                duration_seconds=time.time() - start_time,
+            )
+
+    async def _run_smc_quant_analysis(self, symbol: str) -> AnalysisCycleResult:
+        """Run dedicated SMC quant pipeline analysis for a symbol."""
+        start_time = time.time()
+
+        try:
+            import aiohttp
+
+            async with aiohttp.ClientSession() as session:
+                payload = {
+                    "symbol": symbol,
+                    "timeframe": self.config.timeframe,
+                }
+                async with session.post(
+                    "http://localhost:8000/api/analysis/smc-quant",
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=120)
+                ) as response:
+                    if response.status != 200:
+                        error_text = await response.text()
+                        self.logger.error(f"SMC Quant API error: {error_text}")
+                        return AnalysisCycleResult(
+                            timestamp=datetime.now(),
+                            symbol=symbol,
+                            pipeline="smc_quant",
+                            signal="HOLD",
+                            confidence=0.0,
+                            rationale=f"API Error: {response.status}",
+                            duration_seconds=time.time() - start_time,
+                        )
+
+                    result = await response.json()
+
+            self.logger.info(f"SMC Quant API response status: {result.get('status')}")
+
+            # Log error details if the API returned an error
+            if result.get("status") == "error":
+                self.logger.error(f"SMC Quant API error for {symbol}: {result.get('error', 'unknown')}")
+                if result.get("traceback"):
+                    self.logger.error(f"Traceback: {result['traceback'][:500]}")
+
+            prompt_sent = result.get("prompt_sent")
+            if prompt_sent:
+                self.logger.info(f"\n{'='*80}\nSMC QUANT PROMPT SENT for {symbol}\n{'='*80}\n{prompt_sent}\n{'='*80}")
+
+            decision = result.get("decision", {})
+
+            if not decision:
+                self.logger.warning(f"No decision in SMC Quant API response for {symbol}")
+                return AnalysisCycleResult(
+                    timestamp=datetime.now(),
+                    symbol=symbol,
+                    pipeline="smc_quant",
+                    signal="HOLD",
+                    confidence=0.0,
+                    rationale="No decision from analysis",
+                    duration_seconds=time.time() - start_time,
+                )
+
+            self.logger.info(
+                f"SMC Quant decision for {symbol}: signal={decision.get('signal')}, "
+                f"confidence={decision.get('confidence')}, "
+                f"entry={decision.get('entry_price')}, "
+                f"sl={decision.get('stop_loss')}, tp={decision.get('take_profit')}"
+            )
+
+            signal = decision.get("signal", "HOLD")
+            if isinstance(signal, dict):
+                signal = signal.get("value", "HOLD")
+            signal = signal.upper()
+
+            if signal in ["BUY_TO_ENTER", "BUY"]:
+                signal = "BUY"
+            elif signal in ["SELL_TO_ENTER", "SELL"]:
+                signal = "SELL"
+            else:
+                signal = "HOLD"
+
+            return AnalysisCycleResult(
+                timestamp=datetime.now(),
+                symbol=symbol,
+                pipeline="smc_quant",
+                signal=signal,
+                confidence=decision.get("confidence", 0.5),
+                entry_price=decision.get("entry_price"),
+                stop_loss=decision.get("stop_loss"),
+                take_profit=decision.get("take_profit"),
+                rationale=decision.get("rationale", ""),
+                duration_seconds=time.time() - start_time,
+            )
+
+        except Exception as e:
+            self.logger.error(f"SMC Quant analysis error for {symbol}: {e}")
+            import traceback
+            self.logger.error(traceback.format_exc())
+            return AnalysisCycleResult(
+                timestamp=datetime.now(),
+                symbol=symbol,
+                pipeline="smc_quant",
                 signal="HOLD",
                 confidence=0.0,
                 rationale=f"Error: {str(e)}",
@@ -889,9 +994,12 @@ class QuantAutomation:
                         self.logger.debug(f"  No SL adjustment needed: pnl_pct={pnl_pct:.2f}%, trailing={self.config.enable_trailing_stop}")
 
                     # Run quick analysis to check for close signal
-                    if self.config.pipeline == PipelineType.QUANT:
+                    if self.config.pipeline in (PipelineType.QUANT, PipelineType.SMC_QUANT):
                         self.logger.info(f"  Running reversal check analysis for #{ticket} {symbol}...")
-                        analysis = await self._run_quant_analysis(symbol)
+                        if self.config.pipeline == PipelineType.SMC_QUANT:
+                            analysis = await self._run_smc_quant_analysis(symbol)
+                        else:
+                            analysis = await self._run_quant_analysis(symbol)
                         self.logger.info(f"  Reversal check result: signal={analysis.signal}, confidence={analysis.confidence:.2f}")
 
                         if analysis.signal == "CLOSE" or (
@@ -1003,6 +1111,8 @@ class QuantAutomation:
                     # Run analysis based on pipeline
                     if self.config.pipeline == PipelineType.QUANT:
                         result = await self._run_quant_analysis(symbol)
+                    elif self.config.pipeline == PipelineType.SMC_QUANT:
+                        result = await self._run_smc_quant_analysis(symbol)
                     elif self.config.pipeline == PipelineType.VOLUME_PROFILE:
                         result = await self._run_vp_analysis(symbol)
                     else:
@@ -1192,6 +1302,8 @@ class QuantAutomation:
         """Run a single analysis cycle for testing."""
         if self.config.pipeline == PipelineType.QUANT:
             return await self._run_quant_analysis(symbol)
+        elif self.config.pipeline == PipelineType.SMC_QUANT:
+            return await self._run_smc_quant_analysis(symbol)
         elif self.config.pipeline == PipelineType.VOLUME_PROFILE:
             return await self._run_vp_analysis(symbol)
         else:

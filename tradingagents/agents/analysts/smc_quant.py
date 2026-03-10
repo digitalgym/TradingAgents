@@ -472,7 +472,9 @@ and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placem
 - For BUY orders: Stop loss MUST be BELOW entry price
 - For SELL orders: Stop loss MUST be ABOVE entry price
 - Place stops beyond the OB/FVG zone that forms your entry basis
-- If you cannot identify a valid stop loss placement, output "hold"
+- **MINIMUM SL DISTANCE**: Stop loss must be at least 1x ATR from entry. SL within 0.5% of entry is TOO TIGHT and will get stopped out by normal price noise. For gold (XAUUSD), minimum SL should be $15-30+ from entry.
+- **MINIMUM TP DISTANCE**: Take profit should be at least 1.5x the SL distance (R:R >= 1.5:1). TP within 0.3% of entry is TOO CLOSE.
+- If you cannot identify a valid stop loss placement with adequate distance, output "hold"
 
 {data_context}
 {memories_section}
@@ -629,7 +631,7 @@ def analyze_smc_for_quant(
         swing_lookback=swing_lookback,
         ob_strength_threshold=ob_strength_threshold,
     )
-    analysis = analyzer.analyze(df, include_zones=True)
+    analysis = analyzer.analyze_full_smc(df, current_price=current_price)
     context = _format_smc_analysis_for_prompt(analysis, current_price)
 
     return {

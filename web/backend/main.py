@@ -6453,6 +6453,369 @@ async def run_vp_quant_analysis(request: VPQuantAnalysisRequest):
         }
 
 
+# ----- SMC Quant Analysis (Dedicated SMC-focused, Single LLM Call) -----
+
+class SmcQuantAnalysisRequest(BaseModel):
+    """Request model for dedicated SMC quant analysis."""
+    symbol: str
+    timeframe: str = "H1"
+
+
+@app.post("/api/analysis/smc-quant")
+async def run_smc_quant_analysis(request: SmcQuantAnalysisRequest):
+    """
+    Run dedicated Smart Money Concepts quant analysis using a single LLM call.
+
+    This is a deep SMC-focused quant that specializes in:
+    - Order Blocks as institutional entry zones
+    - Fair Value Gaps for price imbalance entries
+    - BOS/CHoCH for trend confirmation
+    - Liquidity pools as take profit targets
+    - Premium/Discount zones for entry timing
+
+    Uses the dedicated smc_quant agent with specialized SMC prompt.
+    Returns structured trade decision compatible with trade execution modal.
+    """
+    import time as _time
+    _endpoint_start = _time.time()
+    logger.info(f"[SMC QUANT API] Request: symbol={request.symbol}, timeframe={request.timeframe}")
+    try:
+        import MetaTrader5 as mt5
+        import pandas as pd
+        import numpy as np
+
+        if not mt5.initialize():
+            raise HTTPException(status_code=500, detail="MT5 not initialized")
+
+        # Get symbol info for current price
+        symbol_info = mt5.symbol_info_tick(request.symbol)
+        if symbol_info is None:
+            raise HTTPException(status_code=400, detail=f"Symbol {request.symbol} not found")
+
+        current_price = (symbol_info.bid + symbol_info.ask) / 2
+        bid = symbol_info.bid
+        ask = symbol_info.ask
+
+        # Map timeframe
+        tf_map = {
+            "M1": mt5.TIMEFRAME_M1, "M5": mt5.TIMEFRAME_M5, "M15": mt5.TIMEFRAME_M15,
+            "M30": mt5.TIMEFRAME_M30, "H1": mt5.TIMEFRAME_H1, "H4": mt5.TIMEFRAME_H4,
+            "D1": mt5.TIMEFRAME_D1, "W1": mt5.TIMEFRAME_W1
+        }
+        tf = tf_map.get(request.timeframe.upper(), mt5.TIMEFRAME_H1)
+
+        # Get price data
+        rates = mt5.copy_rates_from_pos(request.symbol, tf, 0, 200)
+        if rates is None or len(rates) == 0:
+            raise HTTPException(status_code=400, detail="Failed to get price data")
+
+        df = pd.DataFrame(rates)
+        df['time'] = pd.to_datetime(df['time'], unit='s')
+
+        # === STEP 1: Calculate Technical Indicators ===
+
+        # ATR
+        high_low = df['high'] - df['low']
+        atr = high_low.rolling(14).mean().iloc[-1]
+
+        # RSI
+        delta = df['close'].diff()
+        gain = (delta.where(delta > 0, 0)).rolling(14).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
+        rs = gain / (loss + 0.0001)
+        rsi = 100 - (100 / (1 + rs))
+        rsi_value = rsi.iloc[-1]
+
+        # MACD
+        ema12 = df['close'].ewm(span=12, adjust=False).mean()
+        ema26 = df['close'].ewm(span=26, adjust=False).mean()
+        macd_line = ema12 - ema26
+        signal_line = macd_line.ewm(span=9, adjust=False).mean()
+        macd_hist = macd_line - signal_line
+        macd_value = macd_line.iloc[-1]
+        macd_signal = signal_line.iloc[-1]
+        macd_histogram = macd_hist.iloc[-1]
+
+        # Bollinger Bands
+        sma20 = df['close'].rolling(20).mean()
+        std20 = df['close'].rolling(20).std()
+        bb_upper = sma20 + (2 * std20)
+        bb_lower = sma20 - (2 * std20)
+        bb_upper_val = bb_upper.iloc[-1]
+        bb_lower_val = bb_lower.iloc[-1]
+        bb_middle_val = sma20.iloc[-1]
+
+        # EMA
+        ema20 = df['close'].ewm(span=20, adjust=False).mean().iloc[-1]
+        ema50 = df['close'].ewm(span=50, adjust=False).mean().iloc[-1]
+
+        # ADX for trend strength
+        plus_dm = df['high'].diff()
+        minus_dm = -df['low'].diff()
+        plus_dm[plus_dm < 0] = 0
+        minus_dm[minus_dm < 0] = 0
+        tr = high_low.copy()
+        atr_14 = tr.rolling(14).mean()
+        plus_di = 100 * (plus_dm.rolling(14).mean() / atr_14)
+        minus_di = 100 * (minus_dm.rolling(14).mean() / atr_14)
+        dx = 100 * abs(plus_di - minus_di) / (plus_di + minus_di + 0.0001)
+        adx = dx.rolling(14).mean().iloc[-1]
+
+        # Market regime
+        avg_atr = high_low.rolling(50).mean().iloc[-1]
+        volatility_regime = "high" if atr > avg_atr * 1.5 else "normal" if atr > avg_atr * 0.7 else "low"
+
+        if adx > 25:
+            if plus_di.iloc[-1] > minus_di.iloc[-1]:
+                market_regime = "trending-up"
+            else:
+                market_regime = "trending-down"
+        else:
+            market_regime = "ranging"
+
+        # === Volume Analysis ===
+        volume_col = 'tick_volume' if 'tick_volume' in df.columns else 'real_volume'
+        if volume_col in df.columns:
+            current_volume = df[volume_col].iloc[-1]
+            avg_volume_20 = df[volume_col].rolling(20).mean().iloc[-1]
+            volume_ratio = current_volume / avg_volume_20 if avg_volume_20 > 0 else 1.0
+            recent_volumes = df[volume_col].iloc[-5:]
+            volume_trend = "increasing" if recent_volumes.iloc[-1] > recent_volumes.iloc[0] else "decreasing"
+            volume_spike = current_volume > avg_volume_20 * 1.5
+            if volume_ratio > 2.0:
+                volume_profile = "Very High (spike)"
+            elif volume_ratio > 1.5:
+                volume_profile = "High"
+            elif volume_ratio > 0.8:
+                volume_profile = "Normal"
+            elif volume_ratio > 0.5:
+                volume_profile = "Low"
+            else:
+                volume_profile = "Very Low"
+        else:
+            current_volume = 0
+            avg_volume_20 = 0
+            volume_ratio = 1.0
+            volume_trend = "unknown"
+            volume_spike = False
+            volume_profile = "N/A"
+
+        # === STEP 2: Run dedicated SMC Analysis ===
+        from tradingagents.agents.analysts.smc_quant import (
+            create_smc_quant,
+            analyze_smc_for_quant,
+            _build_smc_data_context,
+            _build_smc_quant_prompt,
+        )
+
+        smc_data = analyze_smc_for_quant(df, current_price)
+        smc_analysis = smc_data["smc_analysis"]
+        smc_context = smc_data["smc_context"]
+
+        # === STEP 3: Build Indicator Context ===
+        indicators_context = f"""## Technical Indicators
+
+### Momentum
+- **RSI(14)**: {rsi_value:.1f} {"(Overbought)" if rsi_value > 70 else "(Oversold)" if rsi_value < 30 else "(Neutral)"}
+- **MACD**: {macd_value:.5f} | Signal: {macd_signal:.5f} | Histogram: {macd_histogram:.5f}
+  - {"Bullish (MACD > Signal)" if macd_value > macd_signal else "Bearish (MACD < Signal)"}
+
+### Trend
+- **EMA20**: {ema20:.5f} {"(Price above)" if current_price > ema20 else "(Price below)"}
+- **EMA50**: {ema50:.5f} {"(Price above)" if current_price > ema50 else "(Price below)"}
+- **ADX**: {adx:.1f} {"(Strong trend)" if adx > 25 else "(Weak/No trend)"}
+- **Regime**: {market_regime}
+
+### Volatility
+- **ATR(14)**: {atr:.5f}
+- **Volatility**: {volatility_regime}
+- **Bollinger Bands**: Upper={bb_upper_val:.5f} | Middle={bb_middle_val:.5f} | Lower={bb_lower_val:.5f}
+  - {"Price near upper band" if current_price > bb_upper_val * 0.99 else "Price near lower band" if current_price < bb_lower_val * 1.01 else "Price within bands"}
+
+### Volume
+- **Current Bar Volume**: {current_volume:,.0f} ticks
+- **20-bar Avg Volume**: {avg_volume_20:,.0f} ticks
+- **Volume Ratio**: {volume_ratio:.2f}x average {"⚠️ SPIKE" if volume_spike else ""}
+- **Volume Profile**: {volume_profile}
+- **Volume Trend (5 bars)**: {volume_trend}
+"""
+
+        # === STEP 4: Call SMC Quant Analyst LLM ===
+        from tradingagents.default_config import DEFAULT_CONFIG
+        import os
+
+        config = DEFAULT_CONFIG.copy()
+
+        if config["llm_provider"].lower() in ["xai", "grok"]:
+            from langchain_xai import ChatXAI
+            api_key = os.environ.get("XAI_API_KEY") or ""
+            llm = ChatXAI(model=config["deep_think_llm"], xai_api_key=api_key)
+        elif config["llm_provider"].lower() in ["openai", "ollama", "openrouter"]:
+            from langchain_openai import ChatOpenAI
+            from openai import OpenAI
+            api_key = os.environ.get("OPENAI_API_KEY") or ""
+            sync_client = OpenAI(api_key=api_key, base_url=config["backend_url"])
+            llm = ChatOpenAI(
+                model=config["deep_think_llm"],
+                base_url=config["backend_url"],
+                api_key=api_key,
+                root_client=sync_client
+            )
+        else:
+            raise HTTPException(status_code=500, detail=f"Unsupported LLM provider: {config['llm_provider']}")
+
+        # Fetch trade memories for this symbol
+        from tradingagents.trade_decisions import get_trade_memories
+        trade_memories = get_trade_memories(request.symbol)
+        if trade_memories:
+            logger.info(f"[SMC QUANT API] Injecting trade memories for {request.symbol} ({len(trade_memories)} chars)")
+
+        # Create state with all the data
+        smc_quant_state = {
+            "company_of_interest": request.symbol,
+            "trade_date": pd.Timestamp.now().strftime("%Y-%m-%d"),
+            "current_price": current_price,
+            "smc_context": smc_context,
+            "smc_analysis": smc_analysis,
+            "market_report": indicators_context,
+            "market_regime": market_regime,
+            "volatility_regime": volatility_regime,
+            "trading_session": _get_trading_session(),
+            "trade_memories": trade_memories,
+        }
+
+        # Build full prompt for logging/debugging
+        debug_data_context = _build_smc_data_context(
+            ticker=request.symbol,
+            current_price=current_price,
+            smc_context=smc_context,
+            smc_analysis=smc_analysis,
+            market_report=indicators_context,
+            market_regime=market_regime,
+            volatility_regime=volatility_regime,
+            trading_session=_get_trading_session(),
+            current_date=smc_quant_state["trade_date"],
+        )
+        full_prompt = _build_smc_quant_prompt(debug_data_context, trade_memories=trade_memories)
+
+        # Run SMC quant analyst
+        logger.info(f"[SMC QUANT API] Running SMC quant analyst for {request.symbol}...")
+        smc_quant_analyst = create_smc_quant(llm, use_structured_output=True)
+        result = smc_quant_analyst(smc_quant_state)
+
+        smc_quant_report = result.get("smc_quant_report", "")
+        smc_quant_decision = result.get("smc_quant_decision")
+        logger.info(f"[SMC QUANT API] Analyst returned: smc_quant_decision={'present' if smc_quant_decision else 'None'}")
+
+        # === STEP 5: Build Response ===
+        if smc_quant_decision:
+            signal_map = {
+                "buy_to_enter": "BUY",
+                "sell_to_enter": "SELL",
+                "hold": "HOLD",
+                "close": "HOLD"
+            }
+            signal = smc_quant_decision.get("signal", "hold")
+            if isinstance(signal, dict):
+                signal = signal.get("value", "hold")
+
+            mapped_signal = signal_map.get(signal, "HOLD")
+
+            decision = {
+                "signal": mapped_signal,
+                "confidence": smc_quant_decision.get("confidence", 0.5),
+                "entry_price": smc_quant_decision.get("entry_price"),
+                "stop_loss": smc_quant_decision.get("stop_loss"),
+                "take_profit": smc_quant_decision.get("profit_target"),
+                "rationale": f"{smc_quant_decision.get('justification', '')}\n\n**Invalidation**: {smc_quant_decision.get('invalidation_condition', 'N/A')}",
+                "analysis_mode": "smc_quant",
+                "leverage": smc_quant_decision.get("leverage"),
+                "risk_usd": smc_quant_decision.get("risk_usd"),
+                "risk_level": smc_quant_decision.get("risk_level"),
+                "risk_reward_ratio": smc_quant_decision.get("risk_reward_ratio"),
+                "full_report": smc_quant_report
+            }
+        else:
+            decision = {
+                "signal": "HOLD",
+                "confidence": 0.0,
+                "entry_price": None,
+                "stop_loss": None,
+                "take_profit": None,
+                "rationale": smc_quant_report or "SMC quant analysis could not generate a structured decision.",
+                "analysis_mode": "smc_quant",
+                "full_report": smc_quant_report
+            }
+
+        # Extract SMC levels for chart display
+        from tradingagents.indicators.smart_money import SmartMoneyAnalyzer
+        # Use the extended analysis for chart levels
+        analyzer = SmartMoneyAnalyzer()
+        smc_extended = analyzer.analyze_full_smc_extended(
+            df,
+            current_price=current_price,
+            use_structural_obs=True,
+            include_equal_levels=True,
+            include_breakers=True,
+            include_ote=True,
+            include_sweeps=True,
+        )
+        smc_levels = _extract_smc_levels_for_chart(smc_extended)
+
+        _endpoint_duration = _time.time() - _endpoint_start
+        logger.info(
+            f"[SMC QUANT API] Response: {request.symbol} signal={decision.get('signal')} "
+            f"confidence={decision.get('confidence')} "
+            f"entry={decision.get('entry_price')} sl={decision.get('stop_loss')} tp={decision.get('take_profit')} "
+            f"[took {_endpoint_duration:.1f}s]"
+        )
+
+        return {
+            "status": "completed",
+            "symbol": request.symbol,
+            "timeframe": request.timeframe,
+            "current_price": round(current_price, 5),
+            "bid": round(bid, 5),
+            "ask": round(ask, 5),
+            "decision": decision,
+            "smc_levels": smc_levels,
+            "indicators": {
+                "rsi": round(rsi_value, 2) if not np.isnan(rsi_value) else None,
+                "macd": round(macd_value, 5) if not np.isnan(macd_value) else None,
+                "macd_signal": round(macd_signal, 5) if not np.isnan(macd_signal) else None,
+                "macd_histogram": round(macd_histogram, 5) if not np.isnan(macd_histogram) else None,
+                "ema20": round(ema20, 5) if not np.isnan(ema20) else None,
+                "ema50": round(ema50, 5) if not np.isnan(ema50) else None,
+                "atr": round(atr, 5) if not np.isnan(atr) else None,
+                "adx": round(adx, 2) if not np.isnan(adx) else None,
+                "bb_upper": round(bb_upper_val, 5) if not np.isnan(bb_upper_val) else None,
+                "bb_middle": round(bb_middle_val, 5) if not np.isnan(bb_middle_val) else None,
+                "bb_lower": round(bb_lower_val, 5) if not np.isnan(bb_lower_val) else None,
+            },
+            "regime": {
+                "market_regime": market_regime,
+                "volatility": volatility_regime,
+                "adx": round(adx, 2) if not np.isnan(adx) else None,
+                "atr": round(atr, 5) if not np.isnan(atr) else None
+            },
+            "analysis_mode": "smc_quant",
+            "llm_used": True,
+            "prompt_sent": full_prompt,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        _endpoint_duration = _time.time() - _endpoint_start
+        logger.error(f"[SMC QUANT API] ERROR for {request.symbol} after {_endpoint_duration:.1f}s: {e}\n{traceback.format_exc()}")
+        return {
+            "status": "error",
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+
 def _format_smc_for_quant(smc_result: dict, current_price: float, atr: float, timeframe: str = "H1") -> str:
     """
     Format SMC analysis for quant analyst prompt.
@@ -7249,7 +7612,7 @@ def _save_config(instance_name: str, config: dict):
 class QuantAutomationConfigRequest(BaseModel):
     """Request model for quant automation configuration."""
     instance_name: str = "quant"  # Unique identifier for this automation instance
-    pipeline: str = "quant"  # "quant", "volume_profile", or "multi_agent"
+    pipeline: str = "quant"  # "quant", "smc_quant", "volume_profile", or "multi_agent"
     symbols: List[str] = ["XAUUSD"]
     timeframe: str = "H1"
     analysis_interval_seconds: int = 180
@@ -7608,6 +7971,7 @@ async def get_quant_automation_history(instance: str = Query(default="quant")):
                 "entry_price": r.entry_price,
                 "stop_loss": r.stop_loss,
                 "take_profit": r.take_profit,
+                "rationale": r.rationale,
                 "executed": r.executed,
                 "execution_ticket": r.execution_ticket,
                 "execution_error": r.execution_error,
