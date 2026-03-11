@@ -401,7 +401,7 @@ class RegimeDetector:
     def get_risk_adjustment_factor(self, regime: Dict[str, str]) -> float:
         """
         Get position size adjustment factor based on regime.
-        
+
         Returns:
             Multiplier for position size (0.5 to 1.5):
             - Extreme volatility: 0.5x (reduce risk)
@@ -410,12 +410,139 @@ class RegimeDetector:
             - Low volatility: 1.25x (can increase slightly)
         """
         volatility = regime.get("volatility_regime", "normal")
-        
+
         adjustments = {
             "extreme": 0.5,
             "high": 0.75,
             "normal": 1.0,
             "low": 1.25
         }
-        
+
         return adjustments.get(volatility, 1.0)
+
+    def detect_consolidation(
+        self,
+        high: np.ndarray,
+        low: np.ndarray,
+        close: np.ndarray,
+        lookback: int = 20
+    ) -> Dict[str, any]:
+        """
+        Detect consolidation pattern and analyze structure for breakout direction.
+
+        A consolidation is identified when:
+        - Bollinger Band width is in lower percentile (squeeze)
+        - Price range is tight relative to recent history
+
+        Structure bias indicates likely breakout direction:
+        - Higher lows within range = Bullish (accumulation)
+        - Lower highs within range = Bearish (distribution)
+
+        Args:
+            high: High prices
+            low: Low prices
+            close: Close prices
+            lookback: Number of candles to analyze for consolidation
+
+        Returns:
+            Dict with:
+            - is_consolidating: bool - True if in consolidation
+            - range_high: float - Upper boundary of consolidation
+            - range_low: float - Lower boundary of consolidation
+            - range_midpoint: float - Middle of range
+            - range_percent: float - Range as percentage of price
+            - squeeze_strength: float - 0-100, higher = tighter squeeze
+            - structure_bias: str - "bullish", "bearish", or "neutral"
+            - breakout_ready: bool - True if conditions favor imminent breakout
+        """
+        if len(close) < lookback:
+            return {
+                "is_consolidating": False,
+                "range_high": None,
+                "range_low": None,
+                "range_midpoint": None,
+                "range_percent": None,
+                "squeeze_strength": 0,
+                "structure_bias": "neutral",
+                "breakout_ready": False
+            }
+
+        # Get recent data
+        recent_high = high[-lookback:]
+        recent_low = low[-lookback:]
+        recent_close = close[-lookback:]
+
+        # Calculate range boundaries
+        range_high = float(np.max(recent_high))
+        range_low = float(np.min(recent_low))
+        range_midpoint = (range_high + range_low) / 2
+        range_percent = ((range_high - range_low) / range_midpoint) * 100 if range_midpoint > 0 else 0
+
+        # Calculate BB width for squeeze detection
+        current_width = self._calculate_bb_width(recent_close, min(20, lookback), 2.0)
+
+        # Calculate historical BB widths for percentile comparison
+        squeeze_strength = 50.0
+        if len(close) >= self.lookback_period:
+            width_history = []
+            for i in range(20, min(len(close), self.lookback_period)):
+                width = self._calculate_bb_width(close[i-20:i+1], 20, 2.0)
+                width_history.append(width)
+
+            if width_history:
+                # Squeeze strength = how many historical widths were LARGER than current
+                # Higher = current width is smaller (tighter squeeze)
+                squeeze_strength = (np.sum(np.array(width_history) > current_width) / len(width_history)) * 100
+
+        # Determine structure bias
+        half = lookback // 2
+        first_half_low = np.min(recent_low[:half])
+        second_half_low = np.min(recent_low[half:])
+        first_half_high = np.max(recent_high[:half])
+        second_half_high = np.max(recent_high[half:])
+
+        higher_lows = second_half_low > first_half_low * 1.001  # Small tolerance
+        lower_highs = second_half_high < first_half_high * 0.999
+
+        if higher_lows and not lower_highs:
+            structure_bias = "bullish"
+        elif lower_highs and not higher_lows:
+            structure_bias = "bearish"
+        else:
+            structure_bias = "neutral"
+
+        # Is consolidating: tight squeeze
+        is_consolidating = squeeze_strength > 70
+
+        # Breakout ready: consolidating with clear bias
+        breakout_ready = is_consolidating and structure_bias != "neutral"
+
+        return {
+            "is_consolidating": is_consolidating,
+            "range_high": range_high,
+            "range_low": range_low,
+            "range_midpoint": range_midpoint,
+            "range_percent": range_percent,
+            "squeeze_strength": squeeze_strength,
+            "structure_bias": structure_bias,
+            "breakout_ready": breakout_ready
+        }
+
+    def is_favorable_for_breakout_trading(self, regime: Dict[str, str]) -> bool:
+        """
+        Check if regime is favorable for breakout trading.
+
+        Favorable conditions:
+        - Contraction regime (squeeze in progress)
+        - Low to normal volatility
+        - Ranging market (not already trending)
+        """
+        market = regime.get("market_regime", "")
+        volatility = regime.get("volatility_regime", "")
+        expansion = regime.get("expansion_regime", "")
+
+        is_ranging = market == "ranging"
+        low_volatility = volatility in ["low", "normal"]
+        contracting = expansion == "contraction"
+
+        return is_ranging and low_volatility and contracting

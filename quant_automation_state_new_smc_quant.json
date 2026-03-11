@@ -1,8 +1,8 @@
 {
   "last_analysis_time": {
-    "XAUUSD": "2026-03-11T18:39:17.304815"
+    "XAUUSD": "2026-03-11T19:25:54.241470"
   },
-  "last_updated": "2026-03-11T18:50:36.379785",
+  "last_updated": "2026-03-11T19:26:16.831443",
   "status": "running",
   "analysis_results": [
     {
@@ -1219,6 +1219,51 @@
       "execution_ticket": null,
       "execution_error": null,
       "duration_seconds": 16.7278790473938
+    },
+    {
+      "timestamp": "2026-03-11T18:55:04.045484",
+      "symbol": "XAUUSD",
+      "pipeline": "smc_quant",
+      "signal": "HOLD",
+      "confidence": 0.85,
+      "entry_price": null,
+      "stop_loss": null,
+      "take_profit": null,
+      "rationale": "No unmitigated OBs or OB+FVG confluence near current price; all OBs mitigated, unfilled bullish FVGs significantly below price, price near unswept buy-side liquidity in ranging market with mixed indicators, violating strict entry rules.\n\n**Invalidation**: Price breaks above 5198.01 confirming new BOS high with unmitigated bullish OB or FVG confluence below.",
+      "executed": false,
+      "execution_ticket": null,
+      "execution_error": null,
+      "duration_seconds": 13.908355712890625
+    },
+    {
+      "timestamp": "2026-03-11T19:10:53.197388",
+      "symbol": "XAUUSD",
+      "pipeline": "smc_quant",
+      "signal": "HOLD",
+      "confidence": 0.0,
+      "entry_price": null,
+      "stop_loss": null,
+      "take_profit": null,
+      "rationale": "**hold**\n\n**Rationale (Step-by-Step Analysis)**:\n1. **Market Bias**: BULLISH (confirmed by BOS HIGH at 5198.01000).\n2. **Premium/Discount**: Price (5184.55) is below EMA20 (5194.55) and BB middle (5204.07), in ~40-45% of range (discount zone favoring longs), but ranging regime with weak ADX (23.8) limits trend strength.\n3. **Unmitigated OBs/Unfilled FVGs Near Price**: NO unmitigated OBs (all listed are MITIGATED). Nearest unfilled bullish FVGs are 5141.27-5163.93 (21-43 points below, 0.83% away) and lower. No zones at/near current price.\n4. **OB+FVG Confluence**: None available (no unmitigated OBs to overlap).\n5. **Liquidity Targets**: Buy-side unswept above (5186.60 just 2 points/0.04% up; 5198.01 at 13.5 points/0.26% up) \u2013 risk of upward sweep first. Sell-side below (5161/5156).\n6. **Liquidity Sweep**: No evidence of recent sweep; unswept buy-side above suggests potential raid up before any reversal.\n7. **Potential SL Placement**: For hypothetical buy, SL below nearest sell-side (5156.54) or 5141 FVG low (~28-43 points/0.54-0.83%, ~1.5-2.5x ATR). For sell, SL above buy-side 5198 (~13 points/0.26%, TOO TIGHT <1x ATR 17.73). Past trades show tight SLs caused failures \u2013 no valid distant SL without stretching R:R.\n8. **Risk:Reward**: No setup meets criteria (no unmitigated zones/confluence). MACD bearish, RSI neutral, low volume \u2013 conflicting signals in range. R:R cannot reliably hit >=1.5:1 without invalid structure.\n\n**Decision**: No high-probability SMC setup (requires unmitigated OB/FVG in trend direction). Hold to avoid low-confluence entry or repeating past tight-SL errors. Wait for retrace to bullish FVG + BOS confirmation.",
+      "executed": false,
+      "execution_ticket": null,
+      "execution_error": null,
+      "duration_seconds": 45.45303392410278
+    },
+    {
+      "timestamp": "2026-03-11T19:26:16.830448",
+      "symbol": "XAUUSD",
+      "pipeline": "smc_quant",
+      "signal": "HOLD",
+      "confidence": 0.85,
+      "entry_price": null,
+      "stop_loss": null,
+      "take_profit": null,
+      "rationale": "All OBs are mitigated, no unmitigated OBs or nearby OB+FVG confluence; unfilled bullish FVGs are 0.9-1.6% below price requiring significant retrace; ranging market with mixed indicators (bullish bias but bearish MACD, price below EMA20); low volume; no liquidity sweep or clear reversal signal; avoids tight SL issues from past trades.\n\n**Invalidation**: New unmitigated bullish OB or FVG forms near price with BOS confirmation",
+      "executed": false,
+      "execution_ticket": null,
+      "execution_error": null,
+      "duration_seconds": 22.58799719810486
     }
   ],
   "position_results": []

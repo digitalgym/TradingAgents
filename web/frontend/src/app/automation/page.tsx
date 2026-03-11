@@ -681,6 +681,7 @@ export default function AutomationPage() {
   const pipelineLabels: Record<string, string> = {
     quant: "Quant Analyst",
     smc_quant: "SMC Quant",
+    breakout_quant: "Breakout Quant",
     volume_profile: "Volume Profile",
     multi_agent: "Multi-Agent AI",
   }
@@ -688,6 +689,7 @@ export default function AutomationPage() {
   const pipelineColors: Record<string, string> = {
     quant: "text-purple-500",
     smc_quant: "text-emerald-500",
+    breakout_quant: "text-orange-500",
     volume_profile: "text-blue-500",
     multi_agent: "text-amber-500",
   }
@@ -1734,6 +1736,7 @@ export default function AutomationPage() {
                 <SelectContent>
                   <SelectItem value="quant">Quant Analyst</SelectItem>
                   <SelectItem value="smc_quant">SMC Quant</SelectItem>
+                  <SelectItem value="breakout_quant">Breakout Quant</SelectItem>
                   <SelectItem value="volume_profile">Volume Profile</SelectItem>
                   <SelectItem value="multi_agent">Multi-Agent AI</SelectItem>
                 </SelectContent>

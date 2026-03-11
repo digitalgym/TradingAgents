@@ -23,6 +23,10 @@ timeout /t 5 /nobreak >nul
 :: Start frontend
 echo Starting frontend (port 3000)...
 cd /d "%~dp0web\frontend"
+if not exist "node_modules" (
+    echo Installing frontend dependencies...
+    npm install
+)
 start "TradingAgents Frontend" cmd /k "title TradingAgents Frontend && npm run dev"
 
 :: Wait for frontend to be ready

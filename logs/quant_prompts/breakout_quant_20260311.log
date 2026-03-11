@@ -1,0 +1,388 @@
+2026-03-11 15:57:57,638 | 
+================================================================================
+BREAKOUT QUANT ANALYSIS - XAUUSD
+================================================================================
+2026-03-11 15:57:57,639 | Symbol: XAUUSD | Date: 2026-03-11 | Price: 2710.5
+2026-03-11 15:57:57,639 | Expansion Regime: contraction | Volatility: low
+2026-03-11 15:57:57,639 | Consolidation: {'is_consolidating': True, 'range_high': 2722.743932714013, 'range_low': 2695.292365112253, 'range_midpoint': 2709.018148913133, 'range_percent': 1.0133401141212022, 'bb_width': 0.509845865483898, 'bb_squeeze': True, 'breakout_ready': False, 'structure_bias': 'neutral', 'squeeze_strength': 100.0}
+2026-03-11 15:57:57,639 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 2710.50000
+- **Date**: 2026-03-11
+- **Trading Session**: London
+
+## MARKET REGIME (Critical for Breakout Strategy)
+- **Trend Regime**: ranging
+- **Volatility Regime**: low
+- **Expansion Regime**: contraction
+
+### Regime Interpretation for Breakouts:
+- If expansion_regime = "contraction": Market is in SQUEEZE - prime breakout setup
+- If expansion_regime = "expansion": Breakout may already be in progress
+- If volatility_regime = "low": Ideal for breakout anticipation
+- If volatility_regime = "high/extreme": Breakout likely already happened, wait for consolidation
+
+## CONSOLIDATION ANALYSIS
+- **Is Consolidating**: YES - IN CONSOLIDATION
+- **BB Squeeze**: YES - BB SQUEEZE ACTIVE
+- **Squeeze Strength**: 100% (higher = tighter squeeze)
+- **Range High (Resistance)**: 2722.74393
+- **Range Low (Support)**: 2695.29237
+- **Range Midpoint**: 2709.01815
+- **Range Width**: 1.01% of price
+- **Structure Bias**: NEUTRAL
+
+### Structure Interpretation:
+- BULLISH structure (higher lows): Buyers accumulating, expect upside breakout
+- BEARISH structure (lower highs): Sellers distributing, expect downside breakout
+- NEUTRAL: No clear bias, wait for breakout direction confirmation
+
+## SMC: Bullish OB at 2695
+## Indicators: RSI 55, MACD bullish
+2026-03-11 15:57:57,639 | 
+--- FULL PROMPT ---
+You are a breakout trading specialist with strict risk discipline. You specialize in identifying consolidation patterns and trading breakouts.
+
+## YOUR TRADING EDGE: CONSOLIDATION TO BREAKOUT
+
+Markets alternate between consolidation (range) and expansion (trend). Your edge is:
+1. Identify when price is consolidating (tight range, low volatility, BB squeeze)
+2. Determine likely breakout direction from structure (higher lows = up, lower highs = down)
+3. Enter on breakout with clear invalidation inside the range
+
+## BREAKOUT TRADING RULES
+
+### 1. IDENTIFYING CONSOLIDATION
+- **BB Squeeze**: When Bollinger Band width is in lowest 30% of recent history
+- **Low Volatility**: ATR is low relative to recent history
+- **Tight Range**: Price contained within narrow high/low boundaries
+- **Time**: Good consolidations last 10-30 candles
+
+### 2. DETERMINING BREAKOUT DIRECTION
+- **Higher Lows** within range = Bullish accumulation = Expect UPSIDE breakout
+- **Lower Highs** within range = Bearish distribution = Expect DOWNSIDE breakout
+- **Neutral structure** = Wait for breakout confirmation before entering
+
+### 3. ENTRY STRATEGIES
+- **Anticipation Entry**: Enter before breakout when structure is clear
+  - BUY near range low when structure is bullish
+  - SELL near range high when structure is bearish
+  - SL: Opposite side of range
+
+- **Breakout Entry**: Enter on breakout with confirmation
+  - BUY when price breaks ABOVE range high with momentum
+  - SELL when price breaks BELOW range low with momentum
+  - SL: Just inside the range (below breakout level for buys)
+
+### 4. STOP LOSS PLACEMENT (CRITICAL)
+- For BUY: Stop loss MUST be BELOW entry price
+  - Anticipation buy: SL below range low
+  - Breakout buy: SL below the breakout level (former resistance)
+
+- For SELL: Stop loss MUST be ABOVE entry price
+  - Anticipation sell: SL above range high
+  - Breakdown sell: SL above the breakdown level (former support)
+
+### 5. TAKE PROFIT TARGETS
+- Minimum target: 1.5x the range width
+- Preferred target: 2x the range width
+- Extended target: Previous swing high/low or major SMC level
+
+### 6. WHEN NOT TO TRADE
+- **No consolidation**: Price is already trending (expansion regime)
+- **Extreme volatility**: Too choppy, wait for consolidation to form
+- **Unclear structure**: No higher lows or lower highs, wait for clarity
+- **News imminent**: Major catalyst could invalidate technical setup
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation**
+5. **If no clear consolidation or direction, output HOLD**
+6. **Stop loss MUST be on correct side of entry**
+
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 2710.50000
+- **Date**: 2026-03-11
+- **Trading Session**: London
+
+## MARKET REGIME (Critical for Breakout Strategy)
+- **Trend Regime**: ranging
+- **Volatility Regime**: low
+- **Expansion Regime**: contraction
+
+### Regime Interpretation for Breakouts:
+- If expansion_regime = "contraction": Market is in SQUEEZE - prime breakout setup
+- If expansion_regime = "expansion": Breakout may already be in progress
+- If volatility_regime = "low": Ideal for breakout anticipation
+- If volatility_regime = "high/extreme": Breakout likely already happened, wait for consolidation
+
+## CONSOLIDATION ANALYSIS
+- **Is Consolidating**: YES - IN CONSOLIDATION
+- **BB Squeeze**: YES - BB SQUEEZE ACTIVE
+- **Squeeze Strength**: 100% (higher = tighter squeeze)
+- **Range High (Resistance)**: 2722.74393
+- **Range Low (Support)**: 2695.29237
+- **Range Midpoint**: 2709.01815
+- **Range Width**: 1.01% of price
+- **Structure Bias**: NEUTRAL
+
+### Structure Interpretation:
+- BULLISH structure (higher lows): Buyers accumulating, expect upside breakout
+- BEARISH structure (lower highs): Sellers distributing, expect downside breakout
+- NEUTRAL: No clear bias, wait for breakout direction confirmation
+
+## SMC: Bullish OB at 2695
+## Indicators: RSI 55, MACD bullish
+
+## YOUR TASK
+
+Analyze the consolidation and regime data to make a breakout trading decision.
+
+Think step-by-step:
+1. Is the market in consolidation? (Check expansion_regime, BB squeeze, range %)
+2. What is the structure bias? (Higher lows = bullish, lower highs = bearish)
+3. Where are the range boundaries? (Resistance high, Support low)
+4. Is price at a good entry zone? (Near range extreme or breaking out)
+5. Where is the stop loss and is the R:R acceptable (>1.5:1)?
+6. What would invalidate this setup?
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Long position. Use when:
+  - Consolidation with BULLISH structure (higher lows) near range low, OR
+  - Breakout above range high with momentum
+  - MUST provide entry_price (at range low or above breakout level), stop_loss (BELOW entry), profit_target
+
+- **sell_to_enter** - Short position. Use when:
+  - Consolidation with BEARISH structure (lower highs) near range high, OR
+  - Breakdown below range low with momentum
+  - MUST provide entry_price (at range high or below breakdown level), stop_loss (ABOVE entry), profit_target
+
+- **hold** - No action. Use when:
+  - No consolidation (trending market, wait for range to form)
+  - Neutral structure (no higher lows or lower highs)
+  - Price is mid-range (not at good entry zone)
+  - Unclear setup or poor R:R
+
+- **close** - Exit existing position. Use when:
+  - Breakout failed (price returned inside range)
+  - Invalidation condition met
+
+## ORDER TYPE
+- **limit** - Preferred for anticipation entries at range extremes
+- **market** - Use for confirmed breakouts when price has already broken out
+
+Remember: The best breakout trades come from CLEAR consolidation with CLEAR structure bias. When in doubt, HOLD.
+2026-03-11 15:57:57,640 | 
+================================================================================
+
+2026-03-11 15:57:57,640 | --- LLM RESPONSE (Structured) [took 0.0s] ---
+2026-03-11 15:57:57,640 | Signal: buy_to_enter
+2026-03-11 15:57:57,640 | Confidence: 0.75
+2026-03-11 15:57:57,640 | Entry: 2700.0 | SL: 2685.0 | TP: 2740.0
+2026-03-11 15:57:57,640 | Justification: Bullish structure in squeeze, higher lows forming, entry at range low
+2026-03-11 15:57:57,640 | Invalidation: Price closes below 2685
+2026-03-11 15:57:57,640 | Raw decision dict: {'symbol': 'XAUUSD', 'signal': 'buy_to_enter', 'order_type': 'limit', 'quantity': 0.1, 'leverage': 10, 'risk_usd': 150.0, 'profit_target': 2740.0, 'stop_loss': 2685.0, 'entry_price': 2700.0, 'invalidation_condition': 'Price closes below 2685', 'justification': 'Bullish structure in squeeze, higher lows forming, entry at range low', 'confidence': 0.75, 'risk_level': 'Medium', 'risk_reward_ratio': 2.67}
+2026-03-11 15:57:57,640 | 
+================================================================================
+
+2026-03-11 15:57:57,640 | Structured output SUCCESS - returning breakout_quant_decision with signal=buy_to_enter
+2026-03-11 15:59:54,731 | 
+================================================================================
+BREAKOUT QUANT ANALYSIS - XAUUSD
+================================================================================
+2026-03-11 15:59:54,731 | Symbol: XAUUSD | Date: 2026-03-11 | Price: 2710.5
+2026-03-11 15:59:54,731 | Expansion Regime: contraction | Volatility: low
+2026-03-11 15:59:54,731 | Consolidation: {'is_consolidating': np.True_, 'range_high': 2722.743932714013, 'range_low': 2695.292365112253, 'range_midpoint': 2709.018148913133, 'range_percent': 1.0133401141212022, 'bb_width': np.float64(0.509845865483898), 'bb_squeeze': np.True_, 'breakout_ready': False, 'structure_bias': 'neutral', 'squeeze_strength': np.float64(100.0)}
+2026-03-11 15:59:54,731 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 2710.50000
+- **Date**: 2026-03-11
+- **Trading Session**: London
+
+## MARKET REGIME (Critical for Breakout Strategy)
+- **Trend Regime**: ranging
+- **Volatility Regime**: low
+- **Expansion Regime**: contraction
+
+### Regime Interpretation for Breakouts:
+- If expansion_regime = "contraction": Market is in SQUEEZE - prime breakout setup
+- If expansion_regime = "expansion": Breakout may already be in progress
+- If volatility_regime = "low": Ideal for breakout anticipation
+- If volatility_regime = "high/extreme": Breakout likely already happened, wait for consolidation
+
+## CONSOLIDATION ANALYSIS
+- **Is Consolidating**: YES - IN CONSOLIDATION
+- **BB Squeeze**: YES - BB SQUEEZE ACTIVE
+- **Squeeze Strength**: 100% (higher = tighter squeeze)
+- **Range High (Resistance)**: 2722.74393
+- **Range Low (Support)**: 2695.29237
+- **Range Midpoint**: 2709.01815
+- **Range Width**: 1.01% of price
+- **Structure Bias**: NEUTRAL
+
+### Structure Interpretation:
+- BULLISH structure (higher lows): Buyers accumulating, expect upside breakout
+- BEARISH structure (lower highs): Sellers distributing, expect downside breakout
+- NEUTRAL: No clear bias, wait for breakout direction confirmation
+
+## SMC: Bullish OB at 2695
+## Indicators: RSI 55, MACD bullish
+2026-03-11 15:59:54,731 | 
+--- FULL PROMPT ---
+You are a breakout trading specialist with strict risk discipline. You specialize in identifying consolidation patterns and trading breakouts.
+
+## YOUR TRADING EDGE: CONSOLIDATION TO BREAKOUT
+
+Markets alternate between consolidation (range) and expansion (trend). Your edge is:
+1. Identify when price is consolidating (tight range, low volatility, BB squeeze)
+2. Determine likely breakout direction from structure (higher lows = up, lower highs = down)
+3. Enter on breakout with clear invalidation inside the range
+
+## BREAKOUT TRADING RULES
+
+### 1. IDENTIFYING CONSOLIDATION
+- **BB Squeeze**: When Bollinger Band width is in lowest 30% of recent history
+- **Low Volatility**: ATR is low relative to recent history
+- **Tight Range**: Price contained within narrow high/low boundaries
+- **Time**: Good consolidations last 10-30 candles
+
+### 2. DETERMINING BREAKOUT DIRECTION
+- **Higher Lows** within range = Bullish accumulation = Expect UPSIDE breakout
+- **Lower Highs** within range = Bearish distribution = Expect DOWNSIDE breakout
+- **Neutral structure** = Wait for breakout confirmation before entering
+
+### 3. ENTRY STRATEGIES
+- **Anticipation Entry**: Enter before breakout when structure is clear
+  - BUY near range low when structure is bullish
+  - SELL near range high when structure is bearish
+  - SL: Opposite side of range
+
+- **Breakout Entry**: Enter on breakout with confirmation
+  - BUY when price breaks ABOVE range high with momentum
+  - SELL when price breaks BELOW range low with momentum
+  - SL: Just inside the range (below breakout level for buys)
+
+### 4. STOP LOSS PLACEMENT (CRITICAL)
+- For BUY: Stop loss MUST be BELOW entry price
+  - Anticipation buy: SL below range low
+  - Breakout buy: SL below the breakout level (former resistance)
+
+- For SELL: Stop loss MUST be ABOVE entry price
+  - Anticipation sell: SL above range high
+  - Breakdown sell: SL above the breakdown level (former support)
+
+### 5. TAKE PROFIT TARGETS
+- Minimum target: 1.5x the range width
+- Preferred target: 2x the range width
+- Extended target: Previous swing high/low or major SMC level
+
+### 6. WHEN NOT TO TRADE
+- **No consolidation**: Price is already trending (expansion regime)
+- **Extreme volatility**: Too choppy, wait for consolidation to form
+- **Unclear structure**: No higher lows or lower highs, wait for clarity
+- **News imminent**: Major catalyst could invalidate technical setup
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation**
+5. **If no clear consolidation or direction, output HOLD**
+6. **Stop loss MUST be on correct side of entry**
+
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 2710.50000
+- **Date**: 2026-03-11
+- **Trading Session**: London
+
+## MARKET REGIME (Critical for Breakout Strategy)
+- **Trend Regime**: ranging
+- **Volatility Regime**: low
+- **Expansion Regime**: contraction
+
+### Regime Interpretation for Breakouts:
+- If expansion_regime = "contraction": Market is in SQUEEZE - prime breakout setup
+- If expansion_regime = "expansion": Breakout may already be in progress
+- If volatility_regime = "low": Ideal for breakout anticipation
+- If volatility_regime = "high/extreme": Breakout likely already happened, wait for consolidation
+
+## CONSOLIDATION ANALYSIS
+- **Is Consolidating**: YES - IN CONSOLIDATION
+- **BB Squeeze**: YES - BB SQUEEZE ACTIVE
+- **Squeeze Strength**: 100% (higher = tighter squeeze)
+- **Range High (Resistance)**: 2722.74393
+- **Range Low (Support)**: 2695.29237
+- **Range Midpoint**: 2709.01815
+- **Range Width**: 1.01% of price
+- **Structure Bias**: NEUTRAL
+
+### Structure Interpretation:
+- BULLISH structure (higher lows): Buyers accumulating, expect upside breakout
+- BEARISH structure (lower highs): Sellers distributing, expect downside breakout
+- NEUTRAL: No clear bias, wait for breakout direction confirmation
+
+## SMC: Bullish OB at 2695
+## Indicators: RSI 55, MACD bullish
+
+## YOUR TASK
+
+Analyze the consolidation and regime data to make a breakout trading decision.
+
+Think step-by-step:
+1. Is the market in consolidation? (Check expansion_regime, BB squeeze, range %)
+2. What is the structure bias? (Higher lows = bullish, lower highs = bearish)
+3. Where are the range boundaries? (Resistance high, Support low)
+4. Is price at a good entry zone? (Near range extreme or breaking out)
+5. Where is the stop loss and is the R:R acceptable (>1.5:1)?
+6. What would invalidate this setup?
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Long position. Use when:
+  - Consolidation with BULLISH structure (higher lows) near range low, OR
+  - Breakout above range high with momentum
+  - MUST provide entry_price (at range low or above breakout level), stop_loss (BELOW entry), profit_target
+
+- **sell_to_enter** - Short position. Use when:
+  - Consolidation with BEARISH structure (lower highs) near range high, OR
+  - Breakdown below range low with momentum
+  - MUST provide entry_price (at range high or below breakdown level), stop_loss (ABOVE entry), profit_target
+
+- **hold** - No action. Use when:
+  - No consolidation (trending market, wait for range to form)
+  - Neutral structure (no higher lows or lower highs)
+  - Price is mid-range (not at good entry zone)
+  - Unclear setup or poor R:R
+
+- **close** - Exit existing position. Use when:
+  - Breakout failed (price returned inside range)
+  - Invalidation condition met
+
+## ORDER TYPE
+- **limit** - Preferred for anticipation entries at range extremes
+- **market** - Use for confirmed breakouts when price has already broken out
+
+Remember: The best breakout trades come from CLEAR consolidation with CLEAR structure bias. When in doubt, HOLD.
+2026-03-11 15:59:54,731 | 
+================================================================================
+
+2026-03-11 15:59:54,731 | --- LLM RESPONSE (Structured) [took 0.0s] ---
+2026-03-11 15:59:54,731 | Signal: buy_to_enter
+2026-03-11 15:59:54,731 | Confidence: 0.75
+2026-03-11 15:59:54,731 | Entry: 2700.0 | SL: 2685.0 | TP: 2740.0
+2026-03-11 15:59:54,731 | Justification: Bullish structure in squeeze, higher lows forming, entry at range low
+2026-03-11 15:59:54,731 | Invalidation: Price closes below 2685
+2026-03-11 15:59:54,732 | Raw decision dict: {'symbol': 'XAUUSD', 'signal': 'buy_to_enter', 'order_type': 'limit', 'quantity': 0.1, 'leverage': 10, 'risk_usd': 150.0, 'profit_target': 2740.0, 'stop_loss': 2685.0, 'entry_price': 2700.0, 'invalidation_condition': 'Price closes below 2685', 'justification': 'Bullish structure in squeeze, higher lows forming, entry at range low', 'confidence': 0.75, 'risk_level': 'Medium', 'risk_reward_ratio': 2.67}
+2026-03-11 15:59:54,732 | 
+================================================================================
+
+2026-03-11 15:59:54,732 | Structured output SUCCESS - returning breakout_quant_decision with signal=buy_to_enter

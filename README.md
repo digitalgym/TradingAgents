@@ -107,9 +107,14 @@ conda create -n tradingagents python=3.13
 conda activate tradingagents
 ```
 
-Install dependencies:
+Install the package:
 ```bash
-pip install -r requirements.txt
+pip install .
+```
+
+Or install in editable mode for development:
+```bash
+pip install -e .
 ```
 
 ### Required APIs

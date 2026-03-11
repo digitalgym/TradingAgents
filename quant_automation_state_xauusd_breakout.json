@@ -1,0 +1,55 @@
+{
+  "last_analysis_time": {
+    "XAUUSD": "2026-03-11T19:26:54.139410"
+  },
+  "last_updated": "2026-03-11T19:26:54.720875",
+  "status": "running",
+  "analysis_results": [
+    {
+      "timestamp": "2026-03-11T18:56:27.395558",
+      "symbol": "XAUUSD",
+      "pipeline": "breakout_quant",
+      "signal": "HOLD",
+      "confidence": 0.0,
+      "entry_price": null,
+      "stop_loss": null,
+      "take_profit": null,
+      "rationale": "No decision from analysis",
+      "executed": false,
+      "execution_ticket": null,
+      "execution_error": null,
+      "duration_seconds": 0.5714900493621826
+    },
+    {
+      "timestamp": "2026-03-11T19:11:53.445348",
+      "symbol": "XAUUSD",
+      "pipeline": "breakout_quant",
+      "signal": "HOLD",
+      "confidence": 0.0,
+      "entry_price": null,
+      "stop_loss": null,
+      "take_profit": null,
+      "rationale": "No decision from analysis",
+      "executed": false,
+      "execution_ticket": null,
+      "execution_error": null,
+      "duration_seconds": 0.6613879203796387
+    },
+    {
+      "timestamp": "2026-03-11T19:26:54.719878",
+      "symbol": "XAUUSD",
+      "pipeline": "breakout_quant",
+      "signal": "HOLD",
+      "confidence": 0.0,
+      "entry_price": null,
+      "stop_loss": null,
+      "take_profit": null,
+      "rationale": "No decision from analysis",
+      "executed": false,
+      "execution_ticket": null,
+      "execution_error": null,
+      "duration_seconds": 0.5784740447998047
+    }
+  ],
+  "position_results": []
+}

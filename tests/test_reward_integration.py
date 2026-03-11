@@ -151,12 +151,13 @@ class TestRewardIntegration:
     def test_multiple_trades_portfolio_tracking(self, temp_decisions_dir, temp_portfolio_state):
         """Test portfolio state across multiple trades"""
         # Execute series of trades
+        # Note: SELL at 2680 exiting at 2640 = WIN (sold high, bought back low)
         trades = [
             ("BUY", 2650.0, 2630.0, 2680.0, True),   # Win
-            ("SELL", 2680.0, 2700.0, 2640.0, False), # Loss
+            ("SELL", 2680.0, 2700.0, 2640.0, True),  # Win (SELL profits when price goes down)
             ("BUY", 2640.0, 2620.0, 2680.0, True),   # Win
         ]
-        
+
         for i, (action, entry, sl, exit_price, is_win) in enumerate(trades):
             decision_id = store_decision(
                 symbol="XAUUSD",
@@ -178,8 +179,8 @@ class TestRewardIntegration:
         # Verify portfolio state
         portfolio = PortfolioStateTracker.load_state()
         assert portfolio.trade_count == 3
-        assert portfolio.win_count == 2
-        assert portfolio.loss_count == 1
+        assert portfolio.win_count == 3  # All 3 trades are winners
+        assert portfolio.loss_count == 0
         assert len(portfolio.equity_curve) == 4  # Initial + 3 trades
         assert len(portfolio.returns) == 3
         
@@ -280,9 +281,10 @@ class TestEnhancedDecisionFields:
             rationale="Test",
             entry_price=2650.0,
             stop_loss=2630.0,
-            take_profit=2690.0
+            take_profit=2690.0,
+            volume=0.1  # Must include volume for close_decision to work
         )
-        
+
         closed_decision = close_decision(
             decision_id=decision_id,
             exit_price=2680.0,

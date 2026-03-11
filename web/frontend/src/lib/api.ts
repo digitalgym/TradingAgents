@@ -655,7 +655,7 @@ export const saveTradeDecision = (params: SaveDecisionParams) =>
 
 export interface QuantAutomationConfig {
   instance_name: string
-  pipeline: 'quant' | 'volume_profile' | 'smc_quant' | 'multi_agent'
+  pipeline: 'quant' | 'volume_profile' | 'smc_quant' | 'breakout_quant' | 'multi_agent'
   symbols: string[]
   timeframe: string
   analysis_interval_seconds: number
@@ -816,6 +816,73 @@ export const runVpQuantAnalysis = (symbol: string, timeframe: string = 'H1') =>
 
 export const runSmcQuantAnalysis = (symbol: string, timeframe: string = 'H1') =>
   fetchApi<QuantAnalysisResult>('/analysis/smc-quant', {
+    method: 'POST',
+    body: JSON.stringify({ symbol, timeframe }),
+  })
+
+// Breakout Quant Analysis (Consolidation/Squeeze Detection)
+export interface BreakoutQuantAnalysisResult {
+  status: string
+  symbol: string
+  timeframe: string
+  current_price: number
+  bid: number
+  ask: number
+  error?: string
+  traceback?: string
+  decision: {
+    signal: "BUY" | "SELL" | "HOLD"
+    confidence: number
+    entry_price: number | null
+    stop_loss: number | null
+    take_profit: number | null
+    rationale: string
+    analysis_mode: "breakout_quant"
+    leverage?: number
+    risk_usd?: number
+    risk_level?: string
+    risk_reward_ratio?: number
+    full_report?: string
+  }
+  consolidation: {
+    is_consolidating: boolean
+    range_high: number | null
+    range_low: number | null
+    range_midpoint: number | null
+    range_percent: number | null
+    squeeze_strength: number
+    structure_bias: "bullish" | "bearish" | "neutral"
+    breakout_ready: boolean
+    bb_squeeze: boolean
+  }
+  regime: {
+    market_regime: string
+    volatility_regime: string
+    expansion_regime: string
+    adx: number | null
+    atr: number | null
+  }
+  indicators: {
+    rsi: number | null
+    macd: number | null
+    macd_signal: number | null
+    macd_histogram: number | null
+    ema20: number | null
+    ema50: number | null
+    atr: number | null
+    adx: number | null
+    bb_upper: number | null
+    bb_middle: number | null
+    bb_lower: number | null
+    bb_width: number | null
+  }
+  analysis_mode: "breakout_quant"
+  llm_used: true
+  prompt_sent?: string
+}
+
+export const runBreakoutQuantAnalysis = (symbol: string, timeframe: string = 'H1') =>
+  fetchApi<BreakoutQuantAnalysisResult>('/analysis/breakout-quant', {
     method: 'POST',
     body: JSON.stringify({ symbol, timeframe }),
   })
