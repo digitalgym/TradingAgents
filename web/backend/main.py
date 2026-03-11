@@ -7163,6 +7163,333 @@ def _get_trading_session() -> str:
         return "asian"
 
 
+# ----- Breakout Quant Analysis (Consolidation Detection, Single LLM Call) -----
+
+class BreakoutQuantAnalysisRequest(BaseModel):
+    """Request model for breakout quant analysis."""
+    symbol: str
+    timeframe: str = "H1"
+
+
+@app.post("/api/analysis/breakout-quant")
+async def run_breakout_quant_analysis(request: BreakoutQuantAnalysisRequest):
+    """
+    Run dedicated Breakout Quant analysis using a single LLM call.
+
+    This is a consolidation/breakout-focused quant that specializes in:
+    - BB Squeeze detection (Bollinger Band width contraction)
+    - Range boundary identification (consolidation high/low)
+    - Structure bias analysis (higher lows = bullish, lower highs = bearish)
+    - Breakout anticipation and confirmation entries
+
+    Uses the dedicated breakout_quant agent with specialized consolidation prompt.
+    Returns structured trade decision compatible with trade execution modal.
+    """
+    import time as _time
+    _endpoint_start = _time.time()
+    logger.info(f"[BREAKOUT QUANT API] Request: symbol={request.symbol}, timeframe={request.timeframe}")
+    try:
+        import MetaTrader5 as mt5
+        import pandas as pd
+        import numpy as np
+
+        if not mt5.initialize():
+            raise HTTPException(status_code=500, detail="MT5 not initialized")
+
+        # Get symbol info for current price
+        symbol_info = mt5.symbol_info_tick(request.symbol)
+        if symbol_info is None:
+            raise HTTPException(status_code=400, detail=f"Symbol {request.symbol} not found")
+
+        current_price = (symbol_info.bid + symbol_info.ask) / 2
+        bid = symbol_info.bid
+        ask = symbol_info.ask
+
+        # Map timeframe
+        timeframe_map = {
+            "M1": mt5.TIMEFRAME_M1, "M5": mt5.TIMEFRAME_M5, "M15": mt5.TIMEFRAME_M15,
+            "M30": mt5.TIMEFRAME_M30, "H1": mt5.TIMEFRAME_H1, "H4": mt5.TIMEFRAME_H4,
+            "D1": mt5.TIMEFRAME_D1,
+        }
+        tf = timeframe_map.get(request.timeframe.upper(), mt5.TIMEFRAME_H1)
+
+        # Get OHLC data
+        bars = mt5.copy_rates_from_pos(request.symbol, tf, 0, 200)
+        if bars is None or len(bars) < 50:
+            raise HTTPException(status_code=400, detail=f"Not enough data for {request.symbol}")
+
+        df = pd.DataFrame(bars)
+        df['time'] = pd.to_datetime(df['time'], unit='s')
+
+        # === STEP 1: Calculate Indicators ===
+        # RSI
+        delta = df['close'].diff()
+        gain = delta.where(delta > 0, 0).rolling(14).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
+        rs = gain / loss.replace(0, np.nan)
+        rsi = 100 - (100 / (1 + rs))
+        df['rsi'] = rsi
+
+        # MACD
+        exp1 = df['close'].ewm(span=12, adjust=False).mean()
+        exp2 = df['close'].ewm(span=26, adjust=False).mean()
+        df['macd'] = exp1 - exp2
+        df['macd_signal'] = df['macd'].ewm(span=9, adjust=False).mean()
+        df['macd_histogram'] = df['macd'] - df['macd_signal']
+
+        # EMAs
+        df['ema20'] = df['close'].ewm(span=20, adjust=False).mean()
+        df['ema50'] = df['close'].ewm(span=50, adjust=False).mean()
+
+        # ATR
+        high_low = df['high'] - df['low']
+        high_close = (df['high'] - df['close'].shift()).abs()
+        low_close = (df['low'] - df['close'].shift()).abs()
+        tr = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
+        df['atr'] = tr.rolling(14).mean()
+
+        # ADX
+        plus_dm = df['high'].diff()
+        minus_dm = df['low'].diff().abs() * -1
+        plus_dm = plus_dm.where((plus_dm > minus_dm.abs()) & (plus_dm > 0), 0)
+        minus_dm = minus_dm.abs().where((minus_dm.abs() > plus_dm) & (minus_dm < 0), 0)
+        smoothed_tr = tr.ewm(span=14, adjust=False).mean()
+        plus_di = 100 * (plus_dm.ewm(span=14, adjust=False).mean() / smoothed_tr)
+        minus_di = 100 * (minus_dm.ewm(span=14, adjust=False).mean() / smoothed_tr)
+        dx = 100 * (plus_di - minus_di).abs() / (plus_di + minus_di).replace(0, np.nan)
+        df['adx'] = dx.ewm(span=14, adjust=False).mean()
+
+        # Bollinger Bands
+        df['bb_middle'] = df['close'].rolling(20).mean()
+        bb_std = df['close'].rolling(20).std()
+        df['bb_upper'] = df['bb_middle'] + (2 * bb_std)
+        df['bb_lower'] = df['bb_middle'] - (2 * bb_std)
+        df['bb_width'] = (df['bb_upper'] - df['bb_lower']) / df['bb_middle'] * 100
+
+        # Get latest values
+        latest = df.iloc[-1]
+        atr = float(latest['atr']) if pd.notna(latest['atr']) else 0
+        adx = float(latest['adx']) if pd.notna(latest['adx']) else 0
+
+        # === STEP 2: Determine Regime ===
+        from tradingagents.indicators.regime import RegimeDetector
+        detector = RegimeDetector()
+
+        high_arr = df['high'].values
+        low_arr = df['low'].values
+        close_arr = df['close'].values
+
+        regime = detector.get_full_regime(high_arr, low_arr, close_arr)
+        market_regime = regime.get("market_regime", "unknown")
+        volatility_regime = regime.get("volatility_regime", "normal")
+        expansion_regime = regime.get("expansion_regime", "neutral")
+
+        # === STEP 3: Consolidation Analysis ===
+        from tradingagents.agents.analysts.breakout_quant import (
+            analyze_consolidation,
+            create_breakout_quant,
+            _build_breakout_data_context,
+            _build_breakout_prompt,
+        )
+
+        consolidation = analyze_consolidation(high_arr, low_arr, close_arr, lookback=20)
+
+        # === STEP 4: Get SMC Context (for additional confluence) ===
+        smc_context = ""
+        smc_analysis = {}
+        try:
+            from tradingagents.agents.analysts.smc_quant import analyze_smc_for_quant
+            smc_data = analyze_smc_for_quant(df, current_price)
+            smc_analysis = smc_data.get("smc_analysis", {})
+            smc_context = smc_data.get("smc_context", "")
+        except Exception as smc_err:
+            logger.warning(f"[BREAKOUT QUANT API] SMC analysis failed: {smc_err}")
+
+        # === STEP 5: Build Indicator Context ===
+        indicators_context = f"""## Technical Indicators
+
+### Momentum
+- RSI(14): {latest['rsi']:.1f} {'(overbought)' if latest['rsi'] > 70 else '(oversold)' if latest['rsi'] < 30 else '(neutral)'}
+- MACD: {latest['macd']:.5f}
+- MACD Signal: {latest['macd_signal']:.5f}
+- MACD Histogram: {latest['macd_histogram']:.5f} {'(bullish)' if latest['macd_histogram'] > 0 else '(bearish)'}
+
+### Trend
+- EMA20: {latest['ema20']:.5f} (Price {'above' if current_price > latest['ema20'] else 'below'})
+- EMA50: {latest['ema50']:.5f} (Price {'above' if current_price > latest['ema50'] else 'below'})
+- ADX: {adx:.1f} ({'Strong trend' if adx > 25 else 'Weak/No trend'})
+
+### Volatility
+- ATR(14): {atr:.5f}
+- BB Upper: {latest['bb_upper']:.5f}
+- BB Middle: {latest['bb_middle']:.5f}
+- BB Lower: {latest['bb_lower']:.5f}
+- BB Width: {latest['bb_width']:.2f}%
+"""
+
+        # === STEP 6: Get Trade Memories ===
+        trade_memories = ""
+        try:
+            trade_memories = _get_trade_memories_for_symbol(request.symbol)
+        except Exception:
+            pass
+
+        # === STEP 7: Initialize LLM ===
+        llm = _get_trading_llm()
+
+        # === STEP 8: Build State and Run Breakout Quant ===
+        breakout_state = {
+            "company_of_interest": request.symbol,
+            "trade_date": pd.Timestamp.now().strftime("%Y-%m-%d"),
+            "current_price": current_price,
+            "smc_context": smc_context,
+            "smc_analysis": smc_analysis,
+            "market_report": indicators_context,
+            "market_regime": market_regime,
+            "volatility_regime": volatility_regime,
+            "expansion_regime": expansion_regime,
+            "trading_session": _get_trading_session(),
+            "trade_memories": trade_memories,
+            "price_data": {
+                "high": high_arr.tolist(),
+                "low": low_arr.tolist(),
+                "close": close_arr.tolist(),
+            }
+        }
+
+        # For debugging: log the prompt
+        debug_data_context = _build_breakout_data_context(
+            ticker=request.symbol,
+            current_price=current_price,
+            smc_context=smc_context,
+            smc_analysis=smc_analysis,
+            market_report=indicators_context,
+            market_regime=market_regime,
+            volatility_regime=volatility_regime,
+            expansion_regime=expansion_regime,
+            trading_session=_get_trading_session(),
+            current_date=breakout_state["trade_date"],
+            consolidation=consolidation,
+        )
+        full_prompt = _build_breakout_prompt(debug_data_context, trade_memories=trade_memories)
+
+        # Run breakout quant analyst
+        logger.info(f"[BREAKOUT QUANT API] Running breakout quant analyst for {request.symbol}...")
+        breakout_quant_analyst = create_breakout_quant(llm, use_structured_output=True)
+        result = breakout_quant_analyst(breakout_state)
+
+        breakout_report = result.get("breakout_quant_report", "")
+        breakout_decision = result.get("breakout_quant_decision")
+        consolidation_result = result.get("consolidation_analysis", consolidation)
+        logger.info(f"[BREAKOUT QUANT API] Analyst returned: breakout_quant_decision={'present' if breakout_decision else 'None'}")
+
+        # === STEP 9: Build Response ===
+        if breakout_decision:
+            signal_map = {
+                "buy_to_enter": "BUY",
+                "sell_to_enter": "SELL",
+                "hold": "HOLD",
+                "close": "HOLD"
+            }
+            signal = breakout_decision.get("signal", "hold")
+            if isinstance(signal, dict):
+                signal = signal.get("value", "hold")
+
+            mapped_signal = signal_map.get(signal, "HOLD")
+
+            decision = {
+                "signal": mapped_signal,
+                "confidence": breakout_decision.get("confidence", 0.5),
+                "entry_price": breakout_decision.get("entry_price"),
+                "stop_loss": breakout_decision.get("stop_loss"),
+                "take_profit": breakout_decision.get("profit_target"),
+                "rationale": f"{breakout_decision.get('justification', '')}\n\n**Invalidation**: {breakout_decision.get('invalidation_condition', 'N/A')}",
+                "analysis_mode": "breakout_quant",
+                "leverage": breakout_decision.get("leverage"),
+                "risk_usd": breakout_decision.get("risk_usd"),
+                "risk_level": breakout_decision.get("risk_level"),
+                "risk_reward_ratio": breakout_decision.get("risk_reward_ratio"),
+                "full_report": breakout_report
+            }
+        else:
+            decision = {
+                "signal": "HOLD",
+                "confidence": 0.0,
+                "entry_price": None,
+                "stop_loss": None,
+                "take_profit": None,
+                "rationale": breakout_report or "Breakout quant analysis could not generate a structured decision.",
+                "analysis_mode": "breakout_quant",
+                "full_report": breakout_report
+            }
+
+        # Convert numpy types in consolidation for JSON serialization
+        def make_serializable(obj):
+            if isinstance(obj, dict):
+                return {k: make_serializable(v) for k, v in obj.items()}
+            elif isinstance(obj, (list, tuple)):
+                return [make_serializable(v) for v in obj]
+            elif isinstance(obj, (np.bool_, np.integer)):
+                return int(obj)
+            elif isinstance(obj, np.floating):
+                return float(obj)
+            elif isinstance(obj, np.ndarray):
+                return obj.tolist()
+            return obj
+
+        consolidation_serializable = make_serializable(consolidation_result)
+
+        _endpoint_duration = _time.time() - _endpoint_start
+        logger.info(f"[BREAKOUT QUANT API] Completed for {request.symbol} in {_endpoint_duration:.1f}s - Signal: {decision['signal']}")
+
+        return {
+            "status": "success",
+            "symbol": request.symbol,
+            "timeframe": request.timeframe,
+            "current_price": current_price,
+            "bid": bid,
+            "ask": ask,
+            "decision": decision,
+            "consolidation": consolidation_serializable,
+            "regime": {
+                "market_regime": market_regime,
+                "volatility_regime": volatility_regime,
+                "expansion_regime": expansion_regime,
+                "adx": adx,
+                "atr": atr,
+            },
+            "indicators": {
+                "rsi": float(latest['rsi']) if pd.notna(latest['rsi']) else None,
+                "macd": float(latest['macd']) if pd.notna(latest['macd']) else None,
+                "macd_signal": float(latest['macd_signal']) if pd.notna(latest['macd_signal']) else None,
+                "macd_histogram": float(latest['macd_histogram']) if pd.notna(latest['macd_histogram']) else None,
+                "ema20": float(latest['ema20']) if pd.notna(latest['ema20']) else None,
+                "ema50": float(latest['ema50']) if pd.notna(latest['ema50']) else None,
+                "atr": atr,
+                "adx": adx,
+                "bb_upper": float(latest['bb_upper']) if pd.notna(latest['bb_upper']) else None,
+                "bb_middle": float(latest['bb_middle']) if pd.notna(latest['bb_middle']) else None,
+                "bb_lower": float(latest['bb_lower']) if pd.notna(latest['bb_lower']) else None,
+                "bb_width": float(latest['bb_width']) if pd.notna(latest['bb_width']) else None,
+            },
+            "analysis_mode": "breakout_quant",
+            "llm_used": True,
+            "prompt_sent": full_prompt,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        _endpoint_duration = _time.time() - _endpoint_start
+        logger.error(f"[BREAKOUT QUANT API] ERROR for {request.symbol} after {_endpoint_duration:.1f}s: {e}\n{traceback.format_exc()}")
+        return {
+            "status": "error",
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+
 # ----- WebSocket for Real-time Updates -----
 
 @app.websocket("/ws")
@@ -7612,7 +7939,7 @@ def _save_config(instance_name: str, config: dict):
 class QuantAutomationConfigRequest(BaseModel):
     """Request model for quant automation configuration."""
     instance_name: str = "quant"  # Unique identifier for this automation instance
-    pipeline: str = "quant"  # "quant", "smc_quant", "volume_profile", or "multi_agent"
+    pipeline: str = "quant"  # "quant", "smc_quant", "breakout_quant", "volume_profile", or "multi_agent"
     symbols: List[str] = ["XAUUSD"]
     timeframe: str = "H1"
     analysis_interval_seconds: int = 180

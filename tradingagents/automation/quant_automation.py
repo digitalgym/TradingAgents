@@ -57,6 +57,7 @@ class PipelineType(str, Enum):
     """Available analysis pipelines."""
     QUANT = "quant"
     SMC_QUANT = "smc_quant"
+    BREAKOUT_QUANT = "breakout_quant"
     VOLUME_PROFILE = "volume_profile"
     MULTI_AGENT = "multi_agent"
 
@@ -488,6 +489,121 @@ class QuantAutomation:
                 timestamp=datetime.now(),
                 symbol=symbol,
                 pipeline="smc_quant",
+                signal="HOLD",
+                confidence=0.0,
+                rationale=f"Error: {str(e)}",
+                duration_seconds=time.time() - start_time,
+            )
+
+    async def _run_breakout_quant_analysis(self, symbol: str) -> AnalysisCycleResult:
+        """Run dedicated Breakout quant pipeline analysis for a symbol."""
+        start_time = time.time()
+
+        try:
+            import aiohttp
+
+            async with aiohttp.ClientSession() as session:
+                payload = {
+                    "symbol": symbol,
+                    "timeframe": self.config.timeframe,
+                }
+                async with session.post(
+                    "http://localhost:8000/api/analysis/breakout-quant",
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=120)
+                ) as response:
+                    if response.status != 200:
+                        error_text = await response.text()
+                        self.logger.error(f"Breakout Quant API error: {error_text}")
+                        return AnalysisCycleResult(
+                            timestamp=datetime.now(),
+                            symbol=symbol,
+                            pipeline="breakout_quant",
+                            signal="HOLD",
+                            confidence=0.0,
+                            rationale=f"API Error: {response.status}",
+                            duration_seconds=time.time() - start_time,
+                        )
+
+                    result = await response.json()
+
+            self.logger.info(f"Breakout Quant API response status: {result.get('status')}")
+
+            # Log error details if the API returned an error
+            if result.get("status") == "error":
+                self.logger.error(f"Breakout Quant API error for {symbol}: {result.get('error', 'unknown')}")
+                if result.get("traceback"):
+                    self.logger.error(f"Traceback: {result['traceback'][:500]}")
+
+            # Log consolidation info
+            consolidation = result.get("consolidation", {})
+            if consolidation:
+                self.logger.info(
+                    f"Breakout Quant consolidation for {symbol}: "
+                    f"is_consolidating={consolidation.get('is_consolidating')}, "
+                    f"squeeze_strength={consolidation.get('squeeze_strength', 0):.1f}%, "
+                    f"structure_bias={consolidation.get('structure_bias')}, "
+                    f"breakout_ready={consolidation.get('breakout_ready')}"
+                )
+
+            prompt_sent = result.get("prompt_sent")
+            if prompt_sent:
+                self.logger.info(f"\n{'='*80}\nBREAKOUT QUANT PROMPT SENT for {symbol}\n{'='*80}\n{prompt_sent}\n{'='*80}")
+
+            decision = result.get("decision", {})
+
+            if not decision:
+                self.logger.warning(f"No decision in Breakout Quant API response for {symbol}")
+                return AnalysisCycleResult(
+                    timestamp=datetime.now(),
+                    symbol=symbol,
+                    pipeline="breakout_quant",
+                    signal="HOLD",
+                    confidence=0.0,
+                    rationale="No decision from analysis",
+                    duration_seconds=time.time() - start_time,
+                )
+
+            self.logger.info(
+                f"Breakout Quant decision for {symbol}: signal={decision.get('signal')}, "
+                f"confidence={decision.get('confidence')}, "
+                f"entry={decision.get('entry_price')}, "
+                f"sl={decision.get('stop_loss')}, tp={decision.get('take_profit')}"
+            )
+
+            signal = decision.get("signal", "HOLD")
+            if isinstance(signal, dict):
+                signal = signal.get("value", "HOLD")
+            signal = signal.upper()
+
+            if signal in ["BUY_TO_ENTER", "BUY"]:
+                signal = "BUY"
+            elif signal in ["SELL_TO_ENTER", "SELL"]:
+                signal = "SELL"
+            else:
+                signal = "HOLD"
+
+            return AnalysisCycleResult(
+                timestamp=datetime.now(),
+                symbol=symbol,
+                pipeline="breakout_quant",
+                signal=signal,
+                confidence=decision.get("confidence", 0.5),
+                entry_price=decision.get("entry_price"),
+                stop_loss=decision.get("stop_loss"),
+                take_profit=decision.get("take_profit"),
+                rationale=decision.get("rationale", ""),
+                duration_seconds=time.time() - start_time,
+            )
+
+        except Exception as e:
+            self.logger.error(f"Breakout Quant analysis error for {symbol}: {e}")
+            import traceback
+            self.logger.error(traceback.format_exc())
+            return AnalysisCycleResult(
+                timestamp=datetime.now(),
+                symbol=symbol,
+                pipeline="breakout_quant",
                 signal="HOLD",
                 confidence=0.0,
                 rationale=f"Error: {str(e)}",
@@ -994,10 +1110,12 @@ class QuantAutomation:
                         self.logger.debug(f"  No SL adjustment needed: pnl_pct={pnl_pct:.2f}%, trailing={self.config.enable_trailing_stop}")
 
                     # Run quick analysis to check for close signal
-                    if self.config.pipeline in (PipelineType.QUANT, PipelineType.SMC_QUANT):
+                    if self.config.pipeline in (PipelineType.QUANT, PipelineType.SMC_QUANT, PipelineType.BREAKOUT_QUANT):
                         self.logger.info(f"  Running reversal check analysis for #{ticket} {symbol}...")
                         if self.config.pipeline == PipelineType.SMC_QUANT:
                             analysis = await self._run_smc_quant_analysis(symbol)
+                        elif self.config.pipeline == PipelineType.BREAKOUT_QUANT:
+                            analysis = await self._run_breakout_quant_analysis(symbol)
                         else:
                             analysis = await self._run_quant_analysis(symbol)
                         self.logger.info(f"  Reversal check result: signal={analysis.signal}, confidence={analysis.confidence:.2f}")
@@ -1113,6 +1231,8 @@ class QuantAutomation:
                         result = await self._run_quant_analysis(symbol)
                     elif self.config.pipeline == PipelineType.SMC_QUANT:
                         result = await self._run_smc_quant_analysis(symbol)
+                    elif self.config.pipeline == PipelineType.BREAKOUT_QUANT:
+                        result = await self._run_breakout_quant_analysis(symbol)
                     elif self.config.pipeline == PipelineType.VOLUME_PROFILE:
                         result = await self._run_vp_analysis(symbol)
                     else:
@@ -1304,6 +1424,8 @@ class QuantAutomation:
             return await self._run_quant_analysis(symbol)
         elif self.config.pipeline == PipelineType.SMC_QUANT:
             return await self._run_smc_quant_analysis(symbol)
+        elif self.config.pipeline == PipelineType.BREAKOUT_QUANT:
+            return await self._run_breakout_quant_analysis(symbol)
         elif self.config.pipeline == PipelineType.VOLUME_PROFILE:
             return await self._run_vp_analysis(symbol)
         else:
