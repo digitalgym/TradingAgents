@@ -11,8 +11,23 @@ import tempfile
 import os
 import json
 from datetime import datetime
+import sys
+
+# Check if SignalProcessor is available
+try:
+    from tradingagents.graph.signal_processing import SignalProcessor
+    HAS_SIGNAL_PROCESSOR = True
+except ImportError:
+    HAS_SIGNAL_PROCESSOR = False
+    SignalProcessor = None
+
+requires_signal_processor = pytest.mark.skipif(
+    not HAS_SIGNAL_PROCESSOR,
+    reason="SignalProcessor not available (missing langchain_anthropic or other dependencies)"
+)
 
 
+@requires_signal_processor
 class TestSignalProcessorGuardrails:
     """Test guardrails integration in SignalProcessor."""
 
@@ -27,8 +42,6 @@ class TestSignalProcessorGuardrails:
 
     def test_apply_guardrails_no_override_when_trading_allowed(self, mock_llm):
         """Test that signal passes through when trading is allowed."""
-        from tradingagents.graph.signal_processing import SignalProcessor
-
         processor = SignalProcessor(mock_llm)
 
         result = {
@@ -55,8 +68,6 @@ class TestSignalProcessorGuardrails:
 
     def test_apply_guardrails_override_when_circuit_breaker_active(self, mock_llm):
         """Test that BUY signal is overridden to HOLD when circuit breaker is active."""
-        from tradingagents.graph.signal_processing import SignalProcessor
-
         processor = SignalProcessor(mock_llm)
 
         result = {
@@ -87,8 +98,6 @@ class TestSignalProcessorGuardrails:
 
     def test_apply_guardrails_override_sell_signal(self, mock_llm):
         """Test that SELL signal is also overridden when circuit breaker is active."""
-        from tradingagents.graph.signal_processing import SignalProcessor
-
         processor = SignalProcessor(mock_llm)
 
         result = {
@@ -115,8 +124,6 @@ class TestSignalProcessorGuardrails:
 
     def test_apply_guardrails_hold_not_affected(self, mock_llm):
         """Test that HOLD signals are not affected by guardrails."""
-        from tradingagents.graph.signal_processing import SignalProcessor
-
         processor = SignalProcessor(mock_llm)
 
         result = {
@@ -145,8 +152,6 @@ class TestSignalProcessorGuardrails:
 
     def test_apply_guardrails_handles_exception(self, mock_llm):
         """Test that guardrails exception is handled gracefully."""
-        from tradingagents.graph.signal_processing import SignalProcessor
-
         processor = SignalProcessor(mock_llm)
 
         result = {
@@ -167,8 +172,6 @@ class TestSignalProcessorGuardrails:
 
     def test_process_signal_applies_guardrails(self, mock_llm):
         """Test that process_signal calls _apply_guardrails."""
-        from tradingagents.graph.signal_processing import SignalProcessor
-
         processor = SignalProcessor(mock_llm)
 
         structured_decision = {
@@ -202,8 +205,6 @@ class TestSignalProcessorGuardrails:
 
     def test_guardrail_reason_in_rationale(self, mock_llm):
         """Test that guardrail reason is included in rationale."""
-        from tradingagents.graph.signal_processing import SignalProcessor
-
         processor = SignalProcessor(mock_llm)
 
         result = {
@@ -349,21 +350,17 @@ class TestRiskGuardrailsBasic:
         assert can_trade is False
 
 
+@requires_signal_processor
 class TestGuardrailIntegrationWithGraph:
     """Test guardrails integration with the full graph pipeline."""
 
     def test_signal_processor_has_guardrails_method(self):
         """Test that SignalProcessor has _apply_guardrails method."""
-        from tradingagents.graph.signal_processing import SignalProcessor
-
         assert hasattr(SignalProcessor, "_apply_guardrails")
 
     def test_guardrails_preserves_other_fields(self):
         """Test that guardrails override preserves other signal fields."""
         mock_llm = MagicMock()
-
-        from tradingagents.graph.signal_processing import SignalProcessor
-
         processor = SignalProcessor(mock_llm)
 
         result = {

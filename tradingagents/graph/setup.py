@@ -118,6 +118,7 @@ class GraphSetup:
                 - "news": News analyst (uses tools for news)
                 - "fundamentals": Fundamentals analyst (uses tools for financial data)
                 - "quant": Quant analyst (single-prompt, no tools, uses state data)
+                - "breakout": Breakout quant (consolidation/squeeze detection, breakout trading)
         """
         if len(selected_analysts) == 0:
             raise ValueError("Trading Agents Graph Setup Error: no analysts selected!")
@@ -169,6 +170,15 @@ class GraphSetup:
             )
             delete_nodes["quant"] = create_msg_delete()
             # No tool node for quant - it's a pure analysis agent
+
+        if "breakout" in selected_analysts:
+            # Breakout quant specializes in consolidation detection and breakout trading
+            # It analyzes BB squeeze, range boundaries, and structure bias
+            analyst_nodes["breakout"] = create_breakout_quant(
+                self.deep_thinking_llm, use_structured_output=True
+            )
+            delete_nodes["breakout"] = create_msg_delete()
+            # No tool node for breakout - it's a pure analysis agent
 
         # Create researcher and manager nodes
         bull_researcher_node = create_bull_researcher(
