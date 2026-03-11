@@ -1,31 +1,74 @@
-2026-03-11 06:43:11,516 - INFO - ==================================================
-2026-03-11 06:43:11,517 - INFO - QUANT AUTOMATION STARTED
-2026-03-11 06:43:11,517 - INFO - ==================================================
-2026-03-11 06:43:11,518 - INFO - Pipeline: smc_quant
-2026-03-11 06:43:11,518 - INFO - Symbols: XAUUSD
-2026-03-11 06:43:11,519 - INFO - Analysis interval: 900s
-2026-03-11 06:43:11,519 - INFO - Auto-execute: True
-2026-03-11 06:43:11,519 - INFO - ==================================================
-2026-03-11 06:43:11,532 - INFO - Position management loop started
-2026-03-11 06:43:11,533 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 06:44:11,862 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 06:45:11,880 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 06:46:11,902 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 06:47:11,921 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 06:48:11,935 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 06:49:11,964 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 06:50:11,972 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 06:51:11,995 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 06:52:12,001 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 06:53:11,995 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 06:54:12,005 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 06:55:12,003 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 06:55:12,792 - INFO - Running smc_quant analysis for XAUUSD...
-2026-03-11 06:55:26,439 - INFO - SMC Quant API response status: completed
-2026-03-11 06:55:26,440 - INFO - 
+2026-03-11 18:08:48,122 | 
 ================================================================================
-SMC QUANT PROMPT SENT for XAUUSD
+SMC QUANT ANALYSIS - XAUUSD
 ================================================================================
+2026-03-11 18:08:48,123 | Symbol: XAUUSD | Date: 2026-03-11 | Price: 5196.0599999999995
+2026-03-11 18:08:48,123 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 5196.06000
+- **Date**: 2026-03-11
+- **Trading Session**: london
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## SMART MONEY CONCEPTS ANALYSIS
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+
+**Market Structure**:
+  - BOS HIGH at 5198.01000
+  - BOS HIGH at 5186.60000
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 5051.06000-5107.37500 | Strength: 80% | MITIGATED | 2.79% from price
+  - BULLISH OB: 5156.54000-5175.86000 | Strength: 80% | MITIGATED | 0.76% from price
+  - BULLISH OB: 5125.06000-5141.27000 | Strength: 80% | MITIGATED | 1.37% from price
+  - BEARISH OB: 5197.51500-5238.49000 | Strength: 80% | MITIGATED | 0.82% from price
+  - BEARISH OB: 5088.88000-5112.18000 | Strength: 42% | MITIGATED | -1.61% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 5106.81000-5118.52000 | UNFILLED | 1.72% below price (expect bounce UP)
+  - BULLISH FVG: 5141.27000-5163.93000 | UNFILLED | 1.05% below price (expect bounce UP)
+  - BULLISH FVG: 5214.38000-5222.71000 | FILLED | -0.35% below price (expect bounce UP)
+  - BEARISH FVG: 5207.58000-5223.70000 | UNFILLED | 0.53% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 5198.01000 | Strength: 89% | UNSWEPT | 0.04% above
+  - BUY-SIDE at 5186.60000 | Strength: 94% | UNSWEPT | 0.18% below
+  - BUY-SIDE at 5223.08000 | Strength: 88% | UNSWEPT | 0.52% above
+  - SELL-SIDE at 5161.13000 | Strength: 67% | UNSWEPT | 0.67% below
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 37.4 (Neutral)
+- **MACD**: 8.58884 | Signal: 12.73301 | Histogram: -4.14417
+  - Bearish (MACD < Signal)
+
+### Trend
+- **EMA20**: 5196.46111 (Price below)
+- **EMA50**: 5174.43062 (Price above)
+- **ADX**: 22.0 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 20.87857
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=5230.64052 | Middle=5204.65400 | Lower=5178.66748
+  - Price near upper band
+
+### Volume
+- **Current Bar Volume**: 1,928 ticks
+- **20-bar Avg Volume**: 13,349 ticks
+- **Volume Ratio**: 0.14x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+2026-03-11 18:08:48,129 | 
+--- FULL PROMPT ---
 You are a systematic Smart Money Concepts (SMC) trader with strict risk discipline. You trade based on institutional order flow analysis to identify high-probability entries.
 
 ## SMART MONEY CONCEPTS TRADING RULES
@@ -104,13 +147,15 @@ You are a systematic Smart Money Concepts (SMC) trader with strict risk discipli
 - For BUY orders: Stop loss MUST be BELOW entry price
 - For SELL orders: Stop loss MUST be ABOVE entry price
 - Place stops beyond the OB/FVG zone that forms your entry basis
-- If you cannot identify a valid stop loss placement, output "hold"
+- **MINIMUM SL DISTANCE**: Stop loss must be at least 1x ATR from entry. SL within 0.5% of entry is TOO TIGHT and will get stopped out by normal price noise. For gold (XAUUSD), minimum SL should be $15-30+ from entry.
+- **MINIMUM TP DISTANCE**: Take profit should be at least 1.5x the SL distance (R:R >= 1.5:1). TP within 0.3% of entry is TOO CLOSE.
+- If you cannot identify a valid stop loss placement with adequate distance, output "hold"
 
 ## CURRENT MARKET DATA
 - **Symbol**: XAUUSD
-- **Current Price**: 5194.12000
+- **Current Price**: 5196.06000
 - **Date**: 2026-03-11
-- **Trading Session**: new_york
+- **Trading Session**: london
 - **Market Regime**: ranging
 - **Volatility Regime**: normal
 
@@ -123,51 +168,48 @@ You are a systematic Smart Money Concepts (SMC) trader with strict risk discipli
   - BOS HIGH at 5186.60000
 
 **Order Blocks** (institutional entry zones):
-  - BULLISH OB: 5120.95000-5157.92500 | Strength: 64% | MITIGATED | 1.41% from price
-  - BULLISH OB: 5051.06000-5107.37500 | Strength: 80% | MITIGATED | 2.75% from price
-  - BULLISH OB: 5156.54000-5175.86000 | Strength: 80% | MITIGATED | 0.72% from price
-  - BEARISH OB: 5197.51500-5238.49000 | Strength: 80% | MITIGATED | 0.85% from price
-  - BEARISH OB: 5150.91000-5174.93000 | Strength: 51% | MITIGATED | -0.37% from price
-  - BEARISH OB: 5088.88000-5112.18000 | Strength: 42% | MITIGATED | -1.58% from price
+  - BULLISH OB: 5051.06000-5107.37500 | Strength: 80% | MITIGATED | 2.79% from price
+  - BULLISH OB: 5156.54000-5175.86000 | Strength: 80% | MITIGATED | 0.76% from price
+  - BULLISH OB: 5125.06000-5141.27000 | Strength: 80% | MITIGATED | 1.37% from price
+  - BEARISH OB: 5197.51500-5238.49000 | Strength: 80% | MITIGATED | 0.82% from price
+  - BEARISH OB: 5088.88000-5112.18000 | Strength: 42% | MITIGATED | -1.61% from price
 
 **Fair Value Gaps** (price imbalance zones):
-  - BULLISH FVG: 5106.81000-5118.52000 | UNFILLED | 1.68% below price (expect bounce UP)
-  - BULLISH FVG: 5141.27000-5163.93000 | UNFILLED | 1.02% below price (expect bounce UP)
-  - BULLISH FVG: 5214.38000-5222.71000 | FILLED | -0.39% below price (expect bounce UP)
-  - BEARISH FVG: 5135.64000-5150.91000 | FILLED | -0.83% above price (expect rejection DOWN)
-  - BEARISH FVG: 5079.99000-5104.32000 | FILLED | -1.73% above price (expect rejection DOWN)
-  - BEARISH FVG: 5207.58000-5223.70000 | UNFILLED | 0.57% above price (expect rejection DOWN)
+  - BULLISH FVG: 5106.81000-5118.52000 | UNFILLED | 1.72% below price (expect bounce UP)
+  - BULLISH FVG: 5141.27000-5163.93000 | UNFILLED | 1.05% below price (expect bounce UP)
+  - BULLISH FVG: 5214.38000-5222.71000 | FILLED | -0.35% below price (expect bounce UP)
+  - BEARISH FVG: 5207.58000-5223.70000 | UNFILLED | 0.53% above price (expect rejection DOWN)
 
 **Liquidity Zones** (stop loss clusters - smart money targets):
-  - BUY-SIDE at 5194.90000 | Strength: 82% | UNSWEPT | 0.02% above
-  - BUY-SIDE at 5198.01000 | Strength: 91% | UNSWEPT | 0.07% above
-  - BUY-SIDE at 5186.60000 | Strength: 96% | UNSWEPT | 0.14% below
-  - SELL-SIDE at 5156.54000 | Strength: 68% | UNSWEPT | 0.72% below
+  - BUY-SIDE at 5198.01000 | Strength: 89% | UNSWEPT | 0.04% above
+  - BUY-SIDE at 5186.60000 | Strength: 94% | UNSWEPT | 0.18% below
+  - BUY-SIDE at 5223.08000 | Strength: 88% | UNSWEPT | 0.52% above
+  - SELL-SIDE at 5161.13000 | Strength: 67% | UNSWEPT | 0.67% below
 
 ## TECHNICAL INDICATORS
 ## Technical Indicators
 
 ### Momentum
-- **RSI(14)**: 57.8 (Neutral)
-- **MACD**: 19.16789 | Signal: 21.00822 | Histogram: -1.84033
+- **RSI(14)**: 37.4 (Neutral)
+- **MACD**: 8.58884 | Signal: 12.73301 | Histogram: -4.14417
   - Bearish (MACD < Signal)
 
 ### Trend
-- **EMA20**: 5186.25740 (Price above)
-- **EMA50**: 5159.15820 (Price above)
-- **ADX**: 22.6 (Weak/No trend)
+- **EMA20**: 5196.46111 (Price below)
+- **EMA50**: 5174.43062 (Price above)
+- **ADX**: 22.0 (Weak/No trend)
 - **Regime**: ranging
 
 ### Volatility
-- **ATR(14)**: 25.53929
+- **ATR(14)**: 20.87857
 - **Volatility**: normal
-- **Bollinger Bands**: Upper=5231.40533 | Middle=5189.57750 | Lower=5147.74967
+- **Bollinger Bands**: Upper=5230.64052 | Middle=5204.65400 | Lower=5178.66748
   - Price near upper band
 
 ### Volume
-- **Current Bar Volume**: 7,375 ticks
-- **20-bar Avg Volume**: 15,223 ticks
-- **Volume Ratio**: 0.48x average 
+- **Current Bar Volume**: 1,928 ticks
+- **20-bar Avg Volume**: 13,349 ticks
+- **Volume Ratio**: 0.14x average 
 - **Volume Profile**: Very Low
 - **Volume Trend (5 bars)**: decreasing
 
@@ -183,11 +225,15 @@ You are a systematic Smart Money Concepts (SMC) trader with strict risk discipli
 Direction prediction needs improvement. Review signal quality and regime alignment.
 
 ### Recent Outcomes
-1. SELL @ 5188.73 -> Manual close @ 5188.73 | +0.00 | SL was 0.2% from entry
-2. SELL @ 5191.06 -> Manual close @ 5191.42 | -0.36 | SL was 0.1% from entry
-3. SELL @ 5181.34 -> Manual close @ 5181.70 | -0.36 | SL was 0.3% from entry
-4. SELL @ 5164.92 -> Manual close @ 5165.28 | -0.36 | SL was 0.8% from entry
-5. SELL @ 5137.52 -> Manual close @ 5137.88 | -0.36 | SL was 0.3% from entry
+1. SELL @ 5188.73 -> Manual close @ 5188.73 | +0.00 | SL 0.2% from entry ⚠️ EXTREMELY TIGHT
+2. SELL @ 5191.06 -> Manual close @ 5191.42 | -0.36 | SL 0.1% from entry ⚠️ EXTREMELY TIGHT
+3. SELL @ 5181.34 -> Manual close @ 5181.70 | -0.36 | SL 0.3% from entry ⚠️ VERY TIGHT
+4. SELL @ 5164.92 -> Manual close @ 5165.28 | -0.36 | SL 0.8% from entry (tight)
+5. SELL @ 5137.52 -> Manual close @ 5137.88 | -0.36 | SL 0.3% from entry ⚠️ EXTREMELY TIGHT
+
+⚠️ **CRITICAL PATTERN**: 5/5 recent trades had SL too tight (<1% from entry).
+Your stops are getting hit or positions closed at a loss because SL is too close to entry.
+**ACTION REQUIRED**: Place SL at least 1-1.5x ATR from entry, or beyond the nearest OB/FVG zone. Do NOT use SL within 0.5% of entry.
 
 ### Apply These Lessons
 - Direction was wrong. Review analysis for signal quality. (occurred 6x)
@@ -233,30 +279,91 @@ Remember:
 - Liquidity shows you where price is likely to go
 - Trade with trend, enter at discount (longs) or premium (shorts)
 - Confluence = higher probability
+2026-03-11 18:08:48,145 | 
 ================================================================================
-2026-03-11 06:55:26,473 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
-2026-03-11 06:55:26,474 - INFO - XAUUSD: HOLD (confidence: 0.85)
-2026-03-11 06:56:12,032 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 06:57:12,043 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 06:58:12,044 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 06:59:12,067 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:00:12,084 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:01:12,093 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:02:12,099 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:03:12,117 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:04:12,131 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:05:12,138 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:06:12,141 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:07:12,143 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:08:12,156 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:09:12,166 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:10:12,183 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:10:28,833 - INFO - Running smc_quant analysis for XAUUSD...
-2026-03-11 07:10:56,022 - INFO - SMC Quant API response status: completed
-2026-03-11 07:10:56,022 - INFO - 
+
+2026-03-11 18:08:58,305 | --- LLM RESPONSE (Structured) [took 10.2s] ---
+2026-03-11 18:08:58,305 | Signal: hold
+2026-03-11 18:08:58,306 | Confidence: 0.85
+2026-03-11 18:08:58,306 | Entry: None | SL: None | TP: None
+2026-03-11 18:08:58,306 | Justification: No unmitigated OBs or OB+FVG confluence near current price; all OBs mitigated, price near unswept buy-side liquidity in ranging market with mixed indicators (bullish bias but bearish MACD and low volume), violating high-probability entry rules.
+2026-03-11 18:08:58,307 | Invalidation: Formation of unmitigated bullish OB or unfilled FVG confluence below price with bullish BOS confirmation
+2026-03-11 18:08:58,307 | Raw decision dict: {'symbol': 'XAUUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Formation of unmitigated bullish OB or unfilled FVG confluence below price with bullish BOS confirmation', 'justification': 'No unmitigated OBs or OB+FVG confluence near current price; all OBs mitigated, price near unswept buy-side liquidity in ranging market with mixed indicators (bullish bias but bearish MACD and low volume), violating high-probability entry rules.', 'confidence': 0.85, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-11 18:08:58,308 | 
 ================================================================================
-SMC QUANT PROMPT SENT for XAUUSD
+
+2026-03-11 18:08:58,308 | Structured output SUCCESS - returning smc_quant_decision with signal=hold
+2026-03-11 18:24:04,045 | 
 ================================================================================
+SMC QUANT ANALYSIS - XAUUSD
+================================================================================
+2026-03-11 18:24:04,046 | Symbol: XAUUSD | Date: 2026-03-11 | Price: 5189.87
+2026-03-11 18:24:04,046 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 5189.87000
+- **Date**: 2026-03-11
+- **Trading Session**: london
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## SMART MONEY CONCEPTS ANALYSIS
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+
+**Market Structure**:
+  - BOS HIGH at 5198.01000
+  - BOS HIGH at 5186.60000
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 5051.06000-5107.37500 | Strength: 80% | MITIGATED | 2.67% from price
+  - BULLISH OB: 5156.54000-5175.86000 | Strength: 80% | MITIGATED | 0.64% from price
+  - BULLISH OB: 5125.06000-5141.27000 | Strength: 80% | MITIGATED | 1.25% from price
+  - BEARISH OB: 5197.51500-5238.49000 | Strength: 80% | MITIGATED | 0.94% from price
+  - BEARISH OB: 5088.88000-5112.18000 | Strength: 42% | MITIGATED | -1.50% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 5106.81000-5118.52000 | UNFILLED | 1.60% below price (expect bounce UP)
+  - BULLISH FVG: 5141.27000-5163.93000 | UNFILLED | 0.94% below price (expect bounce UP)
+  - BULLISH FVG: 5214.38000-5222.71000 | FILLED | -0.47% below price (expect bounce UP)
+  - BEARISH FVG: 5207.58000-5223.70000 | UNFILLED | 0.65% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 5186.60000 | Strength: 94% | UNSWEPT | 0.06% below
+  - BUY-SIDE at 5198.01000 | Strength: 89% | UNSWEPT | 0.16% above
+  - SELL-SIDE at 5161.13000 | Strength: 67% | UNSWEPT | 0.55% below
+  - BUY-SIDE at 5223.08000 | Strength: 88% | UNSWEPT | 0.64% above
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 35.6 (Neutral)
+- **MACD**: 8.09505 | Signal: 12.63425 | Histogram: -4.53920
+  - Bearish (MACD < Signal)
+
+### Trend
+- **EMA20**: 5195.87159 (Price below)
+- **EMA50**: 5174.18788 (Price above)
+- **ADX**: 22.0 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 20.99143
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=5230.90755 | Middle=5204.34450 | Lower=5177.78145
+  - Price near upper band
+
+### Volume
+- **Current Bar Volume**: 5,065 ticks
+- **20-bar Avg Volume**: 13,505 ticks
+- **Volume Ratio**: 0.38x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+2026-03-11 18:24:04,051 | 
+--- FULL PROMPT ---
 You are a systematic Smart Money Concepts (SMC) trader with strict risk discipline. You trade based on institutional order flow analysis to identify high-probability entries.
 
 ## SMART MONEY CONCEPTS TRADING RULES
@@ -335,13 +442,15 @@ You are a systematic Smart Money Concepts (SMC) trader with strict risk discipli
 - For BUY orders: Stop loss MUST be BELOW entry price
 - For SELL orders: Stop loss MUST be ABOVE entry price
 - Place stops beyond the OB/FVG zone that forms your entry basis
-- If you cannot identify a valid stop loss placement, output "hold"
+- **MINIMUM SL DISTANCE**: Stop loss must be at least 1x ATR from entry. SL within 0.5% of entry is TOO TIGHT and will get stopped out by normal price noise. For gold (XAUUSD), minimum SL should be $15-30+ from entry.
+- **MINIMUM TP DISTANCE**: Take profit should be at least 1.5x the SL distance (R:R >= 1.5:1). TP within 0.3% of entry is TOO CLOSE.
+- If you cannot identify a valid stop loss placement with adequate distance, output "hold"
 
 ## CURRENT MARKET DATA
 - **Symbol**: XAUUSD
-- **Current Price**: 5192.80000
+- **Current Price**: 5189.87000
 - **Date**: 2026-03-11
-- **Trading Session**: asian
+- **Trading Session**: london
 - **Market Regime**: ranging
 - **Volatility Regime**: normal
 
@@ -354,52 +463,49 @@ You are a systematic Smart Money Concepts (SMC) trader with strict risk discipli
   - BOS HIGH at 5186.60000
 
 **Order Blocks** (institutional entry zones):
-  - BULLISH OB: 5120.95000-5157.92500 | Strength: 64% | MITIGATED | 1.38% from price
-  - BULLISH OB: 5051.06000-5107.37500 | Strength: 80% | MITIGATED | 2.73% from price
-  - BULLISH OB: 5156.54000-5175.86000 | Strength: 80% | MITIGATED | 0.70% from price
-  - BEARISH OB: 5197.51500-5238.49000 | Strength: 80% | MITIGATED | 0.88% from price
-  - BEARISH OB: 5150.91000-5174.93000 | Strength: 51% | MITIGATED | -0.34% from price
-  - BEARISH OB: 5088.88000-5112.18000 | Strength: 42% | MITIGATED | -1.55% from price
+  - BULLISH OB: 5051.06000-5107.37500 | Strength: 80% | MITIGATED | 2.67% from price
+  - BULLISH OB: 5156.54000-5175.86000 | Strength: 80% | MITIGATED | 0.64% from price
+  - BULLISH OB: 5125.06000-5141.27000 | Strength: 80% | MITIGATED | 1.25% from price
+  - BEARISH OB: 5197.51500-5238.49000 | Strength: 80% | MITIGATED | 0.94% from price
+  - BEARISH OB: 5088.88000-5112.18000 | Strength: 42% | MITIGATED | -1.50% from price
 
 **Fair Value Gaps** (price imbalance zones):
-  - BULLISH FVG: 5106.81000-5118.52000 | UNFILLED | 1.66% below price (expect bounce UP)
-  - BULLISH FVG: 5141.27000-5163.93000 | UNFILLED | 0.99% below price (expect bounce UP)
-  - BULLISH FVG: 5214.38000-5222.71000 | FILLED | -0.42% below price (expect bounce UP)
-  - BEARISH FVG: 5135.64000-5150.91000 | FILLED | -0.81% above price (expect rejection DOWN)
-  - BEARISH FVG: 5079.99000-5104.32000 | FILLED | -1.70% above price (expect rejection DOWN)
-  - BEARISH FVG: 5207.58000-5223.70000 | UNFILLED | 0.60% above price (expect rejection DOWN)
+  - BULLISH FVG: 5106.81000-5118.52000 | UNFILLED | 1.60% below price (expect bounce UP)
+  - BULLISH FVG: 5141.27000-5163.93000 | UNFILLED | 0.94% below price (expect bounce UP)
+  - BULLISH FVG: 5214.38000-5222.71000 | FILLED | -0.47% below price (expect bounce UP)
+  - BEARISH FVG: 5207.58000-5223.70000 | UNFILLED | 0.65% above price (expect rejection DOWN)
 
 **Liquidity Zones** (stop loss clusters - smart money targets):
-  - BUY-SIDE at 5194.90000 | Strength: 82% | UNSWEPT | 0.04% above
-  - BUY-SIDE at 5198.01000 | Strength: 91% | UNSWEPT | 0.10% above
-  - BUY-SIDE at 5186.60000 | Strength: 96% | UNSWEPT | 0.12% below
-  - SELL-SIDE at 5156.54000 | Strength: 68% | UNSWEPT | 0.70% below
+  - BUY-SIDE at 5186.60000 | Strength: 94% | UNSWEPT | 0.06% below
+  - BUY-SIDE at 5198.01000 | Strength: 89% | UNSWEPT | 0.16% above
+  - SELL-SIDE at 5161.13000 | Strength: 67% | UNSWEPT | 0.55% below
+  - BUY-SIDE at 5223.08000 | Strength: 88% | UNSWEPT | 0.64% above
 
 ## TECHNICAL INDICATORS
 ## Technical Indicators
 
 ### Momentum
-- **RSI(14)**: 57.2 (Neutral)
-- **MACD**: 19.06259 | Signal: 20.98716 | Histogram: -1.92457
+- **RSI(14)**: 35.6 (Neutral)
+- **MACD**: 8.09505 | Signal: 12.63425 | Histogram: -4.53920
   - Bearish (MACD < Signal)
 
 ### Trend
-- **EMA20**: 5186.13168 (Price above)
-- **EMA50**: 5159.10644 (Price above)
-- **ADX**: 22.6 (Weak/No trend)
+- **EMA20**: 5195.87159 (Price below)
+- **EMA50**: 5174.18788 (Price above)
+- **ADX**: 22.0 (Weak/No trend)
 - **Regime**: ranging
 
 ### Volatility
-- **ATR(14)**: 25.53929
+- **ATR(14)**: 20.99143
 - **Volatility**: normal
-- **Bollinger Bands**: Upper=5231.31390 | Middle=5189.51150 | Lower=5147.70910
+- **Bollinger Bands**: Upper=5230.90755 | Middle=5204.34450 | Lower=5177.78145
   - Price near upper band
 
 ### Volume
-- **Current Bar Volume**: 7,795 ticks
-- **20-bar Avg Volume**: 15,244 ticks
-- **Volume Ratio**: 0.51x average 
-- **Volume Profile**: Low
+- **Current Bar Volume**: 5,065 ticks
+- **20-bar Avg Volume**: 13,505 ticks
+- **Volume Ratio**: 0.38x average 
+- **Volume Profile**: Very Low
 - **Volume Trend (5 bars)**: decreasing
 
 
@@ -414,11 +520,15 @@ You are a systematic Smart Money Concepts (SMC) trader with strict risk discipli
 Direction prediction needs improvement. Review signal quality and regime alignment.
 
 ### Recent Outcomes
-1. SELL @ 5188.73 -> Manual close @ 5188.73 | +0.00 | SL was 0.2% from entry
-2. SELL @ 5191.06 -> Manual close @ 5191.42 | -0.36 | SL was 0.1% from entry
-3. SELL @ 5181.34 -> Manual close @ 5181.70 | -0.36 | SL was 0.3% from entry
-4. SELL @ 5164.92 -> Manual close @ 5165.28 | -0.36 | SL was 0.8% from entry
-5. SELL @ 5137.52 -> Manual close @ 5137.88 | -0.36 | SL was 0.3% from entry
+1. SELL @ 5188.73 -> Manual close @ 5188.73 | +0.00 | SL 0.2% from entry ⚠️ EXTREMELY TIGHT
+2. SELL @ 5191.06 -> Manual close @ 5191.42 | -0.36 | SL 0.1% from entry ⚠️ EXTREMELY TIGHT
+3. SELL @ 5181.34 -> Manual close @ 5181.70 | -0.36 | SL 0.3% from entry ⚠️ VERY TIGHT
+4. SELL @ 5164.92 -> Manual close @ 5165.28 | -0.36 | SL 0.8% from entry (tight)
+5. SELL @ 5137.52 -> Manual close @ 5137.88 | -0.36 | SL 0.3% from entry ⚠️ EXTREMELY TIGHT
+
+⚠️ **CRITICAL PATTERN**: 5/5 recent trades had SL too tight (<1% from entry).
+Your stops are getting hit or positions closed at a loss because SL is too close to entry.
+**ACTION REQUIRED**: Place SL at least 1-1.5x ATR from entry, or beyond the nearest OB/FVG zone. Do NOT use SL within 0.5% of entry.
 
 ### Apply These Lessons
 - Direction was wrong. Review analysis for signal quality. (occurred 6x)
@@ -464,31 +574,91 @@ Remember:
 - Liquidity shows you where price is likely to go
 - Trade with trend, enter at discount (longs) or premium (shorts)
 - Confluence = higher probability
+2026-03-11 18:24:04,071 | 
 ================================================================================
-2026-03-11 07:10:56,057 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.0, entry=None, sl=None, tp=None
-2026-03-11 07:10:56,057 - INFO - XAUUSD: HOLD (confidence: 0.00)
-2026-03-11 07:11:12,203 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:12:12,227 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:13:12,229 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:14:12,229 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:15:12,263 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:16:12,286 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:17:12,295 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:18:12,317 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:19:12,337 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:20:12,353 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:21:12,338 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:22:12,350 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:23:12,359 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:24:12,369 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:25:12,394 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:25:58,659 - INFO - Running smc_quant analysis for XAUUSD...
-2026-03-11 07:26:14,394 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:26:14,418 - INFO - SMC Quant API response status: completed
-2026-03-11 07:26:14,418 - INFO - 
+
+2026-03-11 18:24:16,149 | --- LLM RESPONSE (Structured) [took 12.1s] ---
+2026-03-11 18:24:16,150 | Signal: hold
+2026-03-11 18:24:16,150 | Confidence: 0.4
+2026-03-11 18:24:16,151 | Entry: None | SL: None | TP: None
+2026-03-11 18:24:16,151 | Justification: All OBs mitigated, no unmitigated OB/FVG confluence near price, ranging regime with mixed indicators (bullish bias but bearish MACD, neutral RSI, low volume), price near upper BB in potential premium zone without clear entry setup or recent liquidity sweep.
+2026-03-11 18:24:16,152 | Invalidation: New bullish BOS above 5198 or bearish CHoCH below 5186
+2026-03-11 18:24:16,152 | Raw decision dict: {'symbol': 'XAUUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'New bullish BOS above 5198 or bearish CHoCH below 5186', 'justification': 'All OBs mitigated, no unmitigated OB/FVG confluence near price, ranging regime with mixed indicators (bullish bias but bearish MACD, neutral RSI, low volume), price near upper BB in potential premium zone without clear entry setup or recent liquidity sweep.', 'confidence': 0.4, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-11 18:24:16,152 | 
 ================================================================================
-SMC QUANT PROMPT SENT for XAUUSD
+
+2026-03-11 18:24:16,153 | Structured output SUCCESS - returning smc_quant_decision with signal=hold
+2026-03-11 18:39:19,361 | 
 ================================================================================
+SMC QUANT ANALYSIS - XAUUSD
+================================================================================
+2026-03-11 18:39:19,362 | Symbol: XAUUSD | Date: 2026-03-11 | Price: 5180.43
+2026-03-11 18:39:19,362 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 5180.43000
+- **Date**: 2026-03-11
+- **Trading Session**: london
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## SMART MONEY CONCEPTS ANALYSIS
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+
+**Market Structure**:
+  - BOS HIGH at 5198.01000
+  - BOS HIGH at 5186.60000
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 5051.06000-5107.37500 | Strength: 80% | MITIGATED | 2.50% from price
+  - BULLISH OB: 5156.54000-5175.86000 | Strength: 80% | MITIGATED | 0.46% from price
+  - BULLISH OB: 5125.06000-5141.27000 | Strength: 80% | MITIGATED | 1.07% from price
+  - BEARISH OB: 5197.51500-5238.49000 | Strength: 80% | MITIGATED | 1.12% from price
+  - BEARISH OB: 5088.88000-5112.18000 | Strength: 42% | MITIGATED | -1.32% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 5106.81000-5118.52000 | UNFILLED | 1.42% below price (expect bounce UP)
+  - BULLISH FVG: 5141.27000-5163.93000 | UNFILLED | 0.76% below price (expect bounce UP)
+  - BULLISH FVG: 5214.38000-5222.71000 | FILLED | -0.66% below price (expect bounce UP)
+  - BEARISH FVG: 5207.58000-5223.70000 | UNFILLED | 0.84% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 5186.60000 | Strength: 94% | UNSWEPT | 0.12% above
+  - BUY-SIDE at 5198.01000 | Strength: 89% | UNSWEPT | 0.34% above
+  - SELL-SIDE at 5161.13000 | Strength: 67% | UNSWEPT | 0.37% below
+  - SELL-SIDE at 5156.54000 | Strength: 69% | UNSWEPT | 0.46% below
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 33.2 (Neutral)
+- **MACD**: 7.34200 | Signal: 12.48364 | Histogram: -5.14164
+  - Bearish (MACD < Signal)
+
+### Trend
+- **EMA20**: 5194.97254 (Price below)
+- **EMA50**: 5173.81768 (Price above)
+- **ADX**: 22.2 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 21.86786
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=5231.82440 | Middle=5203.87250 | Lower=5175.92060
+  - Price near upper band
+
+### Volume
+- **Current Bar Volume**: 8,522 ticks
+- **20-bar Avg Volume**: 13,678 ticks
+- **Volume Ratio**: 0.62x average 
+- **Volume Profile**: Low
+- **Volume Trend (5 bars)**: increasing
+
+2026-03-11 18:39:19,367 | 
+--- FULL PROMPT ---
 You are a systematic Smart Money Concepts (SMC) trader with strict risk discipline. You trade based on institutional order flow analysis to identify high-probability entries.
 
 ## SMART MONEY CONCEPTS TRADING RULES
@@ -567,13 +737,15 @@ You are a systematic Smart Money Concepts (SMC) trader with strict risk discipli
 - For BUY orders: Stop loss MUST be BELOW entry price
 - For SELL orders: Stop loss MUST be ABOVE entry price
 - Place stops beyond the OB/FVG zone that forms your entry basis
-- If you cannot identify a valid stop loss placement, output "hold"
+- **MINIMUM SL DISTANCE**: Stop loss must be at least 1x ATR from entry. SL within 0.5% of entry is TOO TIGHT and will get stopped out by normal price noise. For gold (XAUUSD), minimum SL should be $15-30+ from entry.
+- **MINIMUM TP DISTANCE**: Take profit should be at least 1.5x the SL distance (R:R >= 1.5:1). TP within 0.3% of entry is TOO CLOSE.
+- If you cannot identify a valid stop loss placement with adequate distance, output "hold"
 
 ## CURRENT MARKET DATA
 - **Symbol**: XAUUSD
-- **Current Price**: 5192.80000
+- **Current Price**: 5180.43000
 - **Date**: 2026-03-11
-- **Trading Session**: asian
+- **Trading Session**: london
 - **Market Regime**: ranging
 - **Volatility Regime**: normal
 
@@ -586,53 +758,50 @@ You are a systematic Smart Money Concepts (SMC) trader with strict risk discipli
   - BOS HIGH at 5186.60000
 
 **Order Blocks** (institutional entry zones):
-  - BULLISH OB: 5120.95000-5157.92500 | Strength: 64% | MITIGATED | 1.38% from price
-  - BULLISH OB: 5051.06000-5107.37500 | Strength: 80% | MITIGATED | 2.73% from price
-  - BULLISH OB: 5156.54000-5175.86000 | Strength: 80% | MITIGATED | 0.70% from price
-  - BEARISH OB: 5197.51500-5238.49000 | Strength: 80% | MITIGATED | 0.88% from price
-  - BEARISH OB: 5150.91000-5174.93000 | Strength: 51% | MITIGATED | -0.34% from price
-  - BEARISH OB: 5088.88000-5112.18000 | Strength: 42% | MITIGATED | -1.55% from price
+  - BULLISH OB: 5051.06000-5107.37500 | Strength: 80% | MITIGATED | 2.50% from price
+  - BULLISH OB: 5156.54000-5175.86000 | Strength: 80% | MITIGATED | 0.46% from price
+  - BULLISH OB: 5125.06000-5141.27000 | Strength: 80% | MITIGATED | 1.07% from price
+  - BEARISH OB: 5197.51500-5238.49000 | Strength: 80% | MITIGATED | 1.12% from price
+  - BEARISH OB: 5088.88000-5112.18000 | Strength: 42% | MITIGATED | -1.32% from price
 
 **Fair Value Gaps** (price imbalance zones):
-  - BULLISH FVG: 5106.81000-5118.52000 | UNFILLED | 1.66% below price (expect bounce UP)
-  - BULLISH FVG: 5141.27000-5163.93000 | UNFILLED | 0.99% below price (expect bounce UP)
-  - BULLISH FVG: 5214.38000-5222.71000 | FILLED | -0.42% below price (expect bounce UP)
-  - BEARISH FVG: 5135.64000-5150.91000 | FILLED | -0.81% above price (expect rejection DOWN)
-  - BEARISH FVG: 5079.99000-5104.32000 | FILLED | -1.70% above price (expect rejection DOWN)
-  - BEARISH FVG: 5207.58000-5223.70000 | UNFILLED | 0.60% above price (expect rejection DOWN)
+  - BULLISH FVG: 5106.81000-5118.52000 | UNFILLED | 1.42% below price (expect bounce UP)
+  - BULLISH FVG: 5141.27000-5163.93000 | UNFILLED | 0.76% below price (expect bounce UP)
+  - BULLISH FVG: 5214.38000-5222.71000 | FILLED | -0.66% below price (expect bounce UP)
+  - BEARISH FVG: 5207.58000-5223.70000 | UNFILLED | 0.84% above price (expect rejection DOWN)
 
 **Liquidity Zones** (stop loss clusters - smart money targets):
-  - BUY-SIDE at 5194.90000 | Strength: 82% | UNSWEPT | 0.04% above
-  - BUY-SIDE at 5198.01000 | Strength: 91% | UNSWEPT | 0.10% above
-  - BUY-SIDE at 5186.60000 | Strength: 96% | UNSWEPT | 0.12% below
-  - SELL-SIDE at 5156.54000 | Strength: 68% | UNSWEPT | 0.70% below
+  - BUY-SIDE at 5186.60000 | Strength: 94% | UNSWEPT | 0.12% above
+  - BUY-SIDE at 5198.01000 | Strength: 89% | UNSWEPT | 0.34% above
+  - SELL-SIDE at 5161.13000 | Strength: 67% | UNSWEPT | 0.37% below
+  - SELL-SIDE at 5156.54000 | Strength: 69% | UNSWEPT | 0.46% below
 
 ## TECHNICAL INDICATORS
 ## Technical Indicators
 
 ### Momentum
-- **RSI(14)**: 57.2 (Neutral)
-- **MACD**: 19.06259 | Signal: 20.98716 | Histogram: -1.92457
+- **RSI(14)**: 33.2 (Neutral)
+- **MACD**: 7.34200 | Signal: 12.48364 | Histogram: -5.14164
   - Bearish (MACD < Signal)
 
 ### Trend
-- **EMA20**: 5186.13168 (Price above)
-- **EMA50**: 5159.10644 (Price above)
-- **ADX**: 22.6 (Weak/No trend)
+- **EMA20**: 5194.97254 (Price below)
+- **EMA50**: 5173.81768 (Price above)
+- **ADX**: 22.2 (Weak/No trend)
 - **Regime**: ranging
 
 ### Volatility
-- **ATR(14)**: 25.53929
+- **ATR(14)**: 21.86786
 - **Volatility**: normal
-- **Bollinger Bands**: Upper=5231.31390 | Middle=5189.51150 | Lower=5147.70910
+- **Bollinger Bands**: Upper=5231.82440 | Middle=5203.87250 | Lower=5175.92060
   - Price near upper band
 
 ### Volume
-- **Current Bar Volume**: 7,795 ticks
-- **20-bar Avg Volume**: 15,244 ticks
-- **Volume Ratio**: 0.51x average 
+- **Current Bar Volume**: 8,522 ticks
+- **20-bar Avg Volume**: 13,678 ticks
+- **Volume Ratio**: 0.62x average 
 - **Volume Profile**: Low
-- **Volume Trend (5 bars)**: decreasing
+- **Volume Trend (5 bars)**: increasing
 
 
 
@@ -646,11 +815,15 @@ You are a systematic Smart Money Concepts (SMC) trader with strict risk discipli
 Direction prediction needs improvement. Review signal quality and regime alignment.
 
 ### Recent Outcomes
-1. SELL @ 5188.73 -> Manual close @ 5188.73 | +0.00 | SL was 0.2% from entry
-2. SELL @ 5191.06 -> Manual close @ 5191.42 | -0.36 | SL was 0.1% from entry
-3. SELL @ 5181.34 -> Manual close @ 5181.70 | -0.36 | SL was 0.3% from entry
-4. SELL @ 5164.92 -> Manual close @ 5165.28 | -0.36 | SL was 0.8% from entry
-5. SELL @ 5137.52 -> Manual close @ 5137.88 | -0.36 | SL was 0.3% from entry
+1. SELL @ 5188.73 -> Manual close @ 5188.73 | +0.00 | SL 0.2% from entry ⚠️ EXTREMELY TIGHT
+2. SELL @ 5191.06 -> Manual close @ 5191.42 | -0.36 | SL 0.1% from entry ⚠️ EXTREMELY TIGHT
+3. SELL @ 5181.34 -> Manual close @ 5181.70 | -0.36 | SL 0.3% from entry ⚠️ VERY TIGHT
+4. SELL @ 5164.92 -> Manual close @ 5165.28 | -0.36 | SL 0.8% from entry (tight)
+5. SELL @ 5137.52 -> Manual close @ 5137.88 | -0.36 | SL 0.3% from entry ⚠️ EXTREMELY TIGHT
+
+⚠️ **CRITICAL PATTERN**: 5/5 recent trades had SL too tight (<1% from entry).
+Your stops are getting hit or positions closed at a loss because SL is too close to entry.
+**ACTION REQUIRED**: Place SL at least 1-1.5x ATR from entry, or beyond the nearest OB/FVG zone. Do NOT use SL within 0.5% of entry.
 
 ### Apply These Lessons
 - Direction was wrong. Review analysis for signal quality. (occurred 6x)
@@ -696,90 +869,17 @@ Remember:
 - Liquidity shows you where price is likely to go
 - Trade with trend, enter at discount (longs) or premium (shorts)
 - Confluence = higher probability
+2026-03-11 18:39:19,385 | 
 ================================================================================
-2026-03-11 07:26:14,452 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
-2026-03-11 07:26:14,453 - INFO - XAUUSD: HOLD (confidence: 0.85)
-2026-03-11 07:27:14,404 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:28:14,427 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:29:14,433 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:30:14,438 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:31:14,459 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:32:14,498 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:33:14,525 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 07:33:31,257 - INFO - Quant automation stopped
-2026-03-11 18:08:08,676 - INFO - ==================================================
-2026-03-11 18:08:08,686 - INFO - QUANT AUTOMATION STARTED
-2026-03-11 18:08:08,686 - INFO - ==================================================
-2026-03-11 18:08:08,687 - INFO - Pipeline: smc_quant
-2026-03-11 18:08:08,688 - INFO - Symbols: XAUUSD
-2026-03-11 18:08:08,688 - INFO - Analysis interval: 900s
-2026-03-11 18:08:08,689 - INFO - Auto-execute: True
-2026-03-11 18:08:08,689 - INFO - ==================================================
-2026-03-11 18:08:08,691 - INFO - Running smc_quant analysis for XAUUSD...
-2026-03-11 18:08:08,692 - INFO - Position management loop started
-2026-03-11 18:08:08,701 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:08:09,623 - INFO - Quant automation stopped
-2026-03-11 18:08:44,501 - INFO - ==================================================
-2026-03-11 18:08:44,501 - INFO - QUANT AUTOMATION STARTED
-2026-03-11 18:08:44,502 - INFO - ==================================================
-2026-03-11 18:08:44,502 - INFO - Pipeline: smc_quant
-2026-03-11 18:08:44,503 - INFO - Symbols: XAUUSD
-2026-03-11 18:08:44,503 - INFO - Analysis interval: 900s
-2026-03-11 18:08:44,504 - INFO - Auto-execute: True
-2026-03-11 18:08:44,504 - INFO - ==================================================
-2026-03-11 18:08:44,506 - INFO - Running smc_quant analysis for XAUUSD...
-2026-03-11 18:08:44,507 - INFO - Position management loop started
-2026-03-11 18:08:44,508 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:08:58,625 - INFO - SMC Quant API response status: completed
-2026-03-11 18:08:58,790 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
-2026-03-11 18:08:58,790 - INFO - XAUUSD: HOLD (confidence: 0.85)
-2026-03-11 18:09:44,522 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:10:44,547 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:11:44,551 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:12:44,562 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:13:44,573 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:14:44,588 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:15:44,625 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:16:44,639 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:17:44,648 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:18:44,657 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:19:44,678 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:20:44,685 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:21:44,688 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:22:44,701 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:23:44,733 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:24:01,761 - INFO - Running smc_quant analysis for XAUUSD...
-2026-03-11 18:24:16,394 - INFO - SMC Quant API response status: completed
-2026-03-11 18:24:16,440 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.4, entry=None, sl=None, tp=None
-2026-03-11 18:24:16,441 - INFO - XAUUSD: HOLD (confidence: 0.40)
-2026-03-11 18:24:44,759 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:25:44,774 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:26:44,791 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:27:44,801 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:28:44,833 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:29:44,860 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:30:44,901 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:31:44,908 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:32:44,907 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:33:44,934 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:34:44,956 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:35:44,961 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:36:44,969 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:37:44,995 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:38:45,002 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:39:17,304 - INFO - Running smc_quant analysis for XAUUSD...
-2026-03-11 18:39:33,980 - INFO - SMC Quant API response status: completed
-2026-03-11 18:39:34,032 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
-2026-03-11 18:39:34,033 - INFO - XAUUSD: HOLD (confidence: 0.85)
-2026-03-11 18:39:45,018 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:40:45,037 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:41:45,060 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:42:45,092 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:43:45,112 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:44:45,143 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:45:45,176 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:46:45,194 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:47:45,220 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:48:45,241 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:49:45,254 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
-2026-03-11 18:50:45,260 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+
+2026-03-11 18:39:33,740 | --- LLM RESPONSE (Structured) [took 14.4s] ---
+2026-03-11 18:39:33,741 | Signal: hold
+2026-03-11 18:39:33,741 | Confidence: 0.85
+2026-03-11 18:39:33,741 | Entry: None | SL: None | TP: None
+2026-03-11 18:39:33,741 | Justification: All order blocks are mitigated, no unmitigated OB or OB+FVG confluence near current price in a ranging market with mixed indicators; awaiting retracement to unfilled bullish FVG at 5141-5163 or liquidity sweep below.
+2026-03-11 18:39:33,742 | Invalidation: Price breaks below 5156.54000 sell-side liquidity without sweeping it first, confirming bearish CHoCH
+2026-03-11 18:39:33,742 | Raw decision dict: {'symbol': 'XAUUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price breaks below 5156.54000 sell-side liquidity without sweeping it first, confirming bearish CHoCH', 'justification': 'All order blocks are mitigated, no unmitigated OB or OB+FVG confluence near current price in a ranging market with mixed indicators; awaiting retracement to unfilled bullish FVG at 5141-5163 or liquidity sweep below.', 'confidence': 0.85, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-11 18:39:33,742 | 
+================================================================================
+
+2026-03-11 18:39:33,743 | Structured output SUCCESS - returning smc_quant_decision with signal=hold
