@@ -5986,30 +5986,9 @@ async def run_quant_analysis(request: QuantAnalysisRequest):
 
         # === STEP 4: Call Quant Analyst LLM ===
         from tradingagents.agents.analysts.quant_analyst import create_quant_analyst
-        from tradingagents.default_config import DEFAULT_CONFIG
-        import os
+        from tradingagents.llm_factory import get_llm
 
-        # Get LLM configuration
-        config = DEFAULT_CONFIG.copy()
-
-        # Create LLM based on provider
-        if config["llm_provider"].lower() in ["xai", "grok"]:
-            from langchain_xai import ChatXAI
-            api_key = os.environ.get("XAI_API_KEY") or ""
-            llm = ChatXAI(model=config["deep_think_llm"], xai_api_key=api_key)
-        elif config["llm_provider"].lower() in ["openai", "ollama", "openrouter"]:
-            from langchain_openai import ChatOpenAI
-            from openai import OpenAI
-            api_key = os.environ.get("OPENAI_API_KEY") or ""
-            sync_client = OpenAI(api_key=api_key, base_url=config["backend_url"])
-            llm = ChatOpenAI(
-                model=config["deep_think_llm"],
-                base_url=config["backend_url"],
-                api_key=api_key,
-                root_client=sync_client
-            )
-        else:
-            raise HTTPException(status_code=500, detail=f"Unsupported LLM provider: {config['llm_provider']}")
+        llm = get_llm(tier="deep")
 
         # Fetch trade memories for this symbol (lessons from past trades)
         from tradingagents.trade_decisions import get_trade_memories
@@ -6307,29 +6286,9 @@ async def run_vp_quant_analysis(request: VPQuantAnalysisRequest):
 """
 
         # === STEP 3: Call VP Quant Analyst LLM ===
-        from tradingagents.default_config import DEFAULT_CONFIG
-        import os
+        from tradingagents.llm_factory import get_llm
 
-        config = DEFAULT_CONFIG.copy()
-
-        # Create LLM
-        if config["llm_provider"].lower() in ["xai", "grok"]:
-            from langchain_xai import ChatXAI
-            api_key = os.environ.get("XAI_API_KEY") or ""
-            llm = ChatXAI(model=config["deep_think_llm"], xai_api_key=api_key)
-        elif config["llm_provider"].lower() in ["openai", "ollama", "openrouter"]:
-            from langchain_openai import ChatOpenAI
-            from openai import OpenAI
-            api_key = os.environ.get("OPENAI_API_KEY") or ""
-            sync_client = OpenAI(api_key=api_key, base_url=config["backend_url"])
-            llm = ChatOpenAI(
-                model=config["deep_think_llm"],
-                base_url=config["backend_url"],
-                api_key=api_key,
-                root_client=sync_client
-            )
-        else:
-            raise HTTPException(status_code=500, detail=f"Unsupported LLM provider: {config['llm_provider']}")
+        llm = get_llm(tier="deep")
 
         # Fetch trade memories for this symbol
         from tradingagents.trade_decisions import get_trade_memories as get_vp_trade_memories
@@ -6641,28 +6600,9 @@ async def run_smc_quant_analysis(request: SmcQuantAnalysisRequest):
 """
 
         # === STEP 4: Call SMC Quant Analyst LLM ===
-        from tradingagents.default_config import DEFAULT_CONFIG
-        import os
+        from tradingagents.llm_factory import get_llm
 
-        config = DEFAULT_CONFIG.copy()
-
-        if config["llm_provider"].lower() in ["xai", "grok"]:
-            from langchain_xai import ChatXAI
-            api_key = os.environ.get("XAI_API_KEY") or ""
-            llm = ChatXAI(model=config["deep_think_llm"], xai_api_key=api_key)
-        elif config["llm_provider"].lower() in ["openai", "ollama", "openrouter"]:
-            from langchain_openai import ChatOpenAI
-            from openai import OpenAI
-            api_key = os.environ.get("OPENAI_API_KEY") or ""
-            sync_client = OpenAI(api_key=api_key, base_url=config["backend_url"])
-            llm = ChatOpenAI(
-                model=config["deep_think_llm"],
-                base_url=config["backend_url"],
-                api_key=api_key,
-                root_client=sync_client
-            )
-        else:
-            raise HTTPException(status_code=500, detail=f"Unsupported LLM provider: {config['llm_provider']}")
+        llm = get_llm(tier="deep")
 
         # Fetch trade memories for this symbol
         from tradingagents.trade_decisions import get_trade_memories
@@ -7328,14 +7268,15 @@ async def run_breakout_quant_analysis(request: BreakoutQuantAnalysisRequest):
 """
 
         # === STEP 6: Get Trade Memories ===
-        trade_memories = ""
-        try:
-            trade_memories = _get_trade_memories_for_symbol(request.symbol)
-        except Exception:
-            pass
+        from tradingagents.trade_decisions import get_trade_memories
+        trade_memories = get_trade_memories(request.symbol)
+        if trade_memories:
+            logger.info(f"[BREAKOUT QUANT API] Injecting trade memories for {request.symbol} ({len(trade_memories)} chars)")
 
         # === STEP 7: Initialize LLM ===
-        llm = _get_trading_llm()
+        from tradingagents.llm_factory import get_llm
+
+        llm = get_llm(tier="deep")
 
         # === STEP 8: Build State and Run Breakout Quant ===
         breakout_state = {

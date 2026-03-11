@@ -278,6 +278,14 @@ class QuantAnalystDecision(BaseSchema):
         None, ge=0, description="Calculated risk-to-reward ratio"
     )
 
+    @field_validator("order_type", mode="before")
+    @classmethod
+    def coerce_null_order_type(cls, v):
+        """LLMs sometimes return the string 'null' instead of JSON null."""
+        if isinstance(v, str) and v.lower() in ("null", "none", ""):
+            return None
+        return v
+
     @field_validator("risk_level", mode="before")
     @classmethod
     def coerce_null_risk_level(cls, v):

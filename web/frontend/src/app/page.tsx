@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { getDashboard, getRiskMetrics, getPortfolioStatus } from "@/lib/api"
+import { getDashboard, getRiskMetrics, getPortfolioStatus, listAutomationInstances, getQuantAutomationHistory, QuantAutomationHistory } from "@/lib/api"
 import { formatCurrency, formatPercent, getProfitColor, formatDate } from "@/lib/utils"
 import {
   TrendingUp,
@@ -17,7 +17,10 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   RefreshCw,
+  Target,
+  Eye,
 } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import Link from "next/link"
 
 export default function Dashboard() {
@@ -26,16 +29,62 @@ export default function Dashboard() {
   const [portfolioStatus, setPortfolioStatus] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
+  // All signals from automation
+  const [allSignals, setAllSignals] = useState<Array<any & { pipeline: string, instance: string }>>([])
+  const [signalFilter, setSignalFilter] = useState<string>("actionable")
+  const [pipelineFilter, setPipelineFilter] = useState<string>("all")
+  const [detailModalOpen, setDetailModalOpen] = useState(false)
+  const [detailResult, setDetailResult] = useState<any>(null)
+
+  const pipelineLabels: Record<string, string> = {
+    quant: "Quant",
+    smc_quant: "SMC Quant",
+    breakout_quant: "Breakout",
+    volume_profile: "Volume Profile",
+    multi_agent: "Multi-Agent",
+  }
+
+  const pipelineColors: Record<string, string> = {
+    quant: "text-purple-500",
+    smc_quant: "text-emerald-500",
+    breakout_quant: "text-orange-500",
+    volume_profile: "text-blue-500",
+    multi_agent: "text-amber-500",
+  }
+
   const fetchData = async () => {
     setLoading(true)
-    const [dashRes, riskRes, portRes] = await Promise.all([
+    const [dashRes, riskRes, portRes, instancesRes] = await Promise.all([
       getDashboard(),
       getRiskMetrics(),
       getPortfolioStatus(),
+      listAutomationInstances(),
     ])
     if (dashRes.data) setDashboard(dashRes.data)
     if (riskRes.data) setRiskMetrics(riskRes.data)
     if (portRes.data) setPortfolioStatus(portRes.data)
+
+    // Fetch histories for all instances
+    if (instancesRes.data?.instances) {
+      const instanceNames = Object.keys(instancesRes.data.instances)
+      const historyResults = await Promise.all(
+        instanceNames.map(name => getQuantAutomationHistory(name))
+      )
+      const signals: Array<any> = []
+      historyResults.forEach((res, i) => {
+        const name = instanceNames[i]
+        const pipeline = instancesRes.data!.instances[name]?.config?.pipeline || "quant"
+        if (res.data?.analysis_results) {
+          res.data.analysis_results.forEach((r: any) => {
+            signals.push({ ...r, pipeline, instance: name })
+          })
+        }
+      })
+      // Sort by timestamp descending
+      signals.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      setAllSignals(signals)
+    }
+
     setLoading(false)
   }
 
@@ -296,6 +345,193 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* All Automation Signals */}
+      {allSignals.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Recent Signals
+                </CardTitle>
+                <CardDescription>{allSignals.length} total signals from all automations</CardDescription>
+              </div>
+              <div className="flex items-center gap-3">
+                {/* Pipeline filter */}
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-muted-foreground mr-1">Pipeline:</span>
+                  {["all", ...Object.keys(pipelineLabels).filter(p => allSignals.some(s => s.pipeline === p))].map((p) => (
+                    <Button
+                      key={p}
+                      variant={pipelineFilter === p ? "default" : "ghost"}
+                      size="sm"
+                      className={`h-6 px-2 text-xs ${pipelineFilter !== p && p !== "all" ? (pipelineColors[p] || "") : ""}`}
+                      onClick={() => setPipelineFilter(p)}
+                    >
+                      {p === "all" ? "All" : pipelineLabels[p] || p}
+                    </Button>
+                  ))}
+                </div>
+                {/* Signal filter */}
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-muted-foreground mr-1">Signal:</span>
+                  {["actionable", "all", "BUY", "SELL", "HOLD"].map((filter) => (
+                    <Button
+                      key={filter}
+                      variant={signalFilter === filter ? "default" : "ghost"}
+                      size="sm"
+                      className={`h-6 px-2 text-xs ${
+                        signalFilter === filter
+                          ? ""
+                          : filter === "BUY"
+                          ? "text-green-500 hover:text-green-400"
+                          : filter === "SELL"
+                          ? "text-red-500 hover:text-red-400"
+                          : filter === "HOLD"
+                          ? "text-gray-500 hover:text-gray-400"
+                          : ""
+                      }`}
+                      onClick={() => setSignalFilter(filter)}
+                    >
+                      {filter === "actionable" ? "Actionable" : filter === "all" ? "All" : filter}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[400px]">
+              <div className="space-y-2">
+                {allSignals
+                  .filter((r) => {
+                    const sf = signalFilter === "all" ? true : signalFilter === "actionable" ? r.signal !== "HOLD" : r.signal === signalFilter
+                    const pf = pipelineFilter === "all" ? true : r.pipeline === pipelineFilter
+                    return sf && pf
+                  })
+                  .map((result, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/50">
+                      <div className="flex items-center gap-3">
+                        {result.signal === "BUY" ? (
+                          <TrendingUp className="h-4 w-4 text-green-500" />
+                        ) : result.signal === "SELL" ? (
+                          <TrendingDown className="h-4 w-4 text-red-500" />
+                        ) : (
+                          <Clock className="h-4 w-4 text-gray-500" />
+                        )}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium">{result.symbol}</p>
+                            <Badge variant={result.signal === "BUY" ? "buy" : result.signal === "SELL" ? "sell" : "secondary"} className="text-xs">
+                              {result.signal}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {(result.confidence * 100).toFixed(0)}%
+                            </span>
+                          </div>
+                          <p className={`text-xs ${pipelineColors[result.pipeline] || "text-muted-foreground"}`}>
+                            {pipelineLabels[result.pipeline] || result.pipeline}
+                            <span className="text-muted-foreground ml-1">• {result.instance}</span>
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right flex items-center gap-2">
+                        <div>
+                          {result.entry_price && (
+                            <p className="text-xs text-muted-foreground">
+                              Entry: {result.entry_price?.toFixed(2)}
+                              {result.stop_loss && <span className="text-red-500 ml-2">SL: {result.stop_loss?.toFixed(2)}</span>}
+                              {result.take_profit && <span className="text-green-500 ml-2">TP: {result.take_profit?.toFixed(2)}</span>}
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            {formatDate(result.timestamp)}
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                          onClick={() => {
+                            setDetailResult(result)
+                            setDetailModalOpen(true)
+                          }}
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Signal Detail Modal */}
+      <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {detailResult?.symbol}
+              <Badge variant={detailResult?.signal === "BUY" ? "buy" : detailResult?.signal === "SELL" ? "sell" : "secondary"}>
+                {detailResult?.signal}
+              </Badge>
+              <span className="text-sm font-normal text-muted-foreground">
+                {((detailResult?.confidence || 0) * 100).toFixed(0)}% confidence
+              </span>
+            </DialogTitle>
+          </DialogHeader>
+          {detailResult && (
+            <div className="space-y-4">
+              {/* Price levels */}
+              {(detailResult.entry_price || detailResult.stop_loss || detailResult.take_profit) && (
+                <div className="grid grid-cols-3 gap-3">
+                  {detailResult.entry_price && (
+                    <div className="text-center p-2 rounded bg-muted/50">
+                      <p className="text-xs text-muted-foreground">Entry</p>
+                      <p className="font-medium text-blue-500">{detailResult.entry_price?.toFixed(2)}</p>
+                    </div>
+                  )}
+                  {detailResult.stop_loss && (
+                    <div className="text-center p-2 rounded bg-muted/50">
+                      <p className="text-xs text-muted-foreground">Stop Loss</p>
+                      <p className="font-medium text-red-500">{detailResult.stop_loss?.toFixed(2)}</p>
+                    </div>
+                  )}
+                  {detailResult.take_profit && (
+                    <div className="text-center p-2 rounded bg-muted/50">
+                      <p className="text-xs text-muted-foreground">Take Profit</p>
+                      <p className="font-medium text-green-500">{detailResult.take_profit?.toFixed(2)}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Analysis */}
+              {detailResult.rationale && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Analysis</p>
+                  <ScrollArea className="h-[200px]">
+                    <p className="text-sm whitespace-pre-wrap">{detailResult.rationale}</p>
+                  </ScrollArea>
+                </div>
+              )}
+
+              {/* Meta */}
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span className={pipelineColors[detailResult.pipeline] || ""}>
+                  {pipelineLabels[detailResult.pipeline] || detailResult.pipeline}
+                </span>
+                <span>{formatDate(detailResult.timestamp)}</span>
+                {detailResult.duration_seconds && <span>{detailResult.duration_seconds.toFixed(0)}s</span>}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

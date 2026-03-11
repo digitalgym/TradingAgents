@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev-server-watch": "cd ../.. && python -m uvicorn web.backend.main:app --reload",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

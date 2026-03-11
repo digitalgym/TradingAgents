@@ -7,11 +7,6 @@ from datetime import date, datetime, timedelta
 from typing import Dict, Any, Tuple, List, Optional
 import numpy as np
 
-from langchain_openai import ChatOpenAI
-from langchain_xai import ChatXAI
-from langchain_anthropic import ChatAnthropic
-from langchain_google_genai import ChatGoogleGenerativeAI
-
 from langgraph.prebuilt import ToolNode
 
 from tradingagents.agents import *
@@ -87,55 +82,9 @@ class TradingAgentsGraph:
             exist_ok=True,
         )
 
-        # Initialize LLMs
-        if self.config["llm_provider"].lower() in ["xai", "grok"]:
-            # Use dedicated ChatXAI for xAI/Grok models
-            api_key = os.environ.get("XAI_API_KEY") or ""
-            if not api_key:
-                raise ValueError("XAI_API_KEY not found for xAI provider")
-
-            self.deep_thinking_llm = ChatXAI(
-                model=self.config["deep_think_llm"],
-                xai_api_key=api_key
-            )
-            self.quick_thinking_llm = ChatXAI(
-                model=self.config["quick_think_llm"],
-                xai_api_key=api_key
-            )
-        elif self.config["llm_provider"].lower() in ["openai", "ollama", "openrouter"]:
-            # Use ChatOpenAI for OpenAI-compatible providers
-            api_key = os.environ.get("OPENAI_API_KEY") or ""
-            if not api_key:
-                raise ValueError(f"OPENAI_API_KEY not found for provider {self.config['llm_provider']}")
-
-            # Create OpenAI client explicitly for sync operations
-            from openai import OpenAI
-            sync_client = OpenAI(
-                api_key=api_key,
-                base_url=self.config["backend_url"]
-            )
-
-            # Pass both api_key as string AND root_client for sync support
-            self.deep_thinking_llm = ChatOpenAI(
-                model=self.config["deep_think_llm"],
-                base_url=self.config["backend_url"],
-                api_key=api_key,
-                root_client=sync_client
-            )
-            self.quick_thinking_llm = ChatOpenAI(
-                model=self.config["quick_think_llm"],
-                base_url=self.config["backend_url"],
-                api_key=api_key,
-                root_client=sync_client
-            )
-        elif self.config["llm_provider"].lower() == "anthropic":
-            self.deep_thinking_llm = ChatAnthropic(model=self.config["deep_think_llm"], base_url=self.config["backend_url"])
-            self.quick_thinking_llm = ChatAnthropic(model=self.config["quick_think_llm"], base_url=self.config["backend_url"])
-        elif self.config["llm_provider"].lower() == "google":
-            self.deep_thinking_llm = ChatGoogleGenerativeAI(model=self.config["deep_think_llm"])
-            self.quick_thinking_llm = ChatGoogleGenerativeAI(model=self.config["quick_think_llm"])
-        else:
-            raise ValueError(f"Unsupported LLM provider: {self.config['llm_provider']}")
+        # Initialize LLMs (singleton - reused across instances)
+        from tradingagents.llm_factory import get_llm_pair
+        self.deep_thinking_llm, self.quick_thinking_llm = get_llm_pair(self.config)
         
         # Initialize memories (requires OpenAI API for embeddings)
         if self.config.get("use_memory", True):

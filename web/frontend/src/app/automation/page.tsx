@@ -212,6 +212,9 @@ export default function AutomationPage() {
   const [renamingInstance, setRenamingInstance] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
 
+  // Recent results filter (per instance)
+  const [resultSignalFilters, setResultSignalFilters] = useState<Record<string, string>>({}) // "all" | "actionable" | "BUY" | "SELL" | "HOLD"
+
   // Retry failed trade state
   const [retryWizardOpen, setRetryWizardOpen] = useState(false)
   const [retryTradeData, setRetryTradeData] = useState<any>(null)
@@ -1618,14 +1621,44 @@ export default function AutomationPage() {
 
                         {/* Recent Results */}
                         <div className="space-y-4">
-                          <h3 className="text-sm font-semibold flex items-center gap-2">
-                            <Target className="h-4 w-4" />
-                            Recent Results
-                          </h3>
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-sm font-semibold flex items-center gap-2">
+                              <Target className="h-4 w-4" />
+                              Recent Results
+                            </h3>
+                            <div className="flex items-center gap-1">
+                              {["actionable", "all", "BUY", "SELL", "HOLD"].map((filter) => (
+                                <Button
+                                  key={filter}
+                                  variant={(resultSignalFilters[name] || "actionable") === filter ? "default" : "ghost"}
+                                  size="sm"
+                                  className={`h-6 px-2 text-xs ${
+                                    (resultSignalFilters[name] || "actionable") === filter
+                                      ? ""
+                                      : filter === "BUY"
+                                      ? "text-green-500 hover:text-green-400"
+                                      : filter === "SELL"
+                                      ? "text-red-500 hover:text-red-400"
+                                      : filter === "HOLD"
+                                      ? "text-gray-500 hover:text-gray-400"
+                                      : ""
+                                  }`}
+                                  onClick={() => setResultSignalFilters(prev => ({ ...prev, [name]: filter }))}
+                                >
+                                  {filter === "actionable" ? "Actionable" : filter === "all" ? "All" : filter}
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
                           {inst.history?.analysis_results && inst.history.analysis_results.length > 0 ? (
                             <ScrollArea className="h-[350px]">
                               <div className="space-y-2">
-                                {inst.history.analysis_results.slice().reverse().map((result, idx) => (
+                                {inst.history.analysis_results.slice().reverse()
+                                  .filter((result) => {
+                                    const f = resultSignalFilters[name] || "actionable"
+                                    return f === "all" ? true : f === "actionable" ? result.signal !== "HOLD" : result.signal === f
+                                  })
+                                  .map((result, idx) => (
                                   <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/50">
                                     <div className="flex items-center gap-2">
                                       {result.signal === "BUY" ? (
