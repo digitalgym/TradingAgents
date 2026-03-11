@@ -1,8 +1,8 @@
 {
   "last_analysis_time": {
-    "XAUUSD": "2026-03-11T07:25:58.659919"
+    "XAUUSD": "2026-03-11T18:39:17.304815"
   },
-  "last_updated": "2026-03-11T07:33:15.234631",
+  "last_updated": "2026-03-11T18:41:34.394943",
   "status": "running",
   "analysis_results": [
     {
@@ -1174,6 +1174,51 @@
       "execution_ticket": null,
       "execution_error": null,
       "duration_seconds": 15.79122257232666
+    },
+    {
+      "timestamp": "2026-03-11T18:08:58.790392",
+      "symbol": "XAUUSD",
+      "pipeline": "smc_quant",
+      "signal": "HOLD",
+      "confidence": 0.85,
+      "entry_price": null,
+      "stop_loss": null,
+      "take_profit": null,
+      "rationale": "No unmitigated OBs or OB+FVG confluence near current price; all OBs mitigated, price near unswept buy-side liquidity in ranging market with mixed indicators (bullish bias but bearish MACD and low volume), violating high-probability entry rules.\n\n**Invalidation**: Formation of unmitigated bullish OB or unfilled FVG confluence below price with bullish BOS confirmation",
+      "executed": false,
+      "execution_ticket": null,
+      "execution_error": null,
+      "duration_seconds": 14.28373670578003
+    },
+    {
+      "timestamp": "2026-03-11T18:24:16.441038",
+      "symbol": "XAUUSD",
+      "pipeline": "smc_quant",
+      "signal": "HOLD",
+      "confidence": 0.4,
+      "entry_price": null,
+      "stop_loss": null,
+      "take_profit": null,
+      "rationale": "All OBs mitigated, no unmitigated OB/FVG confluence near price, ranging regime with mixed indicators (bullish bias but bearish MACD, neutral RSI, low volume), price near upper BB in potential premium zone without clear entry setup or recent liquidity sweep.\n\n**Invalidation**: New bullish BOS above 5198 or bearish CHoCH below 5186",
+      "executed": false,
+      "execution_ticket": null,
+      "execution_error": null,
+      "duration_seconds": 14.678506135940552
+    },
+    {
+      "timestamp": "2026-03-11T18:39:34.033687",
+      "symbol": "XAUUSD",
+      "pipeline": "smc_quant",
+      "signal": "HOLD",
+      "confidence": 0.85,
+      "entry_price": null,
+      "stop_loss": null,
+      "take_profit": null,
+      "rationale": "All order blocks are mitigated, no unmitigated OB or OB+FVG confluence near current price in a ranging market with mixed indicators; awaiting retracement to unfilled bullish FVG at 5141-5163 or liquidity sweep below.\n\n**Invalidation**: Price breaks below 5156.54000 sell-side liquidity without sweeping it first, confirming bearish CHoCH",
+      "executed": false,
+      "execution_ticket": null,
+      "execution_error": null,
+      "duration_seconds": 16.7278790473938
     }
   ],
   "position_results": []
