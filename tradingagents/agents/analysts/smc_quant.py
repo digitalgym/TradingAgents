@@ -243,7 +243,11 @@ def _build_smc_data_context(
 
     # SMC Analysis
     if smc_context:
-        sections.append(f"## SMART MONEY CONCEPTS ANALYSIS\n{smc_context}")
+        # smc_context from _format_smc_analysis_for_prompt already includes heading
+        if smc_context.startswith("## SMART MONEY CONCEPTS ANALYSIS"):
+            sections.append(smc_context)
+        else:
+            sections.append(f"## SMART MONEY CONCEPTS ANALYSIS\n{smc_context}")
     elif smc_analysis:
         # Generate context from SMC analysis dict
         sections.append(_format_smc_analysis_for_prompt(smc_analysis, current_price))
@@ -281,21 +285,29 @@ def _format_smc_analysis_for_prompt(
         else:
             lines.append(f"**Premium/Discount**: EQUILIBRIUM ({zone_pct:.0f}%)")
 
-    # Structure (BOS/CHoCH)
+    # Structure (BOS/CHoCH) — use all breaks for full context, highlight recent ones
     structure = analysis.get("structure", {})
+    all_bos = structure.get("all_bos", structure.get("recent_bos", []))
+    all_choc = structure.get("all_choc", structure.get("recent_choc", []))
     recent_bos = structure.get("recent_bos", [])
     recent_choc = structure.get("recent_choc", [])
 
-    if recent_bos or recent_choc:
-        lines.append("\n**Market Structure**:")
-        for bos in recent_bos[-3:]:  # Last 3
+    if all_bos or all_choc:
+        lines.append("\n**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):")
+        recent_bos_prices = {safe_get(b, 'price', 0) for b in recent_bos}
+        recent_choc_prices = {safe_get(c, 'price', 0) for c in recent_choc}
+        for bos in all_bos[-5:]:
             bos_type = safe_get(bos, 'type', 'unknown')
             bos_price = safe_get(bos, 'price', 0)
-            lines.append(f"  - BOS {bos_type.upper()} at {bos_price:.5f}")
-        for choc in recent_choc[-2:]:  # Last 2
+            recency = " [RECENT]" if bos_price in recent_bos_prices else ""
+            lines.append(f"  - BOS {bos_type.upper()} at {bos_price:.2f}{recency}")
+        for choc in all_choc[-4:]:
             choc_type = safe_get(choc, 'type', 'unknown')
             choc_price = safe_get(choc, 'price', 0)
-            lines.append(f"  - CHoCH {choc_type.upper()} at {choc_price:.5f} (potential reversal)")
+            recency = " [RECENT]" if choc_price in recent_choc_prices else ""
+            lines.append(f"  - CHoCH {choc_type.upper()} at {choc_price:.2f} (potential reversal){recency}")
+        if recent_choc:
+            lines.append("    >> Recent CHoCH = possible trend reversal in progress")
 
     # Order Blocks
     obs = analysis.get("order_blocks", {})
@@ -366,6 +378,42 @@ def _format_smc_analysis_for_prompt(
             lines.append(
                 f"  - {lz_type.upper()} at {lz_price:.5f} | Strength: {lz_strength:.0f}% | {status} | {abs(dist):.2f}% {direction}"
             )
+
+    # Equal Levels (Proven Support/Resistance)
+    equal_levels = analysis.get("equal_levels", {})
+    eq_highs = equal_levels.get("equal_highs", []) if isinstance(equal_levels, dict) else []
+    eq_lows = equal_levels.get("equal_lows", []) if isinstance(equal_levels, dict) else []
+
+    if eq_highs or eq_lows:
+        lines.append("\n**Equal Levels** (proven support/resistance - liquidity magnets):")
+        for eq in eq_highs[:4]:
+            eq_price = safe_get(eq, 'price', 0)
+            eq_touches = safe_get(eq, 'touches', 2)
+            eq_swept = safe_get(eq, 'swept', False)
+            status = "SWEPT" if eq_swept else "UNSWEPT"
+            strength = "PROVEN" if eq_touches >= 3 else "FORMING"
+            dist = ((eq_price - cp) / cp * 100) if cp else 0
+            lines.append(
+                f"  - EQUAL HIGHS (Resistance) at {eq_price:.5f} | Touches: {eq_touches} | {strength} | {status} | {abs(dist):.2f}% above"
+            )
+            if eq_touches >= 3 and not eq_swept:
+                lines.append(
+                    f"    >>{eq_touches} retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target."
+                )
+        for eq in eq_lows[:4]:
+            eq_price = safe_get(eq, 'price', 0)
+            eq_touches = safe_get(eq, 'touches', 2)
+            eq_swept = safe_get(eq, 'swept', False)
+            status = "SWEPT" if eq_swept else "UNSWEPT"
+            strength = "PROVEN" if eq_touches >= 3 else "FORMING"
+            dist = ((cp - eq_price) / cp * 100) if cp else 0
+            lines.append(
+                f"  - EQUAL LOWS (Support) at {eq_price:.5f} | Touches: {eq_touches} | {strength} | {status} | {abs(dist):.2f}% below"
+            )
+            if eq_touches >= 3 and not eq_swept:
+                lines.append(
+                    f"    >>{eq_touches} retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target."
+                )
 
     # OTE Zone
     ote = analysis.get("ote_zone")
@@ -438,13 +486,13 @@ and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placem
 - Price retraces to unmitigated OB
 - Enter at OB in trend direction
 - SL: Beyond OB
-- TP: Next liquidity pool or opposing OB
+- TP: Next liquidity pool, opposing OB, or proven equal level (3+ retests)
 
 **Setup 2: OB + FVG Confluence**
 - Unmitigated OB overlaps with unfilled FVG
 - Highest probability setup
 - Enter at the overlap zone
-- Tighter SL possible due to confluence
+- SL: Beyond the full OB/FVG zone plus 1x ATR buffer (confluence improves win rate, not SL placement)
 
 **Setup 3: Liquidity Sweep Reversal**
 - Price sweeps liquidity (EQH/EQL)
@@ -474,6 +522,7 @@ and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placem
 - Place stops beyond the OB/FVG zone that forms your entry basis
 - **MINIMUM SL DISTANCE**: Stop loss must be at least 1x ATR from entry. SL within 0.5% of entry is TOO TIGHT and will get stopped out by normal price noise. For gold (XAUUSD), minimum SL should be $15-30+ from entry.
 - **MINIMUM TP DISTANCE**: Take profit should be at least 1.5x the SL distance (R:R >= 1.5:1). TP within 0.3% of entry is TOO CLOSE.
+- **TP TARGET PRIORITY**: In strong trends, prefer proven equal levels (3+ retests) and strong opposing OBs over the nearest zone. Equal levels with many retests are liquidity magnets — price is drawn to them.
 - If you cannot identify a valid stop loss placement with adequate distance, output "hold"
 
 {data_context}
@@ -487,7 +536,7 @@ Think step-by-step:
 2. Are we in premium or discount? (favor shorts in premium, longs in discount)
 3. Are there unmitigated OBs or unfilled FVGs near current price?
 4. Is there OB+FVG confluence?
-5. Where are the liquidity targets? (EQH/EQL for TP)
+5. Where are the liquidity targets? (EQH/EQL for TP — proven levels with 3+ retests are strongest)
 6. Has there been a recent liquidity sweep that signals reversal?
 7. Where should stop loss be placed? (beyond OB/FVG)
 8. What's the risk:reward ratio? (must be >1.5:1)
@@ -507,6 +556,15 @@ Think step-by-step:
   - Price is NOT YET at the zone (waiting for retracement)
   - You want better entry at the OB/FVG level
   - Zone is nearby but price hasn't reached it yet
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+For buy/sell signals, suggest a trailing stop distance as an ATR multiplier based on current volatility:
+- **Low volatility** (tight ranges, small ATR): 1.5-2.0x ATR — tighter trail locks profits
+- **Normal volatility**: 2.0-3.0x ATR — balanced between protection and breathing room
+- **High volatility** (wide swings, large ATR, news events): 3.0-5.0x ATR — wide trail avoids noise
+- **XAUUSD/Gold**: Typically 2.5-4.0x ATR (gold is volatile, tight trails get stopped out)
+- **Forex majors**: Typically 1.5-2.5x ATR
+- If unsure, default to 2.5x ATR
 
 Remember:
 - Smart money leaves footprints (OBs, FVGs)

@@ -1021,6 +1021,7 @@ def get_open_positions(symbol: str = None) -> list:
             "type": "BUY" if p.type == 0 else "SELL",
             "volume": p.volume,
             "price_open": p.price_open,
+            "price_current": p.price_current,
             "sl": p.sl,
             "tp": p.tp,
             "profit": p.profit,

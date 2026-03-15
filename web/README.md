@@ -79,37 +79,45 @@ web/
 ## API Endpoints
 
 ### Status & Dashboard
+
 - `GET /api/status` - System status
 - `GET /api/dashboard` - Dashboard data
 
 ### Positions
+
 - `GET /api/positions` - List open positions
 - `GET /api/orders` - List pending orders
 - `POST /api/positions/modify` - Modify position SL/TP
 - `POST /api/positions/close` - Close a position
 
 ### Decisions
+
 - `GET /api/decisions` - List decisions
 - `GET /api/decisions/{id}` - Get decision details
 
 ### Analysis
+
 - `POST /api/analysis/run` - Start analysis
 - `GET /api/analysis/status/{task_id}` - Get analysis status
 
 ### Risk
+
 - `GET /api/risk/metrics` - Risk metrics
 - `GET /api/risk/guardrails` - Risk guardrails status
 - `POST /api/risk/position-size` - Calculate position size
 
 ### Learning
+
 - `GET /api/learning/status` - Learning system status
 - `GET /api/learning/patterns` - Identified patterns
 
 ### Memory
+
 - `GET /api/memory/stats` - Memory statistics
 - `POST /api/memory/query` - Query memory
 
 ### Portfolio Automation
+
 - `GET /api/portfolio/status` - Automation status
 - `GET /api/portfolio/config` - Configuration
 - `POST /api/portfolio/start` - Start automation
@@ -117,9 +125,11 @@ web/
 - `POST /api/portfolio/trigger` - Trigger daily cycle
 
 ### SMC Analysis
+
 - `GET /api/smc/analysis` - Run SMC analysis
 
 ### Market Regime
+
 - `GET /api/regime/{symbol}` - Detect market regime
 
 ## WebSocket
@@ -136,6 +146,7 @@ Connect to `ws://localhost:8000/ws` for real-time updates:
 ## Tech Stack
 
 ### Frontend
+
 - **Next.js 14** - React framework
 - **shadcn/ui** - UI components
 - **Tailwind CSS** - Styling
@@ -143,6 +154,7 @@ Connect to `ws://localhost:8000/ws` for real-time updates:
 - **Lucide React** - Icons
 
 ### Backend
+
 - **FastAPI** - Web framework
 - **Uvicorn** - ASGI server
 - **Pydantic** - Data validation
@@ -170,5 +182,6 @@ uvicorn main:app --reload  # Start with hot reload
 The frontend proxies API requests to the backend via Next.js rewrites (configured in `next.config.mjs`).
 
 To change the backend URL, modify:
+
 - `web/frontend/next.config.mjs` - API proxy
 - `web/frontend/src/lib/api.ts` - API base URL

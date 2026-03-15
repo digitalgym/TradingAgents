@@ -22,6 +22,8 @@ import {
   closePosition,
   runSmcAnalysis,
   getPositions,
+  runAssumptionReview,
+  type AssumptionReviewReport,
 } from "@/lib/api"
 import {
   Dialog,
@@ -44,6 +46,10 @@ import {
   Activity,
   Layers,
   X,
+  ShieldCheck,
+  CheckCircle,
+  XCircle,
+  Info,
 } from "lucide-react"
 import {
   BarChart,
@@ -86,6 +92,11 @@ export default function PositionReviewPage() {
   // Close position state
   const [closeDialogOpen, setCloseDialogOpen] = useState(false)
   const [closing, setClosing] = useState(false)
+
+  // Assumption review state
+  const [assumptionReview, setAssumptionReview] = useState<AssumptionReviewReport | null>(null)
+  const [assumptionLoading, setAssumptionLoading] = useState(false)
+  const [assumptionError, setAssumptionError] = useState<string | null>(null)
 
   const TIMEFRAMES = ["M15", "M30", "H1", "H4", "D1"]
 
@@ -226,6 +237,41 @@ export default function PositionReviewPage() {
     if (atrData?.atr_analysis?.trailing_sl) {
       setNewSl(atrData.atr_analysis.trailing_sl.toString())
     }
+  }
+
+  const fetchAssumptionReview = async (useLlm: boolean = true) => {
+    if (!position) return
+    setAssumptionLoading(true)
+    setAssumptionError(null)
+    setAssumptionReview(null)
+
+    // Try to find the automation instance that owns this position via the source field
+    // We pass position.source (from the positions list) as the instance name
+    const source = position.source || position.comment || ""
+
+    if (!source) {
+      setAssumptionError("No automation source found for this position. Assumption review requires a trade decision record.")
+      setAssumptionLoading(false)
+      return
+    }
+
+    const { data, error } = await runAssumptionReview(source, useLlm)
+    if (error) {
+      setAssumptionError(error)
+      setAssumptionLoading(false)
+      return
+    }
+
+    // Find the report for this specific ticket
+    const report = data?.reports?.find((r) => r.ticket === ticket)
+    if (report) {
+      setAssumptionReview(report)
+    } else if (data?.reports?.length === 0) {
+      setAssumptionError("No matching trade decision found for this position. It may have been opened manually without a decision record.")
+    } else {
+      setAssumptionError("Position not found in assumption review results.")
+    }
+    setAssumptionLoading(false)
   }
 
   useEffect(() => {
@@ -509,6 +555,198 @@ export default function PositionReviewPage() {
         atrValue={atrData?.atr_analysis?.atr}
         digits={5}
       />
+
+      {/* Assumption Review - Manual trigger */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <ShieldCheck className="h-4 w-4" />
+                Assumption Review
+                <HelpTooltip content="Checks whether the original trade assumptions still hold. Compares entry conditions against current SMC structure: has the bias shifted? Is the SL still protected? Are new zones blocking TP? Optionally asks an LLM for a nuanced interpretation." />
+              </CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Check if original trade thesis still holds
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchAssumptionReview(false)}
+                disabled={assumptionLoading}
+              >
+                {assumptionLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <ShieldCheck className="mr-2 h-4 w-4" />
+                )}
+                Quick Check
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => fetchAssumptionReview(true)}
+                disabled={assumptionLoading}
+              >
+                {assumptionLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <ShieldCheck className="mr-2 h-4 w-4" />
+                )}
+                Review with AI
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {assumptionError && (
+            <div className="flex items-start gap-2 text-sm text-yellow-500 mb-4">
+              <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+              <span>{assumptionError}</span>
+            </div>
+          )}
+
+          {assumptionLoading && (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground mr-2" />
+              <span className="text-sm text-muted-foreground">Analyzing market structure against trade assumptions...</span>
+            </div>
+          )}
+
+          {!assumptionLoading && !assumptionReview && !assumptionError && (
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              Click &quot;Quick Check&quot; for a fast SMC structure review, or &quot;Review with AI&quot; for a detailed LLM assessment.
+            </p>
+          )}
+
+          {assumptionReview && (
+            <div className="space-y-4">
+              {/* Overall recommendation */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Recommendation:</span>
+                  <Badge
+                    variant={
+                      assumptionReview.recommended_action === "close" ? "destructive" :
+                      assumptionReview.recommended_action === "hold" ? "secondary" :
+                      "outline"
+                    }
+                    className={
+                      assumptionReview.recommended_action === "hold" ? "border-green-500/50 text-green-500" :
+                      assumptionReview.recommended_action.startsWith("adjust") ? "border-yellow-500/50 text-yellow-500" :
+                      ""
+                    }
+                  >
+                    {assumptionReview.recommended_action.toUpperCase().replace("_", " ")}
+                  </Badge>
+                </div>
+                <span className={`text-sm font-medium ${getProfitColor(assumptionReview.pnl_pct)}`}>
+                  P&L: {assumptionReview.pnl_pct >= 0 ? "+" : ""}{assumptionReview.pnl_pct.toFixed(2)}%
+                </span>
+              </div>
+
+              {/* Findings */}
+              {assumptionReview.findings.length > 0 && (
+                <div className="space-y-2">
+                  {assumptionReview.findings.map((finding, i) => (
+                    <div
+                      key={i}
+                      className={`flex items-start gap-2 p-3 rounded-lg text-sm ${
+                        finding.severity === "critical"
+                          ? "bg-red-500/10 border border-red-500/20"
+                          : finding.severity === "warning"
+                          ? "bg-yellow-500/10 border border-yellow-500/20"
+                          : "bg-blue-500/10 border border-blue-500/20"
+                      }`}
+                    >
+                      {finding.severity === "critical" ? (
+                        <XCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
+                      ) : finding.severity === "warning" ? (
+                        <AlertTriangle className="h-4 w-4 text-yellow-500 flex-shrink-0 mt-0.5" />
+                      ) : (
+                        <Info className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                      )}
+                      <div className="flex-1">
+                        <span>{finding.message}</span>
+                        {finding.suggested_value && finding.suggested_action && (
+                          <div className="mt-1">
+                            <Badge variant="outline" className="text-xs">
+                              Suggested: {finding.suggested_action === "adjust_sl" ? "SL" : finding.suggested_action === "adjust_tp" ? "TP" : finding.suggested_action} → {finding.suggested_value.toFixed(5)}
+                            </Badge>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {assumptionReview.findings.length === 0 && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-sm">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span>All original assumptions still hold. No structural issues detected.</span>
+                </div>
+              )}
+
+              {/* Suggested SL/TP actions */}
+              {(assumptionReview.suggested_sl || assumptionReview.suggested_tp) && (
+                <div className="flex flex-wrap gap-2 pt-2 border-t">
+                  {assumptionReview.suggested_sl && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-yellow-500/50 hover:bg-yellow-500/10"
+                      onClick={() => {
+                        setNewSl(assumptionReview.suggested_sl!.toString())
+                      }}
+                    >
+                      <Target className="h-3 w-3 mr-1" />
+                      Apply SL: {assumptionReview.suggested_sl.toFixed(5)}
+                    </Button>
+                  )}
+                  {assumptionReview.suggested_tp && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-blue-500/50 hover:bg-blue-500/10"
+                      onClick={() => {
+                        setNewTp(assumptionReview.suggested_tp!.toString())
+                      }}
+                    >
+                      <Target className="h-3 w-3 mr-1" />
+                      Apply TP: {assumptionReview.suggested_tp.toFixed(5)}
+                    </Button>
+                  )}
+                  {assumptionReview.recommended_action === "close" && (
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => setCloseDialogOpen(true)}
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Close Position
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {/* LLM Assessment */}
+              {assumptionReview.llm_assessment && (
+                <div className="mt-3 p-4 rounded-lg bg-muted/50 border">
+                  <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
+                    AI Assessment
+                    <HelpTooltip content="LLM interpretation of the rule-based findings. Provides nuanced analysis considering the original trade rationale, current SMC structure, and overall market context." iconClassName="h-3 w-3" />
+                  </h4>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                    {assumptionReview.llm_assessment}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* ATR Volatility - Auto-loaded */}
       <Card>

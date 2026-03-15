@@ -1,0 +1,503 @@
+2026-03-14 07:21:57,419 - INFO - ==================================================
+2026-03-14 07:21:57,420 - INFO - QUANT AUTOMATION STARTED
+2026-03-14 07:21:57,420 - INFO - ==================================================
+2026-03-14 07:21:57,421 - INFO - Pipeline: rule_based
+2026-03-14 07:21:57,422 - INFO - Symbols: BTCUSD
+2026-03-14 07:21:57,422 - INFO - Analysis interval: 9s
+2026-03-14 07:21:57,422 - INFO - Auto-execute: True
+2026-03-14 07:21:57,423 - INFO - ==================================================
+2026-03-14 07:21:57,425 - INFO - Running rule_based analysis for BTCUSD...
+2026-03-14 07:21:58,164 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:21:58,165 - INFO - Position management loop started
+2026-03-14 07:21:58,183 - INFO - Position check: 0 total open, 0 owned by rule_based (BTCUSD)
+2026-03-14 07:21:59,424 - INFO - Rule-Based API response: status=completed [total=2.0s]
+2026-03-14 07:21:59,425 - INFO - Rule-Based decision for BTCUSD: signal=HOLD, confidence=0.0, entry=None, sl=None, tp=None
+2026-03-14 07:21:59,425 - INFO - BTCUSD: HOLD (confidence: 0.00)
+2026-03-14 07:22:08,427 - INFO - Running rule_based analysis for BTCUSD...
+2026-03-14 07:22:08,427 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:22:08,875 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:22:08,875 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71375.155, sl=70372.58, tp=71774.21
+2026-03-14 07:22:08,876 - INFO - BTCUSD: BUY (confidence: 0.65)
+2026-03-14 07:22:08,877 - INFO - --- TRADE EXECUTION CHECK for BTCUSD --- signal=BUY, confidence=0.65
+2026-03-14 07:22:08,889 - INFO - Position limits: BTCUSD owned=0/1, global=0/3
+2026-03-14 07:22:08,899 - INFO - All pre-trade checks passed for BTCUSD BUY
+2026-03-14 07:22:08,900 - INFO - Current price for BTCUSD: bid=71367.6, ask=71382.71, using=71382.71
+2026-03-14 07:22:08,901 - INFO - Trade params: BTCUSD BUY entry=71382.71, sl=70372.58, tp=71774.21
+2026-03-14 07:22:08,902 - INFO - Lot size: 0.01
+2026-03-14 07:22:08,902 - INFO - Sending order to MT5...
+2026-03-14 07:22:09,124 - INFO - MT5 trade result: {'success': True, 'order_id': 1613888, 'deal_id': 0, 'volume': 0.01, 'price': 0.0, 'comment': 'Request executed', 'signal': 'BUY', 'entry_price': 71382.71, 'stop_loss': 70372.58, 'take_profit': 71774.21}
+2026-03-14 07:22:10,278 - INFO - TRADE EXECUTED: BTCUSD BUY 0.01 lots @ 71382.71, ticket=1613888, sl=70372.58, tp=71774.21
+2026-03-14 07:22:19,290 - INFO - Running rule_based analysis for BTCUSD...
+2026-03-14 07:22:19,290 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:22:19,741 - INFO - Rule-Based API response: status=completed [total=0.5s]
+2026-03-14 07:22:19,742 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71375.15, sl=70372.58, tp=71774.21
+2026-03-14 07:22:19,742 - INFO - BTCUSD: BUY (confidence: 0.65)
+2026-03-14 07:22:19,743 - INFO - --- TRADE EXECUTION CHECK for BTCUSD --- signal=BUY, confidence=0.65
+2026-03-14 07:22:19,754 - INFO - Position limits: BTCUSD owned=0/1, global=1/3
+2026-03-14 07:22:19,765 - INFO - All pre-trade checks passed for BTCUSD BUY
+2026-03-14 07:22:19,767 - INFO - Current price for BTCUSD: bid=71367.61, ask=71382.69, using=71382.69
+2026-03-14 07:22:19,768 - INFO - Trade params: BTCUSD BUY entry=71382.69, sl=70372.58, tp=71774.21
+2026-03-14 07:22:19,770 - INFO - Lot size: 0.01
+2026-03-14 07:22:19,771 - INFO - Sending order to MT5...
+2026-03-14 07:22:19,992 - INFO - MT5 trade result: {'success': True, 'order_id': 1613889, 'deal_id': 0, 'volume': 0.01, 'price': 0.0, 'comment': 'Request executed', 'signal': 'BUY', 'entry_price': 71382.69, 'stop_loss': 70372.58, 'take_profit': 71774.21}
+2026-03-14 07:22:20,192 - INFO - TRADE EXECUTED: BTCUSD BUY 0.01 lots @ 71382.69, ticket=1613889, sl=70372.58, tp=71774.21
+2026-03-14 07:22:29,212 - INFO - Running rule_based analysis for BTCUSD...
+2026-03-14 07:22:29,213 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:22:29,634 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:22:29,635 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71351.525, sl=70372.5175, tp=71774.21
+2026-03-14 07:22:29,636 - INFO - BTCUSD: BUY (confidence: 0.65)
+2026-03-14 07:22:29,636 - INFO - --- TRADE EXECUTION CHECK for BTCUSD --- signal=BUY, confidence=0.65
+2026-03-14 07:22:29,655 - INFO - Position limits: BTCUSD owned=0/1, global=2/3
+2026-03-14 07:22:29,666 - INFO - All pre-trade checks passed for BTCUSD BUY
+2026-03-14 07:22:29,667 - INFO - Current price for BTCUSD: bid=71344.0, ask=71359.05, using=71359.05
+2026-03-14 07:22:29,667 - INFO - Trade params: BTCUSD BUY entry=71359.05, sl=70372.5175, tp=71774.21
+2026-03-14 07:22:29,669 - INFO - Lot size: 0.01
+2026-03-14 07:22:29,669 - INFO - Sending order to MT5...
+2026-03-14 07:22:29,892 - INFO - MT5 trade result: {'success': True, 'order_id': 1613890, 'deal_id': 0, 'volume': 0.01, 'price': 0.0, 'comment': 'Request executed', 'signal': 'BUY', 'entry_price': 71359.05, 'stop_loss': 70372.5175, 'take_profit': 71774.21}
+2026-03-14 07:22:30,092 - INFO - TRADE EXECUTED: BTCUSD BUY 0.01 lots @ 71359.05, ticket=1613890, sl=70372.5175, tp=71774.21
+2026-03-14 07:22:39,117 - INFO - Running rule_based analysis for BTCUSD...
+2026-03-14 07:22:39,117 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:22:39,542 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:22:39,542 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71353.16, sl=70372.5175, tp=71774.21
+2026-03-14 07:22:39,542 - INFO - BTCUSD: BUY (confidence: 0.65)
+2026-03-14 07:22:39,543 - INFO - --- TRADE EXECUTION CHECK for BTCUSD --- signal=BUY, confidence=0.65
+2026-03-14 07:22:39,563 - INFO - Position limits: BTCUSD owned=0/1, global=3/3
+2026-03-14 07:22:39,563 - INFO - Global max for BTCUSD reached (3/3), skipping
+2026-03-14 07:22:48,585 - INFO - Running rule_based analysis for BTCUSD...
+2026-03-14 07:22:48,585 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:22:49,032 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:22:49,033 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71352.215, sl=70372.48786, tp=71774.21
+2026-03-14 07:22:49,034 - INFO - BTCUSD: BUY (confidence: 0.65)
+2026-03-14 07:22:49,034 - INFO - --- TRADE EXECUTION CHECK for BTCUSD --- signal=BUY, confidence=0.65
+2026-03-14 07:22:49,047 - INFO - Position limits: BTCUSD owned=0/1, global=3/3
+2026-03-14 07:22:49,047 - INFO - Global max for BTCUSD reached (3/3), skipping
+2026-03-14 07:22:58,075 - INFO - Running rule_based analysis for BTCUSD...
+2026-03-14 07:22:58,075 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:22:58,223 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:22:58,224 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71334.97, sl=70372.58, tp=71774.21, profit=-0.24
+2026-03-14 07:23:04,497 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:23:04,498 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:23:04,680 - INFO - Rule-Based API response: status=completed [total=6.6s]
+2026-03-14 07:23:04,681 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71348.95, sl=70372.12464, tp=71774.21
+2026-03-14 07:23:04,682 - INFO - BTCUSD: BUY (confidence: 0.65)
+2026-03-14 07:23:04,682 - INFO - --- TRADE EXECUTION CHECK for BTCUSD --- signal=BUY, confidence=0.65
+2026-03-14 07:23:04,693 - INFO - Position limits: BTCUSD owned=1/1, global=2/3
+2026-03-14 07:23:04,694 - INFO - Automation max positions reached for BTCUSD (1 owned), skipping
+2026-03-14 07:23:04,921 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:23:04,921 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71348.945, sl=70372.12464, tp=71774.21
+2026-03-14 07:23:04,922 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:23:13,702 - INFO - Running rule_based analysis for BTCUSD...
+2026-03-14 07:23:13,703 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:23:14,125 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:23:14,126 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71352.69, sl=70372.12464, tp=71774.21
+2026-03-14 07:23:14,127 - INFO - BTCUSD: BUY (confidence: 0.65)
+2026-03-14 07:23:14,127 - INFO - --- TRADE EXECUTION CHECK for BTCUSD --- signal=BUY, confidence=0.65
+2026-03-14 07:23:14,141 - INFO - Position limits: BTCUSD owned=1/1, global=2/3
+2026-03-14 07:23:14,141 - INFO - Automation max positions reached for BTCUSD (1 owned), skipping
+2026-03-14 07:23:23,152 - INFO - Running rule_based analysis for BTCUSD...
+2026-03-14 07:23:23,152 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:23:23,599 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:23:23,600 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71353.19, sl=70372.12464, tp=71774.21
+2026-03-14 07:23:23,601 - INFO - BTCUSD: BUY (confidence: 0.65)
+2026-03-14 07:23:23,602 - INFO - --- TRADE EXECUTION CHECK for BTCUSD --- signal=BUY, confidence=0.65
+2026-03-14 07:23:23,614 - INFO - Position limits: BTCUSD owned=1/1, global=2/3
+2026-03-14 07:23:23,614 - INFO - Automation max positions reached for BTCUSD (1 owned), skipping
+2026-03-14 07:23:32,636 - INFO - Running rule_based analysis for BTCUSD...
+2026-03-14 07:23:32,637 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:23:33,057 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:23:33,057 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71353.19, sl=70372.12464, tp=71774.21
+2026-03-14 07:23:33,058 - INFO - BTCUSD: BUY (confidence: 0.65)
+2026-03-14 07:23:33,059 - INFO - --- TRADE EXECUTION CHECK for BTCUSD --- signal=BUY, confidence=0.65
+2026-03-14 07:23:33,069 - INFO - Position limits: BTCUSD owned=1/1, global=2/3
+2026-03-14 07:23:33,069 - INFO - Automation max positions reached for BTCUSD (1 owned), skipping
+2026-03-14 07:23:42,085 - INFO - Running rule_based analysis for BTCUSD...
+2026-03-14 07:23:42,085 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:23:42,498 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:23:42,499 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71352.26, sl=70372.12464, tp=71774.21
+2026-03-14 07:23:42,500 - INFO - BTCUSD: BUY (confidence: 0.65)
+2026-03-14 07:23:42,500 - INFO - --- TRADE EXECUTION CHECK for BTCUSD --- signal=BUY, confidence=0.65
+2026-03-14 07:23:42,512 - INFO - Position limits: BTCUSD owned=1/1, global=2/3
+2026-03-14 07:23:42,512 - INFO - Automation max positions reached for BTCUSD (1 owned), skipping
+2026-03-14 07:23:50,367 - INFO - Stopping quant automation...
+2026-03-14 07:23:50,367 - INFO - Quant automation stopped
+2026-03-14 07:24:00,359 - INFO - ==================================================
+2026-03-14 07:24:00,360 - INFO - QUANT AUTOMATION STARTED
+2026-03-14 07:24:00,361 - INFO - ==================================================
+2026-03-14 07:24:00,361 - INFO - Pipeline: rule_based
+2026-03-14 07:24:00,362 - INFO - Symbols: BTCUSD
+2026-03-14 07:24:00,362 - INFO - Analysis interval: 900s
+2026-03-14 07:24:00,363 - INFO - Auto-execute: True
+2026-03-14 07:24:00,363 - INFO - ==================================================
+2026-03-14 07:24:00,368 - INFO - Position management loop started
+2026-03-14 07:24:00,379 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:24:00,379 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71351.62, sl=70372.58, tp=71774.21, profit=0.00
+2026-03-14 07:24:00,382 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:24:00,383 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:24:00,817 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:24:00,818 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71359.115, sl=70372.12464, tp=71774.21
+2026-03-14 07:24:00,818 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:25:00,857 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:25:00,858 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71367.99, sl=70372.58, tp=71774.21, profit=0.23
+2026-03-14 07:25:00,863 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:25:00,864 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:25:01,322 - INFO - Rule-Based API response: status=completed [total=0.5s]
+2026-03-14 07:25:01,322 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71375.52, sl=70372.12464, tp=71774.21
+2026-03-14 07:25:01,322 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:26:01,373 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:26:01,374 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71326.93, sl=70372.58, tp=71774.21, profit=-0.36
+2026-03-14 07:26:01,377 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:26:01,377 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:26:01,832 - INFO - Rule-Based API response: status=completed [total=0.5s]
+2026-03-14 07:26:01,832 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71334.425, sl=70371.89964, tp=71774.21
+2026-03-14 07:26:01,833 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:27:01,859 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:27:01,860 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71282.13, sl=70372.58, tp=71774.21, profit=-1.00
+2026-03-14 07:27:01,864 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:27:01,864 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:27:02,338 - INFO - Rule-Based API response: status=completed [total=0.5s]
+2026-03-14 07:27:02,338 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71289.68, sl=70370.28321, tp=71774.21
+2026-03-14 07:27:02,339 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:28:02,356 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:28:02,356 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71268.99, sl=70372.58, tp=71774.21, profit=-1.19
+2026-03-14 07:28:02,359 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:28:02,360 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:28:02,835 - INFO - Rule-Based API response: status=completed [total=0.5s]
+2026-03-14 07:28:02,835 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71274.4, sl=70369.65393, tp=71774.21
+2026-03-14 07:28:02,836 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:29:02,874 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:29:02,875 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71133.61, sl=70372.58, tp=71774.21, profit=-3.12
+2026-03-14 07:29:02,878 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:29:02,878 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:29:03,304 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:29:03,305 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71141.085, sl=70364.63357, tp=71774.21
+2026-03-14 07:29:03,305 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:30:03,316 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:30:03,316 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71174.9, sl=70372.58, tp=71774.21, profit=-2.54
+2026-03-14 07:30:03,321 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:30:03,321 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:30:03,755 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:30:03,756 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71183.025, sl=70364.63357, tp=71774.21
+2026-03-14 07:30:03,757 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:31:03,757 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:31:03,758 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71193.47, sl=70372.58, tp=71774.21, profit=-2.28
+2026-03-14 07:31:03,762 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:31:03,762 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:31:04,207 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:31:04,207 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71200.985, sl=70364.63357, tp=71774.21
+2026-03-14 07:31:04,208 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:32:04,245 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:32:04,245 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71153.67, sl=70372.58, tp=71774.21, profit=-2.84
+2026-03-14 07:32:04,247 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:32:04,248 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:32:04,696 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:32:04,697 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71161.21, sl=70364.63357, tp=71774.21
+2026-03-14 07:32:04,698 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:33:04,730 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:33:04,730 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71176.2, sl=70372.58, tp=71774.21, profit=-2.52
+2026-03-14 07:33:04,733 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:33:04,733 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:33:05,173 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:33:05,174 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71183.535, sl=70364.63357, tp=71774.21
+2026-03-14 07:33:05,175 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:34:05,209 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:34:05,210 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71204.24, sl=70372.58, tp=71774.21, profit=-2.12
+2026-03-14 07:34:05,215 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:34:05,215 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:34:05,641 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:34:05,642 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71211.92, sl=70364.63357, tp=71774.21
+2026-03-14 07:34:05,642 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:35:05,693 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:35:05,693 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71202.97, sl=70372.58, tp=71774.21, profit=-2.13
+2026-03-14 07:35:05,696 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:35:05,697 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:35:06,132 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:35:06,133 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71210.495, sl=70364.63357, tp=71774.21
+2026-03-14 07:35:06,134 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:36:06,156 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:36:06,157 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71209.91, sl=70372.58, tp=71774.21, profit=-2.03
+2026-03-14 07:36:06,160 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:36:06,160 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:36:06,424 - ERROR - Rule-Based API error (HTTP 500) after 0.3s: {"detail":"MT5 not initialized"}
+2026-03-14 07:36:06,425 - INFO -   Reversal check result: signal=HOLD, confidence=0.00
+2026-03-14 07:36:06,445 - ERROR - Error detecting closed positions: MT5 initialization failed: (-6, 'Terminal: Authorization failed')
+2026-03-14 07:36:10,440 - ERROR - Failed to get positions for status: MT5 initialization failed: (-6, 'Terminal: Authorization failed')
+2026-03-14 07:37:06,469 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:37:06,470 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71262.34, sl=70372.58, tp=71774.21, profit=-1.29
+2026-03-14 07:37:06,484 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:37:06,485 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:37:06,907 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:37:06,908 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71269.83, sl=70364.63357, tp=71774.21
+2026-03-14 07:37:06,909 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:38:06,939 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:38:06,940 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71213.91, sl=70372.58, tp=71774.21, profit=-1.98
+2026-03-14 07:38:06,943 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:38:06,944 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:38:07,359 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:38:07,359 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71221.415, sl=70364.63357, tp=71774.21
+2026-03-14 07:38:07,360 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:39:00,524 - INFO - Running rule_based analysis for BTCUSD...
+2026-03-14 07:39:00,524 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:39:00,934 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:39:00,934 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71133.895, sl=70364.63357, tp=71774.21
+2026-03-14 07:39:00,935 - INFO - BTCUSD: BUY (confidence: 0.65)
+2026-03-14 07:39:00,936 - INFO - --- TRADE EXECUTION CHECK for BTCUSD --- signal=BUY, confidence=0.65
+2026-03-14 07:39:00,948 - INFO - Position limits: BTCUSD owned=1/1, global=1/3
+2026-03-14 07:39:00,948 - INFO - Automation max positions reached for BTCUSD (1 owned), skipping
+2026-03-14 07:39:07,373 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:39:07,374 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71066.8, sl=70372.58, tp=71774.21, profit=-4.08
+2026-03-14 07:39:07,377 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:39:07,377 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:39:07,811 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:39:07,811 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71074.295, sl=70362.60036, tp=71774.21
+2026-03-14 07:39:07,812 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:40:07,837 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:40:07,837 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71070.96, sl=70372.58, tp=71774.21, profit=-4.03
+2026-03-14 07:40:07,841 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:40:07,842 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:40:08,313 - INFO - Rule-Based API response: status=completed [total=0.5s]
+2026-03-14 07:40:08,313 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71078.47, sl=70362.60036, tp=71774.21
+2026-03-14 07:40:08,313 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:41:08,343 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:41:08,343 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71123.3, sl=70372.58, tp=71774.21, profit=-3.28
+2026-03-14 07:41:08,346 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:41:08,347 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:41:08,802 - INFO - Rule-Based API response: status=completed [total=0.5s]
+2026-03-14 07:41:08,803 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71130.85, sl=70362.095, tp=71774.21
+2026-03-14 07:41:08,804 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:42:08,822 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:42:08,822 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71139.63, sl=70372.58, tp=71774.21, profit=-3.04
+2026-03-14 07:42:08,825 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:42:08,825 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:42:09,276 - INFO - Rule-Based API response: status=completed [total=0.5s]
+2026-03-14 07:42:09,277 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71160.265, sl=70362.095, tp=71774.21
+2026-03-14 07:42:09,277 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:43:09,309 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:43:09,309 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71133.63, sl=70372.58, tp=71774.21, profit=-3.12
+2026-03-14 07:43:09,312 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:43:09,313 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:43:09,732 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:43:09,733 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71141.16, sl=70362.095, tp=71774.21
+2026-03-14 07:43:09,733 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:44:09,760 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:44:09,761 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71107.72, sl=70372.58, tp=71774.21, profit=-3.50
+2026-03-14 07:44:09,764 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:44:09,764 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:44:10,199 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:44:10,199 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71115.275, sl=70362.095, tp=71774.21
+2026-03-14 07:44:10,200 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:45:10,228 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:45:10,229 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71114.79, sl=70372.58, tp=71774.21, profit=-3.40
+2026-03-14 07:45:10,232 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:45:10,233 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:45:10,750 - INFO - Rule-Based API response: status=completed [total=0.5s]
+2026-03-14 07:45:10,750 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71122.27, sl=70362.095, tp=71774.21
+2026-03-14 07:45:10,751 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:46:10,787 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:46:10,788 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71159.73, sl=70372.58, tp=71774.21, profit=-2.75
+2026-03-14 07:46:10,791 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:46:10,791 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:46:11,229 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:46:11,230 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71174.465, sl=70362.095, tp=71774.21
+2026-03-14 07:46:11,230 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:47:11,250 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:47:11,251 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71162.16, sl=70372.58, tp=71774.21, profit=-2.72
+2026-03-14 07:47:11,254 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:47:11,254 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:47:11,695 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:47:11,695 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71173.615, sl=70362.095, tp=71774.21
+2026-03-14 07:47:11,696 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:48:11,735 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:48:11,737 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71173.11, sl=70372.58, tp=71774.21, profit=-2.56
+2026-03-14 07:48:11,740 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:48:11,741 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:48:12,169 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:48:12,170 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71180.605, sl=70362.095, tp=71774.21
+2026-03-14 07:48:12,171 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:49:12,208 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:49:12,209 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71196.72, sl=70372.58, tp=71774.21, profit=-2.22
+2026-03-14 07:49:12,212 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:49:12,212 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:49:12,663 - INFO - Rule-Based API response: status=completed [total=0.5s]
+2026-03-14 07:49:12,663 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71204.28, sl=70362.095, tp=71774.21
+2026-03-14 07:49:12,664 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:50:12,701 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:50:12,702 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71194.36, sl=70372.58, tp=71774.21, profit=-2.26
+2026-03-14 07:50:12,704 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:50:12,705 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:50:13,164 - INFO - Rule-Based API response: status=completed [total=0.5s]
+2026-03-14 07:50:13,164 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71201.86, sl=70362.095, tp=71774.21
+2026-03-14 07:50:13,165 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:51:13,201 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:51:13,201 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71154.99, sl=70372.58, tp=71774.21, profit=-2.82
+2026-03-14 07:51:13,206 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:51:13,207 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:51:13,683 - INFO - Rule-Based API response: status=completed [total=0.5s]
+2026-03-14 07:51:13,684 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71162.11, sl=70362.095, tp=71774.21
+2026-03-14 07:51:13,685 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:52:13,715 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:52:13,716 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71181.33, sl=70372.58, tp=71774.21, profit=-2.45
+2026-03-14 07:52:13,719 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:52:13,719 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:52:14,148 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:52:14,149 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71188.885, sl=70362.095, tp=71774.21
+2026-03-14 07:52:14,149 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:53:14,163 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:53:14,163 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71202.6, sl=70372.58, tp=71774.21, profit=-2.13
+2026-03-14 07:53:14,166 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:53:14,167 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:53:14,607 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:53:14,608 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71210.135, sl=70362.095, tp=71774.21
+2026-03-14 07:53:14,609 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:54:02,477 - INFO - Running rule_based analysis for BTCUSD...
+2026-03-14 07:54:02,477 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:54:02,901 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:54:02,902 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71180.93, sl=70362.095, tp=71774.21
+2026-03-14 07:54:02,902 - INFO - BTCUSD: BUY (confidence: 0.65)
+2026-03-14 07:54:02,903 - INFO - --- TRADE EXECUTION CHECK for BTCUSD --- signal=BUY, confidence=0.65
+2026-03-14 07:54:02,913 - INFO - Position limits: BTCUSD owned=1/1, global=1/3
+2026-03-14 07:54:02,914 - INFO - Automation max positions reached for BTCUSD (1 owned), skipping
+2026-03-14 07:54:14,647 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:54:14,648 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71176.21, sl=70372.58, tp=71774.21, profit=-2.52
+2026-03-14 07:54:14,651 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:54:14,651 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:54:15,081 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:54:15,082 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71183.75, sl=70362.095, tp=71774.21
+2026-03-14 07:54:15,082 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:55:15,128 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:55:15,128 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71187.94, sl=70372.58, tp=71774.21, profit=-2.35
+2026-03-14 07:55:15,131 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:55:15,132 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:55:15,562 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:55:15,563 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71195.425, sl=70362.095, tp=71774.21
+2026-03-14 07:55:15,563 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:56:15,609 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:56:15,609 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71167.3, sl=70372.58, tp=71774.21, profit=-2.65
+2026-03-14 07:56:15,612 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:56:15,613 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:56:16,031 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:56:16,032 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71174.825, sl=70362.095, tp=71774.21
+2026-03-14 07:56:16,033 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:57:16,056 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:57:16,056 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71156.33, sl=70372.58, tp=71774.21, profit=-2.81
+2026-03-14 07:57:16,059 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:57:16,059 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:57:16,506 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:57:16,507 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71163.855, sl=70362.095, tp=71774.21
+2026-03-14 07:57:16,507 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:58:16,526 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:58:16,526 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71143.62, sl=70372.58, tp=71774.21, profit=-2.98
+2026-03-14 07:58:16,529 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:58:16,529 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:58:16,960 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:58:16,960 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71151.155, sl=70362.095, tp=71774.21
+2026-03-14 07:58:16,961 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 07:59:16,976 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 07:59:16,977 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71117.01, sl=70372.58, tp=71774.21, profit=-3.37
+2026-03-14 07:59:16,979 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 07:59:16,980 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 07:59:17,402 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 07:59:17,402 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71124.55, sl=70362.095, tp=71774.21
+2026-03-14 07:59:17,403 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 08:00:17,426 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 08:00:17,427 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71180.33, sl=70372.58, tp=71774.21, profit=-2.46
+2026-03-14 08:00:17,429 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 08:00:17,430 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 08:00:17,859 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 08:00:17,859 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71187.835, sl=70386.60786, tp=71774.21
+2026-03-14 08:00:17,859 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 08:01:17,888 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 08:01:17,889 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=71177.46, sl=70372.58, tp=71774.21, profit=-2.51
+2026-03-14 08:01:17,892 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 08:01:17,893 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 08:01:18,336 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 08:01:18,337 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71184.94, sl=70386.60786, tp=71774.21
+2026-03-14 08:01:18,338 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 08:02:18,352 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 08:02:18,352 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=70869.17, sl=70372.58, tp=71774.21, profit=-6.92
+2026-03-14 08:02:18,356 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 08:02:18,356 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 08:02:18,827 - INFO - Rule-Based API response: status=completed [total=0.5s]
+2026-03-14 08:02:18,828 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=70876.685, sl=70377.005, tp=71774.21
+2026-03-14 08:02:18,829 - INFO -   Reversal check result: signal=BUY, confidence=0.65
+2026-03-14 08:03:18,835 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 08:03:18,836 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=70714.57, sl=70372.58, tp=71774.21, profit=-9.13
+2026-03-14 08:03:18,838 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 08:03:18,839 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 08:03:19,270 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 08:03:19,271 - INFO - Rule-Based decision for BTCUSD: signal=HOLD, confidence=0.0, entry=None, sl=None, tp=None
+2026-03-14 08:03:19,272 - INFO -   Reversal check result: signal=HOLD, confidence=0.00
+2026-03-14 08:04:19,302 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 08:04:19,303 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=70738.98, sl=70372.58, tp=71774.21, profit=-8.78
+2026-03-14 08:04:19,306 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 08:04:19,306 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 08:04:19,758 - INFO - Rule-Based API response: status=completed [total=0.5s]
+2026-03-14 08:04:19,759 - INFO - Rule-Based decision for BTCUSD: signal=HOLD, confidence=0.0, entry=None, sl=None, tp=None
+2026-03-14 08:04:19,760 - INFO -   Reversal check result: signal=HOLD, confidence=0.00
+2026-03-14 08:05:19,795 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 08:05:19,796 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=70774.37, sl=70372.58, tp=71774.21, profit=-8.28
+2026-03-14 08:05:19,800 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 08:05:19,800 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 08:05:20,220 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 08:05:20,220 - INFO - Rule-Based decision for BTCUSD: signal=HOLD, confidence=0.0, entry=None, sl=None, tp=None
+2026-03-14 08:05:20,221 - INFO -   Reversal check result: signal=HOLD, confidence=0.00
+2026-03-14 08:06:20,244 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 08:06:20,244 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=70764.76, sl=70372.58, tp=71774.21, profit=-8.41
+2026-03-14 08:06:20,248 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 08:06:20,249 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 08:06:20,699 - INFO - Rule-Based API response: status=completed [total=0.5s]
+2026-03-14 08:06:20,700 - INFO - Rule-Based decision for BTCUSD: signal=HOLD, confidence=0.0, entry=None, sl=None, tp=None
+2026-03-14 08:06:20,701 - INFO -   Reversal check result: signal=HOLD, confidence=0.00
+2026-03-14 08:07:20,729 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 08:07:20,730 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=70808.15, sl=70372.58, tp=71774.21, profit=-7.79
+2026-03-14 08:07:20,733 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 08:07:20,733 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 08:07:21,171 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 08:07:21,171 - INFO - Rule-Based decision for BTCUSD: signal=HOLD, confidence=0.0, entry=None, sl=None, tp=None
+2026-03-14 08:07:21,172 - INFO -   Reversal check result: signal=HOLD, confidence=0.00
+2026-03-14 08:08:21,189 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 08:08:21,190 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=70816.99, sl=70372.58, tp=71774.21, profit=-7.67
+2026-03-14 08:08:21,193 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 08:08:21,194 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 08:08:21,654 - INFO - Rule-Based API response: status=completed [total=0.5s]
+2026-03-14 08:08:21,654 - INFO - Rule-Based decision for BTCUSD: signal=HOLD, confidence=0.0, entry=None, sl=None, tp=None
+2026-03-14 08:08:21,655 - INFO -   Reversal check result: signal=HOLD, confidence=0.00
+2026-03-14 08:09:05,411 - INFO - Running rule_based analysis for BTCUSD...
+2026-03-14 08:09:05,411 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 08:09:05,837 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 08:09:05,838 - INFO - Rule-Based decision for BTCUSD: signal=HOLD, confidence=0.0, entry=None, sl=None, tp=None
+2026-03-14 08:09:05,839 - INFO - BTCUSD: HOLD (confidence: 0.00)
+2026-03-14 08:09:21,667 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 08:09:21,667 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=70811.48, sl=70372.58, tp=71774.21, profit=-7.75
+2026-03-14 08:09:21,670 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 08:09:21,670 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 08:09:22,103 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 08:09:22,104 - INFO - Rule-Based decision for BTCUSD: signal=HOLD, confidence=0.0, entry=None, sl=None, tp=None
+2026-03-14 08:09:22,104 - INFO -   Reversal check result: signal=HOLD, confidence=0.00
+2026-03-14 08:10:22,106 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 08:10:22,107 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=70888.57, sl=70372.58, tp=71774.21, profit=-6.63
+2026-03-14 08:10:22,109 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 08:10:22,110 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 08:10:22,528 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 08:10:22,529 - INFO - Rule-Based decision for BTCUSD: signal=HOLD, confidence=0.0, entry=None, sl=None, tp=None
+2026-03-14 08:10:22,529 - INFO -   Reversal check result: signal=HOLD, confidence=0.00
+2026-03-14 08:11:22,550 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 08:11:22,550 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=70871.98, sl=70372.58, tp=71774.21, profit=-6.88
+2026-03-14 08:11:22,553 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 08:11:22,553 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 08:11:23,007 - INFO - Rule-Based API response: status=completed [total=0.5s]
+2026-03-14 08:11:23,007 - INFO - Rule-Based decision for BTCUSD: signal=HOLD, confidence=0.0, entry=None, sl=None, tp=None
+2026-03-14 08:11:23,008 - INFO -   Reversal check result: signal=HOLD, confidence=0.00
+2026-03-14 08:12:23,051 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 08:12:23,051 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=70883.39, sl=70372.58, tp=71774.21, profit=-6.72
+2026-03-14 08:12:23,054 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 08:12:23,054 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 08:12:23,476 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 08:12:23,476 - INFO - Rule-Based decision for BTCUSD: signal=HOLD, confidence=0.0, entry=None, sl=None, tp=None
+2026-03-14 08:12:23,477 - INFO -   Reversal check result: signal=HOLD, confidence=0.00
+2026-03-14 08:13:23,482 - INFO - Position check: 1 total open, 1 owned by rule_based (BTCUSD)
+2026-03-14 08:13:23,482 - INFO - Managing position #1613888 BTCUSD BUY: entry=71352.49, current=70841.87, sl=70372.58, tp=71774.21, profit=-7.31
+2026-03-14 08:13:23,486 - INFO -   Running reversal check analysis for #1613888 BTCUSD...
+2026-03-14 08:13:23,486 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-14 08:13:23,933 - INFO - Rule-Based API response: status=completed [total=0.4s]
+2026-03-14 08:13:23,933 - INFO - Rule-Based decision for BTCUSD: signal=HOLD, confidence=0.0, entry=None, sl=None, tp=None
+2026-03-14 08:13:23,934 - INFO -   Reversal check result: signal=HOLD, confidence=0.00

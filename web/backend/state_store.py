@@ -10,16 +10,19 @@ This allows the system to:
 
 import json
 import sqlite3
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
 from contextlib import contextmanager
+import threading
 
 # Database file location
 DB_PATH = Path(__file__).parent.parent.parent / "data" / "state.db"
 
 # Track if DB has been initialized
 _db_initialized = False
+_db_lock = threading.Lock()
 
 
 def _init_db():
@@ -31,7 +34,7 @@ def _init_db():
     # Ensure directory exists
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-    conn = sqlite3.connect(str(DB_PATH))
+    conn = sqlite3.connect(str(DB_PATH), timeout=10, check_same_thread=False)
     cursor = conn.cursor()
 
     # Create state table for key-value storage
@@ -61,10 +64,23 @@ def _init_db():
 
 @contextmanager
 def get_connection():
-    """Get a database connection with proper cleanup."""
+    """Get a database connection with proper cleanup.
+
+    Uses a lock to serialize access on Windows where concurrent SQLite
+    opens can fail with 'unable to open database file'.
+    """
     _init_db()
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.row_factory = sqlite3.Row
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            with _db_lock:
+                conn = sqlite3.connect(str(DB_PATH), timeout=10, check_same_thread=False)
+                conn.row_factory = sqlite3.Row
+            break
+        except sqlite3.OperationalError:
+            if attempt == max_retries - 1:
+                raise
+            time.sleep(0.1 * (attempt + 1))
     try:
         yield conn
     finally:

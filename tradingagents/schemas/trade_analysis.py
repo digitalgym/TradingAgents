@@ -270,6 +270,12 @@ class QuantAnalystDecision(BaseSchema):
         ..., ge=0, le=1, description="Confidence in this signal (0.0 to 1.0)"
     )
 
+    # Trailing stop management
+    trailing_stop_atr_multiplier: Optional[float] = Field(
+        None, ge=0.5, le=10.0,
+        description="Suggested trailing stop distance as ATR multiplier. Consider volatility: low vol (1.5-2.0x), normal (2.0-3.0x), high vol (3.0-5.0x). For gold/XAUUSD use 2.5-4.0x. Null if hold/close."
+    )
+
     # Risk assessment (for compatibility with trade modal)
     risk_level: Optional[RiskLevel] = Field(
         None, description="Overall risk level assessment"

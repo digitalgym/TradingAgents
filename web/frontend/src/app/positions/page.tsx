@@ -60,7 +60,9 @@ import {
   TrendingDown,
   Shield,
   Target,
+  Zap,
 } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { HelpTooltip } from "@/components/ui/help-tooltip"
 
 export default function PositionsPage() {
@@ -439,6 +441,7 @@ export default function PositionsPage() {
                     <tr className="text-left">
                       <th className="p-4 w-10"></th>
                       <th className="p-4 font-medium">Ticket</th>
+                      <th className="p-4 font-medium">Src</th>
                       <th className="p-4 font-medium">Symbol</th>
                       <th className="p-4 font-medium">Type</th>
                       <th className="p-4 font-medium">Volume</th>
@@ -466,6 +469,22 @@ export default function PositionsPage() {
                             />
                           </td>
                           <td className="p-4 font-mono text-sm">{pos.ticket}</td>
+                          <td className="p-4">
+                            {pos.source && pos.source !== "web_ui" && pos.source !== "review" ? (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Zap className="h-5 w-5 text-purple-500 cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{pos.source}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : (
+                              <span className="text-muted-foreground text-xs">manual</span>
+                            )}
+                          </td>
                           <td className="p-4 font-medium">{pos.symbol}</td>
                           <td className="p-4">
                             <Badge variant={pos.type === "BUY" ? "buy" : "sell"}>

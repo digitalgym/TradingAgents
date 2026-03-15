@@ -1,0 +1,3667 @@
+2026-03-15 15:12:25,112 | 
+================================================================================
+SMC QUANT ANALYSIS - BTCUSD
+================================================================================
+2026-03-15 15:12:25,112 | Symbol: BTCUSD | Date: 2026-03-15 | Price: 71502.435
+2026-03-15 15:12:25,113 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71502.43500
+- **Date**: 2026-03-15
+- **Trading Session**: asian
+- **Market Regime**: trending-up
+- **Volatility Regime**: low
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: PREMIUM zone (51%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70796.16
+  - BOS HIGH at 71998.18 [RECENT]
+  - BOS HIGH at 71294.44 [RECENT]
+  - CHoCH HIGH at 71316.86 (potential reversal)
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 68968.10000-69571.60786 | Strength: 80% | MITIGATED | 3.54% from price
+  - BULLISH OB: 69339.29000-70258.81714 | Strength: 80% | MITIGATED | 3.03% from price
+  - BULLISH OB: 70312.13000-71009.58000 | Strength: 76% | MITIGATED | 1.66% from price
+  - BEARISH OB: 72350.83000-73894.83000 | Strength: 80% | UNMITIGATED | 3.35% from price
+  - BEARISH OB: 71146.84000-72093.59000 | Strength: 58% | MITIGATED | 0.83% from price
+  - BEARISH OB: 70702.76000-70920.89000 | Strength: 44% | MITIGATED | -0.81% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 70808.85000-70956.74000 | UNFILLED | 0.97% below price (expect bounce UP)
+  - BULLISH FVG: 71040.34000-71230.98000 | UNFILLED | 0.65% below price (expect bounce UP)
+  - BEARISH FVG: 72093.59000-72350.83000 | UNFILLED | 1.19% above price (expect rejection DOWN)
+  - BEARISH FVG: 70736.67000-70908.25000 | FILLED | -0.83% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71294.44000 | Strength: 95% | UNSWEPT | 0.29% below
+  - BUY-SIDE at 71998.18000 | Strength: 59% | UNSWEPT | 0.69% above
+  - BUY-SIDE at 70935.36000 | Strength: 90% | UNSWEPT | 0.79% below
+  - SELL-SIDE at 70312.13000 | Strength: 85% | UNSWEPT | 1.66% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 71305.65000 | Touches: 5 | PROVEN | SWEPT | 0.28% above
+  - EQUAL LOWS (Support) at 67421.35750 | Touches: 4 | PROVEN | SWEPT | 5.71% below
+  - EQUAL LOWS (Support) at 67054.54167 | Touches: 6 | PROVEN | SWEPT | 6.22% below
+  - EQUAL LOWS (Support) at 66829.11400 | Touches: 5 | PROVEN | UNSWEPT | 6.54% below
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 74.2 (Overbought)
+- **MACD**: 130.50662 | Signal: 23.53850 | Histogram: 106.96812
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 71052.94125 (Price above)
+- **EMA50**: 70941.96497 (Price above)
+- **ADX**: 43.4 (Strong trend)
+- **Regime**: trending-up
+
+### Volatility
+- **ATR(14)**: 251.24000
+- **Volatility**: low
+- **Bollinger Bands**: Upper=71566.85627 | Middle=70900.92400 | Lower=70234.99173
+  - Price near upper band
+
+### Volume
+- **Current Bar Volume**: 631 ticks
+- **20-bar Avg Volume**: 3,236 ticks
+- **Volume Ratio**: 0.19x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+2026-03-15 15:12:25,119 | 
+--- FULL PROMPT ---
+You are a systematic Smart Money Concepts (SMC) trader with strict risk discipline. You trade based on institutional order flow analysis to identify high-probability entries.
+
+## SMART MONEY CONCEPTS TRADING RULES
+
+### Core Concepts
+1. **Order Blocks (OB)**: The last opposing candle before a strong impulse move. This marks where institutions entered.
+   - Bullish OB: Last bearish candle before bullish impulse - expect price to bounce UP
+   - Bearish OB: Last bullish candle before bearish impulse - expect price to reject DOWN
+   - Only trade UNMITIGATED OBs (price hasn't returned yet)
+
+2. **Fair Value Gaps (FVG)**: Three-candle imbalance where price moved so fast it left a gap.
+   - Price tends to return to "fill" FVGs
+   - Bullish FVG: Gap below price - expect bounce UP when price returns
+   - Bearish FVG: Gap above price - expect rejection DOWN when price returns
+   - UNFILLED FVGs are active; FILLED FVGs are spent
+
+3. **Break of Structure (BOS)**: Price breaks previous swing high/low IN the direction of trend.
+   - Bullish BOS: Higher high formed - trend continuation UP
+   - Bearish BOS: Lower low formed - trend continuation DOWN
+   - BOS confirms you can trade with the trend
+
+4. **Change of Character (CHoCH)**: Price breaks structure AGAINST the trend.
+   - First warning of potential reversal
+   - Look for new OBs forming in the reversal direction
+   - Wait for confirmation before trading reversal
+
+5. **Liquidity**: Areas where stop losses cluster (equal highs/lows, round numbers).
+   - Smart money hunts liquidity before reversing
+   - EQH (Equal Highs): Buy-side liquidity above - price may spike up to sweep then drop
+   - EQL (Equal Lows): Sell-side liquidity below - price may spike down to sweep then rise
+   - After a liquidity sweep, look for reversal entries
+
+6. **Premium/Discount**: The current range divided into zones.
+   - Premium (>50% of range): Expensive - favor SHORTS
+   - Discount (<50% of range): Cheap - favor LONGS
+   - Equilibrium (50%): Wait for price to move to extreme
+
+### Trading Setups
+
+**Setup 1: OB Entry with Trend**
+- BOS confirms trend direction
+- Price retraces to unmitigated OB
+- Enter at OB in trend direction
+- SL: Beyond OB
+- TP: Next liquidity pool, opposing OB, or proven equal level (3+ retests)
+
+**Setup 2: OB + FVG Confluence**
+- Unmitigated OB overlaps with unfilled FVG
+- Highest probability setup
+- Enter at the overlap zone
+- SL: Beyond the full OB/FVG zone plus 1x ATR buffer (confluence improves win rate, not SL placement)
+
+**Setup 3: Liquidity Sweep Reversal**
+- Price sweeps liquidity (EQH/EQL)
+- Look for CHoCH or BOS in opposite direction
+- Enter at the new OB formed after sweep
+- Target: Opposite liquidity pool
+
+**Setup 4: OTE Entry (Optimal Trade Entry)**
+- After impulse move, wait for retracement
+- Enter at 61.8%-78.6% Fibonacci zone
+- This is where institutions typically re-enter
+- Combine with OB/FVG for confluence
+
+## RISK MANAGEMENT RULES (NEVER BREAK)
+
+1. **Risk no more than 1-2% of account value per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation before entry**
+5. **Place stops beyond OB/FVG zones** (allow for liquidity sweep)
+6. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+7. **Leverage is a tool, not a goal - default 5-20x**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- Place stops beyond the OB/FVG zone that forms your entry basis
+- **MINIMUM SL DISTANCE**: Stop loss must be at least 1x ATR from entry. SL within 0.5% of entry is TOO TIGHT and will get stopped out by normal price noise. For gold (XAUUSD), minimum SL should be $15-30+ from entry.
+- **MINIMUM TP DISTANCE**: Take profit should be at least 1.5x the SL distance (R:R >= 1.5:1). TP within 0.3% of entry is TOO CLOSE.
+- **TP TARGET PRIORITY**: In strong trends, prefer proven equal levels (3+ retests) and strong opposing OBs over the nearest zone. Equal levels with many retests are liquidity magnets — price is drawn to them.
+- If you cannot identify a valid stop loss placement with adequate distance, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71502.43500
+- **Date**: 2026-03-15
+- **Trading Session**: asian
+- **Market Regime**: trending-up
+- **Volatility Regime**: low
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: PREMIUM zone (51%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70796.16
+  - BOS HIGH at 71998.18 [RECENT]
+  - BOS HIGH at 71294.44 [RECENT]
+  - CHoCH HIGH at 71316.86 (potential reversal)
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 68968.10000-69571.60786 | Strength: 80% | MITIGATED | 3.54% from price
+  - BULLISH OB: 69339.29000-70258.81714 | Strength: 80% | MITIGATED | 3.03% from price
+  - BULLISH OB: 70312.13000-71009.58000 | Strength: 76% | MITIGATED | 1.66% from price
+  - BEARISH OB: 72350.83000-73894.83000 | Strength: 80% | UNMITIGATED | 3.35% from price
+  - BEARISH OB: 71146.84000-72093.59000 | Strength: 58% | MITIGATED | 0.83% from price
+  - BEARISH OB: 70702.76000-70920.89000 | Strength: 44% | MITIGATED | -0.81% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 70808.85000-70956.74000 | UNFILLED | 0.97% below price (expect bounce UP)
+  - BULLISH FVG: 71040.34000-71230.98000 | UNFILLED | 0.65% below price (expect bounce UP)
+  - BEARISH FVG: 72093.59000-72350.83000 | UNFILLED | 1.19% above price (expect rejection DOWN)
+  - BEARISH FVG: 70736.67000-70908.25000 | FILLED | -0.83% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71294.44000 | Strength: 95% | UNSWEPT | 0.29% below
+  - BUY-SIDE at 71998.18000 | Strength: 59% | UNSWEPT | 0.69% above
+  - BUY-SIDE at 70935.36000 | Strength: 90% | UNSWEPT | 0.79% below
+  - SELL-SIDE at 70312.13000 | Strength: 85% | UNSWEPT | 1.66% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 71305.65000 | Touches: 5 | PROVEN | SWEPT | 0.28% above
+  - EQUAL LOWS (Support) at 67421.35750 | Touches: 4 | PROVEN | SWEPT | 5.71% below
+  - EQUAL LOWS (Support) at 67054.54167 | Touches: 6 | PROVEN | SWEPT | 6.22% below
+  - EQUAL LOWS (Support) at 66829.11400 | Touches: 5 | PROVEN | UNSWEPT | 6.54% below
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 74.2 (Overbought)
+- **MACD**: 130.50662 | Signal: 23.53850 | Histogram: 106.96812
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 71052.94125 (Price above)
+- **EMA50**: 70941.96497 (Price above)
+- **ADX**: 43.4 (Strong trend)
+- **Regime**: trending-up
+
+### Volatility
+- **ATR(14)**: 251.24000
+- **Volatility**: low
+- **Bollinger Bands**: Upper=71566.85627 | Middle=70900.92400 | Lower=70234.99173
+  - Price near upper band
+
+### Volume
+- **Current Bar Volume**: 631 ticks
+- **20-bar Avg Volume**: 3,236 ticks
+- **Volume Ratio**: 0.19x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+
+## YOUR TASK
+
+Analyze the SMC data and make a systematic trading decision.
+
+Think step-by-step:
+1. What is the market bias? (bullish/bearish based on BOS)
+2. Are we in premium or discount? (favor shorts in premium, longs in discount)
+3. Are there unmitigated OBs or unfilled FVGs near current price?
+4. Is there OB+FVG confluence?
+5. Where are the liquidity targets? (EQH/EQL for TP — proven levels with 3+ retests are strongest)
+6. Has there been a recent liquidity sweep that signals reversal?
+7. Where should stop loss be placed? (beyond OB/FVG)
+8. What's the risk:reward ratio? (must be >1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when: bullish BOS, price at bullish OB/FVG in discount, or after sell-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when: bearish BOS, price at bearish OB/FVG in premium, or after buy-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when: no clear structure, price at equilibrium, no unmitigated zones nearby, or conflicting signals.
+- **close** - Close existing position. Use when: price reaches liquidity target, OB/FVG invalidated, or CHoCH against position.
+
+## ORDER TYPE (you MUST pick one for buy/sell signals)
+- **market** - Execute immediately at current market price. Use when:
+  - Price is ALREADY AT the OB/FVG zone (within 0.1%)
+  - Liquidity sweep just happened and you want immediate entry
+  - Setup is confirmed and you don't want to miss it
+- **limit** - Place pending order at entry_price. Use when:
+  - Price is NOT YET at the zone (waiting for retracement)
+  - You want better entry at the OB/FVG level
+  - Zone is nearby but price hasn't reached it yet
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+For buy/sell signals, suggest a trailing stop distance as an ATR multiplier based on current volatility:
+- **Low volatility** (tight ranges, small ATR): 1.5-2.0x ATR — tighter trail locks profits
+- **Normal volatility**: 2.0-3.0x ATR — balanced between protection and breathing room
+- **High volatility** (wide swings, large ATR, news events): 3.0-5.0x ATR — wide trail avoids noise
+- **XAUUSD/Gold**: Typically 2.5-4.0x ATR (gold is volatile, tight trails get stopped out)
+- **Forex majors**: Typically 1.5-2.5x ATR
+- If unsure, default to 2.5x ATR
+
+Remember:
+- Smart money leaves footprints (OBs, FVGs)
+- Structure (BOS/CHoCH) tells you the trend
+- Liquidity shows you where price is likely to go
+- Trade with trend, enter at discount (longs) or premium (shorts)
+- Confluence = higher probability
+2026-03-15 15:12:25,132 | 
+================================================================================
+
+2026-03-15 15:12:42,660 | --- LLM RESPONSE (Structured) [took 17.5s] ---
+2026-03-15 15:12:42,661 | Signal: hold
+2026-03-15 15:12:42,661 | Confidence: 0.85
+2026-03-15 15:12:42,661 | Entry: None | SL: None | TP: None
+2026-03-15 15:12:42,662 | Justification: No unmitigated OBs or OB+FVG confluence near price; bullish market bias conflicts with premium zone and overbought RSI favoring shorts, low volume suggests no clear momentum for entry.
+2026-03-15 15:12:42,662 | Invalidation: Price retraces to unfilled bullish FVG below 71040 or sweeps buy-side liquidity above 71998 confirming continuation
+2026-03-15 15:12:42,662 | Raw decision dict: {'symbol': 'BTCUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price retraces to unfilled bullish FVG below 71040 or sweeps buy-side liquidity above 71998 confirming continuation', 'justification': 'No unmitigated OBs or OB+FVG confluence near price; bullish market bias conflicts with premium zone and overbought RSI favoring shorts, low volume suggests no clear momentum for entry.', 'confidence': 0.85, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-15 15:12:42,663 | 
+================================================================================
+
+2026-03-15 15:12:42,663 | Structured output SUCCESS - returning smc_quant_decision with signal=hold
+2026-03-15 21:30:40,738 | 
+================================================================================
+SMC QUANT ANALYSIS - BTCUSD
+================================================================================
+2026-03-15 21:30:40,753 | Symbol: BTCUSD | Date: 2026-03-15 | Price: 71717.28
+2026-03-15 21:30:40,753 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71717.28000
+- **Date**: 2026-03-15
+- **Trading Session**: london
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: DISCOUNT zone (31%) - favorable for LONGS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 94783.74
+  - BOS HIGH at 70970.72 [RECENT]
+  - CHoCH LOW at 84446.10 (potential reversal) [RECENT]
+  - CHoCH HIGH at 90589.65 (potential reversal)
+  - CHoCH LOW at 65105.00 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 62505.95000-65005.35000 | Strength: 80% | UNMITIGATED | 12.84% from price
+  - BULLISH OB: 65611.47000-69513.83000 | Strength: 62% | UNMITIGATED | 8.51% from price
+  - BEARISH OB: 91138.51000-94783.74000 | Strength: 80% | MITIGATED | 32.16% from price
+  - BEARISH OB: 94083.47000-97928.36000 | Strength: 80% | MITIGATED | 36.55% from price
+  - BEARISH OB: 88833.88000-90599.24000 | Strength: 80% | MITIGATED | 26.33% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 65005.35000-66492.84000 | FILLED | 9.36% below price (expect bounce UP)
+  - BULLISH FVG: 69491.74000-70636.76000 | FILLED | 3.10% below price (expect bounce UP)
+  - BEARISH FVG: 84729.26000-88833.88000 | UNFILLED | 23.87% above price (expect rejection DOWN)
+  - BEARISH FVG: 79414.57000-81067.99000 | UNFILLED | 13.04% above price (expect rejection DOWN)
+  - BEARISH FVG: 65005.35000-67183.69000 | FILLED | -6.32% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 70970.72000 | Strength: 74% | UNSWEPT | 1.04% below
+  - BUY-SIDE at 74043.78000 | Strength: 68% | UNSWEPT | 3.24% above
+  - SELL-SIDE at 65611.47000 | Strength: 66% | UNSWEPT | 8.51% below
+  - SELL-SIDE at 65105.00000 | Strength: 74% | UNSWEPT | 9.22% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 113677.15900 | Touches: 10 | PROVEN | UNSWEPT | 58.51% above
+    >>10 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 111531.83667 | Touches: 9 | PROVEN | UNSWEPT | 55.52% above
+    >>9 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 112559.90000 | Touches: 4 | PROVEN | SWEPT | 56.95% above
+  - EQUAL HIGHS (Resistance) at 109992.43500 | Touches: 4 | PROVEN | SWEPT | 53.37% above
+  - EQUAL LOWS (Support) at 65358.23500 | Touches: 5 | PROVEN | UNSWEPT | 8.87% below
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 67521.35500 | Touches: 6 | PROVEN | SWEPT | 5.85% below
+  - EQUAL LOWS (Support) at 68279.50250 | Touches: 4 | PROVEN | UNSWEPT | 4.79% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 66446.59400 | Touches: 5 | PROVEN | SWEPT | 7.35% below
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 63.1 (Neutral)
+- **MACD**: 14.36670 | Signal: -658.83752 | Histogram: 673.20422
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 69730.47496 (Price above)
+- **EMA50**: 72884.33687 (Price below)
+- **ADX**: 18.9 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 3025.74857
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=73605.05075 | Middle=68854.60750 | Lower=64104.16425
+  - Price within bands
+
+### Volume
+- **Current Bar Volume**: 55,456 ticks
+- **20-bar Avg Volume**: 226,265 ticks
+- **Volume Ratio**: 0.25x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+2026-03-15 21:30:40,758 | 
+--- FULL PROMPT ---
+You are a systematic Smart Money Concepts (SMC) trader with strict risk discipline. You trade based on institutional order flow analysis to identify high-probability entries.
+
+## SMART MONEY CONCEPTS TRADING RULES
+
+### Core Concepts
+1. **Order Blocks (OB)**: The last opposing candle before a strong impulse move. This marks where institutions entered.
+   - Bullish OB: Last bearish candle before bullish impulse - expect price to bounce UP
+   - Bearish OB: Last bullish candle before bearish impulse - expect price to reject DOWN
+   - Only trade UNMITIGATED OBs (price hasn't returned yet)
+
+2. **Fair Value Gaps (FVG)**: Three-candle imbalance where price moved so fast it left a gap.
+   - Price tends to return to "fill" FVGs
+   - Bullish FVG: Gap below price - expect bounce UP when price returns
+   - Bearish FVG: Gap above price - expect rejection DOWN when price returns
+   - UNFILLED FVGs are active; FILLED FVGs are spent
+
+3. **Break of Structure (BOS)**: Price breaks previous swing high/low IN the direction of trend.
+   - Bullish BOS: Higher high formed - trend continuation UP
+   - Bearish BOS: Lower low formed - trend continuation DOWN
+   - BOS confirms you can trade with the trend
+
+4. **Change of Character (CHoCH)**: Price breaks structure AGAINST the trend.
+   - First warning of potential reversal
+   - Look for new OBs forming in the reversal direction
+   - Wait for confirmation before trading reversal
+
+5. **Liquidity**: Areas where stop losses cluster (equal highs/lows, round numbers).
+   - Smart money hunts liquidity before reversing
+   - EQH (Equal Highs): Buy-side liquidity above - price may spike up to sweep then drop
+   - EQL (Equal Lows): Sell-side liquidity below - price may spike down to sweep then rise
+   - After a liquidity sweep, look for reversal entries
+
+6. **Premium/Discount**: The current range divided into zones.
+   - Premium (>50% of range): Expensive - favor SHORTS
+   - Discount (<50% of range): Cheap - favor LONGS
+   - Equilibrium (50%): Wait for price to move to extreme
+
+### Trading Setups
+
+**Setup 1: OB Entry with Trend**
+- BOS confirms trend direction
+- Price retraces to unmitigated OB
+- Enter at OB in trend direction
+- SL: Beyond OB
+- TP: Next liquidity pool, opposing OB, or proven equal level (3+ retests)
+
+**Setup 2: OB + FVG Confluence**
+- Unmitigated OB overlaps with unfilled FVG
+- Highest probability setup
+- Enter at the overlap zone
+- SL: Beyond the full OB/FVG zone plus 1x ATR buffer (confluence improves win rate, not SL placement)
+
+**Setup 3: Liquidity Sweep Reversal**
+- Price sweeps liquidity (EQH/EQL)
+- Look for CHoCH or BOS in opposite direction
+- Enter at the new OB formed after sweep
+- Target: Opposite liquidity pool
+
+**Setup 4: OTE Entry (Optimal Trade Entry)**
+- After impulse move, wait for retracement
+- Enter at 61.8%-78.6% Fibonacci zone
+- This is where institutions typically re-enter
+- Combine with OB/FVG for confluence
+
+## RISK MANAGEMENT RULES (NEVER BREAK)
+
+1. **Risk no more than 1-2% of account value per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation before entry**
+5. **Place stops beyond OB/FVG zones** (allow for liquidity sweep)
+6. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+7. **Leverage is a tool, not a goal - default 5-20x**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- Place stops beyond the OB/FVG zone that forms your entry basis
+- **MINIMUM SL DISTANCE**: Stop loss must be at least 1x ATR from entry. SL within 0.5% of entry is TOO TIGHT and will get stopped out by normal price noise. For gold (XAUUSD), minimum SL should be $15-30+ from entry.
+- **MINIMUM TP DISTANCE**: Take profit should be at least 1.5x the SL distance (R:R >= 1.5:1). TP within 0.3% of entry is TOO CLOSE.
+- **TP TARGET PRIORITY**: In strong trends, prefer proven equal levels (3+ retests) and strong opposing OBs over the nearest zone. Equal levels with many retests are liquidity magnets — price is drawn to them.
+- If you cannot identify a valid stop loss placement with adequate distance, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71717.28000
+- **Date**: 2026-03-15
+- **Trading Session**: london
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: DISCOUNT zone (31%) - favorable for LONGS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 94783.74
+  - BOS HIGH at 70970.72 [RECENT]
+  - CHoCH LOW at 84446.10 (potential reversal) [RECENT]
+  - CHoCH HIGH at 90589.65 (potential reversal)
+  - CHoCH LOW at 65105.00 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 62505.95000-65005.35000 | Strength: 80% | UNMITIGATED | 12.84% from price
+  - BULLISH OB: 65611.47000-69513.83000 | Strength: 62% | UNMITIGATED | 8.51% from price
+  - BEARISH OB: 91138.51000-94783.74000 | Strength: 80% | MITIGATED | 32.16% from price
+  - BEARISH OB: 94083.47000-97928.36000 | Strength: 80% | MITIGATED | 36.55% from price
+  - BEARISH OB: 88833.88000-90599.24000 | Strength: 80% | MITIGATED | 26.33% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 65005.35000-66492.84000 | FILLED | 9.36% below price (expect bounce UP)
+  - BULLISH FVG: 69491.74000-70636.76000 | FILLED | 3.10% below price (expect bounce UP)
+  - BEARISH FVG: 84729.26000-88833.88000 | UNFILLED | 23.87% above price (expect rejection DOWN)
+  - BEARISH FVG: 79414.57000-81067.99000 | UNFILLED | 13.04% above price (expect rejection DOWN)
+  - BEARISH FVG: 65005.35000-67183.69000 | FILLED | -6.32% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 70970.72000 | Strength: 74% | UNSWEPT | 1.04% below
+  - BUY-SIDE at 74043.78000 | Strength: 68% | UNSWEPT | 3.24% above
+  - SELL-SIDE at 65611.47000 | Strength: 66% | UNSWEPT | 8.51% below
+  - SELL-SIDE at 65105.00000 | Strength: 74% | UNSWEPT | 9.22% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 113677.15900 | Touches: 10 | PROVEN | UNSWEPT | 58.51% above
+    >>10 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 111531.83667 | Touches: 9 | PROVEN | UNSWEPT | 55.52% above
+    >>9 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 112559.90000 | Touches: 4 | PROVEN | SWEPT | 56.95% above
+  - EQUAL HIGHS (Resistance) at 109992.43500 | Touches: 4 | PROVEN | SWEPT | 53.37% above
+  - EQUAL LOWS (Support) at 65358.23500 | Touches: 5 | PROVEN | UNSWEPT | 8.87% below
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 67521.35500 | Touches: 6 | PROVEN | SWEPT | 5.85% below
+  - EQUAL LOWS (Support) at 68279.50250 | Touches: 4 | PROVEN | UNSWEPT | 4.79% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 66446.59400 | Touches: 5 | PROVEN | SWEPT | 7.35% below
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 63.1 (Neutral)
+- **MACD**: 14.36670 | Signal: -658.83752 | Histogram: 673.20422
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 69730.47496 (Price above)
+- **EMA50**: 72884.33687 (Price below)
+- **ADX**: 18.9 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 3025.74857
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=73605.05075 | Middle=68854.60750 | Lower=64104.16425
+  - Price within bands
+
+### Volume
+- **Current Bar Volume**: 55,456 ticks
+- **20-bar Avg Volume**: 226,265 ticks
+- **Volume Ratio**: 0.25x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+
+## YOUR TASK
+
+Analyze the SMC data and make a systematic trading decision.
+
+Think step-by-step:
+1. What is the market bias? (bullish/bearish based on BOS)
+2. Are we in premium or discount? (favor shorts in premium, longs in discount)
+3. Are there unmitigated OBs or unfilled FVGs near current price?
+4. Is there OB+FVG confluence?
+5. Where are the liquidity targets? (EQH/EQL for TP — proven levels with 3+ retests are strongest)
+6. Has there been a recent liquidity sweep that signals reversal?
+7. Where should stop loss be placed? (beyond OB/FVG)
+8. What's the risk:reward ratio? (must be >1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when: bullish BOS, price at bullish OB/FVG in discount, or after sell-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when: bearish BOS, price at bearish OB/FVG in premium, or after buy-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when: no clear structure, price at equilibrium, no unmitigated zones nearby, or conflicting signals.
+- **close** - Close existing position. Use when: price reaches liquidity target, OB/FVG invalidated, or CHoCH against position.
+
+## ORDER TYPE (you MUST pick one for buy/sell signals)
+- **market** - Execute immediately at current market price. Use when:
+  - Price is ALREADY AT the OB/FVG zone (within 0.1%)
+  - Liquidity sweep just happened and you want immediate entry
+  - Setup is confirmed and you don't want to miss it
+- **limit** - Place pending order at entry_price. Use when:
+  - Price is NOT YET at the zone (waiting for retracement)
+  - You want better entry at the OB/FVG level
+  - Zone is nearby but price hasn't reached it yet
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+For buy/sell signals, suggest a trailing stop distance as an ATR multiplier based on current volatility:
+- **Low volatility** (tight ranges, small ATR): 1.5-2.0x ATR — tighter trail locks profits
+- **Normal volatility**: 2.0-3.0x ATR — balanced between protection and breathing room
+- **High volatility** (wide swings, large ATR, news events): 3.0-5.0x ATR — wide trail avoids noise
+- **XAUUSD/Gold**: Typically 2.5-4.0x ATR (gold is volatile, tight trails get stopped out)
+- **Forex majors**: Typically 1.5-2.5x ATR
+- If unsure, default to 2.5x ATR
+
+Remember:
+- Smart money leaves footprints (OBs, FVGs)
+- Structure (BOS/CHoCH) tells you the trend
+- Liquidity shows you where price is likely to go
+- Trade with trend, enter at discount (longs) or premium (shorts)
+- Confluence = higher probability
+2026-03-15 21:30:40,771 | 
+================================================================================
+
+2026-03-15 21:30:53,039 | --- LLM RESPONSE (Structured) [took 12.3s] ---
+2026-03-15 21:30:53,039 | Signal: hold
+2026-03-15 21:30:53,039 | Confidence: 0.85
+2026-03-15 21:30:53,040 | Entry: None | SL: None | TP: None
+2026-03-15 21:30:53,040 | Justification: Ranging market with conflicting recent CHoCH signals indicating potential reversal despite overall bullish bias and discount zone; no unmitigated OB or FVG confluence near current price for high-probability entry, recent past trades show poor direction accuracy.
+2026-03-15 21:30:53,040 | Invalidation: Price breaks below recent CHoCH low at 65105 without forming new bullish BOS
+2026-03-15 21:30:53,041 | Raw decision dict: {'symbol': 'BTCUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price breaks below recent CHoCH low at 65105 without forming new bullish BOS', 'justification': 'Ranging market with conflicting recent CHoCH signals indicating potential reversal despite overall bullish bias and discount zone; no unmitigated OB or FVG confluence near current price for high-probability entry, recent past trades show poor direction accuracy.', 'confidence': 0.85, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-15 21:30:53,041 | 
+================================================================================
+
+2026-03-15 21:30:53,042 | Structured output SUCCESS - returning smc_quant_decision with signal=hold
+2026-03-15 22:30:54,730 | 
+================================================================================
+SMC QUANT ANALYSIS - BTCUSD
+================================================================================
+2026-03-15 22:30:54,731 | Symbol: BTCUSD | Date: 2026-03-15 | Price: 71696.69
+2026-03-15 22:30:54,731 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71696.69000
+- **Date**: 2026-03-15
+- **Trading Session**: london_ny_overlap
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: DISCOUNT zone (31%) - favorable for LONGS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 94783.74
+  - BOS HIGH at 70970.72 [RECENT]
+  - CHoCH LOW at 84446.10 (potential reversal) [RECENT]
+  - CHoCH HIGH at 90589.65 (potential reversal)
+  - CHoCH LOW at 65105.00 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 62505.95000-65005.35000 | Strength: 80% | UNMITIGATED | 12.82% from price
+  - BULLISH OB: 65611.47000-69513.83000 | Strength: 62% | UNMITIGATED | 8.49% from price
+  - BEARISH OB: 91138.51000-94783.74000 | Strength: 80% | MITIGATED | 32.20% from price
+  - BEARISH OB: 94083.47000-97928.36000 | Strength: 80% | MITIGATED | 36.59% from price
+  - BEARISH OB: 88833.88000-90599.24000 | Strength: 80% | MITIGATED | 26.36% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 65005.35000-66492.84000 | FILLED | 9.33% below price (expect bounce UP)
+  - BULLISH FVG: 69491.74000-70636.76000 | FILLED | 3.08% below price (expect bounce UP)
+  - BEARISH FVG: 84729.26000-88833.88000 | UNFILLED | 23.90% above price (expect rejection DOWN)
+  - BEARISH FVG: 79414.57000-81067.99000 | UNFILLED | 13.07% above price (expect rejection DOWN)
+  - BEARISH FVG: 65005.35000-67183.69000 | FILLED | -6.29% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 70970.72000 | Strength: 74% | UNSWEPT | 1.01% below
+  - BUY-SIDE at 74043.78000 | Strength: 68% | UNSWEPT | 3.27% above
+  - SELL-SIDE at 65611.47000 | Strength: 66% | UNSWEPT | 8.49% below
+  - SELL-SIDE at 65105.00000 | Strength: 74% | UNSWEPT | 9.19% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 113677.15900 | Touches: 10 | PROVEN | UNSWEPT | 58.55% above
+    >>10 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 111531.83667 | Touches: 9 | PROVEN | UNSWEPT | 55.56% above
+    >>9 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 112559.90000 | Touches: 4 | PROVEN | SWEPT | 56.99% above
+  - EQUAL HIGHS (Resistance) at 109992.43500 | Touches: 4 | PROVEN | SWEPT | 53.41% above
+  - EQUAL LOWS (Support) at 65358.23500 | Touches: 5 | PROVEN | UNSWEPT | 8.84% below
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 67521.35500 | Touches: 6 | PROVEN | SWEPT | 5.82% below
+  - EQUAL LOWS (Support) at 68279.50250 | Touches: 4 | PROVEN | UNSWEPT | 4.77% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 66446.59400 | Touches: 5 | PROVEN | SWEPT | 7.32% below
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 63.1 (Neutral)
+- **MACD**: 12.72419 | Signal: -659.16602 | Histogram: 671.89021
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 69728.51401 (Price above)
+- **EMA50**: 72883.52942 (Price below)
+- **ADX**: 18.9 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 3025.74857
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=73601.42418 | Middle=68853.57800 | Lower=64105.73182
+  - Price within bands
+
+### Volume
+- **Current Bar Volume**: 58,459 ticks
+- **20-bar Avg Volume**: 226,416 ticks
+- **Volume Ratio**: 0.26x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+2026-03-15 22:30:54,736 | 
+--- FULL PROMPT ---
+You are a systematic Smart Money Concepts (SMC) trader with strict risk discipline. You trade based on institutional order flow analysis to identify high-probability entries.
+
+## SMART MONEY CONCEPTS TRADING RULES
+
+### Core Concepts
+1. **Order Blocks (OB)**: The last opposing candle before a strong impulse move. This marks where institutions entered.
+   - Bullish OB: Last bearish candle before bullish impulse - expect price to bounce UP
+   - Bearish OB: Last bullish candle before bearish impulse - expect price to reject DOWN
+   - Only trade UNMITIGATED OBs (price hasn't returned yet)
+
+2. **Fair Value Gaps (FVG)**: Three-candle imbalance where price moved so fast it left a gap.
+   - Price tends to return to "fill" FVGs
+   - Bullish FVG: Gap below price - expect bounce UP when price returns
+   - Bearish FVG: Gap above price - expect rejection DOWN when price returns
+   - UNFILLED FVGs are active; FILLED FVGs are spent
+
+3. **Break of Structure (BOS)**: Price breaks previous swing high/low IN the direction of trend.
+   - Bullish BOS: Higher high formed - trend continuation UP
+   - Bearish BOS: Lower low formed - trend continuation DOWN
+   - BOS confirms you can trade with the trend
+
+4. **Change of Character (CHoCH)**: Price breaks structure AGAINST the trend.
+   - First warning of potential reversal
+   - Look for new OBs forming in the reversal direction
+   - Wait for confirmation before trading reversal
+
+5. **Liquidity**: Areas where stop losses cluster (equal highs/lows, round numbers).
+   - Smart money hunts liquidity before reversing
+   - EQH (Equal Highs): Buy-side liquidity above - price may spike up to sweep then drop
+   - EQL (Equal Lows): Sell-side liquidity below - price may spike down to sweep then rise
+   - After a liquidity sweep, look for reversal entries
+
+6. **Premium/Discount**: The current range divided into zones.
+   - Premium (>50% of range): Expensive - favor SHORTS
+   - Discount (<50% of range): Cheap - favor LONGS
+   - Equilibrium (50%): Wait for price to move to extreme
+
+### Trading Setups
+
+**Setup 1: OB Entry with Trend**
+- BOS confirms trend direction
+- Price retraces to unmitigated OB
+- Enter at OB in trend direction
+- SL: Beyond OB
+- TP: Next liquidity pool, opposing OB, or proven equal level (3+ retests)
+
+**Setup 2: OB + FVG Confluence**
+- Unmitigated OB overlaps with unfilled FVG
+- Highest probability setup
+- Enter at the overlap zone
+- SL: Beyond the full OB/FVG zone plus 1x ATR buffer (confluence improves win rate, not SL placement)
+
+**Setup 3: Liquidity Sweep Reversal**
+- Price sweeps liquidity (EQH/EQL)
+- Look for CHoCH or BOS in opposite direction
+- Enter at the new OB formed after sweep
+- Target: Opposite liquidity pool
+
+**Setup 4: OTE Entry (Optimal Trade Entry)**
+- After impulse move, wait for retracement
+- Enter at 61.8%-78.6% Fibonacci zone
+- This is where institutions typically re-enter
+- Combine with OB/FVG for confluence
+
+## RISK MANAGEMENT RULES (NEVER BREAK)
+
+1. **Risk no more than 1-2% of account value per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation before entry**
+5. **Place stops beyond OB/FVG zones** (allow for liquidity sweep)
+6. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+7. **Leverage is a tool, not a goal - default 5-20x**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- Place stops beyond the OB/FVG zone that forms your entry basis
+- **MINIMUM SL DISTANCE**: Stop loss must be at least 1x ATR from entry. SL within 0.5% of entry is TOO TIGHT and will get stopped out by normal price noise. For gold (XAUUSD), minimum SL should be $15-30+ from entry.
+- **MINIMUM TP DISTANCE**: Take profit should be at least 1.5x the SL distance (R:R >= 1.5:1). TP within 0.3% of entry is TOO CLOSE.
+- **TP TARGET PRIORITY**: In strong trends, prefer proven equal levels (3+ retests) and strong opposing OBs over the nearest zone. Equal levels with many retests are liquidity magnets — price is drawn to them.
+- If you cannot identify a valid stop loss placement with adequate distance, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71696.69000
+- **Date**: 2026-03-15
+- **Trading Session**: london_ny_overlap
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: DISCOUNT zone (31%) - favorable for LONGS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 94783.74
+  - BOS HIGH at 70970.72 [RECENT]
+  - CHoCH LOW at 84446.10 (potential reversal) [RECENT]
+  - CHoCH HIGH at 90589.65 (potential reversal)
+  - CHoCH LOW at 65105.00 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 62505.95000-65005.35000 | Strength: 80% | UNMITIGATED | 12.82% from price
+  - BULLISH OB: 65611.47000-69513.83000 | Strength: 62% | UNMITIGATED | 8.49% from price
+  - BEARISH OB: 91138.51000-94783.74000 | Strength: 80% | MITIGATED | 32.20% from price
+  - BEARISH OB: 94083.47000-97928.36000 | Strength: 80% | MITIGATED | 36.59% from price
+  - BEARISH OB: 88833.88000-90599.24000 | Strength: 80% | MITIGATED | 26.36% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 65005.35000-66492.84000 | FILLED | 9.33% below price (expect bounce UP)
+  - BULLISH FVG: 69491.74000-70636.76000 | FILLED | 3.08% below price (expect bounce UP)
+  - BEARISH FVG: 84729.26000-88833.88000 | UNFILLED | 23.90% above price (expect rejection DOWN)
+  - BEARISH FVG: 79414.57000-81067.99000 | UNFILLED | 13.07% above price (expect rejection DOWN)
+  - BEARISH FVG: 65005.35000-67183.69000 | FILLED | -6.29% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 70970.72000 | Strength: 74% | UNSWEPT | 1.01% below
+  - BUY-SIDE at 74043.78000 | Strength: 68% | UNSWEPT | 3.27% above
+  - SELL-SIDE at 65611.47000 | Strength: 66% | UNSWEPT | 8.49% below
+  - SELL-SIDE at 65105.00000 | Strength: 74% | UNSWEPT | 9.19% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 113677.15900 | Touches: 10 | PROVEN | UNSWEPT | 58.55% above
+    >>10 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 111531.83667 | Touches: 9 | PROVEN | UNSWEPT | 55.56% above
+    >>9 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 112559.90000 | Touches: 4 | PROVEN | SWEPT | 56.99% above
+  - EQUAL HIGHS (Resistance) at 109992.43500 | Touches: 4 | PROVEN | SWEPT | 53.41% above
+  - EQUAL LOWS (Support) at 65358.23500 | Touches: 5 | PROVEN | UNSWEPT | 8.84% below
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 67521.35500 | Touches: 6 | PROVEN | SWEPT | 5.82% below
+  - EQUAL LOWS (Support) at 68279.50250 | Touches: 4 | PROVEN | UNSWEPT | 4.77% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 66446.59400 | Touches: 5 | PROVEN | SWEPT | 7.32% below
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 63.1 (Neutral)
+- **MACD**: 12.72419 | Signal: -659.16602 | Histogram: 671.89021
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 69728.51401 (Price above)
+- **EMA50**: 72883.52942 (Price below)
+- **ADX**: 18.9 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 3025.74857
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=73601.42418 | Middle=68853.57800 | Lower=64105.73182
+  - Price within bands
+
+### Volume
+- **Current Bar Volume**: 58,459 ticks
+- **20-bar Avg Volume**: 226,416 ticks
+- **Volume Ratio**: 0.26x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+
+## YOUR TASK
+
+Analyze the SMC data and make a systematic trading decision.
+
+Think step-by-step:
+1. What is the market bias? (bullish/bearish based on BOS)
+2. Are we in premium or discount? (favor shorts in premium, longs in discount)
+3. Are there unmitigated OBs or unfilled FVGs near current price?
+4. Is there OB+FVG confluence?
+5. Where are the liquidity targets? (EQH/EQL for TP — proven levels with 3+ retests are strongest)
+6. Has there been a recent liquidity sweep that signals reversal?
+7. Where should stop loss be placed? (beyond OB/FVG)
+8. What's the risk:reward ratio? (must be >1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when: bullish BOS, price at bullish OB/FVG in discount, or after sell-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when: bearish BOS, price at bearish OB/FVG in premium, or after buy-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when: no clear structure, price at equilibrium, no unmitigated zones nearby, or conflicting signals.
+- **close** - Close existing position. Use when: price reaches liquidity target, OB/FVG invalidated, or CHoCH against position.
+
+## ORDER TYPE (you MUST pick one for buy/sell signals)
+- **market** - Execute immediately at current market price. Use when:
+  - Price is ALREADY AT the OB/FVG zone (within 0.1%)
+  - Liquidity sweep just happened and you want immediate entry
+  - Setup is confirmed and you don't want to miss it
+- **limit** - Place pending order at entry_price. Use when:
+  - Price is NOT YET at the zone (waiting for retracement)
+  - You want better entry at the OB/FVG level
+  - Zone is nearby but price hasn't reached it yet
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+For buy/sell signals, suggest a trailing stop distance as an ATR multiplier based on current volatility:
+- **Low volatility** (tight ranges, small ATR): 1.5-2.0x ATR — tighter trail locks profits
+- **Normal volatility**: 2.0-3.0x ATR — balanced between protection and breathing room
+- **High volatility** (wide swings, large ATR, news events): 3.0-5.0x ATR — wide trail avoids noise
+- **XAUUSD/Gold**: Typically 2.5-4.0x ATR (gold is volatile, tight trails get stopped out)
+- **Forex majors**: Typically 1.5-2.5x ATR
+- If unsure, default to 2.5x ATR
+
+Remember:
+- Smart money leaves footprints (OBs, FVGs)
+- Structure (BOS/CHoCH) tells you the trend
+- Liquidity shows you where price is likely to go
+- Trade with trend, enter at discount (longs) or premium (shorts)
+- Confluence = higher probability
+2026-03-15 22:30:54,750 | 
+================================================================================
+
+2026-03-15 22:31:03,651 | --- LLM RESPONSE (Structured) [took 8.9s] ---
+2026-03-15 22:31:03,651 | Signal: hold
+2026-03-15 22:31:03,651 | Confidence: 0.85
+2026-03-15 22:31:03,652 | Entry: None | SL: None | TP: None
+2026-03-15 22:31:03,652 | Justification: Ranging market with conflicting recent CHoCH signals, no unmitigated OB or unfilled FVG confluence at current price in discount zone, and past trades show poor direction accuracy requiring caution.
+2026-03-15 22:31:03,652 | Invalidation: Price breaks below 65105 CHoCH low confirming bearish reversal
+2026-03-15 22:31:03,653 | Raw decision dict: {'symbol': 'BTCUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price breaks below 65105 CHoCH low confirming bearish reversal', 'justification': 'Ranging market with conflicting recent CHoCH signals, no unmitigated OB or unfilled FVG confluence at current price in discount zone, and past trades show poor direction accuracy requiring caution.', 'confidence': 0.85, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-15 22:31:03,654 | 
+================================================================================
+
+2026-03-15 22:31:03,654 | Structured output SUCCESS - returning smc_quant_decision with signal=hold
+2026-03-15 23:31:54,705 | 
+================================================================================
+SMC QUANT ANALYSIS - BTCUSD
+================================================================================
+2026-03-15 23:31:54,705 | Symbol: BTCUSD | Date: 2026-03-15 | Price: 71503.19
+2026-03-15 23:31:54,706 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71503.19000
+- **Date**: 2026-03-15
+- **Trading Session**: london_ny_overlap
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: DISCOUNT zone (30%) - favorable for LONGS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 94783.74
+  - BOS HIGH at 70970.72 [RECENT]
+  - CHoCH LOW at 84446.10 (potential reversal) [RECENT]
+  - CHoCH HIGH at 90589.65 (potential reversal)
+  - CHoCH LOW at 65105.00 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 62505.95000-65005.35000 | Strength: 80% | UNMITIGATED | 12.58% from price
+  - BULLISH OB: 65611.47000-69513.83000 | Strength: 62% | UNMITIGATED | 8.24% from price
+  - BEARISH OB: 91138.51000-94783.74000 | Strength: 80% | MITIGATED | 32.56% from price
+  - BEARISH OB: 94083.47000-97928.36000 | Strength: 80% | MITIGATED | 36.96% from price
+  - BEARISH OB: 88833.88000-90599.24000 | Strength: 80% | MITIGATED | 26.71% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 65005.35000-66492.84000 | FILLED | 9.09% below price (expect bounce UP)
+  - BULLISH FVG: 69491.74000-70636.76000 | FILLED | 2.81% below price (expect bounce UP)
+  - BEARISH FVG: 84729.26000-88833.88000 | UNFILLED | 24.24% above price (expect rejection DOWN)
+  - BEARISH FVG: 79414.57000-81067.99000 | UNFILLED | 13.38% above price (expect rejection DOWN)
+  - BEARISH FVG: 65005.35000-67183.69000 | FILLED | -6.04% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 70970.72000 | Strength: 74% | UNSWEPT | 0.74% below
+  - BUY-SIDE at 74043.78000 | Strength: 68% | UNSWEPT | 3.55% above
+  - SELL-SIDE at 65611.47000 | Strength: 66% | UNSWEPT | 8.24% below
+  - SELL-SIDE at 65105.00000 | Strength: 74% | UNSWEPT | 8.95% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 113677.15900 | Touches: 10 | PROVEN | UNSWEPT | 58.98% above
+    >>10 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 111531.83667 | Touches: 9 | PROVEN | UNSWEPT | 55.98% above
+    >>9 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 112559.90000 | Touches: 4 | PROVEN | SWEPT | 57.42% above
+  - EQUAL HIGHS (Resistance) at 109992.43500 | Touches: 4 | PROVEN | SWEPT | 53.83% above
+  - EQUAL LOWS (Support) at 65358.23500 | Touches: 5 | PROVEN | UNSWEPT | 8.59% below
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 67521.35500 | Touches: 6 | PROVEN | SWEPT | 5.57% below
+  - EQUAL LOWS (Support) at 68279.50250 | Touches: 4 | PROVEN | UNSWEPT | 4.51% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 66446.59400 | Touches: 5 | PROVEN | SWEPT | 7.07% below
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 62.8 (Neutral)
+- **MACD**: -2.70931 | Signal: -662.25272 | Histogram: 659.54341
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 69710.08830 (Price above)
+- **EMA50**: 72875.94236 (Price below)
+- **ADX**: 18.9 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 3025.74857
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=73568.15479 | Middle=68843.90450 | Lower=64119.65421
+  - Price within bands
+
+### Volume
+- **Current Bar Volume**: 63,785 ticks
+- **20-bar Avg Volume**: 226,682 ticks
+- **Volume Ratio**: 0.28x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+2026-03-15 23:31:54,712 | 
+--- FULL PROMPT ---
+You are a systematic Smart Money Concepts (SMC) trader with strict risk discipline. You trade based on institutional order flow analysis to identify high-probability entries.
+
+## SMART MONEY CONCEPTS TRADING RULES
+
+### Core Concepts
+1. **Order Blocks (OB)**: The last opposing candle before a strong impulse move. This marks where institutions entered.
+   - Bullish OB: Last bearish candle before bullish impulse - expect price to bounce UP
+   - Bearish OB: Last bullish candle before bearish impulse - expect price to reject DOWN
+   - Only trade UNMITIGATED OBs (price hasn't returned yet)
+
+2. **Fair Value Gaps (FVG)**: Three-candle imbalance where price moved so fast it left a gap.
+   - Price tends to return to "fill" FVGs
+   - Bullish FVG: Gap below price - expect bounce UP when price returns
+   - Bearish FVG: Gap above price - expect rejection DOWN when price returns
+   - UNFILLED FVGs are active; FILLED FVGs are spent
+
+3. **Break of Structure (BOS)**: Price breaks previous swing high/low IN the direction of trend.
+   - Bullish BOS: Higher high formed - trend continuation UP
+   - Bearish BOS: Lower low formed - trend continuation DOWN
+   - BOS confirms you can trade with the trend
+
+4. **Change of Character (CHoCH)**: Price breaks structure AGAINST the trend.
+   - First warning of potential reversal
+   - Look for new OBs forming in the reversal direction
+   - Wait for confirmation before trading reversal
+
+5. **Liquidity**: Areas where stop losses cluster (equal highs/lows, round numbers).
+   - Smart money hunts liquidity before reversing
+   - EQH (Equal Highs): Buy-side liquidity above - price may spike up to sweep then drop
+   - EQL (Equal Lows): Sell-side liquidity below - price may spike down to sweep then rise
+   - After a liquidity sweep, look for reversal entries
+
+6. **Premium/Discount**: The current range divided into zones.
+   - Premium (>50% of range): Expensive - favor SHORTS
+   - Discount (<50% of range): Cheap - favor LONGS
+   - Equilibrium (50%): Wait for price to move to extreme
+
+### Trading Setups
+
+**Setup 1: OB Entry with Trend**
+- BOS confirms trend direction
+- Price retraces to unmitigated OB
+- Enter at OB in trend direction
+- SL: Beyond OB
+- TP: Next liquidity pool, opposing OB, or proven equal level (3+ retests)
+
+**Setup 2: OB + FVG Confluence**
+- Unmitigated OB overlaps with unfilled FVG
+- Highest probability setup
+- Enter at the overlap zone
+- SL: Beyond the full OB/FVG zone plus 1x ATR buffer (confluence improves win rate, not SL placement)
+
+**Setup 3: Liquidity Sweep Reversal**
+- Price sweeps liquidity (EQH/EQL)
+- Look for CHoCH or BOS in opposite direction
+- Enter at the new OB formed after sweep
+- Target: Opposite liquidity pool
+
+**Setup 4: OTE Entry (Optimal Trade Entry)**
+- After impulse move, wait for retracement
+- Enter at 61.8%-78.6% Fibonacci zone
+- This is where institutions typically re-enter
+- Combine with OB/FVG for confluence
+
+## RISK MANAGEMENT RULES (NEVER BREAK)
+
+1. **Risk no more than 1-2% of account value per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation before entry**
+5. **Place stops beyond OB/FVG zones** (allow for liquidity sweep)
+6. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+7. **Leverage is a tool, not a goal - default 5-20x**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- Place stops beyond the OB/FVG zone that forms your entry basis
+- **MINIMUM SL DISTANCE**: Stop loss must be at least 1x ATR from entry. SL within 0.5% of entry is TOO TIGHT and will get stopped out by normal price noise. For gold (XAUUSD), minimum SL should be $15-30+ from entry.
+- **MINIMUM TP DISTANCE**: Take profit should be at least 1.5x the SL distance (R:R >= 1.5:1). TP within 0.3% of entry is TOO CLOSE.
+- **TP TARGET PRIORITY**: In strong trends, prefer proven equal levels (3+ retests) and strong opposing OBs over the nearest zone. Equal levels with many retests are liquidity magnets — price is drawn to them.
+- If you cannot identify a valid stop loss placement with adequate distance, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71503.19000
+- **Date**: 2026-03-15
+- **Trading Session**: london_ny_overlap
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: DISCOUNT zone (30%) - favorable for LONGS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 94783.74
+  - BOS HIGH at 70970.72 [RECENT]
+  - CHoCH LOW at 84446.10 (potential reversal) [RECENT]
+  - CHoCH HIGH at 90589.65 (potential reversal)
+  - CHoCH LOW at 65105.00 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 62505.95000-65005.35000 | Strength: 80% | UNMITIGATED | 12.58% from price
+  - BULLISH OB: 65611.47000-69513.83000 | Strength: 62% | UNMITIGATED | 8.24% from price
+  - BEARISH OB: 91138.51000-94783.74000 | Strength: 80% | MITIGATED | 32.56% from price
+  - BEARISH OB: 94083.47000-97928.36000 | Strength: 80% | MITIGATED | 36.96% from price
+  - BEARISH OB: 88833.88000-90599.24000 | Strength: 80% | MITIGATED | 26.71% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 65005.35000-66492.84000 | FILLED | 9.09% below price (expect bounce UP)
+  - BULLISH FVG: 69491.74000-70636.76000 | FILLED | 2.81% below price (expect bounce UP)
+  - BEARISH FVG: 84729.26000-88833.88000 | UNFILLED | 24.24% above price (expect rejection DOWN)
+  - BEARISH FVG: 79414.57000-81067.99000 | UNFILLED | 13.38% above price (expect rejection DOWN)
+  - BEARISH FVG: 65005.35000-67183.69000 | FILLED | -6.04% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 70970.72000 | Strength: 74% | UNSWEPT | 0.74% below
+  - BUY-SIDE at 74043.78000 | Strength: 68% | UNSWEPT | 3.55% above
+  - SELL-SIDE at 65611.47000 | Strength: 66% | UNSWEPT | 8.24% below
+  - SELL-SIDE at 65105.00000 | Strength: 74% | UNSWEPT | 8.95% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 113677.15900 | Touches: 10 | PROVEN | UNSWEPT | 58.98% above
+    >>10 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 111531.83667 | Touches: 9 | PROVEN | UNSWEPT | 55.98% above
+    >>9 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 112559.90000 | Touches: 4 | PROVEN | SWEPT | 57.42% above
+  - EQUAL HIGHS (Resistance) at 109992.43500 | Touches: 4 | PROVEN | SWEPT | 53.83% above
+  - EQUAL LOWS (Support) at 65358.23500 | Touches: 5 | PROVEN | UNSWEPT | 8.59% below
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 67521.35500 | Touches: 6 | PROVEN | SWEPT | 5.57% below
+  - EQUAL LOWS (Support) at 68279.50250 | Touches: 4 | PROVEN | UNSWEPT | 4.51% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 66446.59400 | Touches: 5 | PROVEN | SWEPT | 7.07% below
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 62.8 (Neutral)
+- **MACD**: -2.70931 | Signal: -662.25272 | Histogram: 659.54341
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 69710.08830 (Price above)
+- **EMA50**: 72875.94236 (Price below)
+- **ADX**: 18.9 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 3025.74857
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=73568.15479 | Middle=68843.90450 | Lower=64119.65421
+  - Price within bands
+
+### Volume
+- **Current Bar Volume**: 63,785 ticks
+- **20-bar Avg Volume**: 226,682 ticks
+- **Volume Ratio**: 0.28x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+
+## YOUR TASK
+
+Analyze the SMC data and make a systematic trading decision.
+
+Think step-by-step:
+1. What is the market bias? (bullish/bearish based on BOS)
+2. Are we in premium or discount? (favor shorts in premium, longs in discount)
+3. Are there unmitigated OBs or unfilled FVGs near current price?
+4. Is there OB+FVG confluence?
+5. Where are the liquidity targets? (EQH/EQL for TP — proven levels with 3+ retests are strongest)
+6. Has there been a recent liquidity sweep that signals reversal?
+7. Where should stop loss be placed? (beyond OB/FVG)
+8. What's the risk:reward ratio? (must be >1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when: bullish BOS, price at bullish OB/FVG in discount, or after sell-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when: bearish BOS, price at bearish OB/FVG in premium, or after buy-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when: no clear structure, price at equilibrium, no unmitigated zones nearby, or conflicting signals.
+- **close** - Close existing position. Use when: price reaches liquidity target, OB/FVG invalidated, or CHoCH against position.
+
+## ORDER TYPE (you MUST pick one for buy/sell signals)
+- **market** - Execute immediately at current market price. Use when:
+  - Price is ALREADY AT the OB/FVG zone (within 0.1%)
+  - Liquidity sweep just happened and you want immediate entry
+  - Setup is confirmed and you don't want to miss it
+- **limit** - Place pending order at entry_price. Use when:
+  - Price is NOT YET at the zone (waiting for retracement)
+  - You want better entry at the OB/FVG level
+  - Zone is nearby but price hasn't reached it yet
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+For buy/sell signals, suggest a trailing stop distance as an ATR multiplier based on current volatility:
+- **Low volatility** (tight ranges, small ATR): 1.5-2.0x ATR — tighter trail locks profits
+- **Normal volatility**: 2.0-3.0x ATR — balanced between protection and breathing room
+- **High volatility** (wide swings, large ATR, news events): 3.0-5.0x ATR — wide trail avoids noise
+- **XAUUSD/Gold**: Typically 2.5-4.0x ATR (gold is volatile, tight trails get stopped out)
+- **Forex majors**: Typically 1.5-2.5x ATR
+- If unsure, default to 2.5x ATR
+
+Remember:
+- Smart money leaves footprints (OBs, FVGs)
+- Structure (BOS/CHoCH) tells you the trend
+- Liquidity shows you where price is likely to go
+- Trade with trend, enter at discount (longs) or premium (shorts)
+- Confluence = higher probability
+2026-03-15 23:31:54,729 | 
+================================================================================
+
+2026-03-15 23:32:02,952 | --- LLM RESPONSE (Structured) [took 8.2s] ---
+2026-03-15 23:32:02,952 | Signal: hold
+2026-03-15 23:32:02,953 | Confidence: 0.85
+2026-03-15 23:32:02,953 | Entry: None | SL: None | TP: None
+2026-03-15 23:32:02,953 | Justification: Ranging market with conflicting CHoCH signals despite bullish bias and discount zone; no unmitigated OB or FVG confluence near current price (8%+ away), recent poor directional accuracy warrants caution without clear setup.
+2026-03-15 23:32:02,954 | Invalidation: Price breaks below 65105 CHoCH low confirming bearish reversal
+2026-03-15 23:32:02,954 | Raw decision dict: {'symbol': 'BTCUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price breaks below 65105 CHoCH low confirming bearish reversal', 'justification': 'Ranging market with conflicting CHoCH signals despite bullish bias and discount zone; no unmitigated OB or FVG confluence near current price (8%+ away), recent poor directional accuracy warrants caution without clear setup.', 'confidence': 0.85, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-15 23:32:02,955 | 
+================================================================================
+
+2026-03-15 23:32:02,956 | Structured output SUCCESS - returning smc_quant_decision with signal=hold
+2026-03-16 00:32:04,863 | 
+================================================================================
+SMC QUANT ANALYSIS - BTCUSD
+================================================================================
+2026-03-16 00:32:04,864 | Symbol: BTCUSD | Date: 2026-03-16 | Price: 71425.94
+2026-03-16 00:32:04,865 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71425.94000
+- **Date**: 2026-03-16
+- **Trading Session**: london_ny_overlap
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: DISCOUNT zone (30%) - favorable for LONGS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 94783.74
+  - BOS HIGH at 70970.72 [RECENT]
+  - CHoCH LOW at 84446.10 (potential reversal) [RECENT]
+  - CHoCH HIGH at 90589.65 (potential reversal)
+  - CHoCH LOW at 65105.00 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 62505.95000-65005.35000 | Strength: 80% | UNMITIGATED | 12.49% from price
+  - BULLISH OB: 65611.47000-69513.83000 | Strength: 62% | UNMITIGATED | 8.14% from price
+  - BEARISH OB: 91138.51000-94783.74000 | Strength: 80% | MITIGATED | 32.70% from price
+  - BEARISH OB: 94083.47000-97928.36000 | Strength: 80% | MITIGATED | 37.10% from price
+  - BEARISH OB: 88833.88000-90599.24000 | Strength: 80% | MITIGATED | 26.84% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 65005.35000-66492.84000 | FILLED | 8.99% below price (expect bounce UP)
+  - BULLISH FVG: 69491.74000-70636.76000 | FILLED | 2.71% below price (expect bounce UP)
+  - BEARISH FVG: 84729.26000-88833.88000 | UNFILLED | 24.37% above price (expect rejection DOWN)
+  - BEARISH FVG: 79414.57000-81067.99000 | UNFILLED | 13.50% above price (expect rejection DOWN)
+  - BEARISH FVG: 65005.35000-67183.69000 | FILLED | -5.94% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 70970.72000 | Strength: 74% | UNSWEPT | 0.64% below
+  - BUY-SIDE at 74043.78000 | Strength: 68% | UNSWEPT | 3.67% above
+  - SELL-SIDE at 65611.47000 | Strength: 66% | UNSWEPT | 8.14% below
+  - SELL-SIDE at 65105.00000 | Strength: 74% | UNSWEPT | 8.85% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 113677.15900 | Touches: 10 | PROVEN | UNSWEPT | 59.15% above
+    >>10 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 111531.83667 | Touches: 9 | PROVEN | UNSWEPT | 56.15% above
+    >>9 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 112559.90000 | Touches: 4 | PROVEN | SWEPT | 57.59% above
+  - EQUAL HIGHS (Resistance) at 109992.43500 | Touches: 4 | PROVEN | SWEPT | 54.00% above
+  - EQUAL LOWS (Support) at 65358.23500 | Touches: 5 | PROVEN | UNSWEPT | 8.50% below
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 67521.35500 | Touches: 6 | PROVEN | SWEPT | 5.47% below
+  - EQUAL LOWS (Support) at 68279.50250 | Touches: 4 | PROVEN | UNSWEPT | 4.41% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 66446.59400 | Touches: 5 | PROVEN | SWEPT | 6.97% below
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 62.6 (Neutral)
+- **MACD**: -8.87330 | Signal: -663.48552 | Histogram: 654.61222
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 69702.72925 (Price above)
+- **EMA50**: 72872.91217 (Price below)
+- **ADX**: 18.9 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 3025.74857
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=73555.27801 | Middle=68840.04100 | Lower=64124.80399
+  - Price within bands
+
+### Volume
+- **Current Bar Volume**: 68,565 ticks
+- **20-bar Avg Volume**: 226,921 ticks
+- **Volume Ratio**: 0.30x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+2026-03-16 00:32:04,869 | 
+--- FULL PROMPT ---
+You are a systematic Smart Money Concepts (SMC) trader with strict risk discipline. You trade based on institutional order flow analysis to identify high-probability entries.
+
+## SMART MONEY CONCEPTS TRADING RULES
+
+### Core Concepts
+1. **Order Blocks (OB)**: The last opposing candle before a strong impulse move. This marks where institutions entered.
+   - Bullish OB: Last bearish candle before bullish impulse - expect price to bounce UP
+   - Bearish OB: Last bullish candle before bearish impulse - expect price to reject DOWN
+   - Only trade UNMITIGATED OBs (price hasn't returned yet)
+
+2. **Fair Value Gaps (FVG)**: Three-candle imbalance where price moved so fast it left a gap.
+   - Price tends to return to "fill" FVGs
+   - Bullish FVG: Gap below price - expect bounce UP when price returns
+   - Bearish FVG: Gap above price - expect rejection DOWN when price returns
+   - UNFILLED FVGs are active; FILLED FVGs are spent
+
+3. **Break of Structure (BOS)**: Price breaks previous swing high/low IN the direction of trend.
+   - Bullish BOS: Higher high formed - trend continuation UP
+   - Bearish BOS: Lower low formed - trend continuation DOWN
+   - BOS confirms you can trade with the trend
+
+4. **Change of Character (CHoCH)**: Price breaks structure AGAINST the trend.
+   - First warning of potential reversal
+   - Look for new OBs forming in the reversal direction
+   - Wait for confirmation before trading reversal
+
+5. **Liquidity**: Areas where stop losses cluster (equal highs/lows, round numbers).
+   - Smart money hunts liquidity before reversing
+   - EQH (Equal Highs): Buy-side liquidity above - price may spike up to sweep then drop
+   - EQL (Equal Lows): Sell-side liquidity below - price may spike down to sweep then rise
+   - After a liquidity sweep, look for reversal entries
+
+6. **Premium/Discount**: The current range divided into zones.
+   - Premium (>50% of range): Expensive - favor SHORTS
+   - Discount (<50% of range): Cheap - favor LONGS
+   - Equilibrium (50%): Wait for price to move to extreme
+
+### Trading Setups
+
+**Setup 1: OB Entry with Trend**
+- BOS confirms trend direction
+- Price retraces to unmitigated OB
+- Enter at OB in trend direction
+- SL: Beyond OB
+- TP: Next liquidity pool, opposing OB, or proven equal level (3+ retests)
+
+**Setup 2: OB + FVG Confluence**
+- Unmitigated OB overlaps with unfilled FVG
+- Highest probability setup
+- Enter at the overlap zone
+- SL: Beyond the full OB/FVG zone plus 1x ATR buffer (confluence improves win rate, not SL placement)
+
+**Setup 3: Liquidity Sweep Reversal**
+- Price sweeps liquidity (EQH/EQL)
+- Look for CHoCH or BOS in opposite direction
+- Enter at the new OB formed after sweep
+- Target: Opposite liquidity pool
+
+**Setup 4: OTE Entry (Optimal Trade Entry)**
+- After impulse move, wait for retracement
+- Enter at 61.8%-78.6% Fibonacci zone
+- This is where institutions typically re-enter
+- Combine with OB/FVG for confluence
+
+## RISK MANAGEMENT RULES (NEVER BREAK)
+
+1. **Risk no more than 1-2% of account value per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation before entry**
+5. **Place stops beyond OB/FVG zones** (allow for liquidity sweep)
+6. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+7. **Leverage is a tool, not a goal - default 5-20x**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- Place stops beyond the OB/FVG zone that forms your entry basis
+- **MINIMUM SL DISTANCE**: Stop loss must be at least 1x ATR from entry. SL within 0.5% of entry is TOO TIGHT and will get stopped out by normal price noise. For gold (XAUUSD), minimum SL should be $15-30+ from entry.
+- **MINIMUM TP DISTANCE**: Take profit should be at least 1.5x the SL distance (R:R >= 1.5:1). TP within 0.3% of entry is TOO CLOSE.
+- **TP TARGET PRIORITY**: In strong trends, prefer proven equal levels (3+ retests) and strong opposing OBs over the nearest zone. Equal levels with many retests are liquidity magnets — price is drawn to them.
+- If you cannot identify a valid stop loss placement with adequate distance, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71425.94000
+- **Date**: 2026-03-16
+- **Trading Session**: london_ny_overlap
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: DISCOUNT zone (30%) - favorable for LONGS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 94783.74
+  - BOS HIGH at 70970.72 [RECENT]
+  - CHoCH LOW at 84446.10 (potential reversal) [RECENT]
+  - CHoCH HIGH at 90589.65 (potential reversal)
+  - CHoCH LOW at 65105.00 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 62505.95000-65005.35000 | Strength: 80% | UNMITIGATED | 12.49% from price
+  - BULLISH OB: 65611.47000-69513.83000 | Strength: 62% | UNMITIGATED | 8.14% from price
+  - BEARISH OB: 91138.51000-94783.74000 | Strength: 80% | MITIGATED | 32.70% from price
+  - BEARISH OB: 94083.47000-97928.36000 | Strength: 80% | MITIGATED | 37.10% from price
+  - BEARISH OB: 88833.88000-90599.24000 | Strength: 80% | MITIGATED | 26.84% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 65005.35000-66492.84000 | FILLED | 8.99% below price (expect bounce UP)
+  - BULLISH FVG: 69491.74000-70636.76000 | FILLED | 2.71% below price (expect bounce UP)
+  - BEARISH FVG: 84729.26000-88833.88000 | UNFILLED | 24.37% above price (expect rejection DOWN)
+  - BEARISH FVG: 79414.57000-81067.99000 | UNFILLED | 13.50% above price (expect rejection DOWN)
+  - BEARISH FVG: 65005.35000-67183.69000 | FILLED | -5.94% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 70970.72000 | Strength: 74% | UNSWEPT | 0.64% below
+  - BUY-SIDE at 74043.78000 | Strength: 68% | UNSWEPT | 3.67% above
+  - SELL-SIDE at 65611.47000 | Strength: 66% | UNSWEPT | 8.14% below
+  - SELL-SIDE at 65105.00000 | Strength: 74% | UNSWEPT | 8.85% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 113677.15900 | Touches: 10 | PROVEN | UNSWEPT | 59.15% above
+    >>10 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 111531.83667 | Touches: 9 | PROVEN | UNSWEPT | 56.15% above
+    >>9 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 112559.90000 | Touches: 4 | PROVEN | SWEPT | 57.59% above
+  - EQUAL HIGHS (Resistance) at 109992.43500 | Touches: 4 | PROVEN | SWEPT | 54.00% above
+  - EQUAL LOWS (Support) at 65358.23500 | Touches: 5 | PROVEN | UNSWEPT | 8.50% below
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 67521.35500 | Touches: 6 | PROVEN | SWEPT | 5.47% below
+  - EQUAL LOWS (Support) at 68279.50250 | Touches: 4 | PROVEN | UNSWEPT | 4.41% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 66446.59400 | Touches: 5 | PROVEN | SWEPT | 6.97% below
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 62.6 (Neutral)
+- **MACD**: -8.87330 | Signal: -663.48552 | Histogram: 654.61222
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 69702.72925 (Price above)
+- **EMA50**: 72872.91217 (Price below)
+- **ADX**: 18.9 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 3025.74857
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=73555.27801 | Middle=68840.04100 | Lower=64124.80399
+  - Price within bands
+
+### Volume
+- **Current Bar Volume**: 68,565 ticks
+- **20-bar Avg Volume**: 226,921 ticks
+- **Volume Ratio**: 0.30x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+
+## YOUR TASK
+
+Analyze the SMC data and make a systematic trading decision.
+
+Think step-by-step:
+1. What is the market bias? (bullish/bearish based on BOS)
+2. Are we in premium or discount? (favor shorts in premium, longs in discount)
+3. Are there unmitigated OBs or unfilled FVGs near current price?
+4. Is there OB+FVG confluence?
+5. Where are the liquidity targets? (EQH/EQL for TP — proven levels with 3+ retests are strongest)
+6. Has there been a recent liquidity sweep that signals reversal?
+7. Where should stop loss be placed? (beyond OB/FVG)
+8. What's the risk:reward ratio? (must be >1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when: bullish BOS, price at bullish OB/FVG in discount, or after sell-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when: bearish BOS, price at bearish OB/FVG in premium, or after buy-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when: no clear structure, price at equilibrium, no unmitigated zones nearby, or conflicting signals.
+- **close** - Close existing position. Use when: price reaches liquidity target, OB/FVG invalidated, or CHoCH against position.
+
+## ORDER TYPE (you MUST pick one for buy/sell signals)
+- **market** - Execute immediately at current market price. Use when:
+  - Price is ALREADY AT the OB/FVG zone (within 0.1%)
+  - Liquidity sweep just happened and you want immediate entry
+  - Setup is confirmed and you don't want to miss it
+- **limit** - Place pending order at entry_price. Use when:
+  - Price is NOT YET at the zone (waiting for retracement)
+  - You want better entry at the OB/FVG level
+  - Zone is nearby but price hasn't reached it yet
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+For buy/sell signals, suggest a trailing stop distance as an ATR multiplier based on current volatility:
+- **Low volatility** (tight ranges, small ATR): 1.5-2.0x ATR — tighter trail locks profits
+- **Normal volatility**: 2.0-3.0x ATR — balanced between protection and breathing room
+- **High volatility** (wide swings, large ATR, news events): 3.0-5.0x ATR — wide trail avoids noise
+- **XAUUSD/Gold**: Typically 2.5-4.0x ATR (gold is volatile, tight trails get stopped out)
+- **Forex majors**: Typically 1.5-2.5x ATR
+- If unsure, default to 2.5x ATR
+
+Remember:
+- Smart money leaves footprints (OBs, FVGs)
+- Structure (BOS/CHoCH) tells you the trend
+- Liquidity shows you where price is likely to go
+- Trade with trend, enter at discount (longs) or premium (shorts)
+- Confluence = higher probability
+2026-03-16 00:32:04,919 | 
+================================================================================
+
+2026-03-16 00:32:16,786 | --- LLM RESPONSE (Structured) [took 11.9s] ---
+2026-03-16 00:32:16,786 | Signal: hold
+2026-03-16 00:32:16,786 | Confidence: 0.85
+2026-03-16 00:32:16,787 | Entry: None | SL: None | TP: None
+2026-03-16 00:32:16,787 | Justification: Ranging market with recent CHoCH lows signaling potential reversal despite bullish bias and discount zone; no unmitigated OB or FVG confluence near current price (closest bullish OB 8% away); low volume and weak ADX confirm no strong momentum for entry.
+2026-03-16 00:32:16,788 | Invalidation: Price breaks and closes above 74043.78 buy-side liquidity or below 69513.83 bullish OB low
+2026-03-16 00:32:16,788 | Raw decision dict: {'symbol': 'BTCUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price breaks and closes above 74043.78 buy-side liquidity or below 69513.83 bullish OB low', 'justification': 'Ranging market with recent CHoCH lows signaling potential reversal despite bullish bias and discount zone; no unmitigated OB or FVG confluence near current price (closest bullish OB 8% away); low volume and weak ADX confirm no strong momentum for entry.', 'confidence': 0.85, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-16 00:32:16,789 | 
+================================================================================
+
+2026-03-16 00:32:16,789 | Structured output SUCCESS - returning smc_quant_decision with signal=hold
+2026-03-16 01:32:18,913 | 
+================================================================================
+SMC QUANT ANALYSIS - BTCUSD
+================================================================================
+2026-03-16 01:32:18,914 | Symbol: BTCUSD | Date: 2026-03-16 | Price: 71506.73000000001
+2026-03-16 01:32:18,914 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71506.73000
+- **Date**: 2026-03-16
+- **Trading Session**: london_ny_overlap
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: DISCOUNT zone (30%) - favorable for LONGS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 94783.74
+  - BOS HIGH at 70970.72 [RECENT]
+  - CHoCH LOW at 84446.10 (potential reversal) [RECENT]
+  - CHoCH HIGH at 90589.65 (potential reversal)
+  - CHoCH LOW at 65105.00 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 62505.95000-65005.35000 | Strength: 80% | UNMITIGATED | 12.59% from price
+  - BULLISH OB: 65611.47000-69513.83000 | Strength: 62% | UNMITIGATED | 8.24% from price
+  - BEARISH OB: 91138.51000-94783.74000 | Strength: 80% | MITIGATED | 32.55% from price
+  - BEARISH OB: 94083.47000-97928.36000 | Strength: 80% | MITIGATED | 36.95% from price
+  - BEARISH OB: 88833.88000-90599.24000 | Strength: 80% | MITIGATED | 26.70% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 65005.35000-66492.84000 | FILLED | 9.09% below price (expect bounce UP)
+  - BULLISH FVG: 69491.74000-70636.76000 | FILLED | 2.82% below price (expect bounce UP)
+  - BEARISH FVG: 84729.26000-88833.88000 | UNFILLED | 24.23% above price (expect rejection DOWN)
+  - BEARISH FVG: 79414.57000-81067.99000 | UNFILLED | 13.37% above price (expect rejection DOWN)
+  - BEARISH FVG: 65005.35000-67183.69000 | FILLED | -6.05% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 70970.72000 | Strength: 74% | UNSWEPT | 0.75% below
+  - BUY-SIDE at 74043.78000 | Strength: 68% | UNSWEPT | 3.55% above
+  - SELL-SIDE at 65611.47000 | Strength: 66% | UNSWEPT | 8.24% below
+  - SELL-SIDE at 65105.00000 | Strength: 74% | UNSWEPT | 8.95% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 113677.15900 | Touches: 10 | PROVEN | UNSWEPT | 58.97% above
+    >>10 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 111531.83667 | Touches: 9 | PROVEN | UNSWEPT | 55.97% above
+    >>9 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 112559.90000 | Touches: 4 | PROVEN | SWEPT | 57.41% above
+  - EQUAL HIGHS (Resistance) at 109992.43500 | Touches: 4 | PROVEN | SWEPT | 53.82% above
+  - EQUAL LOWS (Support) at 65358.23500 | Touches: 5 | PROVEN | UNSWEPT | 8.60% below
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 67521.35500 | Touches: 6 | PROVEN | SWEPT | 5.57% below
+  - EQUAL LOWS (Support) at 68279.50250 | Touches: 4 | PROVEN | UNSWEPT | 4.51% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 66446.59400 | Touches: 5 | PROVEN | SWEPT | 7.08% below
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 62.8 (Neutral)
+- **MACD**: -2.42453 | Signal: -662.19576 | Histogram: 659.77124
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 69710.42830 (Price above)
+- **EMA50**: 72876.08236 (Price below)
+- **ADX**: 18.9 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 3025.74857
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=73568.75541 | Middle=68844.08300 | Lower=64119.41059
+  - Price within bands
+
+### Volume
+- **Current Bar Volume**: 72,458 ticks
+- **20-bar Avg Volume**: 227,116 ticks
+- **Volume Ratio**: 0.32x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+2026-03-16 01:32:18,921 | 
+--- FULL PROMPT ---
+You are a systematic Smart Money Concepts (SMC) trader with strict risk discipline. You trade based on institutional order flow analysis to identify high-probability entries.
+
+## SMART MONEY CONCEPTS TRADING RULES
+
+### Core Concepts
+1. **Order Blocks (OB)**: The last opposing candle before a strong impulse move. This marks where institutions entered.
+   - Bullish OB: Last bearish candle before bullish impulse - expect price to bounce UP
+   - Bearish OB: Last bullish candle before bearish impulse - expect price to reject DOWN
+   - Only trade UNMITIGATED OBs (price hasn't returned yet)
+
+2. **Fair Value Gaps (FVG)**: Three-candle imbalance where price moved so fast it left a gap.
+   - Price tends to return to "fill" FVGs
+   - Bullish FVG: Gap below price - expect bounce UP when price returns
+   - Bearish FVG: Gap above price - expect rejection DOWN when price returns
+   - UNFILLED FVGs are active; FILLED FVGs are spent
+
+3. **Break of Structure (BOS)**: Price breaks previous swing high/low IN the direction of trend.
+   - Bullish BOS: Higher high formed - trend continuation UP
+   - Bearish BOS: Lower low formed - trend continuation DOWN
+   - BOS confirms you can trade with the trend
+
+4. **Change of Character (CHoCH)**: Price breaks structure AGAINST the trend.
+   - First warning of potential reversal
+   - Look for new OBs forming in the reversal direction
+   - Wait for confirmation before trading reversal
+
+5. **Liquidity**: Areas where stop losses cluster (equal highs/lows, round numbers).
+   - Smart money hunts liquidity before reversing
+   - EQH (Equal Highs): Buy-side liquidity above - price may spike up to sweep then drop
+   - EQL (Equal Lows): Sell-side liquidity below - price may spike down to sweep then rise
+   - After a liquidity sweep, look for reversal entries
+
+6. **Premium/Discount**: The current range divided into zones.
+   - Premium (>50% of range): Expensive - favor SHORTS
+   - Discount (<50% of range): Cheap - favor LONGS
+   - Equilibrium (50%): Wait for price to move to extreme
+
+### Trading Setups
+
+**Setup 1: OB Entry with Trend**
+- BOS confirms trend direction
+- Price retraces to unmitigated OB
+- Enter at OB in trend direction
+- SL: Beyond OB
+- TP: Next liquidity pool, opposing OB, or proven equal level (3+ retests)
+
+**Setup 2: OB + FVG Confluence**
+- Unmitigated OB overlaps with unfilled FVG
+- Highest probability setup
+- Enter at the overlap zone
+- SL: Beyond the full OB/FVG zone plus 1x ATR buffer (confluence improves win rate, not SL placement)
+
+**Setup 3: Liquidity Sweep Reversal**
+- Price sweeps liquidity (EQH/EQL)
+- Look for CHoCH or BOS in opposite direction
+- Enter at the new OB formed after sweep
+- Target: Opposite liquidity pool
+
+**Setup 4: OTE Entry (Optimal Trade Entry)**
+- After impulse move, wait for retracement
+- Enter at 61.8%-78.6% Fibonacci zone
+- This is where institutions typically re-enter
+- Combine with OB/FVG for confluence
+
+## RISK MANAGEMENT RULES (NEVER BREAK)
+
+1. **Risk no more than 1-2% of account value per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation before entry**
+5. **Place stops beyond OB/FVG zones** (allow for liquidity sweep)
+6. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+7. **Leverage is a tool, not a goal - default 5-20x**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- Place stops beyond the OB/FVG zone that forms your entry basis
+- **MINIMUM SL DISTANCE**: Stop loss must be at least 1x ATR from entry. SL within 0.5% of entry is TOO TIGHT and will get stopped out by normal price noise. For gold (XAUUSD), minimum SL should be $15-30+ from entry.
+- **MINIMUM TP DISTANCE**: Take profit should be at least 1.5x the SL distance (R:R >= 1.5:1). TP within 0.3% of entry is TOO CLOSE.
+- **TP TARGET PRIORITY**: In strong trends, prefer proven equal levels (3+ retests) and strong opposing OBs over the nearest zone. Equal levels with many retests are liquidity magnets — price is drawn to them.
+- If you cannot identify a valid stop loss placement with adequate distance, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71506.73000
+- **Date**: 2026-03-16
+- **Trading Session**: london_ny_overlap
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: DISCOUNT zone (30%) - favorable for LONGS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 94783.74
+  - BOS HIGH at 70970.72 [RECENT]
+  - CHoCH LOW at 84446.10 (potential reversal) [RECENT]
+  - CHoCH HIGH at 90589.65 (potential reversal)
+  - CHoCH LOW at 65105.00 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 62505.95000-65005.35000 | Strength: 80% | UNMITIGATED | 12.59% from price
+  - BULLISH OB: 65611.47000-69513.83000 | Strength: 62% | UNMITIGATED | 8.24% from price
+  - BEARISH OB: 91138.51000-94783.74000 | Strength: 80% | MITIGATED | 32.55% from price
+  - BEARISH OB: 94083.47000-97928.36000 | Strength: 80% | MITIGATED | 36.95% from price
+  - BEARISH OB: 88833.88000-90599.24000 | Strength: 80% | MITIGATED | 26.70% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 65005.35000-66492.84000 | FILLED | 9.09% below price (expect bounce UP)
+  - BULLISH FVG: 69491.74000-70636.76000 | FILLED | 2.82% below price (expect bounce UP)
+  - BEARISH FVG: 84729.26000-88833.88000 | UNFILLED | 24.23% above price (expect rejection DOWN)
+  - BEARISH FVG: 79414.57000-81067.99000 | UNFILLED | 13.37% above price (expect rejection DOWN)
+  - BEARISH FVG: 65005.35000-67183.69000 | FILLED | -6.05% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 70970.72000 | Strength: 74% | UNSWEPT | 0.75% below
+  - BUY-SIDE at 74043.78000 | Strength: 68% | UNSWEPT | 3.55% above
+  - SELL-SIDE at 65611.47000 | Strength: 66% | UNSWEPT | 8.24% below
+  - SELL-SIDE at 65105.00000 | Strength: 74% | UNSWEPT | 8.95% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 113677.15900 | Touches: 10 | PROVEN | UNSWEPT | 58.97% above
+    >>10 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 111531.83667 | Touches: 9 | PROVEN | UNSWEPT | 55.97% above
+    >>9 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 112559.90000 | Touches: 4 | PROVEN | SWEPT | 57.41% above
+  - EQUAL HIGHS (Resistance) at 109992.43500 | Touches: 4 | PROVEN | SWEPT | 53.82% above
+  - EQUAL LOWS (Support) at 65358.23500 | Touches: 5 | PROVEN | UNSWEPT | 8.60% below
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 67521.35500 | Touches: 6 | PROVEN | SWEPT | 5.57% below
+  - EQUAL LOWS (Support) at 68279.50250 | Touches: 4 | PROVEN | UNSWEPT | 4.51% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 66446.59400 | Touches: 5 | PROVEN | SWEPT | 7.08% below
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 62.8 (Neutral)
+- **MACD**: -2.42453 | Signal: -662.19576 | Histogram: 659.77124
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 69710.42830 (Price above)
+- **EMA50**: 72876.08236 (Price below)
+- **ADX**: 18.9 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 3025.74857
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=73568.75541 | Middle=68844.08300 | Lower=64119.41059
+  - Price within bands
+
+### Volume
+- **Current Bar Volume**: 72,458 ticks
+- **20-bar Avg Volume**: 227,116 ticks
+- **Volume Ratio**: 0.32x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+
+## YOUR TASK
+
+Analyze the SMC data and make a systematic trading decision.
+
+Think step-by-step:
+1. What is the market bias? (bullish/bearish based on BOS)
+2. Are we in premium or discount? (favor shorts in premium, longs in discount)
+3. Are there unmitigated OBs or unfilled FVGs near current price?
+4. Is there OB+FVG confluence?
+5. Where are the liquidity targets? (EQH/EQL for TP — proven levels with 3+ retests are strongest)
+6. Has there been a recent liquidity sweep that signals reversal?
+7. Where should stop loss be placed? (beyond OB/FVG)
+8. What's the risk:reward ratio? (must be >1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when: bullish BOS, price at bullish OB/FVG in discount, or after sell-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when: bearish BOS, price at bearish OB/FVG in premium, or after buy-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when: no clear structure, price at equilibrium, no unmitigated zones nearby, or conflicting signals.
+- **close** - Close existing position. Use when: price reaches liquidity target, OB/FVG invalidated, or CHoCH against position.
+
+## ORDER TYPE (you MUST pick one for buy/sell signals)
+- **market** - Execute immediately at current market price. Use when:
+  - Price is ALREADY AT the OB/FVG zone (within 0.1%)
+  - Liquidity sweep just happened and you want immediate entry
+  - Setup is confirmed and you don't want to miss it
+- **limit** - Place pending order at entry_price. Use when:
+  - Price is NOT YET at the zone (waiting for retracement)
+  - You want better entry at the OB/FVG level
+  - Zone is nearby but price hasn't reached it yet
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+For buy/sell signals, suggest a trailing stop distance as an ATR multiplier based on current volatility:
+- **Low volatility** (tight ranges, small ATR): 1.5-2.0x ATR — tighter trail locks profits
+- **Normal volatility**: 2.0-3.0x ATR — balanced between protection and breathing room
+- **High volatility** (wide swings, large ATR, news events): 3.0-5.0x ATR — wide trail avoids noise
+- **XAUUSD/Gold**: Typically 2.5-4.0x ATR (gold is volatile, tight trails get stopped out)
+- **Forex majors**: Typically 1.5-2.5x ATR
+- If unsure, default to 2.5x ATR
+
+Remember:
+- Smart money leaves footprints (OBs, FVGs)
+- Structure (BOS/CHoCH) tells you the trend
+- Liquidity shows you where price is likely to go
+- Trade with trend, enter at discount (longs) or premium (shorts)
+- Confluence = higher probability
+2026-03-16 01:32:18,939 | 
+================================================================================
+
+2026-03-16 01:32:32,914 | --- LLM RESPONSE (Structured) [took 14.0s] ---
+2026-03-16 01:32:32,914 | Signal: hold
+2026-03-16 01:32:32,914 | Confidence: 0.85
+2026-03-16 01:32:32,915 | Entry: None | SL: None | TP: None
+2026-03-16 01:32:32,915 | Justification: Mixed market structure with recent CHoCH lows signaling potential reversal against bullish bias; no unmitigated OB or FVG confluence near current price in discount zone; ranging regime with low volume and weak ADX; recent losing trades in similar price area indicate poor signal quality.
+2026-03-16 01:32:32,916 | Invalidation: Clear bullish BOS above recent high at 94783 or displacement to unmitigated bullish OB below confirming continuation
+2026-03-16 01:32:32,916 | Raw decision dict: {'symbol': 'BTCUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Clear bullish BOS above recent high at 94783 or displacement to unmitigated bullish OB below confirming continuation', 'justification': 'Mixed market structure with recent CHoCH lows signaling potential reversal against bullish bias; no unmitigated OB or FVG confluence near current price in discount zone; ranging regime with low volume and weak ADX; recent losing trades in similar price area indicate poor signal quality.', 'confidence': 0.85, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-16 01:32:32,917 | 
+================================================================================
+
+2026-03-16 01:32:32,917 | Structured output SUCCESS - returning smc_quant_decision with signal=hold
+2026-03-16 02:32:34,695 | 
+================================================================================
+SMC QUANT ANALYSIS - BTCUSD
+================================================================================
+2026-03-16 02:32:34,696 | Symbol: BTCUSD | Date: 2026-03-16 | Price: 71347.41500000001
+2026-03-16 02:32:34,696 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71347.41500
+- **Date**: 2026-03-16
+- **Trading Session**: new_york
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: DISCOUNT zone (30%) - favorable for LONGS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 94783.74
+  - BOS HIGH at 70970.72 [RECENT]
+  - CHoCH LOW at 84446.10 (potential reversal) [RECENT]
+  - CHoCH HIGH at 90589.65 (potential reversal)
+  - CHoCH LOW at 65105.00 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 62505.95000-65005.35000 | Strength: 80% | UNMITIGATED | 12.39% from price
+  - BULLISH OB: 65611.47000-69513.83000 | Strength: 62% | UNMITIGATED | 8.04% from price
+  - BEARISH OB: 91138.51000-94783.74000 | Strength: 80% | MITIGATED | 32.85% from price
+  - BEARISH OB: 94083.47000-97928.36000 | Strength: 80% | MITIGATED | 37.26% from price
+  - BEARISH OB: 88833.88000-90599.24000 | Strength: 80% | MITIGATED | 26.98% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 65005.35000-66492.84000 | FILLED | 8.89% below price (expect bounce UP)
+  - BULLISH FVG: 69491.74000-70636.76000 | FILLED | 2.60% below price (expect bounce UP)
+  - BEARISH FVG: 84729.26000-88833.88000 | UNFILLED | 24.51% above price (expect rejection DOWN)
+  - BEARISH FVG: 79414.57000-81067.99000 | UNFILLED | 13.62% above price (expect rejection DOWN)
+  - BEARISH FVG: 65005.35000-67183.69000 | FILLED | -5.84% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 70970.72000 | Strength: 74% | UNSWEPT | 0.53% below
+  - BUY-SIDE at 74043.78000 | Strength: 68% | UNSWEPT | 3.78% above
+  - SELL-SIDE at 65611.47000 | Strength: 66% | UNSWEPT | 8.04% below
+  - SELL-SIDE at 65105.00000 | Strength: 74% | UNSWEPT | 8.75% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 113677.15900 | Touches: 10 | PROVEN | UNSWEPT | 59.33% above
+    >>10 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 111531.83667 | Touches: 9 | PROVEN | UNSWEPT | 56.32% above
+    >>9 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 112559.90000 | Touches: 4 | PROVEN | SWEPT | 57.76% above
+  - EQUAL HIGHS (Resistance) at 109992.43500 | Touches: 4 | PROVEN | SWEPT | 54.16% above
+  - EQUAL LOWS (Support) at 65358.23500 | Touches: 5 | PROVEN | UNSWEPT | 8.39% below
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 67521.35500 | Touches: 6 | PROVEN | SWEPT | 5.36% below
+  - EQUAL LOWS (Support) at 68279.50250 | Touches: 4 | PROVEN | UNSWEPT | 4.30% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 66446.59400 | Touches: 5 | PROVEN | SWEPT | 6.87% below
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 62.5 (Neutral)
+- **MACD**: -15.13302 | Signal: -664.73746 | Histogram: 649.60444
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 69695.25592 (Price above)
+- **EMA50**: 72869.83491 (Price below)
+- **ADX**: 18.9 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 3025.74857
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=73542.44327 | Middle=68836.11750 | Lower=64129.79173
+  - Price within bands
+
+### Volume
+- **Current Bar Volume**: 76,306 ticks
+- **20-bar Avg Volume**: 227,308 ticks
+- **Volume Ratio**: 0.34x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+2026-03-16 02:32:34,701 | 
+--- FULL PROMPT ---
+You are a systematic Smart Money Concepts (SMC) trader with strict risk discipline. You trade based on institutional order flow analysis to identify high-probability entries.
+
+## SMART MONEY CONCEPTS TRADING RULES
+
+### Core Concepts
+1. **Order Blocks (OB)**: The last opposing candle before a strong impulse move. This marks where institutions entered.
+   - Bullish OB: Last bearish candle before bullish impulse - expect price to bounce UP
+   - Bearish OB: Last bullish candle before bearish impulse - expect price to reject DOWN
+   - Only trade UNMITIGATED OBs (price hasn't returned yet)
+
+2. **Fair Value Gaps (FVG)**: Three-candle imbalance where price moved so fast it left a gap.
+   - Price tends to return to "fill" FVGs
+   - Bullish FVG: Gap below price - expect bounce UP when price returns
+   - Bearish FVG: Gap above price - expect rejection DOWN when price returns
+   - UNFILLED FVGs are active; FILLED FVGs are spent
+
+3. **Break of Structure (BOS)**: Price breaks previous swing high/low IN the direction of trend.
+   - Bullish BOS: Higher high formed - trend continuation UP
+   - Bearish BOS: Lower low formed - trend continuation DOWN
+   - BOS confirms you can trade with the trend
+
+4. **Change of Character (CHoCH)**: Price breaks structure AGAINST the trend.
+   - First warning of potential reversal
+   - Look for new OBs forming in the reversal direction
+   - Wait for confirmation before trading reversal
+
+5. **Liquidity**: Areas where stop losses cluster (equal highs/lows, round numbers).
+   - Smart money hunts liquidity before reversing
+   - EQH (Equal Highs): Buy-side liquidity above - price may spike up to sweep then drop
+   - EQL (Equal Lows): Sell-side liquidity below - price may spike down to sweep then rise
+   - After a liquidity sweep, look for reversal entries
+
+6. **Premium/Discount**: The current range divided into zones.
+   - Premium (>50% of range): Expensive - favor SHORTS
+   - Discount (<50% of range): Cheap - favor LONGS
+   - Equilibrium (50%): Wait for price to move to extreme
+
+### Trading Setups
+
+**Setup 1: OB Entry with Trend**
+- BOS confirms trend direction
+- Price retraces to unmitigated OB
+- Enter at OB in trend direction
+- SL: Beyond OB
+- TP: Next liquidity pool, opposing OB, or proven equal level (3+ retests)
+
+**Setup 2: OB + FVG Confluence**
+- Unmitigated OB overlaps with unfilled FVG
+- Highest probability setup
+- Enter at the overlap zone
+- SL: Beyond the full OB/FVG zone plus 1x ATR buffer (confluence improves win rate, not SL placement)
+
+**Setup 3: Liquidity Sweep Reversal**
+- Price sweeps liquidity (EQH/EQL)
+- Look for CHoCH or BOS in opposite direction
+- Enter at the new OB formed after sweep
+- Target: Opposite liquidity pool
+
+**Setup 4: OTE Entry (Optimal Trade Entry)**
+- After impulse move, wait for retracement
+- Enter at 61.8%-78.6% Fibonacci zone
+- This is where institutions typically re-enter
+- Combine with OB/FVG for confluence
+
+## RISK MANAGEMENT RULES (NEVER BREAK)
+
+1. **Risk no more than 1-2% of account value per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation before entry**
+5. **Place stops beyond OB/FVG zones** (allow for liquidity sweep)
+6. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+7. **Leverage is a tool, not a goal - default 5-20x**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- Place stops beyond the OB/FVG zone that forms your entry basis
+- **MINIMUM SL DISTANCE**: Stop loss must be at least 1x ATR from entry. SL within 0.5% of entry is TOO TIGHT and will get stopped out by normal price noise. For gold (XAUUSD), minimum SL should be $15-30+ from entry.
+- **MINIMUM TP DISTANCE**: Take profit should be at least 1.5x the SL distance (R:R >= 1.5:1). TP within 0.3% of entry is TOO CLOSE.
+- **TP TARGET PRIORITY**: In strong trends, prefer proven equal levels (3+ retests) and strong opposing OBs over the nearest zone. Equal levels with many retests are liquidity magnets — price is drawn to them.
+- If you cannot identify a valid stop loss placement with adequate distance, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71347.41500
+- **Date**: 2026-03-16
+- **Trading Session**: new_york
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: DISCOUNT zone (30%) - favorable for LONGS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 94783.74
+  - BOS HIGH at 70970.72 [RECENT]
+  - CHoCH LOW at 84446.10 (potential reversal) [RECENT]
+  - CHoCH HIGH at 90589.65 (potential reversal)
+  - CHoCH LOW at 65105.00 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 62505.95000-65005.35000 | Strength: 80% | UNMITIGATED | 12.39% from price
+  - BULLISH OB: 65611.47000-69513.83000 | Strength: 62% | UNMITIGATED | 8.04% from price
+  - BEARISH OB: 91138.51000-94783.74000 | Strength: 80% | MITIGATED | 32.85% from price
+  - BEARISH OB: 94083.47000-97928.36000 | Strength: 80% | MITIGATED | 37.26% from price
+  - BEARISH OB: 88833.88000-90599.24000 | Strength: 80% | MITIGATED | 26.98% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 65005.35000-66492.84000 | FILLED | 8.89% below price (expect bounce UP)
+  - BULLISH FVG: 69491.74000-70636.76000 | FILLED | 2.60% below price (expect bounce UP)
+  - BEARISH FVG: 84729.26000-88833.88000 | UNFILLED | 24.51% above price (expect rejection DOWN)
+  - BEARISH FVG: 79414.57000-81067.99000 | UNFILLED | 13.62% above price (expect rejection DOWN)
+  - BEARISH FVG: 65005.35000-67183.69000 | FILLED | -5.84% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 70970.72000 | Strength: 74% | UNSWEPT | 0.53% below
+  - BUY-SIDE at 74043.78000 | Strength: 68% | UNSWEPT | 3.78% above
+  - SELL-SIDE at 65611.47000 | Strength: 66% | UNSWEPT | 8.04% below
+  - SELL-SIDE at 65105.00000 | Strength: 74% | UNSWEPT | 8.75% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 113677.15900 | Touches: 10 | PROVEN | UNSWEPT | 59.33% above
+    >>10 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 111531.83667 | Touches: 9 | PROVEN | UNSWEPT | 56.32% above
+    >>9 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 112559.90000 | Touches: 4 | PROVEN | SWEPT | 57.76% above
+  - EQUAL HIGHS (Resistance) at 109992.43500 | Touches: 4 | PROVEN | SWEPT | 54.16% above
+  - EQUAL LOWS (Support) at 65358.23500 | Touches: 5 | PROVEN | UNSWEPT | 8.39% below
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 67521.35500 | Touches: 6 | PROVEN | SWEPT | 5.36% below
+  - EQUAL LOWS (Support) at 68279.50250 | Touches: 4 | PROVEN | UNSWEPT | 4.30% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 66446.59400 | Touches: 5 | PROVEN | SWEPT | 6.87% below
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 62.5 (Neutral)
+- **MACD**: -15.13302 | Signal: -664.73746 | Histogram: 649.60444
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 69695.25592 (Price above)
+- **EMA50**: 72869.83491 (Price below)
+- **ADX**: 18.9 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 3025.74857
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=73542.44327 | Middle=68836.11750 | Lower=64129.79173
+  - Price within bands
+
+### Volume
+- **Current Bar Volume**: 76,306 ticks
+- **20-bar Avg Volume**: 227,308 ticks
+- **Volume Ratio**: 0.34x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+
+## YOUR TASK
+
+Analyze the SMC data and make a systematic trading decision.
+
+Think step-by-step:
+1. What is the market bias? (bullish/bearish based on BOS)
+2. Are we in premium or discount? (favor shorts in premium, longs in discount)
+3. Are there unmitigated OBs or unfilled FVGs near current price?
+4. Is there OB+FVG confluence?
+5. Where are the liquidity targets? (EQH/EQL for TP — proven levels with 3+ retests are strongest)
+6. Has there been a recent liquidity sweep that signals reversal?
+7. Where should stop loss be placed? (beyond OB/FVG)
+8. What's the risk:reward ratio? (must be >1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when: bullish BOS, price at bullish OB/FVG in discount, or after sell-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when: bearish BOS, price at bearish OB/FVG in premium, or after buy-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when: no clear structure, price at equilibrium, no unmitigated zones nearby, or conflicting signals.
+- **close** - Close existing position. Use when: price reaches liquidity target, OB/FVG invalidated, or CHoCH against position.
+
+## ORDER TYPE (you MUST pick one for buy/sell signals)
+- **market** - Execute immediately at current market price. Use when:
+  - Price is ALREADY AT the OB/FVG zone (within 0.1%)
+  - Liquidity sweep just happened and you want immediate entry
+  - Setup is confirmed and you don't want to miss it
+- **limit** - Place pending order at entry_price. Use when:
+  - Price is NOT YET at the zone (waiting for retracement)
+  - You want better entry at the OB/FVG level
+  - Zone is nearby but price hasn't reached it yet
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+For buy/sell signals, suggest a trailing stop distance as an ATR multiplier based on current volatility:
+- **Low volatility** (tight ranges, small ATR): 1.5-2.0x ATR — tighter trail locks profits
+- **Normal volatility**: 2.0-3.0x ATR — balanced between protection and breathing room
+- **High volatility** (wide swings, large ATR, news events): 3.0-5.0x ATR — wide trail avoids noise
+- **XAUUSD/Gold**: Typically 2.5-4.0x ATR (gold is volatile, tight trails get stopped out)
+- **Forex majors**: Typically 1.5-2.5x ATR
+- If unsure, default to 2.5x ATR
+
+Remember:
+- Smart money leaves footprints (OBs, FVGs)
+- Structure (BOS/CHoCH) tells you the trend
+- Liquidity shows you where price is likely to go
+- Trade with trend, enter at discount (longs) or premium (shorts)
+- Confluence = higher probability
+2026-03-16 02:32:34,715 | 
+================================================================================
+
+2026-03-16 02:33:05,520 | --- LLM RESPONSE (Structured) [took 30.8s] ---
+2026-03-16 02:33:05,521 | Signal: hold
+2026-03-16 02:33:05,521 | Confidence: 0.85
+2026-03-16 02:33:05,521 | Entry: None | SL: None | TP: None
+2026-03-16 02:33:05,521 | Justification: Ranging market with recent CHoCH indicating potential reversal conflicting with bullish bias; current price not at unmitigated OB or FVG for entry, low volume, and no confluence for high-probability setup; past trades near this price level failed.
+2026-03-16 02:33:05,522 | Invalidation: Clear BOS or CHoCH confirming a new trend direction with price reaching an unmitigated OB/FVG confluence
+2026-03-16 02:33:05,523 | Raw decision dict: {'symbol': 'BTCUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Clear BOS or CHoCH confirming a new trend direction with price reaching an unmitigated OB/FVG confluence', 'justification': 'Ranging market with recent CHoCH indicating potential reversal conflicting with bullish bias; current price not at unmitigated OB or FVG for entry, low volume, and no confluence for high-probability setup; past trades near this price level failed.', 'confidence': 0.85, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-16 02:33:05,523 | 
+================================================================================
+
+2026-03-16 02:33:05,524 | Structured output SUCCESS - returning smc_quant_decision with signal=hold
+2026-03-16 03:33:06,960 | 
+================================================================================
+SMC QUANT ANALYSIS - BTCUSD
+================================================================================
+2026-03-16 03:33:06,961 | Symbol: BTCUSD | Date: 2026-03-16 | Price: 71492.685
+2026-03-16 03:33:06,961 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71492.68500
+- **Date**: 2026-03-16
+- **Trading Session**: new_york
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: DISCOUNT zone (30%) - favorable for LONGS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 94783.74
+  - BOS HIGH at 70970.72 [RECENT]
+  - CHoCH LOW at 84446.10 (potential reversal) [RECENT]
+  - CHoCH HIGH at 90589.65 (potential reversal)
+  - CHoCH LOW at 65105.00 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 62505.95000-65005.35000 | Strength: 80% | UNMITIGATED | 12.57% from price
+  - BULLISH OB: 65611.47000-69513.83000 | Strength: 62% | UNMITIGATED | 8.23% from price
+  - BEARISH OB: 91138.51000-94783.74000 | Strength: 80% | MITIGATED | 32.58% from price
+  - BEARISH OB: 94083.47000-97928.36000 | Strength: 80% | MITIGATED | 36.98% from price
+  - BEARISH OB: 88833.88000-90599.24000 | Strength: 80% | MITIGATED | 26.73% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 65005.35000-66492.84000 | FILLED | 9.07% below price (expect bounce UP)
+  - BULLISH FVG: 69491.74000-70636.76000 | FILLED | 2.80% below price (expect bounce UP)
+  - BEARISH FVG: 84729.26000-88833.88000 | UNFILLED | 24.26% above price (expect rejection DOWN)
+  - BEARISH FVG: 79414.57000-81067.99000 | UNFILLED | 13.39% above price (expect rejection DOWN)
+  - BEARISH FVG: 65005.35000-67183.69000 | FILLED | -6.03% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 70970.72000 | Strength: 74% | UNSWEPT | 0.73% below
+  - BUY-SIDE at 74043.78000 | Strength: 68% | UNSWEPT | 3.57% above
+  - SELL-SIDE at 65611.47000 | Strength: 66% | UNSWEPT | 8.23% below
+  - SELL-SIDE at 65105.00000 | Strength: 74% | UNSWEPT | 8.93% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 113677.15900 | Touches: 10 | PROVEN | UNSWEPT | 59.01% above
+    >>10 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 111531.83667 | Touches: 9 | PROVEN | UNSWEPT | 56.00% above
+    >>9 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 112559.90000 | Touches: 4 | PROVEN | SWEPT | 57.44% above
+  - EQUAL HIGHS (Resistance) at 109992.43500 | Touches: 4 | PROVEN | SWEPT | 53.85% above
+  - EQUAL LOWS (Support) at 65358.23500 | Touches: 5 | PROVEN | UNSWEPT | 8.58% below
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 67521.35500 | Touches: 6 | PROVEN | SWEPT | 5.55% below
+  - EQUAL LOWS (Support) at 68279.50250 | Touches: 4 | PROVEN | UNSWEPT | 4.49% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 66446.59400 | Touches: 5 | PROVEN | SWEPT | 7.06% below
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 62.7 (Neutral)
+- **MACD**: -3.54533 | Signal: -662.41992 | Histogram: 658.87460
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 69709.09020 (Price above)
+- **EMA50**: 72875.53138 (Price below)
+- **ADX**: 18.9 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 3025.74857
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=73566.39452 | Middle=68843.38050 | Lower=64120.36648
+  - Price within bands
+
+### Volume
+- **Current Bar Volume**: 79,839 ticks
+- **20-bar Avg Volume**: 227,485 ticks
+- **Volume Ratio**: 0.35x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+2026-03-16 03:33:06,966 | 
+--- FULL PROMPT ---
+You are a systematic Smart Money Concepts (SMC) trader with strict risk discipline. You trade based on institutional order flow analysis to identify high-probability entries.
+
+## SMART MONEY CONCEPTS TRADING RULES
+
+### Core Concepts
+1. **Order Blocks (OB)**: The last opposing candle before a strong impulse move. This marks where institutions entered.
+   - Bullish OB: Last bearish candle before bullish impulse - expect price to bounce UP
+   - Bearish OB: Last bullish candle before bearish impulse - expect price to reject DOWN
+   - Only trade UNMITIGATED OBs (price hasn't returned yet)
+
+2. **Fair Value Gaps (FVG)**: Three-candle imbalance where price moved so fast it left a gap.
+   - Price tends to return to "fill" FVGs
+   - Bullish FVG: Gap below price - expect bounce UP when price returns
+   - Bearish FVG: Gap above price - expect rejection DOWN when price returns
+   - UNFILLED FVGs are active; FILLED FVGs are spent
+
+3. **Break of Structure (BOS)**: Price breaks previous swing high/low IN the direction of trend.
+   - Bullish BOS: Higher high formed - trend continuation UP
+   - Bearish BOS: Lower low formed - trend continuation DOWN
+   - BOS confirms you can trade with the trend
+
+4. **Change of Character (CHoCH)**: Price breaks structure AGAINST the trend.
+   - First warning of potential reversal
+   - Look for new OBs forming in the reversal direction
+   - Wait for confirmation before trading reversal
+
+5. **Liquidity**: Areas where stop losses cluster (equal highs/lows, round numbers).
+   - Smart money hunts liquidity before reversing
+   - EQH (Equal Highs): Buy-side liquidity above - price may spike up to sweep then drop
+   - EQL (Equal Lows): Sell-side liquidity below - price may spike down to sweep then rise
+   - After a liquidity sweep, look for reversal entries
+
+6. **Premium/Discount**: The current range divided into zones.
+   - Premium (>50% of range): Expensive - favor SHORTS
+   - Discount (<50% of range): Cheap - favor LONGS
+   - Equilibrium (50%): Wait for price to move to extreme
+
+### Trading Setups
+
+**Setup 1: OB Entry with Trend**
+- BOS confirms trend direction
+- Price retraces to unmitigated OB
+- Enter at OB in trend direction
+- SL: Beyond OB
+- TP: Next liquidity pool, opposing OB, or proven equal level (3+ retests)
+
+**Setup 2: OB + FVG Confluence**
+- Unmitigated OB overlaps with unfilled FVG
+- Highest probability setup
+- Enter at the overlap zone
+- SL: Beyond the full OB/FVG zone plus 1x ATR buffer (confluence improves win rate, not SL placement)
+
+**Setup 3: Liquidity Sweep Reversal**
+- Price sweeps liquidity (EQH/EQL)
+- Look for CHoCH or BOS in opposite direction
+- Enter at the new OB formed after sweep
+- Target: Opposite liquidity pool
+
+**Setup 4: OTE Entry (Optimal Trade Entry)**
+- After impulse move, wait for retracement
+- Enter at 61.8%-78.6% Fibonacci zone
+- This is where institutions typically re-enter
+- Combine with OB/FVG for confluence
+
+## RISK MANAGEMENT RULES (NEVER BREAK)
+
+1. **Risk no more than 1-2% of account value per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation before entry**
+5. **Place stops beyond OB/FVG zones** (allow for liquidity sweep)
+6. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+7. **Leverage is a tool, not a goal - default 5-20x**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- Place stops beyond the OB/FVG zone that forms your entry basis
+- **MINIMUM SL DISTANCE**: Stop loss must be at least 1x ATR from entry. SL within 0.5% of entry is TOO TIGHT and will get stopped out by normal price noise. For gold (XAUUSD), minimum SL should be $15-30+ from entry.
+- **MINIMUM TP DISTANCE**: Take profit should be at least 1.5x the SL distance (R:R >= 1.5:1). TP within 0.3% of entry is TOO CLOSE.
+- **TP TARGET PRIORITY**: In strong trends, prefer proven equal levels (3+ retests) and strong opposing OBs over the nearest zone. Equal levels with many retests are liquidity magnets — price is drawn to them.
+- If you cannot identify a valid stop loss placement with adequate distance, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71492.68500
+- **Date**: 2026-03-16
+- **Trading Session**: new_york
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: DISCOUNT zone (30%) - favorable for LONGS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 94783.74
+  - BOS HIGH at 70970.72 [RECENT]
+  - CHoCH LOW at 84446.10 (potential reversal) [RECENT]
+  - CHoCH HIGH at 90589.65 (potential reversal)
+  - CHoCH LOW at 65105.00 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 62505.95000-65005.35000 | Strength: 80% | UNMITIGATED | 12.57% from price
+  - BULLISH OB: 65611.47000-69513.83000 | Strength: 62% | UNMITIGATED | 8.23% from price
+  - BEARISH OB: 91138.51000-94783.74000 | Strength: 80% | MITIGATED | 32.58% from price
+  - BEARISH OB: 94083.47000-97928.36000 | Strength: 80% | MITIGATED | 36.98% from price
+  - BEARISH OB: 88833.88000-90599.24000 | Strength: 80% | MITIGATED | 26.73% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 65005.35000-66492.84000 | FILLED | 9.07% below price (expect bounce UP)
+  - BULLISH FVG: 69491.74000-70636.76000 | FILLED | 2.80% below price (expect bounce UP)
+  - BEARISH FVG: 84729.26000-88833.88000 | UNFILLED | 24.26% above price (expect rejection DOWN)
+  - BEARISH FVG: 79414.57000-81067.99000 | UNFILLED | 13.39% above price (expect rejection DOWN)
+  - BEARISH FVG: 65005.35000-67183.69000 | FILLED | -6.03% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 70970.72000 | Strength: 74% | UNSWEPT | 0.73% below
+  - BUY-SIDE at 74043.78000 | Strength: 68% | UNSWEPT | 3.57% above
+  - SELL-SIDE at 65611.47000 | Strength: 66% | UNSWEPT | 8.23% below
+  - SELL-SIDE at 65105.00000 | Strength: 74% | UNSWEPT | 8.93% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 113677.15900 | Touches: 10 | PROVEN | UNSWEPT | 59.01% above
+    >>10 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 111531.83667 | Touches: 9 | PROVEN | UNSWEPT | 56.00% above
+    >>9 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 112559.90000 | Touches: 4 | PROVEN | SWEPT | 57.44% above
+  - EQUAL HIGHS (Resistance) at 109992.43500 | Touches: 4 | PROVEN | SWEPT | 53.85% above
+  - EQUAL LOWS (Support) at 65358.23500 | Touches: 5 | PROVEN | UNSWEPT | 8.58% below
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 67521.35500 | Touches: 6 | PROVEN | SWEPT | 5.55% below
+  - EQUAL LOWS (Support) at 68279.50250 | Touches: 4 | PROVEN | UNSWEPT | 4.49% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 66446.59400 | Touches: 5 | PROVEN | SWEPT | 7.06% below
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 62.7 (Neutral)
+- **MACD**: -3.54533 | Signal: -662.41992 | Histogram: 658.87460
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 69709.09020 (Price above)
+- **EMA50**: 72875.53138 (Price below)
+- **ADX**: 18.9 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 3025.74857
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=73566.39452 | Middle=68843.38050 | Lower=64120.36648
+  - Price within bands
+
+### Volume
+- **Current Bar Volume**: 79,839 ticks
+- **20-bar Avg Volume**: 227,485 ticks
+- **Volume Ratio**: 0.35x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+
+## YOUR TASK
+
+Analyze the SMC data and make a systematic trading decision.
+
+Think step-by-step:
+1. What is the market bias? (bullish/bearish based on BOS)
+2. Are we in premium or discount? (favor shorts in premium, longs in discount)
+3. Are there unmitigated OBs or unfilled FVGs near current price?
+4. Is there OB+FVG confluence?
+5. Where are the liquidity targets? (EQH/EQL for TP — proven levels with 3+ retests are strongest)
+6. Has there been a recent liquidity sweep that signals reversal?
+7. Where should stop loss be placed? (beyond OB/FVG)
+8. What's the risk:reward ratio? (must be >1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when: bullish BOS, price at bullish OB/FVG in discount, or after sell-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when: bearish BOS, price at bearish OB/FVG in premium, or after buy-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when: no clear structure, price at equilibrium, no unmitigated zones nearby, or conflicting signals.
+- **close** - Close existing position. Use when: price reaches liquidity target, OB/FVG invalidated, or CHoCH against position.
+
+## ORDER TYPE (you MUST pick one for buy/sell signals)
+- **market** - Execute immediately at current market price. Use when:
+  - Price is ALREADY AT the OB/FVG zone (within 0.1%)
+  - Liquidity sweep just happened and you want immediate entry
+  - Setup is confirmed and you don't want to miss it
+- **limit** - Place pending order at entry_price. Use when:
+  - Price is NOT YET at the zone (waiting for retracement)
+  - You want better entry at the OB/FVG level
+  - Zone is nearby but price hasn't reached it yet
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+For buy/sell signals, suggest a trailing stop distance as an ATR multiplier based on current volatility:
+- **Low volatility** (tight ranges, small ATR): 1.5-2.0x ATR — tighter trail locks profits
+- **Normal volatility**: 2.0-3.0x ATR — balanced between protection and breathing room
+- **High volatility** (wide swings, large ATR, news events): 3.0-5.0x ATR — wide trail avoids noise
+- **XAUUSD/Gold**: Typically 2.5-4.0x ATR (gold is volatile, tight trails get stopped out)
+- **Forex majors**: Typically 1.5-2.5x ATR
+- If unsure, default to 2.5x ATR
+
+Remember:
+- Smart money leaves footprints (OBs, FVGs)
+- Structure (BOS/CHoCH) tells you the trend
+- Liquidity shows you where price is likely to go
+- Trade with trend, enter at discount (longs) or premium (shorts)
+- Confluence = higher probability
+2026-03-16 03:33:06,987 | 
+================================================================================
+
+2026-03-16 03:33:33,394 | --- LLM RESPONSE (Structured) [took 26.4s] ---
+2026-03-16 03:33:33,394 | Signal: hold
+2026-03-16 03:33:33,394 | Confidence: 0.85
+2026-03-16 03:33:33,395 | Entry: None | SL: None | TP: None
+2026-03-16 03:33:33,395 | Justification: Ranging market regime with low ADX (18.9), decreasing volume, and conflicting structure (recent bullish BOS at 70970 but multiple recent CHoCH lows signaling potential reversal); no unmitigated OB/FVG confluence near current price (closest bullish OB 8.23% away); await clearer setup despite discount zone and bullish bias.
+2026-03-16 03:33:33,396 | Invalidation: Clear bullish BOS above recent CHoCH high at 90589.65 with price retracing to unmitigated bullish OB
+2026-03-16 03:33:33,396 | Raw decision dict: {'symbol': 'BTCUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Clear bullish BOS above recent CHoCH high at 90589.65 with price retracing to unmitigated bullish OB', 'justification': 'Ranging market regime with low ADX (18.9), decreasing volume, and conflicting structure (recent bullish BOS at 70970 but multiple recent CHoCH lows signaling potential reversal); no unmitigated OB/FVG confluence near current price (closest bullish OB 8.23% away); await clearer setup despite discount zone and bullish bias.', 'confidence': 0.85, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-16 03:33:33,397 | 
+================================================================================
+
+2026-03-16 03:33:33,397 | Structured output SUCCESS - returning smc_quant_decision with signal=hold
+2026-03-16 04:33:34,930 | 
+================================================================================
+SMC QUANT ANALYSIS - BTCUSD
+================================================================================
+2026-03-16 04:33:34,931 | Symbol: BTCUSD | Date: 2026-03-16 | Price: 71760.81
+2026-03-16 04:33:34,932 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71760.81000
+- **Date**: 2026-03-16
+- **Trading Session**: new_york
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: DISCOUNT zone (31%) - favorable for LONGS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 94783.74
+  - BOS HIGH at 70970.72 [RECENT]
+  - CHoCH LOW at 84446.10 (potential reversal) [RECENT]
+  - CHoCH HIGH at 90589.65 (potential reversal)
+  - CHoCH LOW at 65105.00 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 62505.95000-65005.35000 | Strength: 80% | UNMITIGATED | 12.90% from price
+  - BULLISH OB: 65611.47000-69513.83000 | Strength: 62% | UNMITIGATED | 8.57% from price
+  - BEARISH OB: 91138.51000-94783.74000 | Strength: 80% | MITIGATED | 32.08% from price
+  - BEARISH OB: 94083.47000-97928.36000 | Strength: 80% | MITIGATED | 36.46% from price
+  - BEARISH OB: 88833.88000-90599.24000 | Strength: 80% | MITIGATED | 26.25% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 65005.35000-66492.84000 | FILLED | 9.41% below price (expect bounce UP)
+  - BULLISH FVG: 69491.74000-70636.76000 | FILLED | 3.16% below price (expect bounce UP)
+  - BEARISH FVG: 84729.26000-88833.88000 | UNFILLED | 23.79% above price (expect rejection DOWN)
+  - BEARISH FVG: 79414.57000-81067.99000 | UNFILLED | 12.97% above price (expect rejection DOWN)
+  - BEARISH FVG: 65005.35000-67183.69000 | FILLED | -6.38% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 70970.72000 | Strength: 74% | UNSWEPT | 1.10% below
+  - BUY-SIDE at 74043.78000 | Strength: 68% | UNSWEPT | 3.18% above
+  - SELL-SIDE at 65611.47000 | Strength: 66% | UNSWEPT | 8.57% below
+  - SELL-SIDE at 65105.00000 | Strength: 74% | UNSWEPT | 9.27% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 113677.15900 | Touches: 10 | PROVEN | UNSWEPT | 58.41% above
+    >>10 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 111531.83667 | Touches: 9 | PROVEN | UNSWEPT | 55.42% above
+    >>9 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 112559.90000 | Touches: 4 | PROVEN | SWEPT | 56.85% above
+  - EQUAL HIGHS (Resistance) at 109992.43500 | Touches: 4 | PROVEN | SWEPT | 53.28% above
+  - EQUAL LOWS (Support) at 65358.23500 | Touches: 5 | PROVEN | UNSWEPT | 8.92% below
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 67521.35500 | Touches: 6 | PROVEN | SWEPT | 5.91% below
+  - EQUAL LOWS (Support) at 68279.50250 | Touches: 4 | PROVEN | UNSWEPT | 4.85% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 66446.59400 | Touches: 5 | PROVEN | SWEPT | 7.41% below
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 63.2 (Neutral)
+- **MACD**: 17.84396 | Signal: -658.14206 | Histogram: 675.98603
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 69734.62639 (Price above)
+- **EMA50**: 72886.04628 (Price below)
+- **ADX**: 18.9 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 3029.40357
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=73612.78251 | Middle=68856.78700 | Lower=64100.79149
+  - Price within bands
+
+### Volume
+- **Current Bar Volume**: 84,735 ticks
+- **20-bar Avg Volume**: 227,729 ticks
+- **Volume Ratio**: 0.37x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+2026-03-16 04:33:34,938 | 
+--- FULL PROMPT ---
+You are a systematic Smart Money Concepts (SMC) trader with strict risk discipline. You trade based on institutional order flow analysis to identify high-probability entries.
+
+## SMART MONEY CONCEPTS TRADING RULES
+
+### Core Concepts
+1. **Order Blocks (OB)**: The last opposing candle before a strong impulse move. This marks where institutions entered.
+   - Bullish OB: Last bearish candle before bullish impulse - expect price to bounce UP
+   - Bearish OB: Last bullish candle before bearish impulse - expect price to reject DOWN
+   - Only trade UNMITIGATED OBs (price hasn't returned yet)
+
+2. **Fair Value Gaps (FVG)**: Three-candle imbalance where price moved so fast it left a gap.
+   - Price tends to return to "fill" FVGs
+   - Bullish FVG: Gap below price - expect bounce UP when price returns
+   - Bearish FVG: Gap above price - expect rejection DOWN when price returns
+   - UNFILLED FVGs are active; FILLED FVGs are spent
+
+3. **Break of Structure (BOS)**: Price breaks previous swing high/low IN the direction of trend.
+   - Bullish BOS: Higher high formed - trend continuation UP
+   - Bearish BOS: Lower low formed - trend continuation DOWN
+   - BOS confirms you can trade with the trend
+
+4. **Change of Character (CHoCH)**: Price breaks structure AGAINST the trend.
+   - First warning of potential reversal
+   - Look for new OBs forming in the reversal direction
+   - Wait for confirmation before trading reversal
+
+5. **Liquidity**: Areas where stop losses cluster (equal highs/lows, round numbers).
+   - Smart money hunts liquidity before reversing
+   - EQH (Equal Highs): Buy-side liquidity above - price may spike up to sweep then drop
+   - EQL (Equal Lows): Sell-side liquidity below - price may spike down to sweep then rise
+   - After a liquidity sweep, look for reversal entries
+
+6. **Premium/Discount**: The current range divided into zones.
+   - Premium (>50% of range): Expensive - favor SHORTS
+   - Discount (<50% of range): Cheap - favor LONGS
+   - Equilibrium (50%): Wait for price to move to extreme
+
+### Trading Setups
+
+**Setup 1: OB Entry with Trend**
+- BOS confirms trend direction
+- Price retraces to unmitigated OB
+- Enter at OB in trend direction
+- SL: Beyond OB
+- TP: Next liquidity pool, opposing OB, or proven equal level (3+ retests)
+
+**Setup 2: OB + FVG Confluence**
+- Unmitigated OB overlaps with unfilled FVG
+- Highest probability setup
+- Enter at the overlap zone
+- SL: Beyond the full OB/FVG zone plus 1x ATR buffer (confluence improves win rate, not SL placement)
+
+**Setup 3: Liquidity Sweep Reversal**
+- Price sweeps liquidity (EQH/EQL)
+- Look for CHoCH or BOS in opposite direction
+- Enter at the new OB formed after sweep
+- Target: Opposite liquidity pool
+
+**Setup 4: OTE Entry (Optimal Trade Entry)**
+- After impulse move, wait for retracement
+- Enter at 61.8%-78.6% Fibonacci zone
+- This is where institutions typically re-enter
+- Combine with OB/FVG for confluence
+
+## RISK MANAGEMENT RULES (NEVER BREAK)
+
+1. **Risk no more than 1-2% of account value per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation before entry**
+5. **Place stops beyond OB/FVG zones** (allow for liquidity sweep)
+6. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+7. **Leverage is a tool, not a goal - default 5-20x**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- Place stops beyond the OB/FVG zone that forms your entry basis
+- **MINIMUM SL DISTANCE**: Stop loss must be at least 1x ATR from entry. SL within 0.5% of entry is TOO TIGHT and will get stopped out by normal price noise. For gold (XAUUSD), minimum SL should be $15-30+ from entry.
+- **MINIMUM TP DISTANCE**: Take profit should be at least 1.5x the SL distance (R:R >= 1.5:1). TP within 0.3% of entry is TOO CLOSE.
+- **TP TARGET PRIORITY**: In strong trends, prefer proven equal levels (3+ retests) and strong opposing OBs over the nearest zone. Equal levels with many retests are liquidity magnets — price is drawn to them.
+- If you cannot identify a valid stop loss placement with adequate distance, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71760.81000
+- **Date**: 2026-03-16
+- **Trading Session**: new_york
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: DISCOUNT zone (31%) - favorable for LONGS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 94783.74
+  - BOS HIGH at 70970.72 [RECENT]
+  - CHoCH LOW at 84446.10 (potential reversal) [RECENT]
+  - CHoCH HIGH at 90589.65 (potential reversal)
+  - CHoCH LOW at 65105.00 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 62505.95000-65005.35000 | Strength: 80% | UNMITIGATED | 12.90% from price
+  - BULLISH OB: 65611.47000-69513.83000 | Strength: 62% | UNMITIGATED | 8.57% from price
+  - BEARISH OB: 91138.51000-94783.74000 | Strength: 80% | MITIGATED | 32.08% from price
+  - BEARISH OB: 94083.47000-97928.36000 | Strength: 80% | MITIGATED | 36.46% from price
+  - BEARISH OB: 88833.88000-90599.24000 | Strength: 80% | MITIGATED | 26.25% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 65005.35000-66492.84000 | FILLED | 9.41% below price (expect bounce UP)
+  - BULLISH FVG: 69491.74000-70636.76000 | FILLED | 3.16% below price (expect bounce UP)
+  - BEARISH FVG: 84729.26000-88833.88000 | UNFILLED | 23.79% above price (expect rejection DOWN)
+  - BEARISH FVG: 79414.57000-81067.99000 | UNFILLED | 12.97% above price (expect rejection DOWN)
+  - BEARISH FVG: 65005.35000-67183.69000 | FILLED | -6.38% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 70970.72000 | Strength: 74% | UNSWEPT | 1.10% below
+  - BUY-SIDE at 74043.78000 | Strength: 68% | UNSWEPT | 3.18% above
+  - SELL-SIDE at 65611.47000 | Strength: 66% | UNSWEPT | 8.57% below
+  - SELL-SIDE at 65105.00000 | Strength: 74% | UNSWEPT | 9.27% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 113677.15900 | Touches: 10 | PROVEN | UNSWEPT | 58.41% above
+    >>10 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 111531.83667 | Touches: 9 | PROVEN | UNSWEPT | 55.42% above
+    >>9 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 112559.90000 | Touches: 4 | PROVEN | SWEPT | 56.85% above
+  - EQUAL HIGHS (Resistance) at 109992.43500 | Touches: 4 | PROVEN | SWEPT | 53.28% above
+  - EQUAL LOWS (Support) at 65358.23500 | Touches: 5 | PROVEN | UNSWEPT | 8.92% below
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 67521.35500 | Touches: 6 | PROVEN | SWEPT | 5.91% below
+  - EQUAL LOWS (Support) at 68279.50250 | Touches: 4 | PROVEN | UNSWEPT | 4.85% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 66446.59400 | Touches: 5 | PROVEN | SWEPT | 7.41% below
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 63.2 (Neutral)
+- **MACD**: 17.84396 | Signal: -658.14206 | Histogram: 675.98603
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 69734.62639 (Price above)
+- **EMA50**: 72886.04628 (Price below)
+- **ADX**: 18.9 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 3029.40357
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=73612.78251 | Middle=68856.78700 | Lower=64100.79149
+  - Price within bands
+
+### Volume
+- **Current Bar Volume**: 84,735 ticks
+- **20-bar Avg Volume**: 227,729 ticks
+- **Volume Ratio**: 0.37x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+
+## YOUR TASK
+
+Analyze the SMC data and make a systematic trading decision.
+
+Think step-by-step:
+1. What is the market bias? (bullish/bearish based on BOS)
+2. Are we in premium or discount? (favor shorts in premium, longs in discount)
+3. Are there unmitigated OBs or unfilled FVGs near current price?
+4. Is there OB+FVG confluence?
+5. Where are the liquidity targets? (EQH/EQL for TP — proven levels with 3+ retests are strongest)
+6. Has there been a recent liquidity sweep that signals reversal?
+7. Where should stop loss be placed? (beyond OB/FVG)
+8. What's the risk:reward ratio? (must be >1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when: bullish BOS, price at bullish OB/FVG in discount, or after sell-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when: bearish BOS, price at bearish OB/FVG in premium, or after buy-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when: no clear structure, price at equilibrium, no unmitigated zones nearby, or conflicting signals.
+- **close** - Close existing position. Use when: price reaches liquidity target, OB/FVG invalidated, or CHoCH against position.
+
+## ORDER TYPE (you MUST pick one for buy/sell signals)
+- **market** - Execute immediately at current market price. Use when:
+  - Price is ALREADY AT the OB/FVG zone (within 0.1%)
+  - Liquidity sweep just happened and you want immediate entry
+  - Setup is confirmed and you don't want to miss it
+- **limit** - Place pending order at entry_price. Use when:
+  - Price is NOT YET at the zone (waiting for retracement)
+  - You want better entry at the OB/FVG level
+  - Zone is nearby but price hasn't reached it yet
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+For buy/sell signals, suggest a trailing stop distance as an ATR multiplier based on current volatility:
+- **Low volatility** (tight ranges, small ATR): 1.5-2.0x ATR — tighter trail locks profits
+- **Normal volatility**: 2.0-3.0x ATR — balanced between protection and breathing room
+- **High volatility** (wide swings, large ATR, news events): 3.0-5.0x ATR — wide trail avoids noise
+- **XAUUSD/Gold**: Typically 2.5-4.0x ATR (gold is volatile, tight trails get stopped out)
+- **Forex majors**: Typically 1.5-2.5x ATR
+- If unsure, default to 2.5x ATR
+
+Remember:
+- Smart money leaves footprints (OBs, FVGs)
+- Structure (BOS/CHoCH) tells you the trend
+- Liquidity shows you where price is likely to go
+- Trade with trend, enter at discount (longs) or premium (shorts)
+- Confluence = higher probability
+2026-03-16 04:33:34,956 | 
+================================================================================
+
+2026-03-16 04:33:50,549 | --- LLM RESPONSE (Structured) [took 15.6s] ---
+2026-03-16 04:33:50,550 | Signal: hold
+2026-03-16 04:33:50,550 | Confidence: 0.75
+2026-03-16 04:33:50,550 | Entry: None | SL: None | TP: None
+2026-03-16 04:33:50,551 | Justification: Ranging market with mixed structure (recent bullish BOS but multiple recent CHoCH signals suggesting reversal risk); no unmitigated OB or FVG confluence near current price in discount zone; low volume and weak ADX favor no action to avoid whipsaws as seen in recent losing trades around 70k levels.
+2026-03-16 04:33:50,551 | Invalidation: Price breaks below 70970.72 recent BOS high, confirming bearish CHoCH continuation
+2026-03-16 04:33:50,552 | Raw decision dict: {'symbol': 'BTCUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price breaks below 70970.72 recent BOS high, confirming bearish CHoCH continuation', 'justification': 'Ranging market with mixed structure (recent bullish BOS but multiple recent CHoCH signals suggesting reversal risk); no unmitigated OB or FVG confluence near current price in discount zone; low volume and weak ADX favor no action to avoid whipsaws as seen in recent losing trades around 70k levels.', 'confidence': 0.75, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-16 04:33:50,552 | 
+================================================================================
+
+2026-03-16 04:33:50,553 | Structured output SUCCESS - returning smc_quant_decision with signal=hold
+2026-03-16 05:33:52,070 | 
+================================================================================
+SMC QUANT ANALYSIS - BTCUSD
+================================================================================
+2026-03-16 05:33:52,071 | Symbol: BTCUSD | Date: 2026-03-16 | Price: 71542.325
+2026-03-16 05:33:52,071 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71542.32500
+- **Date**: 2026-03-16
+- **Trading Session**: new_york
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: DISCOUNT zone (30%) - favorable for LONGS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 94783.74
+  - BOS HIGH at 70970.72 [RECENT]
+  - CHoCH LOW at 84446.10 (potential reversal) [RECENT]
+  - CHoCH HIGH at 90589.65 (potential reversal)
+  - CHoCH LOW at 65105.00 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 62505.95000-65005.35000 | Strength: 80% | UNMITIGATED | 12.63% from price
+  - BULLISH OB: 65611.47000-69513.83000 | Strength: 62% | UNMITIGATED | 8.29% from price
+  - BEARISH OB: 91138.51000-94783.74000 | Strength: 80% | MITIGATED | 32.49% from price
+  - BEARISH OB: 94083.47000-97928.36000 | Strength: 80% | MITIGATED | 36.88% from price
+  - BEARISH OB: 88833.88000-90599.24000 | Strength: 80% | MITIGATED | 26.64% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 65005.35000-66492.84000 | FILLED | 9.14% below price (expect bounce UP)
+  - BULLISH FVG: 69491.74000-70636.76000 | FILLED | 2.87% below price (expect bounce UP)
+  - BEARISH FVG: 84729.26000-88833.88000 | UNFILLED | 24.17% above price (expect rejection DOWN)
+  - BEARISH FVG: 79414.57000-81067.99000 | UNFILLED | 13.31% above price (expect rejection DOWN)
+  - BEARISH FVG: 65005.35000-67183.69000 | FILLED | -6.09% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 70970.72000 | Strength: 74% | UNSWEPT | 0.80% below
+  - BUY-SIDE at 74043.78000 | Strength: 68% | UNSWEPT | 3.50% above
+  - SELL-SIDE at 65611.47000 | Strength: 66% | UNSWEPT | 8.29% below
+  - SELL-SIDE at 65105.00000 | Strength: 74% | UNSWEPT | 9.00% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 113677.15900 | Touches: 10 | PROVEN | UNSWEPT | 58.89% above
+    >>10 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 111531.83667 | Touches: 9 | PROVEN | UNSWEPT | 55.90% above
+    >>9 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 112559.90000 | Touches: 4 | PROVEN | SWEPT | 57.33% above
+  - EQUAL HIGHS (Resistance) at 109992.43500 | Touches: 4 | PROVEN | SWEPT | 53.74% above
+  - EQUAL LOWS (Support) at 65358.23500 | Touches: 5 | PROVEN | UNSWEPT | 8.64% below
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 67521.35500 | Touches: 6 | PROVEN | SWEPT | 5.62% below
+  - EQUAL LOWS (Support) at 68279.50250 | Touches: 4 | PROVEN | UNSWEPT | 4.56% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 66446.59400 | Touches: 5 | PROVEN | SWEPT | 7.12% below
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 62.8 (Neutral)
+- **MACD**: 0.41057 | Signal: -661.62874 | Histogram: 662.03932
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 69713.81306 (Price above)
+- **EMA50**: 72877.47609 (Price below)
+- **ADX**: 18.9 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 3029.40357
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=73574.76204 | Middle=68845.86000 | Lower=64116.95796
+  - Price within bands
+
+### Volume
+- **Current Bar Volume**: 89,263 ticks
+- **20-bar Avg Volume**: 227,956 ticks
+- **Volume Ratio**: 0.39x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+2026-03-16 05:33:52,075 | 
+--- FULL PROMPT ---
+You are a systematic Smart Money Concepts (SMC) trader with strict risk discipline. You trade based on institutional order flow analysis to identify high-probability entries.
+
+## SMART MONEY CONCEPTS TRADING RULES
+
+### Core Concepts
+1. **Order Blocks (OB)**: The last opposing candle before a strong impulse move. This marks where institutions entered.
+   - Bullish OB: Last bearish candle before bullish impulse - expect price to bounce UP
+   - Bearish OB: Last bullish candle before bearish impulse - expect price to reject DOWN
+   - Only trade UNMITIGATED OBs (price hasn't returned yet)
+
+2. **Fair Value Gaps (FVG)**: Three-candle imbalance where price moved so fast it left a gap.
+   - Price tends to return to "fill" FVGs
+   - Bullish FVG: Gap below price - expect bounce UP when price returns
+   - Bearish FVG: Gap above price - expect rejection DOWN when price returns
+   - UNFILLED FVGs are active; FILLED FVGs are spent
+
+3. **Break of Structure (BOS)**: Price breaks previous swing high/low IN the direction of trend.
+   - Bullish BOS: Higher high formed - trend continuation UP
+   - Bearish BOS: Lower low formed - trend continuation DOWN
+   - BOS confirms you can trade with the trend
+
+4. **Change of Character (CHoCH)**: Price breaks structure AGAINST the trend.
+   - First warning of potential reversal
+   - Look for new OBs forming in the reversal direction
+   - Wait for confirmation before trading reversal
+
+5. **Liquidity**: Areas where stop losses cluster (equal highs/lows, round numbers).
+   - Smart money hunts liquidity before reversing
+   - EQH (Equal Highs): Buy-side liquidity above - price may spike up to sweep then drop
+   - EQL (Equal Lows): Sell-side liquidity below - price may spike down to sweep then rise
+   - After a liquidity sweep, look for reversal entries
+
+6. **Premium/Discount**: The current range divided into zones.
+   - Premium (>50% of range): Expensive - favor SHORTS
+   - Discount (<50% of range): Cheap - favor LONGS
+   - Equilibrium (50%): Wait for price to move to extreme
+
+### Trading Setups
+
+**Setup 1: OB Entry with Trend**
+- BOS confirms trend direction
+- Price retraces to unmitigated OB
+- Enter at OB in trend direction
+- SL: Beyond OB
+- TP: Next liquidity pool, opposing OB, or proven equal level (3+ retests)
+
+**Setup 2: OB + FVG Confluence**
+- Unmitigated OB overlaps with unfilled FVG
+- Highest probability setup
+- Enter at the overlap zone
+- SL: Beyond the full OB/FVG zone plus 1x ATR buffer (confluence improves win rate, not SL placement)
+
+**Setup 3: Liquidity Sweep Reversal**
+- Price sweeps liquidity (EQH/EQL)
+- Look for CHoCH or BOS in opposite direction
+- Enter at the new OB formed after sweep
+- Target: Opposite liquidity pool
+
+**Setup 4: OTE Entry (Optimal Trade Entry)**
+- After impulse move, wait for retracement
+- Enter at 61.8%-78.6% Fibonacci zone
+- This is where institutions typically re-enter
+- Combine with OB/FVG for confluence
+
+## RISK MANAGEMENT RULES (NEVER BREAK)
+
+1. **Risk no more than 1-2% of account value per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation before entry**
+5. **Place stops beyond OB/FVG zones** (allow for liquidity sweep)
+6. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+7. **Leverage is a tool, not a goal - default 5-20x**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- Place stops beyond the OB/FVG zone that forms your entry basis
+- **MINIMUM SL DISTANCE**: Stop loss must be at least 1x ATR from entry. SL within 0.5% of entry is TOO TIGHT and will get stopped out by normal price noise. For gold (XAUUSD), minimum SL should be $15-30+ from entry.
+- **MINIMUM TP DISTANCE**: Take profit should be at least 1.5x the SL distance (R:R >= 1.5:1). TP within 0.3% of entry is TOO CLOSE.
+- **TP TARGET PRIORITY**: In strong trends, prefer proven equal levels (3+ retests) and strong opposing OBs over the nearest zone. Equal levels with many retests are liquidity magnets — price is drawn to them.
+- If you cannot identify a valid stop loss placement with adequate distance, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71542.32500
+- **Date**: 2026-03-16
+- **Trading Session**: new_york
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: DISCOUNT zone (30%) - favorable for LONGS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 94783.74
+  - BOS HIGH at 70970.72 [RECENT]
+  - CHoCH LOW at 84446.10 (potential reversal) [RECENT]
+  - CHoCH HIGH at 90589.65 (potential reversal)
+  - CHoCH LOW at 65105.00 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 62505.95000-65005.35000 | Strength: 80% | UNMITIGATED | 12.63% from price
+  - BULLISH OB: 65611.47000-69513.83000 | Strength: 62% | UNMITIGATED | 8.29% from price
+  - BEARISH OB: 91138.51000-94783.74000 | Strength: 80% | MITIGATED | 32.49% from price
+  - BEARISH OB: 94083.47000-97928.36000 | Strength: 80% | MITIGATED | 36.88% from price
+  - BEARISH OB: 88833.88000-90599.24000 | Strength: 80% | MITIGATED | 26.64% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 65005.35000-66492.84000 | FILLED | 9.14% below price (expect bounce UP)
+  - BULLISH FVG: 69491.74000-70636.76000 | FILLED | 2.87% below price (expect bounce UP)
+  - BEARISH FVG: 84729.26000-88833.88000 | UNFILLED | 24.17% above price (expect rejection DOWN)
+  - BEARISH FVG: 79414.57000-81067.99000 | UNFILLED | 13.31% above price (expect rejection DOWN)
+  - BEARISH FVG: 65005.35000-67183.69000 | FILLED | -6.09% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 70970.72000 | Strength: 74% | UNSWEPT | 0.80% below
+  - BUY-SIDE at 74043.78000 | Strength: 68% | UNSWEPT | 3.50% above
+  - SELL-SIDE at 65611.47000 | Strength: 66% | UNSWEPT | 8.29% below
+  - SELL-SIDE at 65105.00000 | Strength: 74% | UNSWEPT | 9.00% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 113677.15900 | Touches: 10 | PROVEN | UNSWEPT | 58.89% above
+    >>10 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 111531.83667 | Touches: 9 | PROVEN | UNSWEPT | 55.90% above
+    >>9 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 112559.90000 | Touches: 4 | PROVEN | SWEPT | 57.33% above
+  - EQUAL HIGHS (Resistance) at 109992.43500 | Touches: 4 | PROVEN | SWEPT | 53.74% above
+  - EQUAL LOWS (Support) at 65358.23500 | Touches: 5 | PROVEN | UNSWEPT | 8.64% below
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 67521.35500 | Touches: 6 | PROVEN | SWEPT | 5.62% below
+  - EQUAL LOWS (Support) at 68279.50250 | Touches: 4 | PROVEN | UNSWEPT | 4.56% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 66446.59400 | Touches: 5 | PROVEN | SWEPT | 7.12% below
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 62.8 (Neutral)
+- **MACD**: 0.41057 | Signal: -661.62874 | Histogram: 662.03932
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 69713.81306 (Price above)
+- **EMA50**: 72877.47609 (Price below)
+- **ADX**: 18.9 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 3029.40357
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=73574.76204 | Middle=68845.86000 | Lower=64116.95796
+  - Price within bands
+
+### Volume
+- **Current Bar Volume**: 89,263 ticks
+- **20-bar Avg Volume**: 227,956 ticks
+- **Volume Ratio**: 0.39x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+
+## YOUR TASK
+
+Analyze the SMC data and make a systematic trading decision.
+
+Think step-by-step:
+1. What is the market bias? (bullish/bearish based on BOS)
+2. Are we in premium or discount? (favor shorts in premium, longs in discount)
+3. Are there unmitigated OBs or unfilled FVGs near current price?
+4. Is there OB+FVG confluence?
+5. Where are the liquidity targets? (EQH/EQL for TP — proven levels with 3+ retests are strongest)
+6. Has there been a recent liquidity sweep that signals reversal?
+7. Where should stop loss be placed? (beyond OB/FVG)
+8. What's the risk:reward ratio? (must be >1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when: bullish BOS, price at bullish OB/FVG in discount, or after sell-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when: bearish BOS, price at bearish OB/FVG in premium, or after buy-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when: no clear structure, price at equilibrium, no unmitigated zones nearby, or conflicting signals.
+- **close** - Close existing position. Use when: price reaches liquidity target, OB/FVG invalidated, or CHoCH against position.
+
+## ORDER TYPE (you MUST pick one for buy/sell signals)
+- **market** - Execute immediately at current market price. Use when:
+  - Price is ALREADY AT the OB/FVG zone (within 0.1%)
+  - Liquidity sweep just happened and you want immediate entry
+  - Setup is confirmed and you don't want to miss it
+- **limit** - Place pending order at entry_price. Use when:
+  - Price is NOT YET at the zone (waiting for retracement)
+  - You want better entry at the OB/FVG level
+  - Zone is nearby but price hasn't reached it yet
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+For buy/sell signals, suggest a trailing stop distance as an ATR multiplier based on current volatility:
+- **Low volatility** (tight ranges, small ATR): 1.5-2.0x ATR — tighter trail locks profits
+- **Normal volatility**: 2.0-3.0x ATR — balanced between protection and breathing room
+- **High volatility** (wide swings, large ATR, news events): 3.0-5.0x ATR — wide trail avoids noise
+- **XAUUSD/Gold**: Typically 2.5-4.0x ATR (gold is volatile, tight trails get stopped out)
+- **Forex majors**: Typically 1.5-2.5x ATR
+- If unsure, default to 2.5x ATR
+
+Remember:
+- Smart money leaves footprints (OBs, FVGs)
+- Structure (BOS/CHoCH) tells you the trend
+- Liquidity shows you where price is likely to go
+- Trade with trend, enter at discount (longs) or premium (shorts)
+- Confluence = higher probability
+2026-03-16 05:33:52,092 | 
+================================================================================
+
+2026-03-16 05:34:04,659 | --- LLM RESPONSE (Structured) [took 12.6s] ---
+2026-03-16 05:34:04,660 | Signal: hold
+2026-03-16 05:34:04,660 | Confidence: 0.45
+2026-03-16 05:34:04,660 | Entry: None | SL: None | TP: None
+2026-03-16 05:34:04,660 | Justification: Ranging market with weak ADX, conflicting recent CHoCH lows signaling potential reversal against stated bullish bias; no unmitigated OB or FVG confluence near current price in discount zone; price above unswept buy-side liquidity at 70970 but no immediate reversal setup post-sweep; past trades lost nearby, await clearer structure.
+2026-03-16 05:34:04,661 | Invalidation: Price breaks below recent BOS high at 70970.72 without retracement to bullish OB, confirming bearish CHoCH continuation
+2026-03-16 05:34:04,661 | Raw decision dict: {'symbol': 'BTCUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price breaks below recent BOS high at 70970.72 without retracement to bullish OB, confirming bearish CHoCH continuation', 'justification': 'Ranging market with weak ADX, conflicting recent CHoCH lows signaling potential reversal against stated bullish bias; no unmitigated OB or FVG confluence near current price in discount zone; price above unswept buy-side liquidity at 70970 but no immediate reversal setup post-sweep; past trades lost nearby, await clearer structure.', 'confidence': 0.45, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-16 05:34:04,662 | 
+================================================================================
+
+2026-03-16 05:34:04,662 | Structured output SUCCESS - returning smc_quant_decision with signal=hold
+2026-03-16 06:34:06,260 | 
+================================================================================
+SMC QUANT ANALYSIS - BTCUSD
+================================================================================
+2026-03-16 06:34:06,261 | Symbol: BTCUSD | Date: 2026-03-16 | Price: 71633.89
+2026-03-16 06:34:06,262 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71633.89000
+- **Date**: 2026-03-16
+- **Trading Session**: new_york
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: DISCOUNT zone (31%) - favorable for LONGS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 94783.74
+  - BOS HIGH at 70970.72 [RECENT]
+  - CHoCH LOW at 84446.10 (potential reversal) [RECENT]
+  - CHoCH HIGH at 90589.65 (potential reversal)
+  - CHoCH LOW at 65105.00 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 62505.95000-65005.35000 | Strength: 80% | UNMITIGATED | 12.74% from price
+  - BULLISH OB: 65611.47000-69513.83000 | Strength: 62% | UNMITIGATED | 8.41% from price
+  - BEARISH OB: 91138.51000-94783.74000 | Strength: 80% | MITIGATED | 32.32% from price
+  - BEARISH OB: 94083.47000-97928.36000 | Strength: 80% | MITIGATED | 36.71% from price
+  - BEARISH OB: 88833.88000-90599.24000 | Strength: 80% | MITIGATED | 26.48% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 65005.35000-66492.84000 | FILLED | 9.25% below price (expect bounce UP)
+  - BULLISH FVG: 69491.74000-70636.76000 | FILLED | 2.99% below price (expect bounce UP)
+  - BEARISH FVG: 84729.26000-88833.88000 | UNFILLED | 24.01% above price (expect rejection DOWN)
+  - BEARISH FVG: 79414.57000-81067.99000 | UNFILLED | 13.17% above price (expect rejection DOWN)
+  - BEARISH FVG: 65005.35000-67183.69000 | FILLED | -6.21% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 70970.72000 | Strength: 74% | UNSWEPT | 0.93% below
+  - BUY-SIDE at 74043.78000 | Strength: 68% | UNSWEPT | 3.36% above
+  - SELL-SIDE at 65611.47000 | Strength: 66% | UNSWEPT | 8.41% below
+  - SELL-SIDE at 65105.00000 | Strength: 74% | UNSWEPT | 9.11% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 113677.15900 | Touches: 10 | PROVEN | UNSWEPT | 58.69% above
+    >>10 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 111531.83667 | Touches: 9 | PROVEN | UNSWEPT | 55.70% above
+    >>9 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 112559.90000 | Touches: 4 | PROVEN | SWEPT | 57.13% above
+  - EQUAL HIGHS (Resistance) at 109992.43500 | Touches: 4 | PROVEN | SWEPT | 53.55% above
+  - EQUAL LOWS (Support) at 65358.23500 | Touches: 5 | PROVEN | UNSWEPT | 8.76% below
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 67521.35500 | Touches: 6 | PROVEN | SWEPT | 5.74% below
+  - EQUAL LOWS (Support) at 68279.50250 | Touches: 4 | PROVEN | UNSWEPT | 4.68% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 66446.59400 | Touches: 5 | PROVEN | SWEPT | 7.24% below
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 63.0 (Neutral)
+- **MACD**: 7.71690 | Signal: -660.16748 | Histogram: 667.88438
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 69722.53592 (Price above)
+- **EMA50**: 72881.06785 (Price below)
+- **ADX**: 18.9 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 3029.40357
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=73590.46995 | Middle=68850.43950 | Lower=64110.40905
+  - Price within bands
+
+### Volume
+- **Current Bar Volume**: 92,581 ticks
+- **20-bar Avg Volume**: 228,122 ticks
+- **Volume Ratio**: 0.41x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+2026-03-16 06:34:06,269 | 
+--- FULL PROMPT ---
+You are a systematic Smart Money Concepts (SMC) trader with strict risk discipline. You trade based on institutional order flow analysis to identify high-probability entries.
+
+## SMART MONEY CONCEPTS TRADING RULES
+
+### Core Concepts
+1. **Order Blocks (OB)**: The last opposing candle before a strong impulse move. This marks where institutions entered.
+   - Bullish OB: Last bearish candle before bullish impulse - expect price to bounce UP
+   - Bearish OB: Last bullish candle before bearish impulse - expect price to reject DOWN
+   - Only trade UNMITIGATED OBs (price hasn't returned yet)
+
+2. **Fair Value Gaps (FVG)**: Three-candle imbalance where price moved so fast it left a gap.
+   - Price tends to return to "fill" FVGs
+   - Bullish FVG: Gap below price - expect bounce UP when price returns
+   - Bearish FVG: Gap above price - expect rejection DOWN when price returns
+   - UNFILLED FVGs are active; FILLED FVGs are spent
+
+3. **Break of Structure (BOS)**: Price breaks previous swing high/low IN the direction of trend.
+   - Bullish BOS: Higher high formed - trend continuation UP
+   - Bearish BOS: Lower low formed - trend continuation DOWN
+   - BOS confirms you can trade with the trend
+
+4. **Change of Character (CHoCH)**: Price breaks structure AGAINST the trend.
+   - First warning of potential reversal
+   - Look for new OBs forming in the reversal direction
+   - Wait for confirmation before trading reversal
+
+5. **Liquidity**: Areas where stop losses cluster (equal highs/lows, round numbers).
+   - Smart money hunts liquidity before reversing
+   - EQH (Equal Highs): Buy-side liquidity above - price may spike up to sweep then drop
+   - EQL (Equal Lows): Sell-side liquidity below - price may spike down to sweep then rise
+   - After a liquidity sweep, look for reversal entries
+
+6. **Premium/Discount**: The current range divided into zones.
+   - Premium (>50% of range): Expensive - favor SHORTS
+   - Discount (<50% of range): Cheap - favor LONGS
+   - Equilibrium (50%): Wait for price to move to extreme
+
+### Trading Setups
+
+**Setup 1: OB Entry with Trend**
+- BOS confirms trend direction
+- Price retraces to unmitigated OB
+- Enter at OB in trend direction
+- SL: Beyond OB
+- TP: Next liquidity pool, opposing OB, or proven equal level (3+ retests)
+
+**Setup 2: OB + FVG Confluence**
+- Unmitigated OB overlaps with unfilled FVG
+- Highest probability setup
+- Enter at the overlap zone
+- SL: Beyond the full OB/FVG zone plus 1x ATR buffer (confluence improves win rate, not SL placement)
+
+**Setup 3: Liquidity Sweep Reversal**
+- Price sweeps liquidity (EQH/EQL)
+- Look for CHoCH or BOS in opposite direction
+- Enter at the new OB formed after sweep
+- Target: Opposite liquidity pool
+
+**Setup 4: OTE Entry (Optimal Trade Entry)**
+- After impulse move, wait for retracement
+- Enter at 61.8%-78.6% Fibonacci zone
+- This is where institutions typically re-enter
+- Combine with OB/FVG for confluence
+
+## RISK MANAGEMENT RULES (NEVER BREAK)
+
+1. **Risk no more than 1-2% of account value per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation before entry**
+5. **Place stops beyond OB/FVG zones** (allow for liquidity sweep)
+6. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+7. **Leverage is a tool, not a goal - default 5-20x**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- Place stops beyond the OB/FVG zone that forms your entry basis
+- **MINIMUM SL DISTANCE**: Stop loss must be at least 1x ATR from entry. SL within 0.5% of entry is TOO TIGHT and will get stopped out by normal price noise. For gold (XAUUSD), minimum SL should be $15-30+ from entry.
+- **MINIMUM TP DISTANCE**: Take profit should be at least 1.5x the SL distance (R:R >= 1.5:1). TP within 0.3% of entry is TOO CLOSE.
+- **TP TARGET PRIORITY**: In strong trends, prefer proven equal levels (3+ retests) and strong opposing OBs over the nearest zone. Equal levels with many retests are liquidity magnets — price is drawn to them.
+- If you cannot identify a valid stop loss placement with adequate distance, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71633.89000
+- **Date**: 2026-03-16
+- **Trading Session**: new_york
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: DISCOUNT zone (31%) - favorable for LONGS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 94783.74
+  - BOS HIGH at 70970.72 [RECENT]
+  - CHoCH LOW at 84446.10 (potential reversal) [RECENT]
+  - CHoCH HIGH at 90589.65 (potential reversal)
+  - CHoCH LOW at 65105.00 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 62505.95000-65005.35000 | Strength: 80% | UNMITIGATED | 12.74% from price
+  - BULLISH OB: 65611.47000-69513.83000 | Strength: 62% | UNMITIGATED | 8.41% from price
+  - BEARISH OB: 91138.51000-94783.74000 | Strength: 80% | MITIGATED | 32.32% from price
+  - BEARISH OB: 94083.47000-97928.36000 | Strength: 80% | MITIGATED | 36.71% from price
+  - BEARISH OB: 88833.88000-90599.24000 | Strength: 80% | MITIGATED | 26.48% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 65005.35000-66492.84000 | FILLED | 9.25% below price (expect bounce UP)
+  - BULLISH FVG: 69491.74000-70636.76000 | FILLED | 2.99% below price (expect bounce UP)
+  - BEARISH FVG: 84729.26000-88833.88000 | UNFILLED | 24.01% above price (expect rejection DOWN)
+  - BEARISH FVG: 79414.57000-81067.99000 | UNFILLED | 13.17% above price (expect rejection DOWN)
+  - BEARISH FVG: 65005.35000-67183.69000 | FILLED | -6.21% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 70970.72000 | Strength: 74% | UNSWEPT | 0.93% below
+  - BUY-SIDE at 74043.78000 | Strength: 68% | UNSWEPT | 3.36% above
+  - SELL-SIDE at 65611.47000 | Strength: 66% | UNSWEPT | 8.41% below
+  - SELL-SIDE at 65105.00000 | Strength: 74% | UNSWEPT | 9.11% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 113677.15900 | Touches: 10 | PROVEN | UNSWEPT | 58.69% above
+    >>10 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 111531.83667 | Touches: 9 | PROVEN | UNSWEPT | 55.70% above
+    >>9 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 112559.90000 | Touches: 4 | PROVEN | SWEPT | 57.13% above
+  - EQUAL HIGHS (Resistance) at 109992.43500 | Touches: 4 | PROVEN | SWEPT | 53.55% above
+  - EQUAL LOWS (Support) at 65358.23500 | Touches: 5 | PROVEN | UNSWEPT | 8.76% below
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 67521.35500 | Touches: 6 | PROVEN | SWEPT | 5.74% below
+  - EQUAL LOWS (Support) at 68279.50250 | Touches: 4 | PROVEN | UNSWEPT | 4.68% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 66446.59400 | Touches: 5 | PROVEN | SWEPT | 7.24% below
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 63.0 (Neutral)
+- **MACD**: 7.71690 | Signal: -660.16748 | Histogram: 667.88438
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 69722.53592 (Price above)
+- **EMA50**: 72881.06785 (Price below)
+- **ADX**: 18.9 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 3029.40357
+- **Volatility**: normal
+- **Bollinger Bands**: Upper=73590.46995 | Middle=68850.43950 | Lower=64110.40905
+  - Price within bands
+
+### Volume
+- **Current Bar Volume**: 92,581 ticks
+- **20-bar Avg Volume**: 228,122 ticks
+- **Volume Ratio**: 0.41x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+
+## YOUR TASK
+
+Analyze the SMC data and make a systematic trading decision.
+
+Think step-by-step:
+1. What is the market bias? (bullish/bearish based on BOS)
+2. Are we in premium or discount? (favor shorts in premium, longs in discount)
+3. Are there unmitigated OBs or unfilled FVGs near current price?
+4. Is there OB+FVG confluence?
+5. Where are the liquidity targets? (EQH/EQL for TP — proven levels with 3+ retests are strongest)
+6. Has there been a recent liquidity sweep that signals reversal?
+7. Where should stop loss be placed? (beyond OB/FVG)
+8. What's the risk:reward ratio? (must be >1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when: bullish BOS, price at bullish OB/FVG in discount, or after sell-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when: bearish BOS, price at bearish OB/FVG in premium, or after buy-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when: no clear structure, price at equilibrium, no unmitigated zones nearby, or conflicting signals.
+- **close** - Close existing position. Use when: price reaches liquidity target, OB/FVG invalidated, or CHoCH against position.
+
+## ORDER TYPE (you MUST pick one for buy/sell signals)
+- **market** - Execute immediately at current market price. Use when:
+  - Price is ALREADY AT the OB/FVG zone (within 0.1%)
+  - Liquidity sweep just happened and you want immediate entry
+  - Setup is confirmed and you don't want to miss it
+- **limit** - Place pending order at entry_price. Use when:
+  - Price is NOT YET at the zone (waiting for retracement)
+  - You want better entry at the OB/FVG level
+  - Zone is nearby but price hasn't reached it yet
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+For buy/sell signals, suggest a trailing stop distance as an ATR multiplier based on current volatility:
+- **Low volatility** (tight ranges, small ATR): 1.5-2.0x ATR — tighter trail locks profits
+- **Normal volatility**: 2.0-3.0x ATR — balanced between protection and breathing room
+- **High volatility** (wide swings, large ATR, news events): 3.0-5.0x ATR — wide trail avoids noise
+- **XAUUSD/Gold**: Typically 2.5-4.0x ATR (gold is volatile, tight trails get stopped out)
+- **Forex majors**: Typically 1.5-2.5x ATR
+- If unsure, default to 2.5x ATR
+
+Remember:
+- Smart money leaves footprints (OBs, FVGs)
+- Structure (BOS/CHoCH) tells you the trend
+- Liquidity shows you where price is likely to go
+- Trade with trend, enter at discount (longs) or premium (shorts)
+- Confluence = higher probability
+2026-03-16 06:34:06,288 | 
+================================================================================
+
+2026-03-16 06:34:17,267 | --- LLM RESPONSE (Structured) [took 11.0s] ---
+2026-03-16 06:34:17,267 | Signal: hold
+2026-03-16 06:34:17,268 | Confidence: 0.65
+2026-03-16 06:34:17,268 | Entry: None | SL: None | TP: None
+2026-03-16 06:34:17,268 | Justification: Ranging market with recent CHoCH signals indicating potential reversal, no unmitigated OB or FVG confluence near current price in discount zone, and conflicting structure despite bullish bias; await clearer setup.
+2026-03-16 06:34:17,269 | Invalidation: Price breaks below recent BOS high at 70970.72 without retracement to unmitigated bullish OB
+2026-03-16 06:34:17,269 | Raw decision dict: {'symbol': 'BTCUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price breaks below recent BOS high at 70970.72 without retracement to unmitigated bullish OB', 'justification': 'Ranging market with recent CHoCH signals indicating potential reversal, no unmitigated OB or FVG confluence near current price in discount zone, and conflicting structure despite bullish bias; await clearer setup.', 'confidence': 0.65, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-16 06:34:17,270 | 
+================================================================================
+
+2026-03-16 06:34:17,270 | Structured output SUCCESS - returning smc_quant_decision with signal=hold

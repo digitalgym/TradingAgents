@@ -94,6 +94,47 @@ export const getActiveTrailingStops = () =>
     '/positions/trailing'
   )
 
+// Assumption Review (SMC structure check + LLM assessment)
+export interface AssumptionFinding {
+  category: string
+  severity: 'critical' | 'warning' | 'info'
+  message: string
+  suggested_action: string | null
+  suggested_value: number | null
+}
+
+export interface AssumptionReviewReport {
+  decision_id: string
+  symbol: string
+  direction: string
+  ticket: number
+  entry_price: number
+  current_price: number
+  current_sl: number
+  current_tp: number
+  pnl_pct: number
+  recommended_action: string
+  suggested_sl: number | null
+  suggested_tp: number | null
+  findings: AssumptionFinding[]
+  llm_assessment: string | null
+  error: string | null
+}
+
+export interface AssumptionReviewResponse {
+  instance: string
+  source: string
+  symbols: string[]
+  reports: AssumptionReviewReport[]
+  summary: string
+}
+
+export const runAssumptionReview = (instance: string, useLlm: boolean = true) =>
+  fetchApi<AssumptionReviewResponse>(
+    `/automation/quant/assumption-review?instance=${encodeURIComponent(instance)}&use_llm=${useLlm}`,
+    { method: 'POST' }
+  )
+
 // Position Deep Analysis (Multi-Agent)
 export const startPositionDeepAnalysis = (ticket: number, timeframe?: string, useSmc?: boolean) =>
   fetchApi<any>(`/positions/deep-analysis/${ticket}`, {
@@ -655,7 +696,7 @@ export const saveTradeDecision = (params: SaveDecisionParams) =>
 
 export interface QuantAutomationConfig {
   instance_name: string
-  pipeline: 'quant' | 'volume_profile' | 'smc_quant' | 'breakout_quant' | 'multi_agent'
+  pipeline: 'smc_quant_basic' | 'smc_quant' | 'breakout_quant' | 'range_quant' | 'volume_profile' | 'rule_based' | 'multi_agent'
   symbols: string[]
   timeframe: string
   analysis_interval_seconds: number
@@ -663,7 +704,6 @@ export interface QuantAutomationConfig {
   auto_execute: boolean
   min_confidence: number
   max_positions_per_symbol: number
-  max_total_positions: number
   enable_trailing_stop: boolean
   trailing_stop_atr_multiplier: number
   move_to_breakeven_pct: number
@@ -808,6 +848,16 @@ export const testQuantAnalysis = (symbol: string, pipeline: string = 'quant') =>
 export const getQuantAutomationHistory = (instanceName: string = 'quant') =>
   fetchApi<QuantAutomationHistory>(`/automation/quant/history?instance=${instanceName}`)
 
+// Global symbol position limits
+export const getSymbolLimits = () =>
+  fetchApi<{ limits: Record<string, { max_positions: number }> }>('/automation/symbol-limits')
+
+export const updateSymbolLimit = (symbol: string, maxPositions: number) =>
+  fetchApi<{ success: boolean }>(`/automation/symbol-limits/${symbol}`, {
+    method: 'POST',
+    body: JSON.stringify({ max_positions: maxPositions }),
+  })
+
 export const runVpQuantAnalysis = (symbol: string, timeframe: string = 'H1') =>
   fetchApi<VpQuantAnalysisResult>('/analysis/vp-quant', {
     method: 'POST',
@@ -819,6 +869,106 @@ export const runSmcQuantAnalysis = (symbol: string, timeframe: string = 'H1') =>
     method: 'POST',
     body: JSON.stringify({ symbol, timeframe }),
   })
+
+// ===== Auto-Tuner =====
+
+export interface TuneResultEntry {
+  strategy: string
+  timeframe: string
+  params: Record<string, any>
+  total_trades: number
+  winners: number
+  losers: number
+  win_rate: number
+  avg_pnl: number
+  total_pnl: number
+  sharpe: number
+  profit_factor: number
+  buy_trades: number
+  sell_trades: number
+  buy_win_rate: number
+  sell_win_rate: number
+}
+
+export interface TuneStep {
+  name: string
+  status: 'pending' | 'running' | 'done' | 'skipped'
+}
+
+export interface TuneProgress {
+  phase: string
+  current: number
+  total: number
+  message: string
+  steps: TuneStep[]
+}
+
+export interface TuneTaskState {
+  status: 'running' | 'done' | 'error'
+  started_at: string
+  symbol: string
+  pipeline: string
+  bars: number
+  auto_apply: boolean
+  progress: TuneProgress
+  result: {
+    best: TuneResultEntry | null
+    top_5: TuneResultEntry[]
+    all_count: number
+    symbol: string
+    pipeline: string
+    timeframes_tested: string[]
+    bars_per_tf: Record<string, number>
+    duration_seconds: number
+    config_updates: Record<string, any>
+    error?: string
+  } | null
+  error: string | null
+  applied?: boolean
+  apply_error?: string
+}
+
+export const startTune = (instanceName: string, bars: number = 800, autoApply: boolean = false) =>
+  fetchApi<{ task_id: string; status: string; symbol: string; pipeline: string }>(
+    `/automation/tune/${encodeURIComponent(instanceName)}?bars=${bars}&auto_apply=${autoApply}`,
+    { method: 'POST' }
+  )
+
+export const getTuneStatus = (instanceName: string) =>
+  fetchApi<TuneTaskState>(`/automation/tune/${encodeURIComponent(instanceName)}/status`)
+
+export const applyTuneResult = (instanceName: string) =>
+  fetchApi<{ applied: boolean; config_updates: Record<string, any> }>(
+    `/automation/tune/${encodeURIComponent(instanceName)}/apply`,
+    { method: 'POST' }
+  )
+
+export interface TuneHistoryRecord {
+  timestamp: string
+  symbol: string
+  pipeline: string
+  bars: number
+  duration_seconds: number
+  best: TuneResultEntry | null
+  top_5: TuneResultEntry[]
+  config_updates: Record<string, any>
+  applied: boolean
+  applied_at: string | null
+  config_before_apply: Record<string, any> | null
+  reverted?: boolean
+  reverted_at?: string | null
+}
+
+export const getTuneHistory = (instanceName: string) =>
+  fetchApi<{ instance: string; key: string; symbol: string; pipeline: string; records: TuneHistoryRecord[] }>(
+    `/automation/tune/${encodeURIComponent(instanceName)}/history`
+  )
+
+export const revertTune = (instanceName: string, recordIndex: number) =>
+  fetchApi<{ reverted: boolean; config_restored: Record<string, any> }>(
+    `/automation/tune/${encodeURIComponent(instanceName)}/revert/${recordIndex}`,
+    { method: 'POST' }
+  )
 
 // Breakout Quant Analysis (Consolidation/Squeeze Detection)
 export interface BreakoutQuantAnalysisResult {
@@ -883,6 +1033,76 @@ export interface BreakoutQuantAnalysisResult {
 
 export const runBreakoutQuantAnalysis = (symbol: string, timeframe: string = 'H1') =>
   fetchApi<BreakoutQuantAnalysisResult>('/analysis/breakout-quant', {
+    method: 'POST',
+    body: JSON.stringify({ symbol, timeframe }),
+  })
+
+// Range Quant Analysis
+export interface RangeQuantAnalysisResult {
+  status: string
+  symbol: string
+  timeframe: string
+  current_price: number
+  bid: number
+  ask: number
+  decision: {
+    signal: string
+    confidence: number
+    entry_price: number | null
+    stop_loss: number | null
+    take_profit: number | null
+    rationale: string
+    analysis_mode: "range_quant"
+    leverage?: number
+    risk_usd?: number
+    risk_level?: string
+    risk_reward_ratio?: number
+    trailing_stop_atr_multiplier?: number
+    full_report?: string
+  }
+  range_analysis: {
+    is_ranging: boolean
+    range_high: number | null
+    range_low: number | null
+    range_midpoint: number | null
+    range_percent: number | null
+    mean_reversion_score: number
+    price_position: "premium" | "discount" | "equilibrium"
+    position_pct: number
+    touches_high: number
+    touches_low: number
+    trend_strength: number
+    structural_bias: "bullish" | "bearish" | "neutral"
+  }
+  regime: {
+    market_regime: string
+    volatility_regime: string
+    adx: number | null
+    atr: number | null
+  }
+  indicators: {
+    rsi: number | null
+    macd: number | null
+    macd_signal: number | null
+    macd_histogram: number | null
+    ema20: number | null
+    ema50: number | null
+    atr: number | null
+    adx: number | null
+    bb_upper: number | null
+    bb_middle: number | null
+    bb_lower: number | null
+    bb_width: number | null
+  }
+  analysis_mode: "range_quant"
+  llm_used: true
+  llm_duration_seconds?: number
+  endpoint_duration_seconds?: number
+  prompt_sent?: string
+}
+
+export const runRangeQuantAnalysis = (symbol: string, timeframe: string = 'H1') =>
+  fetchApi<RangeQuantAnalysisResult>('/analysis/range-quant', {
     method: 'POST',
     body: JSON.stringify({ symbol, timeframe }),
   })

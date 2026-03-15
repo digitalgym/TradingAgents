@@ -1,0 +1,530 @@
+2026-03-15 15:12:21,685 - INFO - ==================================================
+2026-03-15 15:12:21,685 - INFO - QUANT AUTOMATION STARTED
+2026-03-15 15:12:21,686 - INFO - ==================================================
+2026-03-15 15:12:21,686 - INFO - Pipeline: smc_quant
+2026-03-15 15:12:21,687 - INFO - Symbols: BTCUSD
+2026-03-15 15:12:21,687 - INFO - Analysis interval: 900s
+2026-03-15 15:12:21,688 - INFO - Assumption review interval: 3600s
+2026-03-15 15:12:21,688 - INFO - Auto-execute: True
+2026-03-15 15:12:21,689 - INFO - ==================================================
+2026-03-15 15:12:21,690 - INFO - Assumption review loop started (interval: 3600s, auto_apply: False)
+2026-03-15 15:12:21,690 - INFO - Assumption review check: should_run=True, last_review=2026-03-15 08:23:04.831930
+2026-03-15 15:12:21,691 - INFO - ==================================================
+2026-03-15 15:12:21,691 - INFO - RUNNING POSITION ASSUMPTION REVIEW
+2026-03-15 15:12:21,692 - INFO -   source_filter='btcusd_smc_quant_deep', symbols=['BTCUSD']
+2026-03-15 15:12:21,692 - INFO - ==================================================
+2026-03-15 15:12:21,756 - INFO - Running smc_quant analysis for BTCUSD...
+2026-03-15 15:12:22,175 - INFO - SMC Quant: calling API for BTCUSD (timeout=120s)...
+2026-03-15 15:12:22,176 - INFO - Position management loop started
+2026-03-15 15:12:22,189 - INFO - Ownership check: my_source='btcusd_smc_quant_deep', active_decisions=10, sources=['btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-15 15:12:22,190 - INFO - Position check: 0 total open, 0 owned by 'btcusd_smc_quant_deep' (BTCUSD)
+2026-03-15 15:12:22,204 - INFO - Assumption review completed: 0 reports in 0.5s
+2026-03-15 15:12:22,204 - INFO - No positions to review.
+2026-03-15 15:12:42,956 - INFO - SMC Quant API response: status=completed [total=21.2s, llm=17.6s, overhead=3.6s]
+2026-03-15 15:12:42,956 - INFO - 
+================================================================================
+SMC QUANT PROMPT SENT for BTCUSD
+================================================================================
+You are a systematic Smart Money Concepts (SMC) trader with strict risk discipline. You trade based on institutional order flow analysis to identify high-probability entries.
+
+## SMART MONEY CONCEPTS TRADING RULES
+
+### Core Concepts
+1. **Order Blocks (OB)**: The last opposing candle before a strong impulse move. This marks where institutions entered.
+   - Bullish OB: Last bearish candle before bullish impulse - expect price to bounce UP
+   - Bearish OB: Last bullish candle before bearish impulse - expect price to reject DOWN
+   - Only trade UNMITIGATED OBs (price hasn't returned yet)
+
+2. **Fair Value Gaps (FVG)**: Three-candle imbalance where price moved so fast it left a gap.
+   - Price tends to return to "fill" FVGs
+   - Bullish FVG: Gap below price - expect bounce UP when price returns
+   - Bearish FVG: Gap above price - expect rejection DOWN when price returns
+   - UNFILLED FVGs are active; FILLED FVGs are spent
+
+3. **Break of Structure (BOS)**: Price breaks previous swing high/low IN the direction of trend.
+   - Bullish BOS: Higher high formed - trend continuation UP
+   - Bearish BOS: Lower low formed - trend continuation DOWN
+   - BOS confirms you can trade with the trend
+
+4. **Change of Character (CHoCH)**: Price breaks structure AGAINST the trend.
+   - First warning of potential reversal
+   - Look for new OBs forming in the reversal direction
+   - Wait for confirmation before trading reversal
+
+5. **Liquidity**: Areas where stop losses cluster (equal highs/lows, round numbers).
+   - Smart money hunts liquidity before reversing
+   - EQH (Equal Highs): Buy-side liquidity above - price may spike up to sweep then drop
+   - EQL (Equal Lows): Sell-side liquidity below - price may spike down to sweep then rise
+   - After a liquidity sweep, look for reversal entries
+
+6. **Premium/Discount**: The current range divided into zones.
+   - Premium (>50% of range): Expensive - favor SHORTS
+   - Discount (<50% of range): Cheap - favor LONGS
+   - Equilibrium (50%): Wait for price to move to extreme
+
+### Trading Setups
+
+**Setup 1: OB Entry with Trend**
+- BOS confirms trend direction
+- Price retraces to unmitigated OB
+- Enter at OB in trend direction
+- SL: Beyond OB
+- TP: Next liquidity pool, opposing OB, or proven equal level (3+ retests)
+
+**Setup 2: OB + FVG Confluence**
+- Unmitigated OB overlaps with unfilled FVG
+- Highest probability setup
+- Enter at the overlap zone
+- SL: Beyond the full OB/FVG zone plus 1x ATR buffer (confluence improves win rate, not SL placement)
+
+**Setup 3: Liquidity Sweep Reversal**
+- Price sweeps liquidity (EQH/EQL)
+- Look for CHoCH or BOS in opposite direction
+- Enter at the new OB formed after sweep
+- Target: Opposite liquidity pool
+
+**Setup 4: OTE Entry (Optimal Trade Entry)**
+- After impulse move, wait for retracement
+- Enter at 61.8%-78.6% Fibonacci zone
+- This is where institutions typically re-enter
+- Combine with OB/FVG for confluence
+
+## RISK MANAGEMENT RULES (NEVER BREAK)
+
+1. **Risk no more than 1-2% of account value per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation before entry**
+5. **Place stops beyond OB/FVG zones** (allow for liquidity sweep)
+6. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+7. **Leverage is a tool, not a goal - default 5-20x**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- Place stops beyond the OB/FVG zone that forms your entry basis
+- **MINIMUM SL DISTANCE**: Stop loss must be at least 1x ATR from entry. SL within 0.5% of entry is TOO TIGHT and will get stopped out by normal price noise. For gold (XAUUSD), minimum SL should be $15-30+ from entry.
+- **MINIMUM TP DISTANCE**: Take profit should be at least 1.5x the SL distance (R:R >= 1.5:1). TP within 0.3% of entry is TOO CLOSE.
+- **TP TARGET PRIORITY**: In strong trends, prefer proven equal levels (3+ retests) and strong opposing OBs over the nearest zone. Equal levels with many retests are liquidity magnets — price is drawn to them.
+- If you cannot identify a valid stop loss placement with adequate distance, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71502.43500
+- **Date**: 2026-03-15
+- **Trading Session**: asian
+- **Market Regime**: trending-up
+- **Volatility Regime**: low
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: PREMIUM zone (51%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70796.16
+  - BOS HIGH at 71998.18 [RECENT]
+  - BOS HIGH at 71294.44 [RECENT]
+  - CHoCH HIGH at 71316.86 (potential reversal)
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 68968.10000-69571.60786 | Strength: 80% | MITIGATED | 3.54% from price
+  - BULLISH OB: 69339.29000-70258.81714 | Strength: 80% | MITIGATED | 3.03% from price
+  - BULLISH OB: 70312.13000-71009.58000 | Strength: 76% | MITIGATED | 1.66% from price
+  - BEARISH OB: 72350.83000-73894.83000 | Strength: 80% | UNMITIGATED | 3.35% from price
+  - BEARISH OB: 71146.84000-72093.59000 | Strength: 58% | MITIGATED | 0.83% from price
+  - BEARISH OB: 70702.76000-70920.89000 | Strength: 44% | MITIGATED | -0.81% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 70808.85000-70956.74000 | UNFILLED | 0.97% below price (expect bounce UP)
+  - BULLISH FVG: 71040.34000-71230.98000 | UNFILLED | 0.65% below price (expect bounce UP)
+  - BEARISH FVG: 72093.59000-72350.83000 | UNFILLED | 1.19% above price (expect rejection DOWN)
+  - BEARISH FVG: 70736.67000-70908.25000 | FILLED | -0.83% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71294.44000 | Strength: 95% | UNSWEPT | 0.29% below
+  - BUY-SIDE at 71998.18000 | Strength: 59% | UNSWEPT | 0.69% above
+  - BUY-SIDE at 70935.36000 | Strength: 90% | UNSWEPT | 0.79% below
+  - SELL-SIDE at 70312.13000 | Strength: 85% | UNSWEPT | 1.66% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 71305.65000 | Touches: 5 | PROVEN | SWEPT | 0.28% above
+  - EQUAL LOWS (Support) at 67421.35750 | Touches: 4 | PROVEN | SWEPT | 5.71% below
+  - EQUAL LOWS (Support) at 67054.54167 | Touches: 6 | PROVEN | SWEPT | 6.22% below
+  - EQUAL LOWS (Support) at 66829.11400 | Touches: 5 | PROVEN | UNSWEPT | 6.54% below
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## TECHNICAL INDICATORS
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 74.2 (Overbought)
+- **MACD**: 130.50662 | Signal: 23.53850 | Histogram: 106.96812
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 71052.94125 (Price above)
+- **EMA50**: 70941.96497 (Price above)
+- **ADX**: 43.4 (Strong trend)
+- **Regime**: trending-up
+
+### Volatility
+- **ATR(14)**: 251.24000
+- **Volatility**: low
+- **Bollinger Bands**: Upper=71566.85627 | Middle=70900.92400 | Lower=70234.99173
+  - Price near upper band
+
+### Volume
+- **Current Bar Volume**: 631 ticks
+- **20-bar Avg Volume**: 3,236 ticks
+- **Volume Ratio**: 0.19x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+
+## YOUR TASK
+
+Analyze the SMC data and make a systematic trading decision.
+
+Think step-by-step:
+1. What is the market bias? (bullish/bearish based on BOS)
+2. Are we in premium or discount? (favor shorts in premium, longs in discount)
+3. Are there unmitigated OBs or unfilled FVGs near current price?
+4. Is there OB+FVG confluence?
+5. Where are the liquidity targets? (EQH/EQL for TP — proven levels with 3+ retests are strongest)
+6. Has there been a recent liquidity sweep that signals reversal?
+7. Where should stop loss be placed? (beyond OB/FVG)
+8. What's the risk:reward ratio? (must be >1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when: bullish BOS, price at bullish OB/FVG in discount, or after sell-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when: bearish BOS, price at bearish OB/FVG in premium, or after buy-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when: no clear structure, price at equilibrium, no unmitigated zones nearby, or conflicting signals.
+- **close** - Close existing position. Use when: price reaches liquidity target, OB/FVG invalidated, or CHoCH against position.
+
+## ORDER TYPE (you MUST pick one for buy/sell signals)
+- **market** - Execute immediately at current market price. Use when:
+  - Price is ALREADY AT the OB/FVG zone (within 0.1%)
+  - Liquidity sweep just happened and you want immediate entry
+  - Setup is confirmed and you don't want to miss it
+- **limit** - Place pending order at entry_price. Use when:
+  - Price is NOT YET at the zone (waiting for retracement)
+  - You want better entry at the OB/FVG level
+  - Zone is nearby but price hasn't reached it yet
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+For buy/sell signals, suggest a trailing stop distance as an ATR multiplier based on current volatility:
+- **Low volatility** (tight ranges, small ATR): 1.5-2.0x ATR — tighter trail locks profits
+- **Normal volatility**: 2.0-3.0x ATR — balanced between protection and breathing room
+- **High volatility** (wide swings, large ATR, news events): 3.0-5.0x ATR — wide trail avoids noise
+- **XAUUSD/Gold**: Typically 2.5-4.0x ATR (gold is volatile, tight trails get stopped out)
+- **Forex majors**: Typically 1.5-2.5x ATR
+- If unsure, default to 2.5x ATR
+
+Remember:
+- Smart money leaves footprints (OBs, FVGs)
+- Structure (BOS/CHoCH) tells you the trend
+- Liquidity shows you where price is likely to go
+- Trade with trend, enter at discount (longs) or premium (shorts)
+- Confluence = higher probability
+================================================================================
+2026-03-15 15:12:42,986 - INFO - SMC Quant decision for BTCUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-15 15:12:42,987 - INFO - BTCUSD: HOLD (confidence: 0.85)
+2026-03-15 15:12:43,451 - INFO - ==================================================
+2026-03-15 15:12:43,452 - INFO - QUANT AUTOMATION STARTED
+2026-03-15 15:12:43,452 - INFO - ==================================================
+2026-03-15 15:12:43,453 - INFO - Pipeline: smc_quant_basic
+2026-03-15 15:12:43,453 - INFO - Symbols: BTCUSD
+2026-03-15 15:12:43,453 - INFO - Analysis interval: 900s
+2026-03-15 15:12:43,454 - INFO - Assumption review interval: 3600s
+2026-03-15 15:12:43,454 - INFO - Auto-execute: True
+2026-03-15 15:12:43,455 - INFO - ==================================================
+2026-03-15 15:12:43,455 - INFO - Assumption review loop started (interval: 3600s, auto_apply: False)
+2026-03-15 15:12:43,456 - INFO - Assumption review check: should_run=True, last_review=2026-03-15 08:05:25.621753
+2026-03-15 15:12:43,456 - INFO - ==================================================
+2026-03-15 15:12:43,457 - INFO - RUNNING POSITION ASSUMPTION REVIEW
+2026-03-15 15:12:43,457 - INFO -   source_filter='btc_smc_lmm', symbols=['BTCUSD']
+2026-03-15 15:12:43,458 - INFO - ==================================================
+2026-03-15 15:12:43,460 - INFO - Running smc_quant_basic analysis for BTCUSD...
+2026-03-15 15:12:43,461 - INFO - Position management loop started
+2026-03-15 15:12:43,482 - INFO - Ownership check: my_source='btc_smc_lmm', active_decisions=10, sources=['btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-15 15:12:43,483 - INFO - Position check: 0 total open, 0 owned by 'btc_smc_lmm' (BTCUSD)
+2026-03-15 15:12:43,503 - INFO - Assumption review completed: 0 reports in 0.0s
+2026-03-15 15:12:43,503 - INFO - No positions to review.
+2026-03-15 15:12:58,414 - INFO - API response status: completed
+2026-03-15 15:12:58,414 - INFO - API response keys: ['status', 'symbol', 'timeframe', 'current_price', 'bid', 'ask', 'decision', 'smc_levels', 'indicators', 'regime', 'analysis_mode', 'llm_used', 'prompt_sent']
+2026-03-15 15:12:58,415 - INFO - 
+================================================================================
+PROMPT SENT TO LLM for BTCUSD
+================================================================================
+You are a systematic quant trader with strict risk discipline. Your only goal is to maximize long-term PnL while surviving drawdowns.
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account value per trade** (risk_usd = position size × distance to stop-loss)
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and one clear invalidation condition before entry**
+5. **Hold only when current plan remains valid; never flip-flop without new high-conviction signal**
+6. **Ignore narratives; trade only price, volume, and the provided technical indicators**
+7. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+8. **Leverage is a tool, not a goal - default 5-20x, higher only with extreme conviction**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- If you cannot identify a valid stop loss placement, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price (Broker)**: 71502.19000
+- **Date**: 2026-03-15
+- **Trading Session**: asian
+- **Market Regime**: trending-up
+- **Volatility Regime**: low
+
+## Smart Money Concepts Analysis
+
+### Market Structure
+**Timeframe**: H1
+**Bias**: BULLISH
+**Recent Structure**: BOS (bullish continuation) on H1 at 174 @ 71294.44
+
+### Price Position
+**Zone**: PREMIUM (51% of range) (favor SELLS - price is expensive)
+**Equilibrium**: 71431.46500
+
+### Order Blocks (Unmitigated)
+- BEARISH OB [STRUCTURAL]: 72350.83000 - 73894.83000 (strength: 80%) | +1.19% from price
+- No unmitigated BULLISH OBs (no demand zones)
+
+### Fair Value Gaps
+- BULLISH FVG: 70808.85000 - 70956.74000 (72% filled) | -0.76% from price
+- BULLISH FVG: 71040.34000 - 71230.98000 (unfilled) | -0.38% from price
+- BEARISH FVG: 72093.59000 - 72350.83000 (60% filled) | +0.83% from price
+
+### Liquidity Zones (Stop Loss Clusters)
+- BUY-SIDE (above): 71294.44000 (strength: 94.8) | +0.00% - target for shorts
+- BUY-SIDE (above): 71998.18000 (strength: 59.2) | +0.69% - target for shorts
+- SELL-SIDE (below): 70312.13000 (strength: 85.2) | -1.66% - target for longs
+- SELL-SIDE (below): 69339.29000 (strength: 67.2) | -3.02% - target for longs
+
+### Recent Liquidity Sweeps (Last 10 candles)
+- BEARISH SWEEP : Swept highs at 0.00000 - look for reversal DOWN
+- BEARISH SWEEP : Swept highs at 0.00000 - look for reversal DOWN
+
+**Current Price**: 71502.19000
+**ATR**: 251.24000
+## Technical Indicators
+
+### Momentum
+- **RSI(14)**: 74.2 (Overbought)
+- **MACD**: 130.48189 | Signal: 23.53355 | Histogram: 106.94834
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 71052.91173 (Price above)
+- **EMA50**: 70941.95281 (Price above)
+- **ADX**: 43.4 (Strong trend)
+- **Regime**: trending-up
+
+### Volatility
+- **ATR(14)**: 251.24000
+- **Volatility**: low
+- **Bollinger Bands**: Upper=71566.78256 | Middle=70900.90850 | Lower=70235.03444
+  - Price near upper band
+
+### Volume
+- **Current Bar Volume**: 644 ticks
+- **20-bar Avg Volume**: 3,237 ticks
+- **Volume Ratio**: 0.20x average 
+- **Volume Profile**: Very Low
+- **Volume Trend (5 bars)**: decreasing
+
+## Key Price Levels
+
+### Previous Day
+- **PDH** (High): 71480.08000 (price is +22.11000 from it)
+- **PDL** (Low): 70312.13000 (price is +1190.06000 from it)
+- **Open**: 71354.08000 | **Close**: 70773.11000
+- **Range**: 1167.95000
+- Price is **ABOVE** Previous Day range
+
+### Previous Week
+- **PWH** (High): 73894.83000 (price is -2392.64000 from it)
+- **PWL** (Low): 65611.47000 (price is +5890.72000 from it)
+- **Open**: 67447.91000 | **Close**: 70773.11000
+- **Range**: 8283.36000
+- Price is **INSIDE** Previous Week range
+
+### Previous H4
+- **PH4H** (High): 71660.78000 (price is -158.59000 from it)
+- **PH4L** (Low): 70850.27000 (price is +651.92000 from it)
+- **Open**: 70977.73000 | **Close**: 71579.47000
+- **Range**: 810.51000
+- Price is **INSIDE** Previous H4 range
+
+### Volume Profile
+**POC (Point of Control)**: 70495.38630 (5.6% of volume)
+  - Price is +1.41% above POC - POC acts as magnet
+**Value Area**: 69460.77300 - 71332.93040 (72% of volume)
+  - Price is ABOVE value area (premium - expect mean reversion)
+**High Volume Nodes** (support/resistance):
+  - HVN at 70495.38630 (5.6% vol) | -1.41% below
+  - HVN at 70593.92090 (5.5% vol) | -1.27% below
+  - HVN at 70692.45550 (5.3% vol) | -1.13% below
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 69017.36730 | -3.48% - price may move fast through this level
+  - LVN at 69115.90190 | -3.34% - price may move fast through this level
+  - LVN at 69214.43650 | -3.20% - price may move fast through this level
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+
+## YOUR TASK
+
+Analyze the provided technical data and make a systematic trading decision.
+
+Think step-by-step:
+1. What is the overall market structure and bias?
+2. Are there high-probability entry zones (OB, FVG) near current price?
+3. Where would stop loss be placed? Is the R:R acceptable (>1.5:1)?
+4. What would invalidate this setup?
+5. What is your confidence level based on confluence?
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when price is at a high-probability bullish zone (bullish OB, bullish FVG, demand zone) with confluence from indicators. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when price is at a high-probability bearish zone (bearish OB, bearish FVG, supply zone) with confluence from indicators. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when no clear edge exists, price is between zones, or conditions are ambiguous.
+- **close** - Close existing position. Use when the original thesis is invalidated.
+
+## ORDER TYPE (you MUST pick one for buy/sell signals)
+- **market** - Execute immediately at current market price. Use when:
+  - Price is ALREADY AT the entry zone (within 0.1%)
+  - Setup is confirmed and you don't want to miss it
+  - Momentum entry after confirmation
+- **limit** - Place pending order at entry_price. Use when:
+  - Price is NOT YET at your target zone
+  - You want better entry at the OB/FVG level
+  - Waiting for retracement to your level
+
+Remember:
+- Only enter trades with clear edge
+- Wait for price to come to your levels
+- No FOMO entries
+- Discipline > prediction
+================================================================================
+2026-03-15 15:12:58,447 - INFO - Decision received for BTCUSD: signal=HOLD, confidence=0.65, entry=None, sl=None, tp=None
+2026-03-15 15:12:58,448 - INFO - Rationale: Bullish structure and trending-up regime with price above EMAs and recent BOS, but overbought RSI (74.2), premium positioning, low volume, and no high-probability entry zones at or near current price;
+2026-03-15 15:12:58,448 - INFO - Mapped signal for BTCUSD: HOLD
+2026-03-15 15:12:58,449 - INFO - BTCUSD: HOLD (confidence: 0.65)
+2026-03-15 15:12:58,507 - INFO - Quant automation stopped
+2026-03-15 15:12:58,508 - INFO - Quant automation stopped
+2026-03-15 15:13:34,583 - INFO - ==================================================
+2026-03-15 15:13:34,584 - INFO - QUANT AUTOMATION STARTED
+2026-03-15 15:13:34,585 - INFO - ==================================================
+2026-03-15 15:13:34,585 - INFO - Pipeline: rule_based
+2026-03-15 15:13:34,585 - INFO - Symbols: BTCUSD
+2026-03-15 15:13:34,586 - INFO - Analysis interval: 900s
+2026-03-15 15:13:34,586 - INFO - Assumption review interval: 3600s
+2026-03-15 15:13:34,586 - INFO - Auto-execute: True
+2026-03-15 15:13:34,587 - INFO - ==================================================
+2026-03-15 15:13:34,588 - INFO - Assumption review loop started (interval: 3600s, auto_apply: False)
+2026-03-15 15:13:34,588 - INFO - Assumption review check: should_run=True, last_review=2026-03-15 08:03:56.491853
+2026-03-15 15:13:34,589 - INFO - ==================================================
+2026-03-15 15:13:34,589 - INFO - RUNNING POSITION ASSUMPTION REVIEW
+2026-03-15 15:13:34,590 - INFO -   source_filter='btc_smc_basic', symbols=['BTCUSD']
+2026-03-15 15:13:34,590 - INFO - ==================================================
+2026-03-15 15:13:34,595 - INFO - Running rule_based analysis for BTCUSD...
+2026-03-15 15:13:34,850 - INFO - Rule-Based: calling API for BTCUSD (no LLM)...
+2026-03-15 15:13:34,851 - INFO - Position management loop started
+2026-03-15 15:13:34,862 - INFO - Ownership check: my_source='btc_smc_basic', active_decisions=10, sources=['btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-15 15:13:34,862 - INFO - Position check: 0 total open, 0 owned by 'btc_smc_basic' (BTCUSD)
+2026-03-15 15:13:34,875 - INFO - Assumption review completed: 0 reports in 0.3s
+2026-03-15 15:13:34,876 - INFO - No positions to review.
+2026-03-15 15:13:35,736 - INFO - Rule-Based API response: status=completed [total=1.1s]
+2026-03-15 15:13:35,737 - INFO - Rule-Based decision for BTCUSD: signal=BUY, confidence=0.65, entry=71516.065, sl=70914.72, tp=72350.83
+2026-03-15 15:13:35,738 - INFO - BTCUSD: BUY (confidence: 0.65)
+2026-03-15 15:13:35,739 - INFO - --- TRADE EXECUTION CHECK for BTCUSD --- signal=BUY, confidence=0.65
+2026-03-15 15:13:35,752 - INFO - Position limits: BTCUSD owned=0/1, global=0/3
+2026-03-15 15:13:35,771 - INFO - All pre-trade checks passed for BTCUSD BUY
+2026-03-15 15:13:35,772 - INFO - Current price for BTCUSD: bid=71508.81, ask=71523.9, using=71523.9
+2026-03-15 15:13:35,773 - INFO - Trade params: BTCUSD BUY entry=71523.9, sl=70914.72, tp=72350.83
+2026-03-15 15:13:35,774 - INFO - Lot size: 0.01
+2026-03-15 15:13:35,774 - INFO - Sending order to MT5...
+2026-03-15 15:13:36,000 - INFO - MT5 trade result: {'success': True, 'order_id': 1614329, 'deal_id': 0, 'volume': 0.01, 'price': 0.0, 'comment': 'Request executed', 'signal': 'BUY', 'entry_price': 71523.9, 'stop_loss': 70914.72, 'take_profit': 72350.83}
+2026-03-15 15:13:36,020 - INFO - TRADE EXECUTED: BTCUSD BUY 0.01 lots @ 71523.9, ticket=1614329, sl=70914.72, tp=72350.83
+2026-03-15 15:13:42,452 - INFO - ==================================================
+2026-03-15 15:13:42,452 - INFO - QUANT AUTOMATION STARTED
+2026-03-15 15:13:42,453 - INFO - ==================================================
+2026-03-15 15:13:42,454 - INFO - Pipeline: smc_quant_basic
+2026-03-15 15:13:42,454 - INFO - Symbols: BTCUSD
+2026-03-15 15:13:42,455 - INFO - Analysis interval: 900s
+2026-03-15 15:13:42,455 - INFO - Assumption review interval: 3600s
+2026-03-15 15:13:42,456 - INFO - Auto-execute: True
+2026-03-15 15:13:42,456 - INFO - ==================================================
+2026-03-15 15:13:42,457 - INFO - Assumption review loop started (interval: 3600s, auto_apply: False)
+2026-03-15 15:13:42,457 - INFO - Assumption review check: should_run=False, last_review=2026-03-15 15:12:43.456209
+2026-03-15 15:13:42,504 - INFO - Position management loop started
+2026-03-15 15:13:42,540 - INFO - Ownership check: my_source='btc_smc_lmm', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-15 15:13:42,542 - INFO - Position check: 0 total open, 0 owned by 'btc_smc_lmm' (BTCUSD)
+2026-03-15 15:13:48,407 - INFO - ==================================================
+2026-03-15 15:13:48,408 - INFO - QUANT AUTOMATION STARTED
+2026-03-15 15:13:48,408 - INFO - ==================================================
+2026-03-15 15:13:48,409 - INFO - Pipeline: smc_quant
+2026-03-15 15:13:48,409 - INFO - Symbols: BTCUSD
+2026-03-15 15:13:48,410 - INFO - Analysis interval: 900s
+2026-03-15 15:13:48,410 - INFO - Assumption review interval: 3600s
+2026-03-15 15:13:48,411 - INFO - Auto-execute: True
+2026-03-15 15:13:48,411 - INFO - ==================================================
+2026-03-15 15:13:48,412 - INFO - Assumption review loop started (interval: 3600s, auto_apply: False)
+2026-03-15 15:13:48,412 - INFO - Assumption review check: should_run=False, last_review=2026-03-15 15:12:21.690643
+2026-03-15 15:13:48,458 - INFO - Position management loop started
+2026-03-15 15:13:48,479 - INFO - Ownership check: my_source='btcusd_smc_quant_deep', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-15 15:13:48,480 - INFO - Position check: 0 total open, 0 owned by 'btcusd_smc_quant_deep' (BTCUSD)
+2026-03-15 15:14:34,904 - INFO - Ownership check: my_source='btc_smc_basic', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-15 15:14:34,904 - INFO - Position check: 0 total open, 0 owned by 'btc_smc_basic' (BTCUSD)
+2026-03-15 15:14:42,605 - INFO - Ownership check: my_source='btc_smc_lmm', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-15 15:14:42,606 - INFO - Position check: 0 total open, 0 owned by 'btc_smc_lmm' (BTCUSD)
+2026-03-15 15:14:43,278 - INFO - Quant automation stopped
+2026-03-15 15:14:43,279 - INFO - Quant automation stopped
+2026-03-15 15:14:43,280 - INFO - Quant automation stopped

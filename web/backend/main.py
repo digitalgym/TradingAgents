@@ -629,10 +629,22 @@ async def get_dashboard():
 
 @app.get("/api/positions")
 async def list_positions():
-    """Get all open positions with trailing stop status"""
+    """Get all open positions with trailing stop status and automation source"""
     positions = get_open_positions()
 
-    # Add trailing stop status to each position
+    # Build ticket -> source lookup from active decisions
+    ticket_source: dict[int, str] = {}
+    try:
+        from tradingagents.trade_decisions import list_active_decisions
+        for dec in list_active_decisions():
+            t = dec.get("mt5_ticket")
+            s = dec.get("source")
+            if t and s:
+                ticket_source[t] = s
+    except Exception:
+        pass
+
+    # Add trailing stop status and automation source to each position
     trailing_stops = TrailingStopState.get_all()
     for pos in positions:
         trailing_config = trailing_stops.get(pos["ticket"])
@@ -642,6 +654,9 @@ async def list_positions():
             pos["trailing_best_price"] = trailing_config["best_price"]
         else:
             pos["trailing_active"] = False
+
+        # Automation source tag
+        pos["source"] = ticket_source.get(pos["ticket"])
 
     return {"positions": positions, "count": len(positions)}
 
@@ -671,6 +686,10 @@ async def modify_position(request: PositionModifyRequest):
         new_sl = request.new_sl if request.new_sl else pos.sl
         new_tp = request.new_tp if request.new_tp else pos.tp
 
+        # Skip if nothing actually changed
+        if new_sl == old_sl and new_tp == old_tp:
+            return {"success": True, "message": "No changes needed", "ticket": request.ticket}
+
         modify_request = {
             "action": mt5.TRADE_ACTION_SLTP,
             "position": request.ticket,
@@ -682,14 +701,14 @@ async def modify_position(request: PositionModifyRequest):
         result = mt5.order_send(modify_request)
 
         if result.retcode != mt5.TRADE_RETCODE_DONE:
-            raise HTTPException(status_code=400, detail=f"Modify failed: {result.comment}")
+            raise HTTPException(status_code=400, detail=f"Modify failed: {result.comment} (retcode={result.retcode})")
 
         # Log the modification for reflection/learning
         changes = []
         if old_sl != new_sl:
-            changes.append(f"SL: {old_sl} → {new_sl}")
+            changes.append(f"SL: {old_sl} -> {new_sl}")
         if old_tp != new_tp:
-            changes.append(f"TP: {old_tp} → {new_tp}")
+            changes.append(f"TP: {old_tp} -> {new_tp}")
 
         if changes:
             try:
@@ -4721,7 +4740,7 @@ async def run_smc_analysis(
 
         # Run extended analysis with new features (equal levels, breakers, OTE, confluence)
         current_price = df.iloc[-1]['close']
-        extended_result = analyzer.analyze_full_smc_extended(df, lookback=lookback)
+        extended_result = analyzer.analyze_full_smc(df, current_price=current_price)
 
         # Extract components from extended analysis
         order_blocks_raw = (
@@ -5158,6 +5177,48 @@ async def run_smc_analysis(
             elif isinstance(alert, dict):
                 alerts_serialized.append(alert)
 
+        # Serialize structure breaks (BOS/CHoCH) for chart rendering
+        def _serialize_structure_point(sp):
+            if hasattr(sp, 'type'):
+                return {
+                    "type": sp.type,
+                    "price": float(sp.price),
+                    "break_type": getattr(sp, 'break_type', 'BOS'),
+                    "break_index": getattr(sp, 'break_index', None),
+                    "timestamp": getattr(sp, 'timestamp', ''),
+                }
+            elif isinstance(sp, dict):
+                return {
+                    "type": sp.get("type", ""),
+                    "price": float(sp.get("price", 0)),
+                    "break_type": sp.get("break_type", "BOS"),
+                    "break_index": sp.get("break_index"),
+                    "timestamp": sp.get("timestamp", ""),
+                }
+            return None
+
+        structure_serialized = {"recent_bos": [], "recent_choc": [], "all_bos": [], "all_choc": []}
+
+        # Serialize all structure breaks
+        for bos_point in structure.get("all_bos", []):
+            serialized = _serialize_structure_point(bos_point)
+            if serialized:
+                structure_serialized["all_bos"].append(serialized)
+        for choc_point in structure.get("all_choc", []):
+            serialized = _serialize_structure_point(choc_point)
+            if serialized:
+                structure_serialized["all_choc"].append(serialized)
+
+        # Serialize recent breaks using same helper
+        for bos_point in structure.get("recent_bos", []):
+            serialized = _serialize_structure_point(bos_point)
+            if serialized:
+                structure_serialized["recent_bos"].append(serialized)
+        for choc_point in structure.get("recent_choc", []):
+            serialized = _serialize_structure_point(choc_point)
+            if serialized:
+                structure_serialized["recent_choc"].append(serialized)
+
         response = {
             "symbol": symbol,
             "timeframe": timeframe,
@@ -5171,6 +5232,8 @@ async def run_smc_analysis(
             "bias_factors": bias_factors,
             "key_levels": key_levels,
             "current_price": round(current_price, 2),
+            # Structure breaks for chart labels
+            "structure": structure_serialized,
             # NEW: Include new SMC features
             "equal_levels": equal_levels_serialized,
             "breaker_blocks": breaker_blocks_serialized,
@@ -5497,6 +5560,7 @@ async def run_rule_based_analysis(request: RuleBasedAnalysisRequest):
             "fair_value_gaps": smc_result.get("fair_value_gaps", {}),
             "liquidity_zones": smc_result.get("liquidity_zones", {}),
             "market_structure": smc_result.get("market_structure", {}),
+            "equal_levels": smc_result.get("equal_levels", {}),
             "atr": atr if not np.isnan(atr) else current_price * 0.01,
         }
 
@@ -5564,7 +5628,8 @@ async def run_rule_based_analysis(request: RuleBasedAnalysisRequest):
 
             decision = {
                 "signal": base_plan.signal,
-                "confidence": base_plan.zone_quality_score / 100,
+                # Map quality 50-100 → confidence 0.65-1.0 (50 is the min threshold, so any signal should be executable)
+                "confidence": 0.65 + (base_plan.zone_quality_score - 50) * 0.35 / 50,
                 "entry_price": round(entry, 5),
                 "stop_loss": round(sl, 5),
                 "take_profit": round(tp, 5),
@@ -5899,7 +5964,7 @@ async def run_quant_analysis(request: QuantAnalysisRequest):
         from tradingagents.indicators.smart_money import SmartMoneyAnalyzer
 
         analyzer = SmartMoneyAnalyzer()
-        smc_result = analyzer.analyze_full_smc_extended(
+        smc_result = analyzer.analyze_full_smc(
             df,
             current_price=current_price,
             use_structural_obs=True,
@@ -6056,7 +6121,7 @@ async def run_quant_analysis(request: QuantAnalysisRequest):
                 "stop_loss": quant_decision.get("stop_loss"),
                 "take_profit": quant_decision.get("profit_target"),
                 "rationale": f"{quant_decision.get('justification', '')}\n\n**Invalidation**: {quant_decision.get('invalidation_condition', 'N/A')}",
-                "analysis_mode": "quant",
+                "analysis_mode": "smc_quant_basic",
                 "leverage": quant_decision.get("leverage"),
                 "risk_usd": quant_decision.get("risk_usd"),
                 "risk_level": quant_decision.get("risk_level"),
@@ -6072,7 +6137,7 @@ async def run_quant_analysis(request: QuantAnalysisRequest):
                 "stop_loss": None,
                 "take_profit": None,
                 "rationale": quant_report or "Quant analysis could not generate a structured decision.",
-                "analysis_mode": "quant",
+                "analysis_mode": "smc_quant_basic",
                 "full_report": quant_report
             }
 
@@ -6115,7 +6180,7 @@ async def run_quant_analysis(request: QuantAnalysisRequest):
                 "adx": round(adx, 2) if not np.isnan(adx) else None,
                 "atr": round(atr, 5) if not np.isnan(atr) else None
             },
-            "analysis_mode": "quant",
+            "analysis_mode": "smc_quant_basic",
             "llm_used": True,
             "prompt_sent": full_prompt,
         }
@@ -6327,12 +6392,14 @@ async def run_vp_quant_analysis(request: VPQuantAnalysisRequest):
 
         # Run VP quant analyst
         logger.info(f"[VP QUANT API] Running VP quant analyst for {request.symbol}...")
+        _llm_start = _time.time()
         vp_quant_analyst = create_volume_profile_quant(llm, use_structured_output=True)
         result = vp_quant_analyst(vp_quant_state)
+        _llm_duration = _time.time() - _llm_start
 
         vp_quant_report = result.get("vp_quant_report", "")
         vp_quant_decision = result.get("vp_quant_decision")
-        logger.info(f"[VP QUANT API] Analyst returned: vp_quant_decision={'present' if vp_quant_decision else 'None'}")
+        logger.info(f"[VP QUANT API] Analyst returned: vp_quant_decision={'present' if vp_quant_decision else 'None'} [LLM took {_llm_duration:.1f}s]")
 
         # Build response
         _endpoint_duration = _time.time() - _endpoint_start
@@ -6382,6 +6449,8 @@ async def run_vp_quant_analysis(request: VPQuantAnalysisRequest):
                 },
                 "analysis_mode": "vp_quant",
                 "llm_used": True,
+                "llm_duration_seconds": round(_llm_duration, 2),
+                "endpoint_duration_seconds": round(_endpoint_duration, 2),
                 "prompt_sent": full_vp_prompt,
             }
         else:
@@ -6396,6 +6465,8 @@ async def run_vp_quant_analysis(request: VPQuantAnalysisRequest):
                 "current_price": current_price,
                 "analysis_mode": "vp_quant",
                 "llm_used": True,
+                "llm_duration_seconds": round(_llm_duration, 2),
+                "endpoint_duration_seconds": round(_endpoint_duration, 2),
                 "prompt_sent": full_vp_prompt,
             }
 
@@ -6639,13 +6710,16 @@ async def run_smc_quant_analysis(request: SmcQuantAnalysisRequest):
         full_prompt = _build_smc_quant_prompt(debug_data_context, trade_memories=trade_memories)
 
         # Run SMC quant analyst
+        import time as _time
         logger.info(f"[SMC QUANT API] Running SMC quant analyst for {request.symbol}...")
+        _llm_start = _time.time()
         smc_quant_analyst = create_smc_quant(llm, use_structured_output=True)
         result = smc_quant_analyst(smc_quant_state)
+        _llm_duration = _time.time() - _llm_start
 
         smc_quant_report = result.get("smc_quant_report", "")
         smc_quant_decision = result.get("smc_quant_decision")
-        logger.info(f"[SMC QUANT API] Analyst returned: smc_quant_decision={'present' if smc_quant_decision else 'None'}")
+        logger.info(f"[SMC QUANT API] Analyst returned: smc_quant_decision={'present' if smc_quant_decision else 'None'} [LLM took {_llm_duration:.1f}s]")
 
         # === STEP 5: Build Response ===
         if smc_quant_decision:
@@ -6673,6 +6747,7 @@ async def run_smc_quant_analysis(request: SmcQuantAnalysisRequest):
                 "risk_usd": smc_quant_decision.get("risk_usd"),
                 "risk_level": smc_quant_decision.get("risk_level"),
                 "risk_reward_ratio": smc_quant_decision.get("risk_reward_ratio"),
+                "trailing_stop_atr_multiplier": smc_quant_decision.get("trailing_stop_atr_multiplier"),
                 "full_report": smc_quant_report
             }
         else:
@@ -6691,7 +6766,7 @@ async def run_smc_quant_analysis(request: SmcQuantAnalysisRequest):
         from tradingagents.indicators.smart_money import SmartMoneyAnalyzer
         # Use the extended analysis for chart levels
         analyzer = SmartMoneyAnalyzer()
-        smc_extended = analyzer.analyze_full_smc_extended(
+        smc_extended = analyzer.analyze_full_smc(
             df,
             current_price=current_price,
             use_structural_obs=True,
@@ -6740,6 +6815,8 @@ async def run_smc_quant_analysis(request: SmcQuantAnalysisRequest):
             },
             "analysis_mode": "smc_quant",
             "llm_used": True,
+            "llm_duration_seconds": round(_llm_duration, 2),
+            "endpoint_duration_seconds": round(_endpoint_duration, 2),
             "prompt_sent": full_prompt,
         }
 
@@ -7316,13 +7393,15 @@ async def run_breakout_quant_analysis(request: BreakoutQuantAnalysisRequest):
 
         # Run breakout quant analyst
         logger.info(f"[BREAKOUT QUANT API] Running breakout quant analyst for {request.symbol}...")
+        _llm_start = _time.time()
         breakout_quant_analyst = create_breakout_quant(llm, use_structured_output=True)
         result = breakout_quant_analyst(breakout_state)
+        _llm_duration = _time.time() - _llm_start
 
         breakout_report = result.get("breakout_quant_report", "")
         breakout_decision = result.get("breakout_quant_decision")
         consolidation_result = result.get("consolidation_analysis", consolidation)
-        logger.info(f"[BREAKOUT QUANT API] Analyst returned: breakout_quant_decision={'present' if breakout_decision else 'None'}")
+        logger.info(f"[BREAKOUT QUANT API] Analyst returned: breakout_quant_decision={'present' if breakout_decision else 'None'} [LLM took {_llm_duration:.1f}s]")
 
         # === STEP 9: Build Response ===
         if breakout_decision:
@@ -7350,6 +7429,7 @@ async def run_breakout_quant_analysis(request: BreakoutQuantAnalysisRequest):
                 "risk_usd": breakout_decision.get("risk_usd"),
                 "risk_level": breakout_decision.get("risk_level"),
                 "risk_reward_ratio": breakout_decision.get("risk_reward_ratio"),
+                "trailing_stop_atr_multiplier": breakout_decision.get("trailing_stop_atr_multiplier"),
                 "full_report": breakout_report
             }
         else:
@@ -7415,6 +7495,8 @@ async def run_breakout_quant_analysis(request: BreakoutQuantAnalysisRequest):
             },
             "analysis_mode": "breakout_quant",
             "llm_used": True,
+            "llm_duration_seconds": round(_llm_duration, 2),
+            "endpoint_duration_seconds": round(_endpoint_duration, 2),
             "prompt_sent": full_prompt,
         }
 
@@ -7424,6 +7506,337 @@ async def run_breakout_quant_analysis(request: BreakoutQuantAnalysisRequest):
         import traceback
         _endpoint_duration = _time.time() - _endpoint_start
         logger.error(f"[BREAKOUT QUANT API] ERROR for {request.symbol} after {_endpoint_duration:.1f}s: {e}\n{traceback.format_exc()}")
+        return {
+            "status": "error",
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+
+class RangeQuantAnalysisRequest(BaseModel):
+    """Request model for range quant analysis."""
+    symbol: str
+    timeframe: str = "H1"
+
+
+@app.post("/api/analysis/range-quant")
+async def run_range_quant_analysis(request: RangeQuantAnalysisRequest):
+    """
+    Run dedicated Range-Bound Market quant analysis using SMC levels.
+
+    This is a range-focused quant that specializes in:
+    - Identifying ranging/sideways market conditions
+    - Mapping SMC zones (OBs, FVGs, equal levels) as range boundaries
+    - Mean reversion entries at range extremes with SMC confluence
+    - Liquidity sweep reversals at range boundaries
+
+    Uses the dedicated range_quant agent with specialized ranging market prompt.
+    Returns structured trade decision compatible with trade execution modal.
+    """
+    import time as _time
+    _endpoint_start = _time.time()
+    logger.info(f"[RANGE QUANT API] Request: symbol={request.symbol}, timeframe={request.timeframe}")
+    try:
+        import MetaTrader5 as mt5
+        import pandas as pd
+        import numpy as np
+
+        if not mt5.initialize():
+            raise HTTPException(status_code=500, detail="MT5 not initialized")
+
+        # Get symbol info for current price
+        symbol_info = mt5.symbol_info_tick(request.symbol)
+        if symbol_info is None:
+            raise HTTPException(status_code=400, detail=f"Symbol {request.symbol} not found")
+
+        current_price = (symbol_info.bid + symbol_info.ask) / 2
+        bid = symbol_info.bid
+        ask = symbol_info.ask
+
+        # Map timeframe
+        timeframe_map = {
+            "M1": mt5.TIMEFRAME_M1, "M5": mt5.TIMEFRAME_M5, "M15": mt5.TIMEFRAME_M15,
+            "M30": mt5.TIMEFRAME_M30, "H1": mt5.TIMEFRAME_H1, "H4": mt5.TIMEFRAME_H4,
+            "D1": mt5.TIMEFRAME_D1,
+        }
+        tf = timeframe_map.get(request.timeframe.upper(), mt5.TIMEFRAME_H1)
+
+        # Get OHLC data
+        bars = mt5.copy_rates_from_pos(request.symbol, tf, 0, 200)
+        if bars is None or len(bars) < 50:
+            raise HTTPException(status_code=400, detail=f"Not enough data for {request.symbol}")
+
+        df = pd.DataFrame(bars)
+        df['time'] = pd.to_datetime(df['time'], unit='s')
+
+        # === STEP 1: Calculate Indicators ===
+        # RSI
+        delta = df['close'].diff()
+        gain = delta.where(delta > 0, 0).rolling(14).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
+        rs = gain / loss.replace(0, np.nan)
+        rsi = 100 - (100 / (1 + rs))
+        df['rsi'] = rsi
+
+        # MACD
+        exp1 = df['close'].ewm(span=12, adjust=False).mean()
+        exp2 = df['close'].ewm(span=26, adjust=False).mean()
+        df['macd'] = exp1 - exp2
+        df['macd_signal'] = df['macd'].ewm(span=9, adjust=False).mean()
+        df['macd_histogram'] = df['macd'] - df['macd_signal']
+
+        # EMAs
+        df['ema20'] = df['close'].ewm(span=20, adjust=False).mean()
+        df['ema50'] = df['close'].ewm(span=50, adjust=False).mean()
+
+        # ATR
+        high_low = df['high'] - df['low']
+        high_close = (df['high'] - df['close'].shift()).abs()
+        low_close = (df['low'] - df['close'].shift()).abs()
+        tr = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
+        df['atr'] = tr.rolling(14).mean()
+
+        # ADX
+        plus_dm = df['high'].diff()
+        minus_dm = df['low'].diff().abs() * -1
+        plus_dm = plus_dm.where((plus_dm > minus_dm.abs()) & (plus_dm > 0), 0)
+        minus_dm = minus_dm.abs().where((minus_dm.abs() > plus_dm) & (minus_dm < 0), 0)
+        smoothed_tr = tr.ewm(span=14, adjust=False).mean()
+        plus_di = 100 * (plus_dm.ewm(span=14, adjust=False).mean() / smoothed_tr)
+        minus_di = 100 * (minus_dm.ewm(span=14, adjust=False).mean() / smoothed_tr)
+        dx = 100 * (plus_di - minus_di).abs() / (plus_di + minus_di).replace(0, np.nan)
+        df['adx'] = dx.ewm(span=14, adjust=False).mean()
+
+        # Bollinger Bands
+        df['bb_middle'] = df['close'].rolling(20).mean()
+        bb_std = df['close'].rolling(20).std()
+        df['bb_upper'] = df['bb_middle'] + (2 * bb_std)
+        df['bb_lower'] = df['bb_middle'] - (2 * bb_std)
+        df['bb_width'] = (df['bb_upper'] - df['bb_lower']) / df['bb_middle'] * 100
+
+        # Get latest values
+        latest = df.iloc[-1]
+        atr = float(latest['atr']) if pd.notna(latest['atr']) else 0
+        adx = float(latest['adx']) if pd.notna(latest['adx']) else 0
+
+        # === STEP 2: Determine Regime ===
+        high_arr = df['high'].values
+        low_arr = df['low'].values
+        close_arr = df['close'].values
+
+        if adx > 25:
+            if plus_di.iloc[-1] > minus_di.iloc[-1]:
+                market_regime = "trending-up"
+            else:
+                market_regime = "trending-down"
+        else:
+            market_regime = "ranging"
+
+        avg_atr = high_low.rolling(50).mean().iloc[-1]
+        volatility_regime = "high" if atr > avg_atr * 1.5 else "normal" if atr > avg_atr * 0.7 else "low"
+
+        # === STEP 3: Range Analysis ===
+        from tradingagents.agents.analysts.range_quant import (
+            analyze_range,
+            create_range_quant,
+            analyze_smc_for_range,
+            _build_range_data_context,
+            _build_range_prompt,
+        )
+
+        range_analysis = analyze_range(high_arr, low_arr, close_arr, lookback=25)
+
+        # === STEP 4: Get SMC Context ===
+        smc_context = ""
+        smc_analysis = {}
+        try:
+            smc_data = analyze_smc_for_range(df, current_price)
+            smc_analysis = smc_data.get("smc_analysis", {})
+            smc_context = smc_data.get("smc_context", "")
+        except Exception as smc_err:
+            logger.warning(f"[RANGE QUANT API] SMC analysis failed: {smc_err}")
+
+        # === STEP 5: Build Indicator Context ===
+        indicators_context = f"""## Technical Indicators
+
+### Momentum
+- RSI(14): {latest['rsi']:.1f} {'(overbought)' if latest['rsi'] > 70 else '(oversold)' if latest['rsi'] < 30 else '(neutral)'}
+- MACD: {latest['macd']:.5f}
+- MACD Signal: {latest['macd_signal']:.5f}
+- MACD Histogram: {latest['macd_histogram']:.5f} {'(bullish)' if latest['macd_histogram'] > 0 else '(bearish)'}
+
+### Trend
+- EMA20: {latest['ema20']:.5f} (Price {'above' if current_price > latest['ema20'] else 'below'})
+- EMA50: {latest['ema50']:.5f} (Price {'above' if current_price > latest['ema50'] else 'below'})
+- ADX: {adx:.1f} ({'Strong trend - CAUTION for range trading' if adx > 25 else 'Weak trend - favorable for range trading'})
+
+### Volatility
+- ATR(14): {atr:.5f}
+- BB Upper: {latest['bb_upper']:.5f}
+- BB Middle: {latest['bb_middle']:.5f}
+- BB Lower: {latest['bb_lower']:.5f}
+- BB Width: {latest['bb_width']:.2f}%
+"""
+
+        # === STEP 6: Get Trade Memories ===
+        from tradingagents.trade_decisions import get_trade_memories
+        trade_memories = get_trade_memories(request.symbol)
+        if trade_memories:
+            logger.info(f"[RANGE QUANT API] Injecting trade memories for {request.symbol} ({len(trade_memories)} chars)")
+
+        # === STEP 7: Initialize LLM ===
+        from tradingagents.llm_factory import get_llm
+
+        llm = get_llm(tier="deep")
+
+        # === STEP 8: Build State and Run Range Quant ===
+        range_state = {
+            "company_of_interest": request.symbol,
+            "trade_date": pd.Timestamp.now().strftime("%Y-%m-%d"),
+            "current_price": current_price,
+            "smc_context": smc_context,
+            "smc_analysis": smc_analysis,
+            "market_report": indicators_context,
+            "market_regime": market_regime,
+            "volatility_regime": volatility_regime,
+            "trading_session": _get_trading_session(),
+            "trade_memories": trade_memories,
+            "price_data": {
+                "high": high_arr.tolist(),
+                "low": low_arr.tolist(),
+                "close": close_arr.tolist(),
+            }
+        }
+
+        # For debugging: log the prompt
+        debug_data_context = _build_range_data_context(
+            ticker=request.symbol,
+            current_price=current_price,
+            smc_context=smc_context,
+            smc_analysis=smc_analysis,
+            market_report=indicators_context,
+            market_regime=market_regime,
+            volatility_regime=volatility_regime,
+            trading_session=_get_trading_session(),
+            current_date=range_state["trade_date"],
+            range_analysis=range_analysis,
+        )
+        full_prompt = _build_range_prompt(debug_data_context, trade_memories=trade_memories)
+
+        # Run range quant analyst
+        logger.info(f"[RANGE QUANT API] Running range quant analyst for {request.symbol}...")
+        _llm_start = _time.time()
+        range_quant_analyst = create_range_quant(llm, use_structured_output=True)
+        result = range_quant_analyst(range_state)
+        _llm_duration = _time.time() - _llm_start
+
+        range_report = result.get("range_quant_report", "")
+        range_decision = result.get("range_quant_decision")
+        range_result = result.get("range_analysis", range_analysis)
+        logger.info(f"[RANGE QUANT API] Analyst returned: range_quant_decision={'present' if range_decision else 'None'} [LLM took {_llm_duration:.1f}s]")
+
+        # === STEP 9: Build Response ===
+        if range_decision:
+            signal_map = {
+                "buy_to_enter": "BUY",
+                "sell_to_enter": "SELL",
+                "hold": "HOLD",
+                "close": "HOLD"
+            }
+            signal = range_decision.get("signal", "hold")
+            if isinstance(signal, dict):
+                signal = signal.get("value", "hold")
+
+            mapped_signal = signal_map.get(signal, "HOLD")
+
+            decision = {
+                "signal": mapped_signal,
+                "confidence": range_decision.get("confidence", 0.5),
+                "entry_price": range_decision.get("entry_price"),
+                "stop_loss": range_decision.get("stop_loss"),
+                "take_profit": range_decision.get("profit_target"),
+                "rationale": f"{range_decision.get('justification', '')}\n\n**Invalidation**: {range_decision.get('invalidation_condition', 'N/A')}",
+                "analysis_mode": "range_quant",
+                "leverage": range_decision.get("leverage"),
+                "risk_usd": range_decision.get("risk_usd"),
+                "risk_level": range_decision.get("risk_level"),
+                "risk_reward_ratio": range_decision.get("risk_reward_ratio"),
+                "trailing_stop_atr_multiplier": range_decision.get("trailing_stop_atr_multiplier"),
+                "full_report": range_report
+            }
+        else:
+            decision = {
+                "signal": "HOLD",
+                "confidence": 0.0,
+                "entry_price": None,
+                "stop_loss": None,
+                "take_profit": None,
+                "rationale": range_report or "Range quant analysis could not generate a structured decision.",
+                "analysis_mode": "range_quant",
+                "full_report": range_report
+            }
+
+        # Convert numpy types for JSON serialization
+        def make_serializable(obj):
+            if isinstance(obj, dict):
+                return {k: make_serializable(v) for k, v in obj.items()}
+            elif isinstance(obj, (list, tuple)):
+                return [make_serializable(v) for v in obj]
+            elif isinstance(obj, (np.bool_, np.integer)):
+                return int(obj)
+            elif isinstance(obj, np.floating):
+                return float(obj)
+            elif isinstance(obj, np.ndarray):
+                return obj.tolist()
+            return obj
+
+        range_serializable = make_serializable(range_result)
+
+        _endpoint_duration = _time.time() - _endpoint_start
+        logger.info(f"[RANGE QUANT API] Completed for {request.symbol} in {_endpoint_duration:.1f}s - Signal: {decision['signal']}")
+
+        return {
+            "status": "success",
+            "symbol": request.symbol,
+            "timeframe": request.timeframe,
+            "current_price": current_price,
+            "bid": bid,
+            "ask": ask,
+            "decision": decision,
+            "range_analysis": range_serializable,
+            "regime": {
+                "market_regime": market_regime,
+                "volatility_regime": volatility_regime,
+                "adx": adx,
+                "atr": atr,
+            },
+            "indicators": {
+                "rsi": float(latest['rsi']) if pd.notna(latest['rsi']) else None,
+                "macd": float(latest['macd']) if pd.notna(latest['macd']) else None,
+                "macd_signal": float(latest['macd_signal']) if pd.notna(latest['macd_signal']) else None,
+                "macd_histogram": float(latest['macd_histogram']) if pd.notna(latest['macd_histogram']) else None,
+                "ema20": float(latest['ema20']) if pd.notna(latest['ema20']) else None,
+                "ema50": float(latest['ema50']) if pd.notna(latest['ema50']) else None,
+                "atr": atr,
+                "adx": adx,
+                "bb_upper": float(latest['bb_upper']) if pd.notna(latest['bb_upper']) else None,
+                "bb_middle": float(latest['bb_middle']) if pd.notna(latest['bb_middle']) else None,
+                "bb_lower": float(latest['bb_lower']) if pd.notna(latest['bb_lower']) else None,
+                "bb_width": float(latest['bb_width']) if pd.notna(latest['bb_width']) else None,
+            },
+            "analysis_mode": "range_quant",
+            "llm_used": True,
+            "llm_duration_seconds": round(_llm_duration, 2),
+            "endpoint_duration_seconds": round(_endpoint_duration, 2),
+            "prompt_sent": full_prompt,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        _endpoint_duration = _time.time() - _endpoint_start
+        logger.error(f"[RANGE QUANT API] ERROR for {request.symbol} after {_endpoint_duration:.1f}s: {e}\n{traceback.format_exc()}")
         return {
             "status": "error",
             "error": str(e),
@@ -7877,18 +8290,40 @@ def _save_config(instance_name: str, config: dict):
     logger.info(f"Saved automation config for '{instance_name}' to {_AUTOMATION_CONFIGS_FILE}")
 
 
+# Global symbol position limits (shared across all automations)
+_SYMBOL_LIMITS_FILE = PROJECT_ROOT / "automation_symbol_limits.json"
+
+
+def _load_symbol_limits() -> Dict[str, dict]:
+    """Load global per-symbol position limits.
+
+    Returns dict like {"XAUUSD": {"max_positions": 3}, ...}
+    """
+    try:
+        if _SYMBOL_LIMITS_FILE.exists():
+            with open(_SYMBOL_LIMITS_FILE, "r") as f:
+                return json.load(f)
+    except Exception as e:
+        logger.warning(f"Failed to load symbol limits: {e}")
+    return {}
+
+
+def _save_symbol_limits(limits: Dict[str, dict]):
+    with open(_SYMBOL_LIMITS_FILE, "w") as f:
+        json.dump(limits, f, indent=2)
+
+
 class QuantAutomationConfigRequest(BaseModel):
     """Request model for quant automation configuration."""
-    instance_name: str = "quant"  # Unique identifier for this automation instance
-    pipeline: str = "quant"  # "quant", "smc_quant", "breakout_quant", "volume_profile", or "multi_agent"
+    instance_name: str = "smc_quant_basic"  # Unique identifier for this automation instance
+    pipeline: str = "smc_quant_basic"  # "smc_quant_basic", "smc_quant", "breakout_quant", "volume_profile", "rule_based", or "multi_agent"
     symbols: List[str] = ["XAUUSD"]
     timeframe: str = "H1"
     analysis_interval_seconds: int = 180
     position_check_interval_seconds: int = 60
     auto_execute: bool = False
     min_confidence: float = 0.65
-    max_positions_per_symbol: int = 1
-    max_total_positions: int = 3
+    max_positions_per_symbol: int = 1  # Per-automation limit per symbol
     enable_trailing_stop: bool = True
     trailing_stop_atr_multiplier: float = 1.5
     move_to_breakeven_pct: float = 1.0
@@ -7954,6 +8389,65 @@ async def list_automation_instances():
             result[name] = status
 
     return {"instances": result}
+
+
+@app.get("/api/automation/symbol-limits")
+async def get_symbol_limits():
+    """Get global per-symbol position limits.
+
+    Auto-populates with all symbols used across saved automation configs.
+    """
+    limits = _load_symbol_limits()
+
+    # Collect all symbols from saved automation configs
+    configs = _load_saved_configs()
+    all_symbols: set = set()
+    for cfg in configs.values():
+        for sym in cfg.get("symbols", []):
+            all_symbols.add(sym)
+
+    # Ensure every active symbol has an entry (default max_positions=3)
+    for sym in sorted(all_symbols):
+        if sym not in limits:
+            limits[sym] = {"max_positions": 3}
+
+    return {"limits": limits}
+
+
+@app.post("/api/automation/symbol-limits")
+async def update_symbol_limits(request: dict):
+    """Update global per-symbol position limits.
+
+    Body: {"limits": {"XAUUSD": {"max_positions": 3}, ...}}
+    """
+    new_limits = request.get("limits", {})
+    if not isinstance(new_limits, dict):
+        return {"error": "limits must be a dict"}
+
+    # Validate
+    for sym, cfg in new_limits.items():
+        mp = cfg.get("max_positions")
+        if mp is not None and (not isinstance(mp, int) or mp < 1 or mp > 20):
+            return {"error": f"max_positions for {sym} must be 1-20"}
+
+    _save_symbol_limits(new_limits)
+    return {"success": True, "limits": new_limits}
+
+
+@app.post("/api/automation/symbol-limits/{symbol}")
+async def update_single_symbol_limit(symbol: str, request: dict):
+    """Update limit for a single symbol.
+
+    Body: {"max_positions": 3}
+    """
+    mp = request.get("max_positions")
+    if mp is None or not isinstance(mp, int) or mp < 1 or mp > 20:
+        return {"error": "max_positions must be 1-20"}
+
+    limits = _load_symbol_limits()
+    limits[symbol.upper()] = {"max_positions": mp}
+    _save_symbol_limits(limits)
+    return {"success": True, "symbol": symbol.upper(), "max_positions": mp}
 
 
 @app.delete("/api/automation/quant/config/{instance_name}")
@@ -8038,13 +8532,19 @@ async def start_quant_automation(config: QuantAutomationConfigRequest):
             PipelineType,
         )
 
+        # Backward compat: rename old "quant" pipeline to "smc_quant_basic"
+        pipeline_name = config.pipeline
+        if pipeline_name == "quant":
+            pipeline_name = "smc_quant_basic"
+
         # Create configuration
         # Each instance gets its own state file to prevent race conditions
         # when multiple automations run concurrently
         instance_state_file = f"quant_automation_state_{instance_name}.json"
 
         auto_config = QuantAutomationConfig(
-            pipeline=PipelineType(config.pipeline),
+            instance_name=instance_name,
+            pipeline=PipelineType(pipeline_name),
             symbols=config.symbols,
             timeframe=config.timeframe,
             analysis_interval_seconds=config.analysis_interval_seconds,
@@ -8052,7 +8552,6 @@ async def start_quant_automation(config: QuantAutomationConfigRequest):
             auto_execute=config.auto_execute,
             min_confidence=config.min_confidence,
             max_positions_per_symbol=config.max_positions_per_symbol,
-            max_total_positions=config.max_total_positions,
             enable_trailing_stop=config.enable_trailing_stop,
             trailing_stop_atr_multiplier=config.trailing_stop_atr_multiplier,
             move_to_breakeven_pct=config.move_to_breakeven_pct,
@@ -8179,7 +8678,7 @@ async def update_quant_automation_config(updates: Dict[str, Any], instance: str 
 
 
 @app.post("/api/automation/quant/test-analysis/{symbol}")
-async def test_quant_analysis(symbol: str, pipeline: str = Query(default="quant")):
+async def test_quant_analysis(symbol: str, pipeline: str = Query(default="smc_quant_basic")):
     """Run a single analysis cycle for testing (without execution)."""
     try:
         from tradingagents.automation.quant_automation import (
@@ -8187,6 +8686,10 @@ async def test_quant_analysis(symbol: str, pipeline: str = Query(default="quant"
             QuantAutomationConfig,
             PipelineType,
         )
+
+        # Backward compat
+        if pipeline == "quant":
+            pipeline = "smc_quant_basic"
 
         config = QuantAutomationConfig(
             pipeline=PipelineType(pipeline),
@@ -8215,17 +8718,466 @@ async def test_quant_analysis(symbol: str, pipeline: str = Query(default="quant"
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/api/automation/quant/assumption-review")
+async def trigger_assumption_review(
+    instance: str = Query(default="btc_smc_basic"),
+    use_llm: bool = Query(default=True),
+):
+    """Manually trigger a position assumption review for an automation instance."""
+    import asyncio
+
+    try:
+        from tradingagents.automation.position_assumption_review import (
+            review_all_positions,
+            format_review_summary,
+        )
+
+        # Get source and symbols from running instance or saved config
+        automation = _get_automation_instance(instance)
+        if automation:
+            source = automation._source
+            symbols = automation.config.symbols
+            timeframe = automation.config.timeframe
+        else:
+            saved_configs = _load_saved_configs()
+            cfg = saved_configs.get(instance, {})
+            source = instance
+            symbols = cfg.get("symbols", [])
+            timeframe = cfg.get("timeframe", "H1")
+
+        if not symbols:
+            raise HTTPException(status_code=400, detail=f"No symbols configured for instance '{instance}'")
+
+        # Run in thread to avoid blocking
+        reports = await asyncio.get_event_loop().run_in_executor(
+            None,
+            lambda: review_all_positions(
+                source_filter=source,
+                symbols=symbols,
+                timeframe=timeframe,
+                auto_apply=False,
+                use_llm=use_llm,
+            ),
+        )
+
+        results = []
+        for r in reports:
+            results.append({
+                "decision_id": r.decision_id,
+                "symbol": r.symbol,
+                "direction": r.direction,
+                "ticket": r.ticket,
+                "entry_price": r.entry_price,
+                "current_price": r.current_price,
+                "current_sl": r.current_sl,
+                "current_tp": r.current_tp,
+                "pnl_pct": r.pnl_pct,
+                "recommended_action": r.recommended_action,
+                "suggested_sl": r.suggested_sl,
+                "suggested_tp": r.suggested_tp,
+                "findings": [
+                    {
+                        "category": f.category,
+                        "severity": f.severity,
+                        "message": f.message,
+                        "suggested_action": f.suggested_action,
+                        "suggested_value": f.suggested_value,
+                    }
+                    for f in r.findings
+                ],
+                "llm_assessment": r.llm_assessment,
+                "error": r.error,
+            })
+
+        # Update running instance state if available
+        if automation:
+            automation._last_assumption_review = datetime.now()
+            automation._assumption_review_results = results
+
+        return {
+            "instance": instance,
+            "source": source,
+            "symbols": symbols,
+            "reports": results,
+            "summary": format_review_summary(reports),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ----- Auto-Tuner -----
+
+_tune_tasks: Dict[str, Dict[str, Any]] = {}
+_TUNE_HISTORY_FILE = PROJECT_ROOT / "tune_history.json"
+
+
+def _load_tune_history() -> Dict[str, list]:
+    """Load tune history from disk. Format: {symbol_pipeline: [tune_records]}."""
+    try:
+        if _TUNE_HISTORY_FILE.exists():
+            with open(_TUNE_HISTORY_FILE, "r") as f:
+                return json.load(f)
+    except Exception as e:
+        logger.warning(f"Failed to load tune history: {e}")
+    return {}
+
+
+def _tune_history_key(symbol: str, pipeline: str) -> str:
+    """Consistent key for tune history: SYMBOL_pipeline."""
+    return f"{symbol}_{pipeline}"
+
+
+def _get_instance_symbol_pipeline(instance_name: str) -> tuple:
+    """Resolve symbol and pipeline from an instance name."""
+    automation = _get_automation_instance(instance_name)
+    if automation:
+        symbol = automation.config.symbols[0] if automation.config.symbols else None
+        pipeline = automation.config.pipeline
+    else:
+        saved_configs = _load_saved_configs()
+        cfg = saved_configs.get(instance_name, {})
+        symbol = cfg.get("symbols", [None])[0] if cfg.get("symbols") else None
+        pipeline = cfg.get("pipeline", "")
+    return symbol, pipeline
+
+
+def _save_tune_record(symbol: str, pipeline: str, record: dict):
+    """Append a tune record to history, keyed by symbol+pipeline (shared across instances)."""
+    history = _load_tune_history()
+    key = _tune_history_key(symbol, pipeline)
+    if key not in history:
+        history[key] = []
+    history[key].append(record)
+    # Keep last 20 records per symbol+pipeline
+    history[key] = history[key][-20:]
+    with open(_TUNE_HISTORY_FILE, "w") as f:
+        json.dump(history, f, indent=2, default=str)
+    logger.info(f"Saved tune record for '{key}' ({len(history[key])} total)")
+
+
+@app.post("/api/automation/tune/{instance_name}")
+async def start_tune(
+    instance_name: str,
+    bars: int = Query(default=800),
+    min_trades: int = Query(default=5),
+    auto_apply: bool = Query(default=False),
+):
+    """Start a background parameter tuning task for an automation instance."""
+    try:
+        # Check if tune is already running for this instance
+        existing = _tune_tasks.get(instance_name)
+        if existing and existing.get("status") == "running":
+            return {"task_id": instance_name, "status": "already_running"}
+
+        # Look up instance config to get symbol + pipeline
+        automation = _get_automation_instance(instance_name)
+        if automation:
+            symbol = automation.config.symbols[0] if automation.config.symbols else None
+            pipeline = automation.config.pipeline
+        else:
+            saved_configs = _load_saved_configs()
+            cfg = saved_configs.get(instance_name, {})
+            symbol = cfg.get("symbols", [None])[0] if cfg.get("symbols") else None
+            pipeline = cfg.get("pipeline", "")
+
+        if not symbol:
+            raise HTTPException(status_code=400, detail=f"No symbol configured for instance '{instance_name}'")
+        if not pipeline:
+            raise HTTPException(status_code=400, detail=f"No pipeline configured for instance '{instance_name}'")
+        if pipeline == "multi_agent":
+            raise HTTPException(status_code=400, detail="multi_agent pipeline requires LLM and cannot be auto-tuned")
+
+        # Initialize task state
+        _tune_tasks[instance_name] = {
+            "status": "running",
+            "started_at": datetime.now().isoformat(),
+            "symbol": symbol,
+            "pipeline": pipeline,
+            "bars": bars,
+            "min_trades": min_trades,
+            "auto_apply": auto_apply,
+            "progress": {"phase": "starting", "current": 0, "total": 0, "message": "Starting tune...", "steps": []},
+            "result": None,
+            "error": None,
+        }
+
+        # Spawn background task
+        async def _run_tune_task():
+            from tradingagents.automation.auto_tuner import run_tune, best_params_to_config_updates
+
+            # Capture the event loop so we can schedule coroutines from worker threads
+            loop = asyncio.get_running_loop()
+
+            def progress_callback(phase, current, total, message, steps=None):
+                task_state = _tune_tasks.get(instance_name)
+                if task_state:
+                    task_state["progress"] = {
+                        "phase": phase,
+                        "current": current,
+                        "total": total,
+                        "message": message,
+                        "steps": steps or task_state["progress"].get("steps", []),
+                    }
+                    # Broadcast via WebSocket (thread-safe)
+                    try:
+                        loop.call_soon_threadsafe(
+                            asyncio.ensure_future,
+                            _broadcast_tune_progress(instance_name, task_state["progress"]),
+                        )
+                    except RuntimeError:
+                        pass  # Loop closed
+
+            try:
+                result = await run_tune(
+                    symbol=symbol,
+                    pipeline=pipeline,
+                    bars=bars,
+                    min_trades=min_trades,
+                    progress_callback=progress_callback,
+                )
+
+                task_state = _tune_tasks.get(instance_name)
+                if not task_state:
+                    return
+
+                if result.get("error"):
+                    task_state["status"] = "error"
+                    task_state["error"] = result["error"]
+                    task_state["result"] = result
+                else:
+                    task_state["status"] = "done"
+                    task_state["result"] = result
+
+                    # Save tune record to history (keyed by symbol+pipeline)
+                    _save_tune_record(symbol, pipeline, {
+                        "timestamp": datetime.now().isoformat(),
+                        "symbol": symbol,
+                        "pipeline": pipeline,
+                        "bars": bars,
+                        "duration_seconds": result.get("duration_seconds"),
+                        "best": result.get("best"),
+                        "top_5": result.get("top_5", [])[:5],
+                        "config_updates": result.get("config_updates", {}),
+                        "applied": False,
+                        "applied_at": None,
+                        "config_before_apply": None,
+                    })
+
+                    # Auto-apply if requested
+                    if auto_apply and result.get("config_updates"):
+                        try:
+                            _apply_tune_config(instance_name, result["config_updates"])
+                            task_state["applied"] = True
+                        except Exception as e:
+                            task_state["apply_error"] = str(e)
+                            task_state["applied"] = False
+
+                # Broadcast completion
+                asyncio.ensure_future(_broadcast_tune_complete(instance_name, task_state))
+
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                task_state = _tune_tasks.get(instance_name)
+                if task_state:
+                    task_state["status"] = "error"
+                    task_state["error"] = str(e)
+
+        asyncio.create_task(_run_tune_task())
+
+        return {"task_id": instance_name, "status": "started", "symbol": symbol, "pipeline": pipeline}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/automation/tune/{instance_name}/status")
+async def get_tune_status(instance_name: str):
+    """Get the status/result of a tuning task."""
+    task_state = _tune_tasks.get(instance_name)
+    if not task_state:
+        raise HTTPException(status_code=404, detail=f"No tune task found for '{instance_name}'")
+    return task_state
+
+
+@app.post("/api/automation/tune/{instance_name}/apply")
+async def apply_tune_result(instance_name: str):
+    """Apply the best config from a completed tune task."""
+    task_state = _tune_tasks.get(instance_name)
+    if not task_state:
+        raise HTTPException(status_code=404, detail=f"No tune task found for '{instance_name}'")
+    if task_state.get("status") != "done":
+        raise HTTPException(status_code=400, detail="Tune task is not complete")
+
+    result = task_state.get("result", {})
+    config_updates = result.get("config_updates", {})
+    if not config_updates:
+        raise HTTPException(status_code=400, detail="No config updates available from tune result")
+
+    try:
+        _apply_tune_config(instance_name, config_updates)
+        task_state["applied"] = True
+        return {"applied": True, "config_updates": config_updates}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+def _apply_tune_config(instance_name: str, config_updates: Dict[str, Any]):
+    """Apply tuned config updates to a running or saved automation instance.
+
+    Snapshots the current config before applying so we can revert later.
+    """
+    # Snapshot current config values (only the keys we're about to change)
+    saved_configs = _load_saved_configs()
+    current_cfg = saved_configs.get(instance_name, {})
+    config_before = {k: current_cfg.get(k) for k in config_updates}
+
+    # Update running instance if available
+    automation = _get_automation_instance(instance_name)
+    if automation:
+        for key, value in config_updates.items():
+            if hasattr(automation.config, key):
+                setattr(automation.config, key, value)
+        logger.info(f"Applied tune config to running instance '{instance_name}': {config_updates}")
+
+    # Always update saved config
+    if instance_name in saved_configs:
+        saved_configs[instance_name].update(config_updates)
+        with open(_AUTOMATION_CONFIGS_FILE, "w") as f:
+            json.dump(saved_configs, f, indent=2)
+        logger.info(f"Applied tune config to saved config '{instance_name}': {config_updates}")
+
+    # Update the latest tune history record with apply info
+    symbol, pipeline = _get_instance_symbol_pipeline(instance_name)
+    history = _load_tune_history()
+    key = _tune_history_key(symbol, pipeline) if symbol and pipeline else instance_name
+    records = history.get(key, [])
+    if records:
+        latest = records[-1]
+        latest["applied"] = True
+        latest["applied_at"] = datetime.now().isoformat()
+        latest["config_before_apply"] = config_before
+        with open(_TUNE_HISTORY_FILE, "w") as f:
+            json.dump(history, f, indent=2, default=str)
+
+
+@app.get("/api/automation/tune/{instance_name}/history")
+async def get_tune_history(instance_name: str):
+    """Get tune history for an instance (shared by symbol+pipeline)."""
+    symbol, pipeline = _get_instance_symbol_pipeline(instance_name)
+    history = _load_tune_history()
+    key = _tune_history_key(symbol, pipeline) if symbol and pipeline else instance_name
+    records = history.get(key, [])
+    # Fallback: check old instance-keyed records and migrate
+    if not records and instance_name in history:
+        records = history[instance_name]
+        if symbol and pipeline:
+            history[key] = records
+            del history[instance_name]
+            with open(_TUNE_HISTORY_FILE, "w") as f:
+                json.dump(history, f, indent=2, default=str)
+    return {"instance": instance_name, "key": key, "symbol": symbol, "pipeline": pipeline, "records": records}
+
+
+@app.post("/api/automation/tune/{instance_name}/revert/{record_index}")
+async def revert_tune(instance_name: str, record_index: int):
+    """Revert to the config that was in place before a specific tune was applied."""
+    symbol, pipeline = _get_instance_symbol_pipeline(instance_name)
+    history = _load_tune_history()
+    key = _tune_history_key(symbol, pipeline) if symbol and pipeline else instance_name
+    records = history.get(key, [])
+    if record_index < 0 or record_index >= len(records):
+        raise HTTPException(status_code=404, detail=f"Tune record #{record_index} not found")
+
+    record = records[record_index]
+    config_before = record.get("config_before_apply")
+    if not config_before:
+        raise HTTPException(status_code=400, detail="No pre-apply config snapshot available for this record")
+
+    # Apply the old config back
+    _apply_tune_config(instance_name, config_before)
+
+    # Mark the record as reverted
+    record["reverted"] = True
+    record["reverted_at"] = datetime.now().isoformat()
+    with open(_TUNE_HISTORY_FILE, "w") as f:
+        json.dump(history, f, indent=2, default=str)
+
+    return {"reverted": True, "config_restored": config_before}
+
+
+async def _broadcast_tune_progress(instance_name: str, progress: dict):
+    """Broadcast tune progress via WebSocket."""
+    message = json.dumps({
+        "type": "tune_progress",
+        "instance": instance_name,
+        "progress": progress,
+    })
+    for ws in websocket_connections[:]:
+        try:
+            await ws.send_text(message)
+        except Exception:
+            pass
+
+
+async def _broadcast_tune_complete(instance_name: str, task_state: dict):
+    """Broadcast tune completion via WebSocket."""
+    message = json.dumps({
+        "type": "tune_complete",
+        "instance": instance_name,
+        "status": task_state.get("status"),
+        "result": task_state.get("result"),
+        "error": task_state.get("error"),
+    }, default=str)
+    for ws in websocket_connections[:]:
+        try:
+            await ws.send_text(message)
+        except Exception:
+            pass
+
+
 @app.get("/api/automation/quant/history")
 async def get_quant_automation_history(instance: str = Query(default="quant")):
     """Get recent analysis and position management history for an instance."""
     automation = _get_automation_instance(instance)
 
-    if automation is None:
-        return {
-            "instance_name": instance,
-            "analysis_results": [],
-            "position_results": [],
-        }
+    if automation is not None:
+        # Instance is running — use in-memory results
+        analysis_results = automation._analysis_results
+        position_results = automation._position_results
+    else:
+        # Instance not running — load persisted history from state file
+        analysis_results = []
+        position_results = []
+        from tradingagents.automation.quant_automation import AnalysisCycleResult, PositionManagementResult
+        state_file = PROJECT_ROOT / f"quant_automation_state_{instance}.json"
+        if state_file.exists():
+            try:
+                with open(state_file, "r") as f:
+                    state = json.load(f)
+                for item in state.get("analysis_results", []):
+                    try:
+                        item["timestamp"] = datetime.fromisoformat(item["timestamp"])
+                        analysis_results.append(AnalysisCycleResult(**item))
+                    except Exception:
+                        continue
+                for item in state.get("position_results", []):
+                    try:
+                        item["timestamp"] = datetime.fromisoformat(item["timestamp"])
+                        position_results.append(PositionManagementResult(**item))
+                    except Exception:
+                        continue
+            except Exception as e:
+                logger.warning(f"Failed to load state file for '{instance}': {e}")
 
     return {
         "instance_name": instance,
@@ -8245,7 +9197,7 @@ async def get_quant_automation_history(instance: str = Query(default="quant")):
                 "execution_error": r.execution_error,
                 "duration_seconds": r.duration_seconds,
             }
-            for r in automation._analysis_results
+            for r in analysis_results
         ],
         "position_results": [
             {
@@ -8260,7 +9212,7 @@ async def get_quant_automation_history(instance: str = Query(default="quant")):
                 "close_reason": r.close_reason,
                 "pnl": r.pnl,
             }
-            for r in automation._position_results
+            for r in position_results
         ],
     }
 

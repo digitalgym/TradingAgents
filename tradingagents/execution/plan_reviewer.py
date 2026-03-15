@@ -220,9 +220,9 @@ class PlanReviewer:
                 component="stop",
                 current_value=current_stop,
                 recommended_value=current_price * (0.985 if plan.direction == "BUY" else 1.015),
-                reason=f"Stop very tight ({stop_distance_pct:.2f}%). Risk of premature exit. Consider widening.",
-                urgency="low",
-                confidence=0.6
+                reason=f"Stop very tight ({stop_distance_pct:.2f}%). High risk of premature exit from normal price noise. Widen to at least 1x ATR.",
+                urgency="high",
+                confidence=0.9
             ))
         
         return adjustments

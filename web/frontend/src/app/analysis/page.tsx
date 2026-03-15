@@ -219,6 +219,8 @@ export default function AnalysisPage() {
     oteZones?: any[]
     premiumDiscount?: any
     confluenceScore?: any
+    // Structure breaks for chart labels
+    structure?: any
     // NEW: Advanced SMC patterns
     liquidity_sweeps?: any[]
     inducements?: any[]
@@ -278,6 +280,8 @@ export default function AnalysisPage() {
             oteZones: smcResult.data.ote_zones || [],
             premiumDiscount: smcResult.data.premium_discount,
             confluenceScore: smcResult.data.confluence_score,
+            // Structure breaks for chart labels
+            structure: smcResult.data.structure,
             // NEW: Advanced SMC patterns
             liquidity_sweeps: smcResult.data.liquidity_sweeps || [],
             inducements: smcResult.data.inducements || [],
@@ -834,7 +838,7 @@ export default function AnalysisPage() {
                 onValueChange={(mode) => {
                   setAnalysisMode(mode)
                   setUseRuleBased(mode === "rule_based")
-                  setUseQuantAnalysis(mode === "quant")
+                  setUseQuantAnalysis(mode === "smc_quant_basic")
                   setUseSmc(mode !== "rule_based")
                 }}
               >
@@ -848,10 +852,10 @@ export default function AnalysisPage() {
                       Multi-Agent AI
                     </span>
                   </SelectItem>
-                  <SelectItem value="quant">
+                  <SelectItem value="smc_quant_basic">
                     <span className="flex items-center gap-2">
                       <BarChart className="h-3.5 w-3.5" />
-                      Quant Analyst
+                      SMC Quant Basic
                     </span>
                   </SelectItem>
                   <SelectItem value="smc_quant">
@@ -876,7 +880,7 @@ export default function AnalysisPage() {
               </Select>
               <p className="text-xs text-muted-foreground">
                 {analysisMode === "multi_agent" && "Full 11-agent pipeline: market, news, sentiment, risk, debate"}
-                {analysisMode === "quant" && "General quant: SMC + indicators, single LLM call — fast & focused"}
+                {analysisMode === "smc_quant_basic" && "SMC + indicators, single LLM call — fast & focused"}
                 {analysisMode === "smc_quant" && "Deep SMC quant: Order Blocks, FVGs, BOS/CHoCH, liquidity — institutional focus"}
                 {analysisMode === "volume_profile" && "Volume profile zones (POC, VAH, VAL) + single LLM call"}
                 {analysisMode === "rule_based" && "Pure SMC rules, no LLM — instant & free"}
@@ -953,10 +957,10 @@ export default function AnalysisPage() {
                   <Calculator className="mr-2 h-4 w-4" />
                   Run Rule-Based Analysis
                 </>
-              ) : analysisMode === "quant" ? (
+              ) : analysisMode === "smc_quant_basic" ? (
                 <>
                   <BarChart className="mr-2 h-4 w-4" />
-                  Run SMC Quant Analysis
+                  Run SMC Quant Basic
                 </>
               ) : analysisMode === "volume_profile" ? (
                 <>
@@ -1188,6 +1192,11 @@ export default function AnalysisPage() {
             breakerBlocks={smcData?.breakerBlocks}
             equalLevels={smcData?.equalLevels}
             oteZones={smcData?.oteZones}
+            structureBreaks={[
+              ...(smcData?.structure?.all_bos || smcData?.structure?.recent_bos || []),
+              ...(smcData?.structure?.all_choc || smcData?.structure?.recent_choc || []),
+            ]}
+            premiumDiscount={smcData?.premiumDiscount}
             pdh={smcData?.pdh}
             pdl={smcData?.pdl}
             atrValue={smcData?.atrValue}

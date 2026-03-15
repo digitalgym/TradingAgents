@@ -34,6 +34,16 @@ import {
   getQuantAutomationHistory,
   runVpQuantAnalysis,
   getMarketStatusMulti,
+  getSymbolLimits,
+  updateSymbolLimit,
+  startTune,
+  getTuneStatus,
+  applyTuneResult,
+  getTuneHistory,
+  revertTune,
+  TuneTaskState,
+  TuneResultEntry,
+  TuneHistoryRecord,
   QuantAutomationStatus,
   QuantAutomationConfig,
   QuantAutomationHistory,
@@ -203,11 +213,18 @@ export default function AutomationPage() {
     expanded: boolean
     testSymbol: string
     testResult: any
+    tuneStatus: TuneTaskState | null
+    tuneError: string | null
+    tuneExpanded: boolean
+    tuneHistory: TuneHistoryRecord[] | null
+    tuneHistoryKey: string | null
+    tuneHistoryOpen: boolean
   }
   const [instances, setInstances] = useState<Record<string, InstanceState>>({})
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [newInstanceName, setNewInstanceName] = useState('')
-  const [newInstancePipeline, setNewInstancePipeline] = useState<string>('quant')
+  const [newInstancePipeline, setNewInstancePipeline] = useState<string>('smc_quant_basic')
+  const [newInstanceTimeframe, setNewInstanceTimeframe] = useState<string>('H1')
   const [newInstanceSymbols, setNewInstanceSymbols] = useState<string[]>(['XAUUSD'])
   const [renamingInstance, setRenamingInstance] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
@@ -225,19 +242,24 @@ export default function AutomationPage() {
   const [marketStatus, setMarketStatus] = useState<Record<string, { open: boolean; reason: string }>>({})
   const [marketSession, setMarketSession] = useState<string>("")
 
+  // Global symbol position limits
+  const [symbolLimits, setSymbolLimits] = useState<Record<string, { max_positions: number }>>({})
+  const [symbolLimitsLoaded, setSymbolLimitsLoaded] = useState(false)
+
   // Ref to track if we've done initial selection (survives re-renders, not HMR)
   const hasInitialized = useRef(false)
 
   // Polling function - updates data but NEVER touches selectedSymbols
   const fetchData = useCallback(async (showLoading = false) => {
     if (showLoading) setLoading(true)
-    const [statusRes, configRes, dailyCycleRes, predictionsRes, marketWatchRes, instancesRes] = await Promise.all([
+    const [statusRes, configRes, dailyCycleRes, predictionsRes, marketWatchRes, instancesRes, symbolLimitsRes] = await Promise.all([
       getPortfolioStatus(),
       getPortfolioConfig(),
       getDailyCycleStatus(),
       getPendingPredictions(),
       getMarketWatchSymbols(),
       listAutomationInstances(),
+      getSymbolLimits(),
     ])
     if (statusRes.data) setStatus(statusRes.data)
     if (configRes.data) setConfig(configRes.data)
@@ -245,6 +267,10 @@ export default function AutomationPage() {
     if (predictionsRes.data) setPendingPredictions(predictionsRes.data.predictions || [])
     if (marketWatchRes.data?.symbols) {
       setMarketWatchSymbols(marketWatchRes.data.symbols)
+    }
+    if (symbolLimitsRes.data?.limits) {
+      setSymbolLimits(symbolLimitsRes.data.limits)
+      setSymbolLimitsLoaded(true)
     }
 
     // Update dynamic instances from server
@@ -270,6 +296,12 @@ export default function AutomationPage() {
             expanded: prevInstance?.expanded ?? false,
             testSymbol: prevInstance?.testSymbol || '',
             testResult: prevInstance?.testResult || null,
+            tuneStatus: prevInstance?.tuneStatus || null,
+            tuneError: prevInstance?.tuneError || null,
+            tuneExpanded: prevInstance?.tuneExpanded ?? false,
+            tuneHistory: prevInstance?.tuneHistory || null,
+            tuneHistoryKey: prevInstance?.tuneHistoryKey || null,
+            tuneHistoryOpen: prevInstance?.tuneHistoryOpen ?? false,
           }
         })
         return updated
@@ -371,6 +403,12 @@ export default function AutomationPage() {
             expanded: false,
             testSymbol: '',
             testResult: null,
+            tuneStatus: null,
+            tuneError: null,
+            tuneExpanded: false,
+            tuneHistory: null,
+            tuneHistoryKey: null,
+            tuneHistoryOpen: false,
           }
         })
         setInstances(initial)
@@ -613,6 +651,66 @@ export default function AutomationPage() {
     updateInstance(name, { actionLoading: null, testResult })
   }
 
+  const handleStartTune = async (name: string) => {
+    updateInstance(name, { tuneStatus: null, tuneError: null, actionLoading: "tune" })
+    const result = await startTune(name)
+    if (result.error) {
+      updateInstance(name, { tuneError: result.error, actionLoading: null })
+      return
+    }
+    // Start polling for tune status
+    updateInstance(name, { actionLoading: null })
+    pollTuneStatus(name)
+  }
+
+  const pollTuneStatus = (name: string) => {
+    const interval = setInterval(async () => {
+      const result = await getTuneStatus(name)
+      if (result.error) {
+        clearInterval(interval)
+        updateInstance(name, { tuneError: result.error })
+        return
+      }
+      if (result.data) {
+        updateInstance(name, { tuneStatus: result.data, tuneExpanded: true, tuneError: null })
+        if (result.data.status !== "running") {
+          clearInterval(interval)
+        }
+      }
+    }, 1000)
+  }
+
+  const handleApplyTuneResult = async (name: string) => {
+    updateInstance(name, { actionLoading: "apply_tune" })
+    const result = await applyTuneResult(name)
+    if (result.error) {
+      updateInstance(name, { tuneError: result.error, actionLoading: null })
+    } else {
+      updateInstance(name, { actionLoading: null })
+      await fetchData()
+      loadTuneHistory(name)
+    }
+  }
+
+  const loadTuneHistory = async (name: string) => {
+    const result = await getTuneHistory(name)
+    if (result.data) {
+      updateInstance(name, { tuneHistory: result.data.records, tuneHistoryKey: result.data.key })
+    }
+  }
+
+  const handleRevertTune = async (name: string, recordIndex: number) => {
+    updateInstance(name, { actionLoading: "revert_tune" })
+    const result = await revertTune(name, recordIndex)
+    if (result.error) {
+      updateInstance(name, { tuneError: result.error, actionLoading: null })
+    } else {
+      updateInstance(name, { actionLoading: null })
+      await fetchData()
+      loadTuneHistory(name)
+    }
+  }
+
   const handleInstanceConfigUpdate = (name: string, key: keyof QuantAutomationConfig, value: any) => {
     updateInstance(name, { config: { ...instances[name]?.config, [key]: value } })
     updateQuantAutomationConfig({ [key]: value }, name)
@@ -653,17 +751,18 @@ export default function AutomationPage() {
     if (!newInstanceSymbols.length) return
     const name = newInstanceName.trim() || `${newInstancePipeline}_${newInstanceSymbols[0] || 'default'}`.toLowerCase()
 
+    const defaults = pipelineDefaults[newInstancePipeline] || pipelineDefaults.smc_quant_basic
     const config: Partial<QuantAutomationConfig> = {
       instance_name: name,
       pipeline: newInstancePipeline as any,
       symbols: newInstanceSymbols,
-      timeframe: 'H1',
-      analysis_interval_seconds: 180,
+      timeframe: newInstanceTimeframe,
+      analysis_interval_seconds: defaults.interval,
       auto_execute: false,
-      min_confidence: 0.65,
+      min_confidence: defaults.confidence,
       max_positions_per_symbol: 1,
-      max_total_positions: 3,
       enable_trailing_stop: true,
+      trailing_stop_atr_multiplier: defaults.atrMultiplier,
       default_lot_size: 0.01,
       max_risk_per_trade_pct: 1.0,
     }
@@ -677,24 +776,89 @@ export default function AutomationPage() {
     await fetchData()
     setAddDialogOpen(false)
     setNewInstanceName('')
-    setNewInstancePipeline('quant')
+    setNewInstancePipeline('smc_quant_basic')
+    setNewInstanceTimeframe('H1')
     setNewInstanceSymbols(['XAUUSD'])
   }
 
   const pipelineLabels: Record<string, string> = {
-    quant: "Quant Analyst",
+    smc_quant_basic: "SMC Quant Basic",
     smc_quant: "SMC Quant",
     breakout_quant: "Breakout Quant",
+    range_quant: "Range Quant",
     volume_profile: "Volume Profile",
+    rule_based: "Rule-Based SMC",
     multi_agent: "Multi-Agent AI",
   }
 
   const pipelineColors: Record<string, string> = {
-    quant: "text-purple-500",
+    smc_quant_basic: "text-purple-500",
     smc_quant: "text-emerald-500",
     breakout_quant: "text-orange-500",
+    range_quant: "text-teal-500",
     volume_profile: "text-blue-500",
+    rule_based: "text-cyan-500",
     multi_agent: "text-amber-500",
+  }
+
+  // Pipeline descriptions with backtest results from XAUUSD (Oct 2022 - Dec 2025, 827 D1 bars)
+  // Backtest script: tests/backtest_all_pipelines.py
+  const pipelineDescriptions: Record<string, { summary: string; details: string; recommendedTimeframes: string; recommendedInterval: string }> = {
+    rule_based: {
+      summary: "Pure rules-based SMC analysis with no LLM. Instant, zero API cost.",
+      details: "Backtest (XAUUSD D1): 75% WR, Sharpe 1.49, PF 2.22 on 12 trades. BUY signals 87.5% WR vs SELL 50%. Uses OB proximity + structural bias. Best with hold=3 bars, OB proximity 0.8%. Strong but selective - fewer signals than other strategies.",
+      recommendedTimeframes: "D1 (best), H4",
+      recommendedInterval: "15-30 min (instant computation)",
+    },
+    smc_quant_basic: {
+      summary: "LLM-powered SMC analysis with standard depth.",
+      details: "Uses same underlying SMC signals as rule-based (75% WR on D1) but adds LLM reasoning for nuanced trade decisions. Good balance of analysis depth and API cost. LLM may improve or filter the 12 raw signals per ~800 bars.",
+      recommendedTimeframes: "D1 (best), H4",
+      recommendedInterval: "30-60 min",
+    },
+    smc_quant: {
+      summary: "Deep SMC analysis with extended lookback and LLM confluence.",
+      details: "Extended analysis window with deeper structural assessment. Same base signals as rule-based (75% WR D1, Sharpe 1.49) but LLM evaluates more context. Higher API cost for more thorough analysis.",
+      recommendedTimeframes: "D1 (best), H4",
+      recommendedInterval: "60-120 min",
+    },
+    breakout_quant: {
+      summary: "Consolidation breakout detection with BB squeeze.",
+      details: "Backtest (XAUUSD D1): 60% WR, Sharpe 0.50, PF 1.47 on 25 trades. Best with lookback=15, hold=10 bars, squeeze>60. BUY avg +2.2% vs SELL avg -0.004%. On H4: 54.4% WR with 960 trades, PF 1.64 (more trades, lower WR).",
+      recommendedTimeframes: "D1 (best WR), H4 (more signals)",
+      recommendedInterval: "30-60 min",
+    },
+    range_quant: {
+      summary: "Mean-reversion at range extremes with structural bias filter.",
+      details: "Backtest (XAUUSD D1): 64.5% WR, Sharpe 0.74, PF 1.87 on 31 trades. BUY at discount 75% WR vs SELL at premium 53.3%. Best with lookback=30, hold=3, MR threshold>65. D1 clearly best (H4: 57.6% WR, H1: 52.5% WR).",
+      recommendedTimeframes: "D1 (best), H4",
+      recommendedInterval: "60-120 min (ranges evolve slowly)",
+    },
+    volume_profile: {
+      summary: "Value area reversion using volume distribution.",
+      details: "Backtest (XAUUSD D1): 49.7% WR, negative Sharpe on pure signals. BUY outside VA: 57.5% WR. SELL outside VA: 47.6% WR. Volume profile works better as confluence filter with other strategies than standalone. LLM analysis adds significant value here.",
+      recommendedTimeframes: "H4, D1",
+      recommendedInterval: "30-60 min",
+    },
+    multi_agent: {
+      summary: "Full multi-agent debate with multiple analyst perspectives.",
+      details: "Runs multiple specialized analysts that debate and reach consensus. Highest analysis quality but also highest API cost and latency. Not backtested (requires LLM). Best for important decisions on higher timeframes.",
+      recommendedTimeframes: "H4, D1",
+      recommendedInterval: "120-240 min",
+    },
+  }
+
+  // Sensible defaults per pipeline. Timeframe from XAUUSD backtest (D1 wins across all strategies).
+  // Confidence and ATR multiplier are conservative starting points — use the Tune button to
+  // find optimal values for your specific symbol.
+  const pipelineDefaults: Record<string, { timeframe: string; interval: number; confidence: number; atrMultiplier: number }> = {
+    rule_based:     { timeframe: "D1", interval: 900,   confidence: 0.65, atrMultiplier: 1.5 },
+    smc_quant_basic:{ timeframe: "D1", interval: 1800,  confidence: 0.65, atrMultiplier: 1.5 },
+    smc_quant:      { timeframe: "D1", interval: 3600,  confidence: 0.70, atrMultiplier: 2.0 },
+    breakout_quant: { timeframe: "D1", interval: 1800,  confidence: 0.65, atrMultiplier: 1.5 },
+    range_quant:    { timeframe: "D1", interval: 3600,  confidence: 0.70, atrMultiplier: 2.5 },
+    volume_profile: { timeframe: "H4", interval: 1800,  confidence: 0.65, atrMultiplier: 2.0 },
+    multi_agent:    { timeframe: "D1", interval: 7200,  confidence: 0.70, atrMultiplier: 2.0 },
   }
 
   const executionModeColors: Record<string, string> = {
@@ -1307,6 +1471,43 @@ export default function AutomationPage() {
           </div>
         </div>
 
+        {/* Global Symbol Position Limits */}
+        {symbolLimitsLoaded && Object.keys(symbolLimits).length > 0 && (
+          <Card>
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Global Position Limits
+                <HelpTooltip content="Account-wide max positions per symbol across ALL automations. If 3 automations trade XAUUSD and the global max is 3, each can open 1. Auto-populated from all configured automation symbols." />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3 pt-0">
+              <div className="flex flex-wrap gap-3">
+                {Object.entries(symbolLimits).sort(([a], [b]) => a.localeCompare(b)).map(([sym, cfg]) => (
+                  <div key={sym} className="flex items-center gap-2 rounded-md border px-3 py-1.5">
+                    <span className="text-sm font-medium">{sym}</span>
+                    <span className="text-xs text-muted-foreground">max</span>
+                    <Input
+                      type="number"
+                      className="h-7 w-14 text-xs text-center"
+                      value={cfg.max_positions}
+                      min={1}
+                      max={20}
+                      onChange={async (e) => {
+                        const val = parseInt(e.target.value)
+                        if (val >= 1 && val <= 20) {
+                          setSymbolLimits(prev => ({...prev, [sym]: { max_positions: val }}))
+                          await updateSymbolLimit(sym, val)
+                        }
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {Object.keys(instances).length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12 text-center">
@@ -1366,6 +1567,9 @@ export default function AutomationPage() {
                         <Badge variant="outline" className="capitalize text-xs">
                           {pipelineLabels[pipeline] || pipeline}
                         </Badge>
+                        {pipelineDescriptions[pipeline] && (
+                          <HelpTooltip content={`${pipelineDescriptions[pipeline].summary} Best TF: ${pipelineDescriptions[pipeline].recommendedTimeframes}. Suggested interval: ${pipelineDescriptions[pipeline].recommendedInterval}.`} />
+                        )}
                         <Badge
                           variant={
                             isRunning ? "success" :
@@ -1437,10 +1641,11 @@ export default function AutomationPage() {
                     {/* Quick info row */}
                     {inst.status?.config && !inst.expanded && (
                       <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
+                        <span>TF: {inst.config.timeframe || 'H1'}</span>
                         <span>Interval: {inst.config.analysis_interval_seconds}s</span>
                         <span>Auto Execute: {inst.config.auto_execute ? "On" : "Off"}</span>
                         {inst.status.positions && (
-                          <span>Positions: {inst.status.positions.managed}/{inst.status.positions.max_total}</span>
+                          <span>Positions: {inst.status.positions.managed} (max {inst.status.positions.max_per_symbol}/sym)</span>
                         )}
                         {inst.status.guardrails && !inst.status.guardrails.can_trade && (
                           <span className="text-yellow-500">Guardrails active</span>
@@ -1490,6 +1695,25 @@ export default function AutomationPage() {
 
                           <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1">
+                              <Label className="text-xs">Timeframe</Label>
+                              <Select
+                                value={inst.config.timeframe || 'H1'}
+                                onValueChange={(v) => handleInstanceConfigUpdate(name, 'timeframe', v)}
+                                disabled={isRunning}
+                              >
+                                <SelectTrigger className="h-9">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="M15">M15</SelectItem>
+                                  <SelectItem value="M30">M30</SelectItem>
+                                  <SelectItem value="H1">H1</SelectItem>
+                                  <SelectItem value="H4">H4</SelectItem>
+                                  <SelectItem value="D1">D1</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-1">
                               <Label className="text-xs">Analysis Interval (s)</Label>
                               <Input
                                 type="number"
@@ -1526,21 +1750,15 @@ export default function AutomationPage() {
                               />
                             </div>
                             <div className="space-y-1">
-                              <Label className="text-xs">Max Pos/Symbol</Label>
+                              <div className="flex items-center gap-1">
+                                <Label className="text-xs">Max Pos/Symbol</Label>
+                                <HelpTooltip content="How many positions THIS automation can open per symbol. The global limit (across all automations) is set in the Global Position Limits table above." />
+                              </div>
                               <Input
                                 type="number"
                                 value={inst.config.max_positions_per_symbol}
                                 onChange={(e) => handleInstanceConfigUpdate(name, 'max_positions_per_symbol', parseInt(e.target.value) || 1)}
                                 min={1} max={5} disabled={isRunning}
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs">Max Total Pos</Label>
-                              <Input
-                                type="number"
-                                value={inst.config.max_total_positions}
-                                onChange={(e) => handleInstanceConfigUpdate(name, 'max_total_positions', parseInt(e.target.value) || 3)}
-                                min={1} max={10} disabled={isRunning}
                               />
                             </div>
                           </div>
@@ -1570,6 +1788,25 @@ export default function AutomationPage() {
                                 disabled={isRunning}
                               />
                             </div>
+                            {inst.config.enable_trailing_stop && (
+                              <div className="flex items-center justify-between pl-4">
+                                <div className="flex items-center gap-2">
+                                  <Label htmlFor={`trail-mult-${name}`} className="text-xs">Trail Distance (ATR×)</Label>
+                                  <HelpTooltip content="How far behind price the trailing stop follows, as a multiple of ATR. 1.5× = tight, locks profit fast but risks early exit. 2.5× = moderate, good balance. 3.0-4.0× = wide, gives room but gives back more profit. For XAUUSD, 2.5-3.0× is recommended." />
+                                </div>
+                                <Input
+                                  id={`trail-mult-${name}`}
+                                  type="number"
+                                  step={0.5}
+                                  min={0.5}
+                                  max={10}
+                                  className="h-7 w-20 text-xs"
+                                  value={inst.config.trailing_stop_atr_multiplier ?? 1.5}
+                                  onChange={(e) => handleInstanceConfigUpdate(name, 'trailing_stop_atr_multiplier', parseFloat(e.target.value) || 1.5)}
+                                  disabled={isRunning}
+                                />
+                              </div>
+                            )}
                           </div>
 
                           {/* Test Analysis */}
@@ -1618,6 +1855,290 @@ export default function AutomationPage() {
                             )}
                           </div>
                         </div>
+
+                          {/* Auto-Tuner */}
+                          <Separator />
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-xs font-semibold flex items-center gap-1">
+                                <Zap className="h-3 w-3" /> Tune Parameters
+                                <HelpTooltip content="Runs a backtest parameter sweep on historical data for this symbol/pipeline. Finds the optimal timeframe, confidence threshold, and other settings. Takes 30-60 seconds for most pipelines (SMC pipelines may take longer). Results are based on pure-signal backtesting (no LLM) - actual results may differ." />
+                              </h4>
+                              {inst.config.pipeline !== "multi_agent" && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-xs gap-1"
+                                  onClick={() => handleStartTune(name)}
+                                  disabled={inst.actionLoading === "tune" || inst.tuneStatus?.status === "running"}
+                                >
+                                  {inst.tuneStatus?.status === "running" ? (
+                                    <><Loader2 className="h-3 w-3 animate-spin" /> Tuning...</>
+                                  ) : (
+                                    <><Zap className="h-3 w-3" /> Tune</>
+                                  )}
+                                </Button>
+                              )}
+                            </div>
+
+                            {inst.config.pipeline === "multi_agent" && (
+                              <p className="text-xs text-muted-foreground">Multi-agent pipeline requires LLM and cannot be auto-tuned.</p>
+                            )}
+
+                            {inst.tuneError && inst.tuneStatus?.status !== "error" && (
+                              <div className="p-2 rounded bg-red-500/10 border border-red-500/20 text-xs text-red-400">
+                                {inst.tuneError}
+                              </div>
+                            )}
+
+                            {/* Step-based progress during tuning */}
+                            {inst.tuneStatus?.status === "running" && inst.tuneStatus.progress && (
+                              <div className="space-y-2 p-3 rounded-lg bg-muted/50">
+                                {/* Steps list */}
+                                {inst.tuneStatus.progress.steps && inst.tuneStatus.progress.steps.length > 0 && (
+                                  <div className="space-y-1">
+                                    {inst.tuneStatus.progress.steps.map((step, i) => (
+                                      <div key={i} className="flex items-center gap-2 text-xs">
+                                        {step.status === "done" ? (
+                                          <Check className="h-3 w-3 text-green-500 flex-shrink-0" />
+                                        ) : step.status === "running" ? (
+                                          <Loader2 className="h-3 w-3 animate-spin text-primary flex-shrink-0" />
+                                        ) : (
+                                          <div className="h-3 w-3 rounded-full border border-muted-foreground/30 flex-shrink-0" />
+                                        )}
+                                        <span className={step.status === "done" ? "text-muted-foreground" : step.status === "running" ? "text-foreground font-medium" : "text-muted-foreground/50"}>
+                                          {step.name}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* Current phase detail + progress bar */}
+                                <div className="space-y-1 pt-1 border-t border-border/50">
+                                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                    <span className="truncate">{inst.tuneStatus.progress.message}</span>
+                                    {inst.tuneStatus.progress.total > 0 && (
+                                      <span className="flex-shrink-0 ml-2">{inst.tuneStatus.progress.current}/{inst.tuneStatus.progress.total}</span>
+                                    )}
+                                  </div>
+                                  <div className="w-full bg-muted rounded-full h-1.5">
+                                    <div
+                                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                                        inst.tuneStatus.progress.phase === "sweeping" || inst.tuneStatus.progress.phase === "smc_precompute"
+                                          ? "bg-primary"
+                                          : "bg-primary/60 animate-pulse"
+                                      }`}
+                                      style={{
+                                        width: inst.tuneStatus.progress.total > 0
+                                          ? `${Math.max(5, (inst.tuneStatus.progress.current / inst.tuneStatus.progress.total) * 100)}%`
+                                          : "100%",
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Tune results */}
+                            {inst.tuneStatus?.status === "done" && inst.tuneStatus.result?.best && (
+                              <div className="space-y-2">
+                                <div className="p-3 rounded-lg bg-muted/50 space-y-2 text-xs">
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-semibold">Best Configuration</span>
+                                    <span className="text-muted-foreground">{inst.tuneStatus.result.duration_seconds}s</span>
+                                  </div>
+                                  <div className="grid grid-cols-3 gap-2">
+                                    <div>
+                                      <span className="text-muted-foreground">Win Rate</span>
+                                      <p className="font-medium text-green-500">{inst.tuneStatus.result.best.win_rate.toFixed(1)}%</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground">Sharpe</span>
+                                      <p className="font-medium">{inst.tuneStatus.result.best.sharpe.toFixed(2)}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground">Profit Factor</span>
+                                      <p className="font-medium">{inst.tuneStatus.result.best.profit_factor.toFixed(2)}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground">Trades</span>
+                                      <p className="font-medium">{inst.tuneStatus.result.best.total_trades}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground">BUY WR</span>
+                                      <p className="font-medium text-green-500">{inst.tuneStatus.result.best.buy_win_rate.toFixed(0)}%
+                                        <span className="text-muted-foreground ml-1">({inst.tuneStatus.result.best.buy_trades})</span>
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground">SELL WR</span>
+                                      <p className="font-medium text-red-500">{inst.tuneStatus.result.best.sell_win_rate.toFixed(0)}%
+                                        <span className="text-muted-foreground ml-1">({inst.tuneStatus.result.best.sell_trades})</span>
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="text-muted-foreground">
+                                    <span className="font-medium text-foreground">Params:</span>{" "}
+                                    TF={inst.tuneStatus.result.best.timeframe},{" "}
+                                    {Object.entries(inst.tuneStatus.result.best.params).map(([k, v]) => `${k}=${v}`).join(", ")}
+                                  </div>
+
+                                  {/* Config changes to apply */}
+                                  {inst.tuneStatus.result.config_updates && Object.keys(inst.tuneStatus.result.config_updates).length > 0 && (
+                                    <div className="mt-2 p-2 rounded bg-blue-500/10 border border-blue-500/20">
+                                      <span className="font-medium text-blue-400">Suggested config changes:</span>
+                                      <div className="mt-1 space-y-0.5">
+                                        {Object.entries(inst.tuneStatus.result.config_updates).map(([key, value]) => (
+                                          <div key={key} className="flex items-center justify-between">
+                                            <span className="text-muted-foreground">{key}</span>
+                                            <span>
+                                              <span className="text-muted-foreground line-through mr-2">
+                                                {inst.config[key as keyof QuantAutomationConfig] !== undefined
+                                                  ? String(inst.config[key as keyof QuantAutomationConfig])
+                                                  : "—"}
+                                              </span>
+                                              <span className="text-blue-400 font-medium">{String(value)}</span>
+                                            </span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                      {!inst.tuneStatus.applied && (
+                                        <Button
+                                          size="sm"
+                                          className="mt-2 h-7 text-xs w-full gap-1"
+                                          onClick={() => handleApplyTuneResult(name)}
+                                          disabled={inst.actionLoading === "apply_tune"}
+                                        >
+                                          {inst.actionLoading === "apply_tune" ? (
+                                            <><Loader2 className="h-3 w-3 animate-spin" /> Applying...</>
+                                          ) : (
+                                            <><Check className="h-3 w-3" /> Apply Best Config</>
+                                          )}
+                                        </Button>
+                                      )}
+                                      {inst.tuneStatus.applied && (
+                                        <p className="mt-1 text-green-400 text-center">Applied</p>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Top 5 collapsible */}
+                                {inst.tuneStatus.result.top_5 && inst.tuneStatus.result.top_5.length > 1 && (
+                                  <div>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 text-xs w-full gap-1"
+                                      onClick={() => updateInstance(name, { tuneExpanded: !inst.tuneExpanded })}
+                                    >
+                                      {inst.tuneExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                                      Top {inst.tuneStatus.result.top_5.length} configs ({inst.tuneStatus.result.all_count} tested)
+                                    </Button>
+                                    {inst.tuneExpanded && (
+                                      <div className="space-y-1 mt-1">
+                                        {inst.tuneStatus.result.top_5.slice(1).map((r, i) => (
+                                          <div key={i} className="flex items-center justify-between text-xs p-1.5 rounded bg-muted/30">
+                                            <span className="text-muted-foreground">
+                                              #{i + 2} {r.timeframe} {Object.entries(r.params).map(([k, v]) => `${k}=${v}`).join(", ")}
+                                            </span>
+                                            <span>
+                                              WR {r.win_rate.toFixed(0)}% | S {r.sharpe.toFixed(2)} | PF {r.profit_factor.toFixed(1)} | {r.total_trades}t
+                                            </span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Error state */}
+                            {inst.tuneStatus?.status === "error" && (
+                              <div className="p-2 rounded bg-red-500/10 border border-red-500/20 text-xs text-red-400">
+                                Tune failed: {inst.tuneStatus.error || inst.tuneStatus.result?.error || "Unknown error"}
+                              </div>
+                            )}
+
+                            {/* Tune History */}
+                            {inst.config.pipeline !== "multi_agent" && (
+                              <div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 text-xs w-full gap-1 text-muted-foreground"
+                                  onClick={() => {
+                                    if (!inst.tuneHistory) loadTuneHistory(name)
+                                    updateInstance(name, { tuneHistoryOpen: !inst.tuneHistoryOpen })
+                                  }}
+                                >
+                                  <Clock className="h-3 w-3" />
+                                  {inst.tuneHistoryOpen ? "Hide" : "Show"} Tune History
+                                  {inst.tuneHistoryKey && (
+                                    <span className="text-muted-foreground/60 text-[10px]">({inst.tuneHistoryKey})</span>
+                                  )}
+                                  {!inst.tuneHistoryKey && inst.tuneHistory && inst.tuneHistory.length > 0 && (
+                                    <span className="text-muted-foreground/60">({inst.tuneHistory.length})</span>
+                                  )}
+                                </Button>
+                                {inst.tuneHistoryOpen && inst.tuneHistory && (
+                                  <div className="space-y-1.5 mt-1">
+                                    {inst.tuneHistory.length === 0 && (
+                                      <p className="text-xs text-muted-foreground text-center py-2">No tune history yet</p>
+                                    )}
+                                    {inst.tuneHistory.slice().reverse().map((rec, idx) => {
+                                      const realIdx = inst.tuneHistory!.length - 1 - idx
+                                      return (
+                                        <div key={idx} className="p-2 rounded bg-muted/30 text-xs space-y-1">
+                                          <div className="flex items-center justify-between">
+                                            <span className="text-muted-foreground">
+                                              {new Date(rec.timestamp).toLocaleDateString()} {new Date(rec.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                            <div className="flex items-center gap-1">
+                                              {rec.applied && !rec.reverted && (
+                                                <Badge variant="outline" className="text-[10px] h-4 px-1">Applied</Badge>
+                                              )}
+                                              {rec.reverted && (
+                                                <Badge variant="secondary" className="text-[10px] h-4 px-1">Reverted</Badge>
+                                              )}
+                                              {rec.applied && rec.config_before_apply && !rec.reverted && (
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="h-5 px-1 text-[10px] text-yellow-500 hover:text-yellow-400"
+                                                  onClick={() => handleRevertTune(name, realIdx)}
+                                                  disabled={inst.actionLoading === "revert_tune"}
+                                                >
+                                                  <RotateCcw className="h-2.5 w-2.5 mr-0.5" />
+                                                  Revert
+                                                </Button>
+                                              )}
+                                            </div>
+                                          </div>
+                                          {rec.best && (
+                                            <div className="flex items-center gap-3 text-muted-foreground">
+                                              <span>WR <span className="text-foreground">{rec.best.win_rate.toFixed(0)}%</span></span>
+                                              <span>S <span className="text-foreground">{rec.best.sharpe.toFixed(2)}</span></span>
+                                              <span>PF <span className="text-foreground">{rec.best.profit_factor.toFixed(1)}</span></span>
+                                              <span>{rec.best.total_trades}t</span>
+                                              <span className="ml-auto">{rec.duration_seconds}s</span>
+                                            </div>
+                                          )}
+                                          {rec.config_updates && Object.keys(rec.config_updates).length > 0 && (
+                                            <div className="text-muted-foreground">
+                                              {Object.entries(rec.config_updates).map(([k, v]) => `${k}=${v}`).join(", ")}
+                                            </div>
+                                          )}
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
 
                         {/* Recent Results */}
                         <div className="space-y-4">
@@ -1762,16 +2283,53 @@ export default function AutomationPage() {
             </div>
             <div className="space-y-2">
               <Label>Pipeline</Label>
-              <Select value={newInstancePipeline} onValueChange={setNewInstancePipeline}>
+              <Select value={newInstancePipeline} onValueChange={(v) => {
+                setNewInstancePipeline(v)
+                const def = pipelineDefaults[v]
+                if (def) setNewInstanceTimeframe(def.timeframe)
+              }}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="quant">Quant Analyst</SelectItem>
-                  <SelectItem value="smc_quant">SMC Quant</SelectItem>
+                  <SelectItem value="rule_based">Rule-Based SMC (no LLM, instant)</SelectItem>
+                  <SelectItem value="smc_quant_basic">SMC Quant Basic</SelectItem>
+                  <SelectItem value="smc_quant">SMC Quant (deep)</SelectItem>
                   <SelectItem value="breakout_quant">Breakout Quant</SelectItem>
+                  <SelectItem value="range_quant">Range Quant (SMC levels)</SelectItem>
                   <SelectItem value="volume_profile">Volume Profile</SelectItem>
                   <SelectItem value="multi_agent">Multi-Agent AI</SelectItem>
+                </SelectContent>
+              </Select>
+              {pipelineDescriptions[newInstancePipeline] && (
+                <div className="rounded-md border border-border bg-muted/50 p-3 space-y-1.5">
+                  <p className="text-sm text-foreground">{pipelineDescriptions[newInstancePipeline].summary}</p>
+                  <p className="text-xs text-muted-foreground">{pipelineDescriptions[newInstancePipeline].details}</p>
+                  <div className="flex gap-4 pt-1">
+                    <div className="text-xs">
+                      <span className="text-muted-foreground">Best timeframes: </span>
+                      <span className="text-foreground font-medium">{pipelineDescriptions[newInstancePipeline].recommendedTimeframes}</span>
+                    </div>
+                    <div className="text-xs">
+                      <span className="text-muted-foreground">Interval: </span>
+                      <span className="text-foreground font-medium">{pipelineDescriptions[newInstancePipeline].recommendedInterval}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>Timeframe</Label>
+              <Select value={newInstanceTimeframe} onValueChange={setNewInstanceTimeframe}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="M15">M15</SelectItem>
+                  <SelectItem value="M30">M30</SelectItem>
+                  <SelectItem value="H1">H1</SelectItem>
+                  <SelectItem value="H4">H4</SelectItem>
+                  <SelectItem value="D1">D1</SelectItem>
                 </SelectContent>
               </Select>
             </div>

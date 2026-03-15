@@ -5330,3 +5330,735 @@ aiohttp.client_exceptions.ClientConnectorError: Cannot connect to host localhost
 2026-03-12 08:01:32,332 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
 2026-03-12 08:01:51,286 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
 2026-03-12 08:01:51,397 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:02:32,359 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:02:51,293 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:02:51,403 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:03:32,366 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:03:51,329 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:03:51,393 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:04:32,373 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:04:51,345 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:04:51,407 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:05:18,182 - INFO - Running breakout_quant analysis for XAUUSD...
+2026-03-12 08:05:26,734 - INFO - Breakout Quant API response status: success
+2026-03-12 08:05:26,735 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=1, squeeze_strength=98.3%, structure_bias=bearish, breakout_ready=True
+2026-03-12 08:05:26,805 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.7, entry=None, sl=None, tp=None
+2026-03-12 08:05:26,806 - INFO - XAUUSD: HOLD (confidence: 0.70)
+2026-03-12 08:05:32,394 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:05:51,353 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:05:51,400 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:06:32,403 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:06:51,352 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:06:51,415 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:07:32,427 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:07:51,365 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:07:51,428 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:08:32,456 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:08:51,373 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:08:51,436 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:09:32,465 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:09:51,393 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:09:51,457 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:10:32,458 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:10:51,402 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:10:51,479 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:11:32,468 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:11:51,422 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:11:51,498 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:12:32,500 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:12:51,455 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:12:51,502 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:13:32,540 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:13:51,473 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:13:51,521 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:14:32,526 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:14:51,487 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:14:51,533 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:15:32,530 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:15:34,407 - INFO - Running smc_quant analysis for XAUUSD...
+2026-03-12 08:15:49,527 - INFO - SMC Quant API response status: completed
+2026-03-12 08:15:49,583 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 08:15:49,583 - INFO - XAUUSD: HOLD (confidence: 0.85)
+2026-03-12 08:15:51,523 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:15:51,555 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:16:32,550 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:16:51,534 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:16:51,568 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:17:32,565 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:17:51,560 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:17:51,592 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:18:10,581 - INFO - Running volume_profile analysis for XAUUSD...
+2026-03-12 08:18:22,457 - INFO - [VP] API response status: success
+2026-03-12 08:18:22,458 - INFO - [VP] Decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 08:18:22,458 - INFO - [VP] Justification: Price is inside Value Area at fair value near multiple HVNs during low-volume Asian session with neutral RSI and no clear Volume Profile setup for mean reversion or breakout; past trades show poor dir
+2026-03-12 08:18:22,459 - INFO - XAUUSD: HOLD (confidence: 0.85)
+2026-03-12 08:18:32,564 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:18:51,573 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:18:51,605 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:19:32,567 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:19:51,584 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:19:51,616 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:20:29,675 - INFO - Running breakout_quant analysis for XAUUSD...
+2026-03-12 08:20:43,202 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:20:43,313 - INFO - Breakout Quant API response status: success
+2026-03-12 08:20:43,313 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=1, squeeze_strength=98.3%, structure_bias=bearish, breakout_ready=True
+2026-03-12 08:20:43,369 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.45, entry=None, sl=None, tp=None
+2026-03-12 08:20:43,370 - INFO - XAUUSD: HOLD (confidence: 0.45)
+2026-03-12 08:20:51,586 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:20:51,634 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:21:43,223 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:21:51,596 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:21:51,658 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:22:43,245 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:22:51,607 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:22:51,671 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:23:43,278 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:23:51,626 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:23:51,690 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:24:43,312 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:24:51,683 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:24:51,693 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:25:43,319 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:25:51,738 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:25:51,747 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:26:43,326 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:26:51,751 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:26:51,827 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:27:43,354 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:27:51,767 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:27:51,904 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:28:43,392 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:28:51,764 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:28:51,981 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:29:43,395 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:29:51,760 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:29:52,014 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:30:43,405 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:30:51,770 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:30:52,036 - INFO - Running smc_quant analysis for XAUUSD...
+2026-03-12 08:30:52,038 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:31:08,430 - INFO - SMC Quant API response status: completed
+2026-03-12 08:31:08,484 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 08:31:08,485 - INFO - XAUUSD: HOLD (confidence: 0.85)
+2026-03-12 08:31:43,414 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:31:51,797 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:31:52,048 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:32:43,436 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:32:51,802 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:32:52,055 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:33:43,452 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:33:51,815 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:33:52,070 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:34:43,473 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:34:51,830 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:34:52,085 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:35:43,478 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:35:44,534 - INFO - Running breakout_quant analysis for XAUUSD...
+2026-03-12 08:36:04,365 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:36:04,377 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:36:04,486 - INFO - Breakout Quant API response status: success
+2026-03-12 08:36:04,487 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=1, squeeze_strength=95.0%, structure_bias=bearish, breakout_ready=True
+2026-03-12 08:36:04,535 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 08:36:04,535 - INFO - XAUUSD: HOLD (confidence: 0.85)
+2026-03-12 08:36:43,481 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:37:04,389 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:37:04,399 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:37:43,486 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:38:04,386 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:38:04,395 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:38:43,499 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:39:04,398 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:39:04,408 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:39:43,513 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:40:04,389 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:40:04,437 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:40:43,524 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:41:04,396 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:41:04,444 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:41:43,530 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:42:04,420 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:42:04,468 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:42:43,549 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:43:04,424 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:43:04,488 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:43:43,553 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:44:04,445 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:44:04,492 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:44:43,572 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:45:04,457 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:45:04,504 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:45:43,587 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:46:04,484 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:46:04,516 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:46:09,911 - INFO - Running smc_quant analysis for XAUUSD...
+2026-03-12 08:46:23,381 - INFO - SMC Quant API response status: completed
+2026-03-12 08:46:23,437 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.3, entry=None, sl=None, tp=None
+2026-03-12 08:46:23,437 - INFO - XAUUSD: HOLD (confidence: 0.30)
+2026-03-12 08:46:43,611 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:47:04,495 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:47:04,527 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:47:43,625 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:48:04,517 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:48:04,527 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:48:30,069 - INFO - Running volume_profile analysis for XAUUSD...
+2026-03-12 08:48:38,089 - INFO - [VP] API response status: success
+2026-03-12 08:48:38,089 - INFO - [VP] Decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 08:48:38,090 - INFO - [VP] Justification: Price is inside value area at POC and primary HVN during fair value zone with no clear mean reversion, breakout, or bounce setup; mixed indicators and low volume suggest waiting for extremes.
+2026-03-12 08:48:38,090 - INFO - XAUUSD: HOLD (confidence: 0.85)
+2026-03-12 08:48:43,628 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:49:04,547 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:49:04,557 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:49:43,652 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:50:04,556 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:50:04,565 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:50:43,663 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:51:04,575 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:51:04,585 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:51:06,140 - INFO - Running breakout_quant analysis for XAUUSD...
+2026-03-12 08:51:17,621 - INFO - Breakout Quant API response status: success
+2026-03-12 08:51:17,622 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=1, squeeze_strength=94.4%, structure_bias=bearish, breakout_ready=True
+2026-03-12 08:51:17,683 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.4, entry=None, sl=None, tp=None
+2026-03-12 08:51:17,684 - INFO - XAUUSD: HOLD (confidence: 0.40)
+2026-03-12 08:51:43,678 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:52:04,595 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:52:04,606 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:52:43,688 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:53:04,621 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:53:04,631 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:53:43,699 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:54:04,644 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:54:04,653 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:54:43,706 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:55:04,653 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:55:04,662 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:55:43,718 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:56:04,678 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:56:04,687 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:56:43,756 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:57:04,681 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:57:04,690 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:57:43,771 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:58:04,698 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:58:04,708 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:58:43,793 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:59:04,707 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:59:04,716 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 08:59:43,808 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:00:04,726 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:00:04,739 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:00:43,809 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:01:04,736 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:01:04,745 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:01:25,807 - INFO - Running smc_quant analysis for XAUUSD...
+2026-03-12 09:01:38,042 - INFO - SMC Quant API response status: completed
+2026-03-12 09:01:38,093 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 09:01:38,093 - INFO - XAUUSD: HOLD (confidence: 0.85)
+2026-03-12 09:01:43,824 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:02:04,742 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:02:04,754 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:02:43,829 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:03:04,754 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:03:04,764 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:03:43,829 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:04:04,765 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:04:04,775 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:04:43,822 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:05:04,766 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:05:04,798 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:05:43,820 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:06:04,764 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:06:04,810 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:06:23,037 - INFO - Running breakout_quant analysis for XAUUSD...
+2026-03-12 09:06:32,587 - INFO - Breakout Quant API response status: success
+2026-03-12 09:06:32,587 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=1, squeeze_strength=86.7%, structure_bias=bearish, breakout_ready=True
+2026-03-12 09:06:32,647 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.4, entry=None, sl=None, tp=None
+2026-03-12 09:06:32,648 - INFO - XAUUSD: HOLD (confidence: 0.40)
+2026-03-12 09:06:43,829 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:07:04,778 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:07:04,825 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:07:43,840 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:08:04,809 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:08:04,841 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:08:43,857 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:09:04,833 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:09:04,865 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:09:43,871 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:10:04,837 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:10:04,884 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:10:43,868 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:11:04,863 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:11:04,911 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:11:43,905 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:12:04,885 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:12:04,916 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:12:43,934 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:13:04,908 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:13:04,938 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:13:43,954 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:14:04,915 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:14:04,947 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:14:43,968 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:15:04,934 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:15:04,966 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:15:43,979 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:16:04,955 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:16:04,987 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:16:40,213 - INFO - Running smc_quant analysis for XAUUSD...
+2026-03-12 09:16:52,267 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:16:52,277 - INFO - SMC Quant API response status: completed
+2026-03-12 09:16:52,326 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 09:16:52,326 - INFO - XAUUSD: HOLD (confidence: 0.85)
+2026-03-12 09:17:04,963 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:17:04,994 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:17:52,601 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:18:04,975 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:18:05,023 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:18:52,617 - INFO - Running volume_profile analysis for XAUUSD...
+2026-03-12 09:18:52,619 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:19:00,805 - INFO - [VP] API response status: success
+2026-03-12 09:19:00,806 - INFO - [VP] Decision for XAUUSD: signal=HOLD, confidence=0.75, entry=None, sl=None, tp=None
+2026-03-12 09:19:00,806 - INFO - [VP] Justification: Price is inside Value Area at fair value, below POC by only 0.28% with no clear mean reversion setup or edge rejection, mixed indicators in trending-up regime, low volume; avoid entry per past lessons
+2026-03-12 09:19:00,807 - INFO - XAUUSD: HOLD (confidence: 0.75)
+2026-03-12 09:19:04,986 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:19:05,048 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:19:52,630 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:20:05,005 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:20:05,051 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:20:52,646 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:21:05,019 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:21:05,066 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:21:34,116 - INFO - Running breakout_quant analysis for XAUUSD...
+2026-03-12 09:21:44,701 - INFO - Breakout Quant API response status: success
+2026-03-12 09:21:44,701 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=1, squeeze_strength=87.8%, structure_bias=bearish, breakout_ready=True
+2026-03-12 09:21:44,751 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.65, entry=None, sl=None, tp=None
+2026-03-12 09:21:44,752 - INFO - XAUUSD: HOLD (confidence: 0.65)
+2026-03-12 09:21:52,663 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:22:05,026 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:22:05,088 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:22:52,668 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:23:05,032 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:23:05,095 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:23:52,673 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:24:05,057 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:24:05,121 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:24:52,696 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:25:05,083 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:25:05,129 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:25:52,700 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:26:05,087 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:26:05,150 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:26:52,707 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:27:05,075 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:27:05,170 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:27:52,717 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:28:05,078 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:28:05,187 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:28:52,731 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:29:05,091 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:29:05,200 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:29:52,747 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:30:05,080 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:30:05,222 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:30:52,754 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:31:05,092 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:31:05,217 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:31:52,776 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:31:54,221 - INFO - Running smc_quant analysis for XAUUSD...
+2026-03-12 09:32:09,771 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:32:09,781 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:32:09,845 - INFO - SMC Quant API response status: completed
+2026-03-12 09:32:09,889 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 09:32:09,890 - INFO - XAUUSD: HOLD (confidence: 0.85)
+2026-03-12 09:32:52,807 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:33:10,114 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:33:10,123 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:33:52,830 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:34:10,126 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:34:10,467 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:34:52,837 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:35:10,149 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:35:10,801 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:35:52,863 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:36:10,186 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:36:11,144 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:36:49,598 - INFO - Running breakout_quant analysis for XAUUSD...
+2026-03-12 09:37:10,175 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:37:10,188 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:37:10,248 - INFO - Breakout Quant API response status: success
+2026-03-12 09:37:10,248 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=1, squeeze_strength=87.2%, structure_bias=bearish, breakout_ready=True
+2026-03-12 09:37:10,294 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 09:37:10,295 - INFO - XAUUSD: HOLD (confidence: 0.85)
+2026-03-12 09:37:11,185 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:38:10,190 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:38:10,199 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:38:11,320 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:39:10,198 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:39:10,207 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:39:11,355 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:40:10,215 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:40:10,224 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:40:11,372 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:41:10,231 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:41:10,241 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:41:11,393 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:42:10,241 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:42:10,249 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:42:11,407 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:43:10,264 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:43:10,273 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:43:11,690 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:44:10,285 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:44:10,294 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:44:11,789 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:45:10,289 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:45:10,298 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:45:11,845 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:46:10,290 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:46:10,322 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:46:11,878 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:47:10,299 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:47:10,329 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:47:11,966 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:47:11,998 - INFO - Running smc_quant analysis for XAUUSD...
+2026-03-12 09:47:35,509 - INFO - SMC Quant API response status: completed
+2026-03-12 09:47:35,557 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 09:47:35,558 - INFO - XAUUSD: HOLD (confidence: 0.85)
+2026-03-12 09:48:10,314 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:48:10,344 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:48:12,044 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:49:10,333 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:49:10,365 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:49:12,070 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:49:12,407 - INFO - Running volume_profile analysis for XAUUSD...
+2026-03-12 09:49:28,852 - INFO - [VP] API response status: success
+2026-03-12 09:49:28,853 - INFO - [VP] Decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 09:49:28,853 - INFO - [VP] Justification: Price is inside Value Area at fair value, only 0.43% (1 ATR) below POC with no clear mean reversion setup, bearish MACD divergence in uptrending regime, and below-average volume indicate no high-proba
+2026-03-12 09:49:28,854 - INFO - XAUUSD: HOLD (confidence: 0.85)
+2026-03-12 09:50:10,346 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:50:10,377 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:50:12,059 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:51:10,367 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:51:10,398 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:51:12,077 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:52:10,386 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:52:10,396 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:52:12,085 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:52:12,475 - INFO - Running breakout_quant analysis for XAUUSD...
+2026-03-12 09:52:25,940 - INFO - Breakout Quant API response status: success
+2026-03-12 09:52:25,940 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=1, squeeze_strength=82.8%, structure_bias=bearish, breakout_ready=True
+2026-03-12 09:52:25,989 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 09:52:25,990 - INFO - XAUUSD: HOLD (confidence: 0.85)
+2026-03-12 09:53:23,711 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:53:23,723 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:53:23,738 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:54:23,730 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:54:23,740 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:54:23,751 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:55:23,737 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:55:23,768 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:55:23,779 - INFO - Position check: 0 total open, 0 managed (XAUUSD)
+2026-03-12 09:56:23,760 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 09:56:23,761 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5193.24, tp=5077.0, profit=1.75
+2026-03-12 09:56:23,766 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 09:56:23,767 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 09:56:23,767 - INFO -   Modifying SL to breakeven: 5193.24000 -> 5143.24000
+2026-03-12 09:56:23,990 - INFO -   Modify result: {'success': True, 'ticket': 1589710, 'new_sl': 5143.24, 'new_tp': 5077.0}
+2026-03-12 09:56:23,990 - INFO -   BREAKEVEN SET for XAUUSD #1589710: 5193.24000 -> 5143.24000
+2026-03-12 09:56:24,000 - INFO - Position action: #1589710 XAUUSD -> adjusted_sl
+2026-03-12 09:56:24,002 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 09:56:24,002 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=1.23
+2026-03-12 09:56:24,005 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 09:56:24,006 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 09:56:24,006 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 09:56:24,008 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 09:56:24,009 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=1.23
+2026-03-12 09:56:24,013 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 09:56:24,014 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 09:56:24,014 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 09:57:04,405 - INFO - SMC Quant API response status: completed
+2026-03-12 09:57:04,457 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 09:57:04,458 - INFO -   Reversal check result: signal=HOLD, confidence=0.85
+2026-03-12 09:57:04,467 - INFO - Breakout Quant API response status: success
+2026-03-12 09:57:04,467 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=1, squeeze_strength=80.6%, structure_bias=bearish, breakout_ready=True
+2026-03-12 09:57:04,513 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 09:57:04,514 - INFO -   Reversal check result: signal=HOLD, confidence=0.85
+2026-03-12 09:57:24,019 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 09:57:24,019 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=5.25
+2026-03-12 09:57:24,023 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 09:57:24,023 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 09:58:04,478 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 09:58:04,478 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=9.22
+2026-03-12 09:58:04,481 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 09:58:04,482 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 09:58:04,482 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 09:58:04,524 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 09:58:04,524 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=9.22
+2026-03-12 09:58:04,527 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 09:58:04,528 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 09:58:04,528 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 09:58:15,781 - INFO - SMC Quant API response status: completed
+2026-03-12 09:58:15,824 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.3, entry=None, sl=None, tp=None
+2026-03-12 09:58:15,825 - INFO -   Reversal check result: signal=HOLD, confidence=0.30
+2026-03-12 09:58:40,010 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 09:58:40,011 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=10.22
+2026-03-12 09:58:40,014 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 09:58:40,014 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 09:58:40,072 - INFO - Breakout Quant API response status: success
+2026-03-12 09:58:40,072 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=1, squeeze_strength=79.4%, structure_bias=bearish, breakout_ready=True
+2026-03-12 09:58:40,119 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.4, entry=None, sl=None, tp=None
+2026-03-12 09:58:40,119 - INFO -   Reversal check result: signal=HOLD, confidence=0.40
+2026-03-12 09:59:15,840 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 09:59:15,841 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=10.73
+2026-03-12 09:59:15,844 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 09:59:15,845 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 09:59:15,845 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 09:59:56,834 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 09:59:56,835 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=13.93
+2026-03-12 09:59:56,838 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 09:59:56,839 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 09:59:57,143 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 09:59:57,144 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=13.96
+2026-03-12 09:59:57,147 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 09:59:57,147 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 09:59:57,148 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 09:59:57,680 - INFO - SMC Quant API response status: completed
+2026-03-12 09:59:57,744 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.95, entry=None, sl=None, tp=None
+2026-03-12 09:59:57,745 - INFO -   Reversal check result: signal=HOLD, confidence=0.95
+2026-03-12 10:00:10,481 - INFO - Breakout Quant API response status: success
+2026-03-12 10:00:10,482 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=1, squeeze_strength=78.9%, structure_bias=bearish, breakout_ready=True
+2026-03-12 10:00:10,528 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.4, entry=None, sl=None, tp=None
+2026-03-12 10:00:10,528 - INFO -   Reversal check result: signal=HOLD, confidence=0.40
+2026-03-12 10:00:57,149 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:00:57,149 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=21.61
+2026-03-12 10:00:57,153 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:00:57,154 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:00:58,063 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:00:58,064 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=21.33
+2026-03-12 10:00:58,068 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:00:58,069 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:00:58,070 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 10:01:09,985 - INFO - SMC Quant API response status: completed
+2026-03-12 10:01:10,041 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.7, entry=None, sl=None, tp=None
+2026-03-12 10:01:10,042 - INFO -   Reversal check result: signal=HOLD, confidence=0.70
+2026-03-12 10:01:10,568 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:01:10,569 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=22.31
+2026-03-12 10:01:10,573 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:01:10,573 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:01:10,574 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 10:01:32,709 - INFO - Breakout Quant API response status: success
+2026-03-12 10:01:32,709 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=1, squeeze_strength=72.2%, structure_bias=bearish, breakout_ready=True
+2026-03-12 10:01:32,760 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 10:01:32,760 - INFO -   Reversal check result: signal=HOLD, confidence=0.85
+2026-03-12 10:01:57,168 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:01:57,169 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=20.03
+2026-03-12 10:01:57,172 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:01:57,172 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:02:10,051 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:02:10,052 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=20.89
+2026-03-12 10:02:10,055 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:02:10,056 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:02:10,056 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 10:02:25,495 - INFO - Running smc_quant analysis for XAUUSD...
+2026-03-12 10:02:25,499 - INFO - SMC Quant API response status: completed
+2026-03-12 10:02:25,554 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.65, entry=None, sl=None, tp=None
+2026-03-12 10:02:25,554 - INFO -   Reversal check result: signal=HOLD, confidence=0.65
+2026-03-12 10:02:48,432 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:02:48,433 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=12.51
+2026-03-12 10:02:48,436 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:02:48,436 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:02:48,437 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 10:02:48,438 - INFO - SMC Quant API response status: completed
+2026-03-12 10:02:48,484 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 10:02:48,485 - INFO - XAUUSD: HOLD (confidence: 0.85)
+2026-03-12 10:03:11,294 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:03:11,294 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=14.29
+2026-03-12 10:03:11,299 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:03:11,300 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:03:11,366 - INFO - Breakout Quant API response status: success
+2026-03-12 10:03:11,367 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=1, squeeze_strength=73.9%, structure_bias=bearish, breakout_ready=True
+2026-03-12 10:03:11,420 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.65, entry=None, sl=None, tp=None
+2026-03-12 10:03:11,421 - INFO -   Reversal check result: signal=HOLD, confidence=0.65
+2026-03-12 10:03:25,857 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:03:25,857 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=11.40
+2026-03-12 10:03:25,862 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:03:25,862 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:03:25,863 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 10:03:45,597 - INFO - SMC Quant API response status: completed
+2026-03-12 10:03:45,645 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 10:03:45,645 - INFO -   Reversal check result: signal=HOLD, confidence=0.85
+2026-03-12 10:04:11,317 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:04:11,317 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=17.45
+2026-03-12 10:04:11,320 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:04:11,321 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:04:11,428 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:04:11,428 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=17.36
+2026-03-12 10:04:11,431 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:04:11,432 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:04:11,432 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 10:04:26,692 - INFO - Breakout Quant API response status: success
+2026-03-12 10:04:26,693 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=1, squeeze_strength=73.3%, structure_bias=bearish, breakout_ready=True
+2026-03-12 10:04:26,745 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 10:04:26,746 - INFO -   Reversal check result: signal=HOLD, confidence=0.85
+2026-03-12 10:04:45,671 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:04:45,671 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=16.47
+2026-03-12 10:04:45,675 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:04:45,675 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:04:45,676 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 10:05:02,716 - INFO - SMC Quant API response status: completed
+2026-03-12 10:05:02,771 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 10:05:02,771 - INFO -   Reversal check result: signal=HOLD, confidence=0.85
+2026-03-12 10:05:11,335 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:05:11,336 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=18.12
+2026-03-12 10:05:11,339 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:05:11,339 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:05:26,761 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:05:26,761 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=15.21
+2026-03-12 10:05:26,764 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:05:26,765 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:05:26,765 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 10:05:39,488 - INFO - Breakout Quant API response status: success
+2026-03-12 10:05:39,489 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=1, squeeze_strength=73.3%, structure_bias=bearish, breakout_ready=True
+2026-03-12 10:05:39,536 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 10:05:39,536 - INFO -   Reversal check result: signal=HOLD, confidence=0.85
+2026-03-12 10:06:02,782 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:06:02,783 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=14.93
+2026-03-12 10:06:02,786 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:06:02,787 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:06:02,787 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 10:06:30,198 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:06:30,199 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=15.57
+2026-03-12 10:06:30,202 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:06:30,202 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:06:30,364 - INFO - SMC Quant API response status: completed
+2026-03-12 10:06:30,421 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 10:06:30,421 - INFO -   Reversal check result: signal=HOLD, confidence=0.85
+2026-03-12 10:06:39,564 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:06:39,565 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=14.25
+2026-03-12 10:06:39,568 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:06:39,569 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:06:39,570 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 10:06:49,793 - INFO - Breakout Quant API response status: success
+2026-03-12 10:06:49,794 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=1, squeeze_strength=73.9%, structure_bias=bearish, breakout_ready=True
+2026-03-12 10:06:49,838 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 10:06:49,838 - INFO -   Reversal check result: signal=HOLD, confidence=0.85
+2026-03-12 10:07:30,209 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:07:30,209 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=22.62
+2026-03-12 10:07:30,212 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:07:30,213 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:07:30,287 - INFO - Running breakout_quant analysis for XAUUSD...
+2026-03-12 10:07:30,653 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:07:30,653 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=22.45
+2026-03-12 10:07:30,657 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:07:30,657 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:07:30,657 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 10:07:52,036 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:07:52,037 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=19.16
+2026-03-12 10:07:52,041 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:07:52,041 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:07:52,042 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 10:07:52,043 - INFO - Breakout Quant API response status: success
+2026-03-12 10:07:52,044 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=1, squeeze_strength=71.7%, structure_bias=bearish, breakout_ready=True
+2026-03-12 10:07:52,094 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 10:07:52,104 - INFO - XAUUSD: HOLD (confidence: 0.85)
+2026-03-12 10:08:11,285 - INFO - SMC Quant API response status: completed
+2026-03-12 10:08:11,334 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.65, entry=None, sl=None, tp=None
+2026-03-12 10:08:11,335 - INFO -   Reversal check result: signal=HOLD, confidence=0.65
+2026-03-12 10:08:24,783 - INFO - Breakout Quant API response status: success
+2026-03-12 10:08:24,783 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=1, squeeze_strength=72.2%, structure_bias=bearish, breakout_ready=True
+2026-03-12 10:08:24,827 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 10:08:24,827 - INFO -   Reversal check result: signal=HOLD, confidence=0.85
+2026-03-12 10:08:30,196 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:08:30,196 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=15.91
+2026-03-12 10:08:30,199 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:08:30,200 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:09:11,580 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:09:11,581 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=11.60
+2026-03-12 10:09:11,584 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:09:11,585 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:09:11,585 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 10:09:32,155 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:09:32,156 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=10.75
+2026-03-12 10:09:32,159 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:09:32,159 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:09:32,160 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 10:09:32,162 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:09:32,163 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=10.75
+2026-03-12 10:09:32,167 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:09:32,167 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:09:32,524 - INFO - SMC Quant API response status: completed
+2026-03-12 10:09:32,570 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 10:09:32,571 - INFO -   Reversal check result: signal=HOLD, confidence=0.85
+2026-03-12 10:09:49,988 - INFO - Breakout Quant API response status: success
+2026-03-12 10:09:49,988 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=1, squeeze_strength=73.9%, structure_bias=bearish, breakout_ready=True
+2026-03-12 10:09:50,038 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 10:09:50,039 - INFO -   Reversal check result: signal=HOLD, confidence=0.85
+2026-03-12 10:10:32,191 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:10:32,192 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=7.39
+2026-03-12 10:10:32,195 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:10:32,195 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:10:32,584 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:10:32,584 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=7.42
+2026-03-12 10:10:32,588 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:10:32,588 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:10:32,588 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 10:10:45,919 - INFO - SMC Quant API response status: completed
+2026-03-12 10:10:45,965 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 10:10:45,965 - INFO -   Reversal check result: signal=HOLD, confidence=0.85
+2026-03-12 10:10:50,049 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:10:50,049 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=6.73
+2026-03-12 10:10:50,052 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:10:50,053 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:10:50,053 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 10:11:05,556 - INFO - Breakout Quant API response status: success
+2026-03-12 10:11:05,556 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=1, squeeze_strength=74.4%, structure_bias=bearish, breakout_ready=True
+2026-03-12 10:11:05,601 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 10:11:05,602 - INFO -   Reversal check result: signal=HOLD, confidence=0.85
+2026-03-12 10:11:32,200 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:11:32,201 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=8.54
+2026-03-12 10:11:32,204 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:11:32,204 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:11:45,985 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:11:45,985 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=9.55
+2026-03-12 10:11:45,988 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:11:45,989 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:11:45,989 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 10:11:59,235 - INFO - SMC Quant API response status: completed
+2026-03-12 10:11:59,282 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 10:11:59,282 - INFO -   Reversal check result: signal=HOLD, confidence=0.85
+2026-03-12 10:12:05,642 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:12:05,643 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=5.51
+2026-03-12 10:12:05,645 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:12:05,646 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:12:05,646 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 10:12:21,410 - INFO - Breakout Quant API response status: success
+2026-03-12 10:12:21,411 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=1, squeeze_strength=75.0%, structure_bias=bearish, breakout_ready=True
+2026-03-12 10:12:21,458 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.65, entry=None, sl=None, tp=None
+2026-03-12 10:12:21,459 - INFO -   Reversal check result: signal=HOLD, confidence=0.65
+2026-03-12 10:12:32,211 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:12:32,211 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=3.31
+2026-03-12 10:12:32,214 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:12:32,214 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:12:59,313 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:12:59,314 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=3.61
+2026-03-12 10:12:59,316 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:12:59,317 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:12:59,317 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 10:13:11,526 - INFO - SMC Quant API response status: completed
+2026-03-12 10:13:11,573 - INFO - SMC Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 10:13:11,574 - INFO -   Reversal check result: signal=HOLD, confidence=0.85
+2026-03-12 10:13:21,485 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:13:21,485 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=4.00
+2026-03-12 10:13:21,488 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:13:21,489 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:13:21,489 - INFO -   Running reversal check analysis for #1589710 XAUUSD...
+2026-03-12 10:13:40,904 - INFO - Position check: 1 total open, 1 managed (XAUUSD)
+2026-03-12 10:13:40,905 - INFO - Managing position #1589710 XAUUSD SELL: entry=5143.24, current=0, sl=5143.24, tp=5077.0, profit=4.13
+2026-03-12 10:13:40,908 - INFO -   Breakeven check: pnl 100.00% >= threshold 1.0%
+2026-03-12 10:13:40,908 - INFO -   Breakeven SL=5143.24, eligible=True
+2026-03-12 10:13:41,276 - INFO - Breakout Quant API response status: success
+2026-03-12 10:13:41,276 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=1, squeeze_strength=75.0%, structure_bias=bearish, breakout_ready=True
+2026-03-12 10:13:41,319 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-12 10:13:41,320 - INFO -   Reversal check result: signal=HOLD, confidence=0.85
+2026-03-12 10:13:57,066 - INFO - Quant automation stopped
+2026-03-12 10:13:57,066 - INFO - Quant automation stopped
+2026-03-12 10:13:57,067 - INFO - Quant automation stopped

@@ -9,6 +9,7 @@ from .analysts.social_media_analyst import create_social_media_analyst
 from .analysts.quant_analyst import create_quant_analyst, get_quant_decision_for_modal
 from .analysts.smc_quant import create_smc_quant, get_smc_quant_decision_for_modal, analyze_smc_for_quant
 from .analysts.breakout_quant import create_breakout_quant, get_breakout_decision_for_modal, analyze_consolidation
+from .analysts.range_quant import create_range_quant, get_range_quant_decision_for_modal, analyze_range, analyze_smc_for_range
 
 from .researchers.bear_researcher import create_bear_researcher
 from .researchers.bull_researcher import create_bull_researcher
@@ -49,6 +50,10 @@ __all__ = [
     "create_breakout_quant",
     "get_breakout_decision_for_modal",
     "analyze_consolidation",
+    "create_range_quant",
+    "get_range_quant_decision_for_modal",
+    "analyze_range",
+    "analyze_smc_for_range",
     "create_trader",
     "create_position_manager_agent",
     "PositionManagerDecision",

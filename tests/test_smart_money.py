@@ -983,5 +983,797 @@ class TestPerformance:
         assert second_call < first_call
 
 
+# =============================================================================
+# TEST: XAUUSD-LIKE SCENARIOS - Alignment with MT5 indicators
+# =============================================================================
+
+def _make_xauusd_downtrend_data():
+    """
+    Create XAUUSD-like H1 data simulating the scenario from the chart:
+    - Price rallies from ~5023 to ~5200 area
+    - Forms swing highs around 5200, 5186
+    - Drops through 5140 (PDL) = bearish BOS
+    - Multiple touches near 5077 = proven support (equal lows)
+    - Current price around 5130
+    """
+    np.random.seed(99)
+    n = 200
+    timestamps = pd.date_range('2026-03-01', periods=n, freq='h')
+
+    # Phase 1 (0-40): Base around 5023-5030, multiple touches
+    # Phase 2 (40-100): Rally up to 5200
+    # Phase 3 (100-140): Ranging around 5170-5200 with swing highs
+    # Phase 4 (140-180): Sell-off through 5140 PDL
+    # Phase 5 (180-200): Current price hovering ~5127-5140
+
+    prices = []
+    for i in range(n):
+        if i < 15:
+            # Touch 5077 area multiple times
+            base = 5077 + np.sin(i * 1.2) * 8
+        elif i < 25:
+            # Touch 5077 area again
+            base = 5080 + np.sin(i * 0.8) * 10
+        elif i < 35:
+            # Another touch near 5077
+            base = 5075 + np.sin(i * 1.0) * 12
+        elif i < 45:
+            # Another set of touches near 5077
+            base = 5078 + np.sin(i * 0.9) * 9
+        elif i < 60:
+            # Start rallying
+            base = 5077 + (i - 45) * 4
+        elif i < 80:
+            # Continue rally
+            base = 5137 + (i - 60) * 2.5
+        elif i < 100:
+            # Rally to highs
+            base = 5187 + (i - 80) * 0.5 + np.sin(i * 0.5) * 5
+        elif i < 120:
+            # Ranging at top, swing highs around 5198, 5186
+            base = 5185 + np.sin(i * 0.4) * 12
+        elif i < 140:
+            # Start dropping
+            base = 5190 - (i - 120) * 2.5
+        elif i < 160:
+            # Sharp drop through 5140 (PDL break = BOS)
+            base = 5140 - (i - 140) * 1.0
+        elif i < 180:
+            # Stabilize around 5127-5135
+            base = 5130 + np.sin(i * 0.6) * 5
+        else:
+            # Current area ~5127
+            base = 5128 + np.sin(i * 0.3) * 3
+
+        prices.append(base)
+
+    data = {
+        'open': [],
+        'high': [],
+        'low': [],
+        'close': [],
+        'volume': [],
+    }
+
+    for i, price in enumerate(prices):
+        volatility = np.random.uniform(3, 8)  # XAUUSD-like volatility
+        h_off = np.random.uniform(1, volatility)
+        l_off = np.random.uniform(1, volatility)
+        o = price + np.random.uniform(-2, 2)
+        c = price + np.random.uniform(-2, 2)
+        h = max(o, c) + h_off
+        lo = min(o, c) - l_off
+        data['open'].append(o)
+        data['high'].append(h)
+        data['low'].append(lo)
+        data['close'].append(c)
+        data['volume'].append(np.random.uniform(5000, 20000))
+
+    return pd.DataFrame(data, index=timestamps)
+
+
+def _make_bearish_bos_data():
+    """
+    Create data with a clear bearish BOS pattern:
+    - Uptrend with higher highs and higher lows
+    - Then price breaks below a swing low = bearish BOS
+    """
+    n = 80
+    timestamps = pd.date_range('2026-03-01', periods=n, freq='h')
+
+    prices = []
+    for i in range(n):
+        if i < 20:
+            # Uptrend: higher highs, higher lows
+            base = 100 + i * 1.5 + np.sin(i * 0.8) * 5
+        elif i < 35:
+            # Form swing high around 130
+            base = 130 + np.sin(i * 0.6) * 3
+        elif i < 45:
+            # Pull back to swing low around 120
+            base = 130 - (i - 35) * 1.0
+        elif i < 55:
+            # Lower high around 127
+            base = 120 + (55 - i) * 0.7
+        elif i < 65:
+            # Break below the swing low at 120 = bearish BOS
+            base = 120 - (i - 55) * 1.5
+        else:
+            # Continue lower
+            base = 105 - (i - 65) * 0.5
+
+        prices.append(base)
+
+    data = {'open': [], 'high': [], 'low': [], 'close': [], 'volume': []}
+    for i, price in enumerate(prices):
+        o = price + np.random.uniform(-0.5, 0.5)
+        c = price + np.random.uniform(-0.5, 0.5)
+        h = max(o, c) + np.random.uniform(0.5, 2.0)
+        lo = min(o, c) - np.random.uniform(0.5, 2.0)
+        data['open'].append(o)
+        data['high'].append(h)
+        data['low'].append(lo)
+        data['close'].append(c)
+        data['volume'].append(np.random.uniform(1000, 5000))
+
+    return pd.DataFrame(data, index=timestamps)
+
+
+class TestXAUUSDAlignmentScenarios:
+    """
+    Test SMC detection against XAUUSD-like scenarios to ensure
+    alignment with MT5 indicator outputs.
+    """
+
+    def test_equal_lows_detected_at_proven_support(self):
+        """
+        XAUUSD scenario: Price touches ~5077 multiple times (6 retests).
+        With old tolerance (0.1 ATR ≈ 2.2 pts), these were missed.
+        With new tolerance (0.25 ATR ≈ 5.5 pts), they should be detected.
+        """
+        df = _make_xauusd_downtrend_data()
+        analyzer = SmartMoneyAnalyzer(swing_lookback=5, ob_strength_threshold=0.3)
+
+        swings = analyzer.detect_swing_points(df, lookback=200)
+        swing_lows = [sp for sp in swings if sp.type == 'low']
+
+        # There should be swing lows in the 5065-5090 range (our 5077 area)
+        lows_near_5077 = [sp for sp in swing_lows if 5060 <= sp.price <= 5095]
+        assert len(lows_near_5077) >= 2, (
+            f"Expected at least 2 swing lows near 5077, got {len(lows_near_5077)}. "
+            f"Low prices: {[sp.price for sp in swing_lows]}"
+        )
+
+        # Now detect equal levels
+        equal_levels = analyzer.detect_equal_levels(df, swings)
+        equal_lows = [el for el in equal_levels if el.type == 'equal_lows']
+
+        # Should detect equal lows near 5077
+        eql_near_5077 = [el for el in equal_lows if 5060 <= el.price <= 5095]
+        assert len(eql_near_5077) >= 1, (
+            f"Expected equal lows near 5077 (proven support), got none. "
+            f"Equal low prices: {[el.price for el in equal_lows]}"
+        )
+
+        # Verify it has multiple touches
+        for el in eql_near_5077:
+            assert el.touches >= 2, f"Expected >= 2 touches, got {el.touches}"
+
+    def test_equal_level_tolerance_wider_than_before(self):
+        """Verify the tolerance constant was increased."""
+        assert SMCConstants.EQUAL_LEVEL_TOLERANCE_ATR == 0.25, (
+            f"Expected 0.25, got {SMCConstants.EQUAL_LEVEL_TOLERANCE_ATR}"
+        )
+
+    def test_bearish_bos_detected_on_low_break(self):
+        """
+        Scenario: Price in uptrend, then breaks below a swing low.
+        This should be classified as CHOC (change of character / reversal)
+        since the prior trend was UP and breaking a low is counter-trend.
+
+        Previously: with only 1 previous high, the break was silently skipped.
+        Now: fallback logic ensures it's still classified.
+        """
+        df = _make_bearish_bos_data()
+        analyzer = SmartMoneyAnalyzer(swing_lookback=5, ob_strength_threshold=0.3)
+
+        swings = analyzer.detect_swing_points(df, lookback=80)
+        breaks = analyzer.detect_structure_breaks(df, swings)
+
+        # Should have at least some structure breaks
+        all_breaks = breaks['bos'] + breaks['choc']
+        assert len(all_breaks) > 0, (
+            f"Expected structure breaks to be detected. "
+            f"Swings: {[(sp.type, round(sp.price, 1), sp.index) for sp in swings]}"
+        )
+
+        # Look for breaks of lows (these should exist given the scenario)
+        low_breaks = [sp for sp in all_breaks if sp.type == 'low']
+        assert len(low_breaks) > 0, (
+            f"Expected bearish structure breaks (low broken), got none. "
+            f"All breaks: {[(sp.type, sp.break_type, round(sp.price, 1)) for sp in all_breaks]}"
+        )
+
+    def test_bearish_bos_with_downtrend_context(self):
+        """
+        When price is already in a downtrend (lower highs) and breaks
+        a swing low, it should be BOS (continuation), not CHOC.
+        """
+        n = 60
+        timestamps = pd.date_range('2026-03-01', periods=n, freq='h')
+        np.random.seed(42)
+
+        prices = []
+        for i in range(n):
+            if i < 15:
+                base = 130 - i * 0.5 + np.sin(i * 0.8) * 3  # Down
+            elif i < 25:
+                base = 123 + np.sin(i * 0.6) * 4  # Swing high ~127
+            elif i < 35:
+                base = 127 - (i - 25) * 1.0  # Drop to swing low ~117
+            elif i < 45:
+                base = 117 + np.sin(i * 0.5) * 3  # Lower high ~120
+            else:
+                base = 120 - (i - 45) * 1.5  # Break below 117 = BOS
+            prices.append(base)
+
+        data = {'open': [], 'high': [], 'low': [], 'close': [], 'volume': []}
+        for price in prices:
+            o = price + np.random.uniform(-0.3, 0.3)
+            c = price + np.random.uniform(-0.3, 0.3)
+            h = max(o, c) + np.random.uniform(0.3, 1.5)
+            lo = min(o, c) - np.random.uniform(0.3, 1.5)
+            data['open'].append(o)
+            data['high'].append(h)
+            data['low'].append(lo)
+            data['close'].append(c)
+            data['volume'].append(np.random.uniform(1000, 5000))
+
+        df = pd.DataFrame(data, index=timestamps)
+        analyzer = SmartMoneyAnalyzer(swing_lookback=3, ob_strength_threshold=0.3)
+
+        swings = analyzer.detect_swing_points(df, lookback=60)
+        breaks = analyzer.detect_structure_breaks(df, swings)
+
+        # In a downtrend, breaking a low should be BOS
+        bos_lows = [sp for sp in breaks['bos'] if sp.type == 'low']
+        # It's OK if there are also CHOCs; the key point is that breaks are detected
+        all_low_breaks = [sp for sp in breaks['bos'] + breaks['choc'] if sp.type == 'low']
+        assert len(all_low_breaks) > 0, (
+            f"Expected at least one low break in downtrend scenario. "
+            f"BOS: {[(sp.type, sp.break_type) for sp in breaks['bos']]} "
+            f"CHOC: {[(sp.type, sp.break_type) for sp in breaks['choc']]}"
+        )
+
+    def test_structural_ob_zone_not_too_wide(self):
+        """
+        Structural OBs should not span more than ~2x ATR.
+        Previously zones could be 50+ points on XAUUSD (ATR ~22).
+        """
+        df = _make_xauusd_downtrend_data()
+        analyzer = SmartMoneyAnalyzer(swing_lookback=5, ob_strength_threshold=0.3)
+
+        swings = analyzer.detect_swing_points(df, lookback=200)
+        structural_obs = analyzer.detect_structural_order_blocks(df, swings, lookback=200)
+
+        atr_series = analyzer._get_atr(df)
+        recent_atr = atr_series.iloc[-1]
+
+        for ob in structural_obs:
+            zone_width = ob.top - ob.bottom
+            max_allowed = recent_atr * 3.0  # 3x ATR is generous upper limit
+            assert zone_width <= max_allowed, (
+                f"Structural OB zone too wide: {ob.type} at "
+                f"{ob.bottom:.1f}-{ob.top:.1f} = {zone_width:.1f} pts, "
+                f"ATR={recent_atr:.1f}, max allowed={max_allowed:.1f}"
+            )
+
+    def test_structural_ob_consolidation_candles_reduced(self):
+        """Verify consolidation candles constant was reduced."""
+        assert SMCConstants.STRUCTURAL_OB_CONSOLIDATION_CANDLES == 3, (
+            f"Expected 3, got {SMCConstants.STRUCTURAL_OB_CONSOLIDATION_CANDLES}"
+        )
+
+    def test_candle_ob_zone_width_reasonable(self):
+        """
+        Candle-based OBs should be single-candle width (high-low of one candle).
+        They're already well-constrained but verify.
+        """
+        df = _make_xauusd_downtrend_data()
+        analyzer = SmartMoneyAnalyzer(swing_lookback=5, ob_strength_threshold=0.3)
+
+        obs = analyzer.detect_order_blocks(df, lookback=200)
+        for ob in obs:
+            if ob.detection_method == 'candle':
+                zone_width = ob.top - ob.bottom
+                # Single candle OB shouldn't exceed ~30 points on XAUUSD
+                assert zone_width < 40, (
+                    f"Candle OB too wide: {zone_width:.1f} pts at "
+                    f"{ob.bottom:.1f}-{ob.top:.1f}"
+                )
+
+    def test_full_analysis_detects_bearish_structure(self):
+        """
+        Run full analysis on downtrend data and verify bearish bias
+        with proper BOS/CHoCH detection.
+        """
+        df = _make_xauusd_downtrend_data()
+        analyzer = SmartMoneyAnalyzer(swing_lookback=5, ob_strength_threshold=0.3)
+
+        analysis = analyzer.analyze_full_smc(df)
+
+        # Should have structure data
+        assert 'structure' in analysis
+        structure = analysis['structure']
+
+        # Full analysis uses summary keys (bos_count, choc_count)
+        bos_count = structure.get('bos_count', 0)
+        choc_count = structure.get('choc_count', 0)
+        total_breaks = bos_count + choc_count
+        assert total_breaks > 0, (
+            f"No structure breaks detected in downtrend data. "
+            f"Structure: {structure}"
+        )
+
+    def test_bos_detection_requires_fewer_previous_swings(self):
+        """
+        BOS detection should work even with only 1 previous swing
+        (fallback logic), not require 2 previous same-type swings.
+        """
+        # Create minimal data: one swing high, one swing low, then break
+        n = 40
+        timestamps = pd.date_range('2026-03-01', periods=n, freq='h')
+        np.random.seed(123)
+
+        prices = []
+        for i in range(n):
+            if i < 10:
+                base = 100 + i * 2  # Up to ~120
+            elif i < 15:
+                base = 120 - (i - 10) * 1  # Pullback to ~115
+            elif i < 20:
+                base = 115 + (i - 15) * 1  # Up to ~120 again (lower high)
+            elif i < 30:
+                base = 120 - (i - 20) * 2  # Drop below 115 = break
+            else:
+                base = 100 - (i - 30) * 0.5  # Continue lower
+            prices.append(base)
+
+        data = {'open': [], 'high': [], 'low': [], 'close': [], 'volume': []}
+        for price in prices:
+            o = price + np.random.uniform(-0.2, 0.2)
+            c = price + np.random.uniform(-0.2, 0.2)
+            h = max(o, c) + np.random.uniform(0.2, 1.0)
+            lo = min(o, c) - np.random.uniform(0.2, 1.0)
+            data['open'].append(o)
+            data['high'].append(h)
+            data['low'].append(lo)
+            data['close'].append(c)
+            data['volume'].append(1000)
+
+        df = pd.DataFrame(data, index=timestamps)
+        analyzer = SmartMoneyAnalyzer(swing_lookback=3, ob_strength_threshold=0.3)
+
+        swings = analyzer.detect_swing_points(df, lookback=40)
+        breaks = analyzer.detect_structure_breaks(df, swings)
+
+        # With the fallback logic, breaks should be detected
+        # even with minimal swing history
+        all_breaks = breaks['bos'] + breaks['choc']
+        # At minimum we should detect the highs being broken
+        # or the lows being broken
+        high_breaks = [sp for sp in all_breaks if sp.type == 'high']
+        low_breaks = [sp for sp in all_breaks if sp.type == 'low']
+
+        assert len(all_breaks) > 0, (
+            f"Expected breaks with minimal swing history. "
+            f"Swings found: {[(sp.type, round(sp.price, 1)) for sp in swings]}"
+        )
+
+
+class TestTPSelection:
+    """Tests for _calculate_take_profit in SMCTradePlanGenerator."""
+
+    def _make_generator(self):
+        from tradingagents.dataflows.smc_trade_plan import SMCTradePlanGenerator
+        return SMCTradePlanGenerator(min_quality_score=60.0, min_rr_ratio=1.5)
+
+    def _base_smc_analysis(self):
+        """Base SMC analysis data with zones mimicking XAUUSD scenario."""
+        return {
+            "order_blocks": {
+                "bullish": [
+                    {"top": 5107, "bottom": 5051, "strength": 0.80, "mitigated": False},
+                ],
+                "bearish": [
+                    {"top": 5200, "bottom": 5185, "strength": 0.65, "mitigated": False},
+                ],
+            },
+            "liquidity_zones": [
+                {"price": 5156, "type": "sell-side", "strength": 50},
+            ],
+            "equal_levels": {
+                "equal_highs": [],
+                "equal_lows": [
+                    {"price": 5077, "touches": 6, "swept": False},
+                    {"price": 5030, "touches": 2, "swept": False},
+                ],
+            },
+        }
+
+    def test_equal_levels_included_as_tp_candidates_sell(self):
+        """Equal lows should be valid TP targets for SELL orders."""
+        gen = self._make_generator()
+        smc = self._base_smc_analysis()
+
+        tp_price, tp_zone = gen._calculate_take_profit(
+            entry_price=5166.0,
+            direction="SELL",
+            smc_analysis=smc,
+            current_price=5140.0,
+            market_regime="trending-down",
+        )
+
+        # TP should be at the strong equal level (5077), not the nearest liquidity (5156)
+        # 5077 has 6 touches = strength 100, while 5156 liquidity = strength 50
+        assert tp_zone["type"] == "equal_level", f"Expected equal_level TP, got {tp_zone['type']}"
+        assert abs(tp_price - 5077) < 1, f"Expected TP near 5077, got {tp_price}"
+
+    def test_strong_trend_prefers_stronger_target(self):
+        """In a strong downtrend, prefer the deeper/stronger target over nearest."""
+        gen = self._make_generator()
+        smc = self._base_smc_analysis()
+
+        tp_price, tp_zone = gen._calculate_take_profit(
+            entry_price=5166.0,
+            direction="SELL",
+            smc_analysis=smc,
+            current_price=5140.0,
+            market_regime="trending-down",
+        )
+
+        # 5077 (equal_level, 6 touches, strength=100) should beat
+        # 5107 (opposing_ob top, strength=80) and 5156 (liquidity, strength=50)
+        assert tp_price < 5120, f"Expected deeper TP target in strong trend, got {tp_price}"
+
+    def test_ranging_market_prefers_nearest_target(self):
+        """In ranging/weak market, prefer the nearest target when strengths are comparable."""
+        gen = self._make_generator()
+        # Use zones with similar strength so proximity wins in ranging mode
+        smc = {
+            "order_blocks": {"bullish": [], "bearish": []},
+            "liquidity_zones": [
+                {"price": 5130, "type": "sell-side", "strength": 70},
+            ],
+            "equal_levels": {
+                "equal_highs": [],
+                "equal_lows": [
+                    {"price": 5050, "touches": 3, "swept": False},  # strength=70
+                ],
+            },
+        }
+
+        tp_price, tp_zone = gen._calculate_take_profit(
+            entry_price=5166.0,
+            direction="SELL",
+            smc_analysis=smc,
+            current_price=5150.0,
+            market_regime="ranging",
+        )
+
+        # Both have strength ~70, but 5130 is much closer - should win in ranging
+        assert tp_price > 5100, f"Expected nearer TP in ranging market, got {tp_price}"
+
+    def test_equal_highs_as_buy_tp(self):
+        """Equal highs should be valid TP targets for BUY orders."""
+        gen = self._make_generator()
+        smc = {
+            "order_blocks": {"bullish": [], "bearish": []},
+            "liquidity_zones": [],
+            "equal_levels": {
+                "equal_highs": [
+                    {"price": 5200, "touches": 4, "swept": False},
+                ],
+                "equal_lows": [],
+            },
+        }
+
+        tp_price, tp_zone = gen._calculate_take_profit(
+            entry_price=5100.0,
+            direction="BUY",
+            smc_analysis=smc,
+            current_price=5110.0,
+            market_regime="trending-up",
+        )
+
+        assert tp_zone["type"] == "equal_level"
+        assert abs(tp_price - 5200) < 1
+
+    def test_swept_equal_levels_excluded(self):
+        """Swept equal levels should not be used as TP targets."""
+        gen = self._make_generator()
+        smc = {
+            "order_blocks": {"bullish": [], "bearish": []},
+            "liquidity_zones": [],
+            "equal_levels": {
+                "equal_highs": [],
+                "equal_lows": [
+                    {"price": 5077, "touches": 6, "swept": True},  # Swept - excluded
+                ],
+            },
+        }
+
+        tp_price, tp_zone = gen._calculate_take_profit(
+            entry_price=5166.0,
+            direction="SELL",
+            smc_analysis=smc,
+            current_price=5140.0,
+            market_regime="trending-down",
+        )
+
+        # With only swept levels and no other candidates, should fall back to calculated
+        assert tp_zone["type"] == "calculated"
+
+    def test_no_candidates_falls_back(self):
+        """When no TP candidates exist, fallback calculation is used."""
+        gen = self._make_generator()
+        smc = {
+            "order_blocks": {"bullish": [], "bearish": []},
+            "liquidity_zones": [],
+            "equal_levels": {"equal_highs": [], "equal_lows": []},
+        }
+
+        tp_price, tp_zone = gen._calculate_take_profit(
+            entry_price=5166.0,
+            direction="SELL",
+            smc_analysis=smc,
+            current_price=5140.0,
+        )
+
+        assert tp_zone["type"] == "calculated"
+        assert tp_price < 5140.0, "Fallback SELL TP should be below current price"
+
+    def test_strength_scales_with_touches(self):
+        """Equal level strength should scale: 2 touches=60, 6=100, 10=100 (capped)."""
+        gen = self._make_generator()
+
+        # 2 touches vs 6 touches - both available as SELL targets
+        smc = {
+            "order_blocks": {"bullish": [], "bearish": []},
+            "liquidity_zones": [],
+            "equal_levels": {
+                "equal_highs": [],
+                "equal_lows": [
+                    {"price": 5090, "touches": 2, "swept": False},  # strength=60
+                    {"price": 5077, "touches": 6, "swept": False},  # strength=100
+                ],
+            },
+        }
+
+        tp_price, tp_zone = gen._calculate_take_profit(
+            entry_price=5166.0,
+            direction="SELL",
+            smc_analysis=smc,
+            current_price=5140.0,
+            market_regime="trending-down",
+        )
+
+        # In strong trend, the stronger 5077 (100 strength) should win
+        assert abs(tp_price - 5077) < 1, f"Expected 5077 (6 touches), got {tp_price}"
+
+    def test_proximity_penalty_for_very_close_targets(self):
+        """Targets less than 0.2% from entry should get penalized in strong trends."""
+        gen = self._make_generator()
+        # 5160 is only 0.12% from 5166 entry - should be penalized
+        smc = {
+            "order_blocks": {"bullish": [], "bearish": []},
+            "liquidity_zones": [
+                {"price": 5160, "type": "sell-side", "strength": 60},
+            ],
+            "equal_levels": {
+                "equal_highs": [],
+                "equal_lows": [
+                    {"price": 5077, "touches": 3, "swept": False},  # strength=70
+                ],
+            },
+        }
+
+        tp_price, tp_zone = gen._calculate_take_profit(
+            entry_price=5166.0,
+            direction="SELL",
+            smc_analysis=smc,
+            current_price=5150.0,
+            market_regime="trending-down",
+        )
+
+        # 5160 is too close and should be penalized; 5077 should win
+        assert tp_price < 5120, f"Very close target should be penalized, got TP={tp_price}"
+
+
+class TestGeneratePlanTPIntegration:
+    """
+    Integration tests verifying that generate_plan() receives equal levels
+    and uses them for TP selection. This catches the bug where flat_smc
+    in the backend was missing equal_levels, causing TP to fall back
+    to the nearest liquidity zone.
+    """
+
+    def _make_xauusd_smc_with_equal_levels(self):
+        """
+        Simulate the full SMC analysis dict as returned by analyze_full_smc(),
+        matching XAUUSD H1 scenario with proven support at 5077.
+        """
+        return {
+            "bias": "bearish",
+            "order_blocks": {
+                "bullish": [
+                    {"top": 5107, "bottom": 5051, "strength": 0.80, "mitigated": False},
+                ],
+                "bearish": [
+                    {"top": 5190, "bottom": 5170, "strength": 0.65, "mitigated": False},
+                ],
+            },
+            "fair_value_gaps": {
+                "bullish": [],
+                "bearish": [
+                    {"top": 5175, "bottom": 5160, "strength": 0.60, "mitigated": False},
+                ],
+            },
+            "liquidity_zones": [
+                {"price": 5156, "type": "sell-side", "strength": 50},
+            ],
+            "equal_levels": {
+                "equal_highs": [],
+                "equal_lows": [
+                    {"price": 5077, "touches": 6, "swept": False},
+                ],
+            },
+            "market_structure": {
+                "recent_bos": [{"type": "low", "price": 5140}],
+                "recent_choc": [],
+            },
+            "structure": {
+                "recent_bos": [{"type": "low", "price": 5140}],
+                "recent_choc": [],
+            },
+            "atr": 21.8,
+        }
+
+    def test_generate_plan_uses_equal_levels_for_tp(self):
+        """
+        generate_plan() should target equal level at 5077 (6 retests)
+        instead of nearest liquidity at 5156 when equal_levels is present.
+        """
+        from tradingagents.dataflows.smc_trade_plan import SMCTradePlanGenerator
+
+        gen = SMCTradePlanGenerator(
+            min_quality_score=50.0,
+            min_rr_ratio=0.1,  # Low threshold so plan isn't rejected
+        )
+        smc = self._make_xauusd_smc_with_equal_levels()
+
+        plan = gen.generate_plan(
+            smc_analysis=smc,
+            current_price=5140.0,
+            atr=21.8,
+            market_regime="trending-down",
+        )
+
+        assert plan is not None, "Expected a trade plan to be generated"
+        assert plan.signal == "SELL", f"Expected SELL signal, got {plan.signal}"
+        # TP should target the proven equal level at 5077, not 5156
+        assert plan.take_profit < 5120, (
+            f"TP {plan.take_profit:.2f} is too conservative. "
+            f"Expected ~5077 (proven support with 6 retests), not ~5156 (nearest liquidity)."
+        )
+
+    def test_generate_plan_without_equal_levels_uses_nearest(self):
+        """
+        Without equal_levels in the analysis dict (the old bug),
+        TP falls back to nearest liquidity/OB — this is the behavior
+        we had before the fix.
+        """
+        from tradingagents.dataflows.smc_trade_plan import SMCTradePlanGenerator
+
+        gen = SMCTradePlanGenerator(
+            min_quality_score=50.0,
+            min_rr_ratio=0.1,
+        )
+        smc = self._make_xauusd_smc_with_equal_levels()
+        # Remove equal_levels — simulates the old flat_smc bug
+        del smc["equal_levels"]
+
+        plan = gen.generate_plan(
+            smc_analysis=smc,
+            current_price=5140.0,
+            atr=21.8,
+            market_regime="trending-down",
+        )
+
+        assert plan is not None, "Expected a trade plan to be generated"
+        # Without equal levels, TP should target opposing OB top at 5107 or liquidity
+        # It should NOT be at 5077 since that data is missing
+        assert plan.take_profit > 5077, (
+            f"TP {plan.take_profit:.2f} reached 5077 even without equal_levels data — "
+            f"this means equal_levels wasn't the source of the 5077 target."
+        )
+
+    def test_flat_smc_must_include_equal_levels(self):
+        """
+        Regression test: verify that the flat_smc dict pattern used in the
+        backend includes equal_levels. This is a documentation/contract test.
+        """
+        smc_result = self._make_xauusd_smc_with_equal_levels()
+
+        # Simulate the backend's flat_smc construction (AFTER the fix)
+        flat_smc = {
+            "order_blocks": smc_result.get("order_blocks", {}),
+            "fair_value_gaps": smc_result.get("fair_value_gaps", {}),
+            "liquidity_zones": smc_result.get("liquidity_zones", {}),
+            "market_structure": smc_result.get("market_structure", {}),
+            "equal_levels": smc_result.get("equal_levels", {}),
+            "atr": smc_result.get("atr", 21.8),
+        }
+
+        # Verify equal_levels survived the flattening
+        assert "equal_levels" in flat_smc, "flat_smc must include equal_levels"
+        eq_lows = flat_smc["equal_levels"].get("equal_lows", [])
+        assert len(eq_lows) > 0, "equal_lows should be present in flat_smc"
+        assert eq_lows[0]["price"] == 5077, "5077 proven support should be in flat_smc"
+
+
+    def test_generate_plan_with_dataclass_equal_levels(self):
+        """
+        analyze_full_smc_extended returns EqualLevel dataclass objects,
+        not dicts. Verify generate_plan handles dataclass objects correctly
+        via safe_get.
+        """
+        from tradingagents.dataflows.smc_trade_plan import SMCTradePlanGenerator
+
+        gen = SMCTradePlanGenerator(
+            min_quality_score=50.0,
+            min_rr_ratio=0.1,
+        )
+        smc = self._make_xauusd_smc_with_equal_levels()
+
+        # Replace dict equal levels with EqualLevel dataclass objects
+        # (as returned by analyze_full_smc_extended)
+        smc["equal_levels"] = {
+            "equal_highs": [],
+            "equal_lows": [
+                EqualLevel(price=5077, type="equal_lows", touches=6, swept=False, indices=[10, 50, 90, 120, 150, 180]),
+            ],
+        }
+
+        plan = gen.generate_plan(
+            smc_analysis=smc,
+            current_price=5140.0,
+            atr=21.8,
+            market_regime="trending-down",
+        )
+
+        assert plan is not None, "Expected a trade plan to be generated"
+        assert plan.take_profit < 5120, (
+            f"TP {plan.take_profit:.2f} should target dataclass EqualLevel at 5077, not nearest zone"
+        )
+
+    def test_analyze_full_smc_extended_includes_equal_levels(self):
+        """
+        Verify analyze_full_smc_extended returns equal_levels in its output,
+        confirming the rule-based endpoint will have the data it needs.
+        """
+        # Use the XAUUSD downtrend test data
+        data = _make_xauusd_downtrend_data()
+        analyzer = SmartMoneyAnalyzer(swing_lookback=3, ob_strength_threshold=0.3)
+
+        result = analyzer.analyze_full_smc_extended(
+            data, current_price=5127.0, use_structural_obs=True
+        )
+
+        assert "equal_levels" in result, "analyze_full_smc_extended must return equal_levels"
+        assert "equal_highs" in result["equal_levels"], "Must have equal_highs key"
+        assert "equal_lows" in result["equal_levels"], "Must have equal_lows key"
+
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

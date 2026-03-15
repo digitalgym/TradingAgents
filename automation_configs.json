@@ -22,6 +22,7 @@
     "logs_dir": "logs/quant_automation"
   },
   "volume_quant_xauusd": {
+    "instance_name": "volume_quant_xauusd",
     "pipeline": "volume_profile",
     "symbols": [
       "XAUUSD"
@@ -32,8 +33,7 @@
     "auto_execute": true,
     "min_confidence": 0.65,
     "max_positions_per_symbol": 1,
-    "max_total_positions": 3,
-    "enable_trailing_stop": true,
+    "enable_trailing_stop": false,
     "trailing_stop_atr_multiplier": 1.5,
     "move_to_breakeven_pct": 1.0,
     "max_risk_per_trade_pct": 1.0,
@@ -44,28 +44,31 @@
     "logs_dir": "logs/quant_automation"
   },
   "new_smc_quant": {
+    "instance_name": "new_smc_quant",
     "pipeline": "smc_quant",
     "symbols": [
       "XAUUSD"
     ],
-    "timeframe": "H1",
-    "analysis_interval_seconds": 900,
+    "timeframe": "D1",
+    "analysis_interval_seconds": 3600,
     "position_check_interval_seconds": 60,
     "auto_execute": true,
     "min_confidence": 0.65,
     "max_positions_per_symbol": 1,
-    "max_total_positions": 3,
-    "enable_trailing_stop": true,
+    "enable_trailing_stop": false,
     "trailing_stop_atr_multiplier": 1.5,
     "move_to_breakeven_pct": 1.0,
     "max_risk_per_trade_pct": 1.0,
     "default_lot_size": 0.01,
     "daily_loss_limit_pct": 3.0,
     "max_consecutive_losses": 3,
+    "assumption_review_interval_seconds": 3600,
+    "assumption_review_auto_apply": false,
     "state_file": "quant_automation_state_new_smc_quant.json",
     "logs_dir": "logs/quant_automation"
   },
   "xauusd_breakout": {
+    "instance_name": "xauusd_breakout",
     "pipeline": "breakout_quant",
     "symbols": [
       "XAUUSD"
@@ -76,8 +79,7 @@
     "auto_execute": true,
     "min_confidence": 0.65,
     "max_positions_per_symbol": 1,
-    "max_total_positions": 3,
-    "enable_trailing_stop": true,
+    "enable_trailing_stop": false,
     "trailing_stop_atr_multiplier": 1.5,
     "move_to_breakeven_pct": 1.0,
     "max_risk_per_trade_pct": 1.0,
@@ -88,7 +90,7 @@
     "logs_dir": "logs/quant_automation"
   },
   "generic_quant_xauusd": {
-    "pipeline": "quant",
+    "pipeline": "smc_quant_basic",
     "symbols": [
       "XAUUSD"
     ],
@@ -106,8 +108,173 @@
     "default_lot_size": 0.01,
     "daily_loss_limit_pct": 3.0,
     "max_consecutive_losses": 3,
-    "state_file": "quant_automation_state_smc_quant_xauusd.json",
-    "logs_dir": "logs/quant_automation",
-    "instance_name": "generic_quant_xauusd"
+    "state_file": "quant_automation_state_generic_quant_xauusd.json",
+    "logs_dir": "logs/quant_automation"
+  },
+  "xauusd_smc_quant_rules_based": {
+    "instance_name": "xauusd_smc_quant_rules_based",
+    "pipeline": "rule_based",
+    "symbols": [
+      "XAUUSD"
+    ],
+    "timeframe": "H1",
+    "analysis_interval_seconds": 900,
+    "position_check_interval_seconds": 60,
+    "auto_execute": true,
+    "min_confidence": 0.65,
+    "max_positions_per_symbol": 1,
+    "enable_trailing_stop": false,
+    "trailing_stop_atr_multiplier": 1.5,
+    "move_to_breakeven_pct": 1.0,
+    "max_risk_per_trade_pct": 1.0,
+    "default_lot_size": 0.01,
+    "daily_loss_limit_pct": 3.0,
+    "max_consecutive_losses": 3,
+    "state_file": "quant_automation_state_xauusd_smc_quant_rules_based.json",
+    "logs_dir": "logs/quant_automation"
+  },
+  "btc_smc_basic": {
+    "instance_name": "btc_smc_basic",
+    "pipeline": "rule_based",
+    "symbols": [
+      "BTCUSD"
+    ],
+    "timeframe": "H1",
+    "analysis_interval_seconds": 900,
+    "position_check_interval_seconds": 60,
+    "auto_execute": true,
+    "min_confidence": 0.65,
+    "max_positions_per_symbol": 1,
+    "enable_trailing_stop": false,
+    "trailing_stop_atr_multiplier": 1.5,
+    "move_to_breakeven_pct": 1.0,
+    "max_risk_per_trade_pct": 1.0,
+    "default_lot_size": 0.01,
+    "daily_loss_limit_pct": 3.0,
+    "max_consecutive_losses": 3,
+    "assumption_review_interval_seconds": 3600,
+    "assumption_review_auto_apply": false,
+    "state_file": "quant_automation_state_btc_smc_basic.json",
+    "logs_dir": "logs/quant_automation"
+  },
+  "btc_smc_lmm": {
+    "instance_name": "btc_smc_lmm",
+    "pipeline": "smc_quant_basic",
+    "symbols": [
+      "BTCUSD"
+    ],
+    "timeframe": "H1",
+    "analysis_interval_seconds": 900,
+    "position_check_interval_seconds": 60,
+    "auto_execute": true,
+    "min_confidence": 0.65,
+    "max_positions_per_symbol": 1,
+    "enable_trailing_stop": false,
+    "trailing_stop_atr_multiplier": 1.5,
+    "move_to_breakeven_pct": 1.0,
+    "max_risk_per_trade_pct": 1.0,
+    "default_lot_size": 0.01,
+    "daily_loss_limit_pct": 3.0,
+    "max_consecutive_losses": 3,
+    "assumption_review_interval_seconds": 3600,
+    "assumption_review_auto_apply": false,
+    "state_file": "quant_automation_state_btc_smc_lmm.json",
+    "logs_dir": "logs/quant_automation"
+  },
+  "range_quant_btcusd": {
+    "instance_name": "range_quant_btcusd",
+    "pipeline": "range_quant",
+    "symbols": [
+      "BTCUSD"
+    ],
+    "timeframe": "H4",
+    "analysis_interval_seconds": 180,
+    "position_check_interval_seconds": 60,
+    "auto_execute": false,
+    "min_confidence": 0.7,
+    "max_positions_per_symbol": 1,
+    "enable_trailing_stop": true,
+    "trailing_stop_atr_multiplier": 1.5,
+    "move_to_breakeven_pct": 1.0,
+    "max_risk_per_trade_pct": 1.0,
+    "default_lot_size": 0.01,
+    "daily_loss_limit_pct": 3.0,
+    "max_consecutive_losses": 3,
+    "assumption_review_interval_seconds": 3600,
+    "assumption_review_auto_apply": false,
+    "state_file": "quant_automation_state_range_quant_btcusd.json",
+    "logs_dir": "logs/quant_automation"
+  },
+  "smc_with_llm_btcusd": {
+    "instance_name": "smc_with_llm_btcusd",
+    "pipeline": "smc_quant",
+    "symbols": [
+      "BTCUSD"
+    ],
+    "timeframe": "D1",
+    "analysis_interval_seconds": 3600,
+    "position_check_interval_seconds": 60,
+    "auto_execute": false,
+    "min_confidence": 0.7,
+    "max_positions_per_symbol": 1,
+    "enable_trailing_stop": true,
+    "trailing_stop_atr_multiplier": 2.0,
+    "move_to_breakeven_pct": 1.0,
+    "max_risk_per_trade_pct": 1.0,
+    "default_lot_size": 0.01,
+    "daily_loss_limit_pct": 3.0,
+    "max_consecutive_losses": 3,
+    "assumption_review_interval_seconds": 3600,
+    "assumption_review_auto_apply": false,
+    "state_file": "quant_automation_state_smc_with_llm_btcusd.json",
+    "logs_dir": "logs/quant_automation"
+  },
+  "range_quant_xauusd": {
+    "instance_name": "range_quant_xauusd",
+    "pipeline": "range_quant",
+    "symbols": [
+      "XAUUSD"
+    ],
+    "timeframe": "D1",
+    "analysis_interval_seconds": 3600,
+    "position_check_interval_seconds": 60,
+    "auto_execute": false,
+    "min_confidence": 0.7,
+    "max_positions_per_symbol": 1,
+    "enable_trailing_stop": true,
+    "trailing_stop_atr_multiplier": 1.0,
+    "move_to_breakeven_pct": 1.0,
+    "max_risk_per_trade_pct": 1.0,
+    "default_lot_size": 0.01,
+    "daily_loss_limit_pct": 3.0,
+    "max_consecutive_losses": 3,
+    "assumption_review_interval_seconds": 3600,
+    "assumption_review_auto_apply": false,
+    "state_file": "quant_automation_state_range_quant_xauusd.json",
+    "logs_dir": "logs/quant_automation"
+  },
+  "smc_xagusd": {
+    "instance_name": "smc_xagusd",
+    "pipeline": "smc_quant",
+    "symbols": [
+      "XAUUSD"
+    ],
+    "timeframe": "D1",
+    "analysis_interval_seconds": 3600,
+    "position_check_interval_seconds": 60,
+    "auto_execute": false,
+    "min_confidence": 0.7,
+    "max_positions_per_symbol": 1,
+    "enable_trailing_stop": true,
+    "trailing_stop_atr_multiplier": 1.5,
+    "move_to_breakeven_pct": 1.0,
+    "max_risk_per_trade_pct": 1.0,
+    "default_lot_size": 0.01,
+    "daily_loss_limit_pct": 3.0,
+    "max_consecutive_losses": 3,
+    "assumption_review_interval_seconds": 3600,
+    "assumption_review_auto_apply": false,
+    "state_file": "quant_automation_state_smc_xagusd.json",
+    "logs_dir": "logs/quant_automation"
   }
 }

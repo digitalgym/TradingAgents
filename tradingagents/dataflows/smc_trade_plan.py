@@ -169,7 +169,7 @@ class SMCTradePlanGenerator:
         self,
         min_quality_score: float = 60.0,
         min_rr_ratio: float = 1.5,
-        sl_buffer_atr: float = 0.5,  # ATR multiplier for SL buffer
+        sl_buffer_atr: float = 1.0,  # ATR multiplier for SL buffer (minimum 1x ATR)
         entry_zone_percent: float = 0.5,  # Enter at 50% of zone by default
     ):
         """
@@ -228,12 +228,12 @@ class SMCTradePlanGenerator:
         )
 
         # Step 4: Calculate entry, SL, TP levels
-        entry_price = self._calculate_entry_price(entry_zone, trade_direction)
+        entry_price = self._calculate_entry_price(entry_zone, trade_direction, current_price)
         sl_price, sl_zone = self._calculate_stop_loss(
             entry_zone, trade_direction, atr, smc_analysis
         )
         tp_price, tp_zone = self._calculate_take_profit(
-            entry_price, trade_direction, smc_analysis, current_price
+            entry_price, trade_direction, smc_analysis, current_price, market_regime
         )
 
         # Step 5: Validate risk:reward
@@ -399,16 +399,25 @@ class SMCTradePlanGenerator:
         if mitigated:
             return False
 
-        # For BUY: zone should be below current price (we want price to come down to it)
-        # For SELL: zone should be above current price (we want price to come up to it)
-        zone_mid = (top + bottom) / 2
+        # Price must be inside or very close to the zone for a market-entry signal.
+        # We use 1% proximity threshold — beyond that, it would be a limit order setup
+        # which the automation doesn't support (it executes at market).
+        max_distance_pct = 0.01  # 1% of price
 
         if direction == "BUY":
-            # Zone should be at or below current price, within reasonable distance
-            return bottom <= current_price and (current_price - bottom) / current_price < 0.05
+            # Zone should be at or below current price
+            # Price can be inside zone or slightly above (already touched/bouncing)
+            if bottom > current_price:
+                return False  # Zone entirely above price — wrong side
+            distance = max(0, current_price - top)  # 0 if price inside zone
+            return distance / current_price < max_distance_pct
         else:
             # Zone should be at or above current price
-            return top >= current_price and (top - current_price) / current_price < 0.05
+            # Price can be inside zone or slightly below (already touched/rejecting)
+            if top < current_price:
+                return False  # Zone entirely below price — wrong side
+            distance = max(0, bottom - current_price)  # 0 if price inside zone
+            return distance / current_price < max_distance_pct
 
     def _score_entry_zone(
         self,
@@ -531,25 +540,28 @@ class SMCTradePlanGenerator:
         self,
         zone: Dict[str, Any],
         direction: str,
+        current_price: float = 0,
     ) -> float:
         """
-        Calculate entry price within the zone.
+        Calculate entry price for market execution.
 
-        For BUY: Enter at top of zone (or 50% if entry_zone_percent=0.5)
-        For SELL: Enter at bottom of zone (or 50% if entry_zone_percent=0.5)
+        Uses current market price when price is inside or near the zone,
+        since this is for market orders (not limit orders).
         """
         top = safe_get(zone, 'top', 0)
         bottom = safe_get(zone, 'bottom', 0)
-        zone_size = top - bottom
 
+        # If price is inside the zone, use current price (market entry)
+        if current_price and bottom <= current_price <= top:
+            return current_price
+
+        # Price is near but outside zone — use the nearest zone edge
         if direction == "BUY":
-            # Enter at the upper portion of the zone (price coming down into it)
-            entry = top - (zone_size * self.entry_zone_percent)
+            # Price is slightly above zone top, enter at market
+            return current_price if current_price else top
         else:
-            # Enter at the lower portion of the zone (price coming up into it)
-            entry = bottom + (zone_size * self.entry_zone_percent)
-
-        return entry
+            # Price is slightly below zone bottom, enter at market
+            return current_price if current_price else bottom
 
     def _calculate_stop_loss(
         self,
@@ -605,13 +617,15 @@ class SMCTradePlanGenerator:
         direction: str,
         smc_analysis: Dict[str, Any],
         current_price: float,
+        market_regime: Optional[str] = None,
     ) -> Tuple[float, Dict[str, Any]]:
         """
         Calculate take profit level.
 
         Rules:
-        - Target next liquidity zone
-        - Or target opposing order block
+        - Target next liquidity zone, opposing OB, or equal level (proven support/resistance)
+        - In strong trends, prefer stronger/deeper targets over nearest
+        - In weak/ranging markets, prefer nearest conservative target
         - Ensure minimum R:R ratio
         - IMPORTANT: For limit orders, TP must be BEYOND current price
           (above current for BUY, below current for SELL)
@@ -619,7 +633,6 @@ class SMCTradePlanGenerator:
         tp_candidates = []
 
         # For limit orders, we need TP beyond current price, not just beyond entry
-        # Use the max/min of entry and current to ensure valid TP placement
         min_tp_price = max(entry_price, current_price) if direction == "BUY" else 0
         max_tp_price = min(entry_price, current_price) if direction == "SELL" else float('inf')
 
@@ -627,16 +640,11 @@ class SMCTradePlanGenerator:
         liquidity_zones = smc_analysis.get("liquidity_zones", [])
         for lz in liquidity_zones:
             lz_price = safe_get(lz, 'price', 0)
-            lz_type = safe_get(lz, 'type', '')
             lz_strength = safe_get(lz, 'strength', 50)
 
-            # For BUY: TP must be above BOTH entry AND current price
             if direction == "BUY" and lz_price > min_tp_price:
-                # Buy-side liquidity above = target
                 tp_candidates.append((lz_price, lz_strength, "liquidity", lz))
-            # For SELL: TP must be below BOTH entry AND current price
             elif direction == "SELL" and lz_price < max_tp_price:
-                # Sell-side liquidity below = target
                 tp_candidates.append((lz_price, lz_strength, "liquidity", lz))
 
         # Look for opposing order blocks
@@ -648,33 +656,77 @@ class SMCTradePlanGenerator:
             ob_strength = safe_get(ob, 'strength', 0.5)
             ob_mid = (ob_top + ob_bottom) / 2
 
-            # For BUY: target bottom of bearish OB above current price
             if direction == "BUY" and ob_mid > min_tp_price:
                 tp_candidates.append((ob_bottom, ob_strength * 100, "opposing_ob", ob))
-            # For SELL: target top of bullish OB below current price
             elif direction == "SELL" and ob_mid < max_tp_price:
                 tp_candidates.append((ob_top, ob_strength * 100, "opposing_ob", ob))
 
-        # Sort by proximity and strength
-        if direction == "BUY":
-            tp_candidates.sort(key=lambda x: (x[0], -x[1]))  # Closest first, then strongest
-        else:
-            tp_candidates.sort(key=lambda x: (-x[0], -x[1]))  # Closest first (lowest for sell)
+        # Look for equal levels (proven support/resistance) as TP targets
+        equal_levels = smc_analysis.get("equal_levels", {})
+        eq_highs = equal_levels.get("equal_highs", []) if isinstance(equal_levels, dict) else []
+        eq_lows = equal_levels.get("equal_lows", []) if isinstance(equal_levels, dict) else []
 
-        if tp_candidates:
-            tp_price, strength, tp_type, zone = tp_candidates[0]
-            tp_zone = {"type": tp_type, "price": tp_price, "strength": strength}
+        if direction == "BUY":
+            # For BUY: target equal highs above (resistance / liquidity magnet)
+            for eq in eq_highs:
+                eq_price = safe_get(eq, 'price', 0)
+                eq_touches = safe_get(eq, 'touches', 2)
+                eq_swept = safe_get(eq, 'swept', False)
+                if eq_price > min_tp_price and not eq_swept:
+                    # Strength scales with touches: 2 touches = 60, 6 touches = 100
+                    eq_strength = min(40 + eq_touches * 10, 100)
+                    tp_candidates.append((eq_price, eq_strength, "equal_level", eq))
         else:
-            # Fallback: project TP beyond current price based on risk distance
-            # For limit orders, we want TP beyond current market price
+            # For SELL: target equal lows below (support / liquidity magnet)
+            for eq in eq_lows:
+                eq_price = safe_get(eq, 'price', 0)
+                eq_touches = safe_get(eq, 'touches', 2)
+                eq_swept = safe_get(eq, 'swept', False)
+                if eq_price < max_tp_price and not eq_swept:
+                    eq_strength = min(40 + eq_touches * 10, 100)
+                    tp_candidates.append((eq_price, eq_strength, "equal_level", eq))
+
+        if not tp_candidates:
+            # Fallback: project TP beyond current price
             risk_distance = abs(entry_price - current_price) if entry_price != current_price else current_price * 0.01
             if direction == "BUY":
-                # TP above current price, at least 2x the distance from entry to current
                 tp_price = current_price + (risk_distance * 2)
             else:
-                # TP below current price
                 tp_price = current_price - (risk_distance * 2)
-            tp_zone = {"type": "calculated", "price": tp_price, "reason": "no_target_found"}
+            return tp_price, {"type": "calculated", "price": tp_price, "reason": "no_target_found"}
+
+        # Determine trend strength to adjust TP selection strategy
+        # In strong trends: prefer stronger targets (even if farther)
+        # In weak/ranging: prefer nearest targets (conservative)
+        is_strong_trend = False
+        if market_regime:
+            regime_lower = market_regime.lower()
+            is_strong_trend = "trending" in regime_lower
+
+        # Score each candidate: balance between strength and proximity
+        # Normalize distance relative to entry price
+        for i, (price, strength, tp_type, zone) in enumerate(tp_candidates):
+            distance = abs(price - entry_price)
+            distance_pct = distance / entry_price * 100  # Distance as % of price
+
+            if is_strong_trend:
+                # Strong trend: weight strength heavily (70%), proximity less (30%)
+                # Penalize very close targets (< 0.2% away = likely noise)
+                proximity_penalty = 0 if distance_pct >= 0.2 else -30
+                score = strength * 0.7 + proximity_penalty
+            else:
+                # Ranging/weak: weight proximity heavily, strength as tiebreaker
+                # Closer = higher score (invert distance)
+                proximity_score = max(0, 100 - distance_pct * 20)  # 0% = 100, 5% = 0
+                score = proximity_score * 0.6 + strength * 0.4
+
+            tp_candidates[i] = (price, strength, tp_type, zone, score)
+
+        # Sort by score descending (highest score = best target)
+        tp_candidates.sort(key=lambda x: -x[4])
+
+        tp_price, strength, tp_type, zone, score = tp_candidates[0]
+        tp_zone = {"type": tp_type, "price": tp_price, "strength": strength}
 
         return tp_price, tp_zone
 

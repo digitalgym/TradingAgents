@@ -359,6 +359,7 @@ def store_decision(
         "was_correct": None,  # True if decision led to profit or avoided loss
         
         # Exit analysis (filled when closed)
+        "trailing_stop_atr_multiplier": None,  # LLM-suggested trailing stop distance as ATR multiple
         "exit_reason": None,  # "tp-hit", "sl-hit", "manual", "trailing-stop", "time-exit"
         "rr_planned": None,  # Planned risk-reward ratio
         "rr_realized": None,  # Actual risk-reward achieved

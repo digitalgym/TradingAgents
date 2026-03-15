@@ -19,8 +19,10 @@ import {
   RefreshCw,
   Target,
   Eye,
+  RotateCcw,
 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { TradeExecutionWizard } from "@/components/TradeExecutionWizard"
 import Link from "next/link"
 
 export default function Dashboard() {
@@ -35,20 +37,26 @@ export default function Dashboard() {
   const [pipelineFilter, setPipelineFilter] = useState<string>("all")
   const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [detailResult, setDetailResult] = useState<any>(null)
+  const [reentryOpen, setReentryOpen] = useState(false)
+  const [reentrySignal, setReentrySignal] = useState<any>(null)
 
   const pipelineLabels: Record<string, string> = {
-    quant: "Quant",
+    smc_quant_basic: "SMC Quant Basic",
     smc_quant: "SMC Quant",
     breakout_quant: "Breakout",
+    range_quant: "Range",
     volume_profile: "Volume Profile",
+    rule_based: "Rule-Based",
     multi_agent: "Multi-Agent",
   }
 
   const pipelineColors: Record<string, string> = {
-    quant: "text-purple-500",
+    smc_quant_basic: "text-purple-500",
     smc_quant: "text-emerald-500",
     breakout_quant: "text-orange-500",
+    range_quant: "text-teal-500",
     volume_profile: "text-blue-500",
+    rule_based: "text-cyan-500",
     multi_agent: "text-amber-500",
   }
 
@@ -450,6 +458,20 @@ export default function Dashboard() {
                             {formatDate(result.timestamp)}
                           </p>
                         </div>
+                        {result.signal !== "HOLD" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                            title="Re-enter trade"
+                            onClick={() => {
+                              setReentrySignal(result)
+                              setReentryOpen(true)
+                            }}
+                          >
+                            <RotateCcw className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"
@@ -528,10 +550,40 @@ export default function Dashboard() {
                 <span>{formatDate(detailResult.timestamp)}</span>
                 {detailResult.duration_seconds && <span>{detailResult.duration_seconds.toFixed(0)}s</span>}
               </div>
+
+              {/* Re-enter button */}
+              {detailResult.signal !== "HOLD" && (
+                <Button
+                  className="w-full"
+                  variant={detailResult.signal === "BUY" ? "default" : "destructive"}
+                  onClick={() => {
+                    setReentrySignal(detailResult)
+                    setDetailModalOpen(false)
+                    setReentryOpen(true)
+                  }}
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Re-enter {detailResult.signal} Trade
+                </Button>
+              )}
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Re-entry Trade Execution Wizard */}
+      {reentrySignal && (
+        <TradeExecutionWizard
+          open={reentryOpen}
+          onOpenChange={setReentryOpen}
+          symbol={reentrySignal.symbol}
+          signal={reentrySignal.signal}
+          suggestedEntry={reentrySignal.entry_price}
+          suggestedStopLoss={reentrySignal.stop_loss}
+          suggestedTakeProfit={reentrySignal.take_profit}
+          rationale={reentrySignal.rationale}
+        />
+      )}
     </div>
   )
 }

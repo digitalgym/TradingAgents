@@ -65,6 +65,22 @@ interface OTEZone {
   swing_low?: number
 }
 
+interface StructureBreak {
+  type: "high" | "low"
+  price: number
+  break_type: "BOS" | "CHOC"
+  break_index?: number
+  timestamp?: string
+}
+
+interface PremiumDiscountZone {
+  current_zone: "premium" | "discount" | "equilibrium"
+  equilibrium: number
+  range_high: number
+  range_low: number
+  position_percent: number
+}
+
 interface TradeDecision {
   signal: "BUY" | "SELL" | "HOLD"
   confidence?: number
@@ -88,6 +104,8 @@ interface PriceChartProps {
   breakerBlocks?: BreakerBlock[]
   equalLevels?: EqualLevel[]
   oteZones?: OTEZone[]
+  structureBreaks?: StructureBreak[]
+  premiumDiscount?: PremiumDiscountZone | null
   pdh?: number  // Previous Day High
   pdl?: number  // Previous Day Low
   atrValue?: number
@@ -150,6 +168,8 @@ export function PriceChart({
   breakerBlocks = [],
   equalLevels = [],
   oteZones = [],
+  structureBreaks = [],
+  premiumDiscount,
   pdh,
   pdl,
   atrValue,
@@ -251,6 +271,18 @@ export function PriceChart({
       max = Math.max(max, ote.fib_618)
     })
 
+    // Include premium/discount zone in range
+    if (premiumDiscount) {
+      min = Math.min(min, premiumDiscount.range_low)
+      max = Math.max(max, premiumDiscount.range_high)
+    }
+
+    // Include structure breaks in range
+    structureBreaks.forEach(sb => {
+      min = Math.min(min, sb.price)
+      max = Math.max(max, sb.price)
+    })
+
     // Add 5% padding
     const range = max - min
     const padding = range * 0.05
@@ -259,7 +291,7 @@ export function PriceChart({
       maxPrice: max + padding,
       priceRange: range + (padding * 2),
     }
-  }, [candles, entryPrice, stopLoss, takeProfit, liquidityZones, equalLevels, breakerBlocks, oteZones])
+  }, [candles, entryPrice, stopLoss, takeProfit, liquidityZones, equalLevels, breakerBlocks, oteZones, premiumDiscount, structureBreaks])
 
   // Convert price to Y coordinate
   const priceToY = (price: number, height: number) => {
@@ -376,6 +408,59 @@ export function PriceChart({
               height={chartHeight}
               className="bg-background w-full"
             >
+              {/* Premium/Discount Background Zone */}
+              {premiumDiscount && premiumDiscount.range_high > 0 && (
+                <g>
+                  {/* Premium zone (above equilibrium) - orange tint */}
+                  <rect
+                    x={leftPadding}
+                    y={priceToY(premiumDiscount.range_high, chartHeight)}
+                    width={chartWidth - leftPadding - rightPadding}
+                    height={Math.abs(priceToY(premiumDiscount.equilibrium, chartHeight) - priceToY(premiumDiscount.range_high, chartHeight))}
+                    fill="rgba(251, 191, 36, 0.08)"
+                  />
+                  {/* Discount zone (below equilibrium) - blue tint */}
+                  <rect
+                    x={leftPadding}
+                    y={priceToY(premiumDiscount.equilibrium, chartHeight)}
+                    width={chartWidth - leftPadding - rightPadding}
+                    height={Math.abs(priceToY(premiumDiscount.range_low, chartHeight) - priceToY(premiumDiscount.equilibrium, chartHeight))}
+                    fill="rgba(59, 130, 246, 0.08)"
+                  />
+                  {/* Equilibrium line */}
+                  <line
+                    x1={leftPadding}
+                    y1={priceToY(premiumDiscount.equilibrium, chartHeight)}
+                    x2={chartWidth - rightPadding}
+                    y2={priceToY(premiumDiscount.equilibrium, chartHeight)}
+                    stroke="rgba(255, 255, 255, 0.3)"
+                    strokeWidth={1}
+                    strokeDasharray="6 4"
+                  />
+                  {/* Labels */}
+                  <text
+                    x={leftPadding + 5}
+                    y={priceToY(premiumDiscount.range_high, chartHeight) + 14}
+                    fill="#fbbf24"
+                    fontSize={11}
+                    fontWeight="bold"
+                    opacity={0.6}
+                  >
+                    Premium
+                  </text>
+                  <text
+                    x={leftPadding + 5}
+                    y={priceToY(premiumDiscount.range_low, chartHeight) - 6}
+                    fill="#3b82f6"
+                    fontSize={11}
+                    fontWeight="bold"
+                    opacity={0.6}
+                  >
+                    Discount
+                  </text>
+                </g>
+              )}
+
               {/* Background grid lines */}
               {[0.25, 0.5, 0.75].map((pct) => (
                 <line
@@ -410,6 +495,7 @@ export function PriceChart({
                       strokeWidth={isOB ? 2 : 1}
                       strokeDasharray={isOB ? "none" : "4 4"}
                     />
+                    {/* Left label: zone type */}
                     <text
                       x={leftPadding + 5}
                       y={Math.min(y1, y2) + 12}
@@ -417,8 +503,22 @@ export function PriceChart({
                       fontSize={10}
                       opacity={0.8}
                     >
-                      {zone.source} {isBullish ? "Bull" : "Bear"}
+                      {zone.source} {isBullish ? "Bull" : "Bear"}{zone.mitigated ? " (mitigated)" : ""}
                     </text>
+                    {/* Right label: Un-Mitigated status for active zones */}
+                    {!zone.mitigated && (
+                      <text
+                        x={chartWidth - rightPadding - 5}
+                        y={Math.min(y1, y2) + 12}
+                        fill={isBullish ? "#22c55e" : "#ef4444"}
+                        fontSize={10}
+                        fontWeight="bold"
+                        textAnchor="end"
+                        opacity={0.9}
+                      >
+                        Un-Mitigated {isBullish ? "Support" : "Resistance"}
+                      </text>
+                    )}
                   </g>
                 )
               })}
@@ -546,9 +646,15 @@ export function PriceChart({
                       fill={color}
                       fontSize={9}
                       textAnchor="end"
+                      fontWeight={el.touches >= 3 ? "bold" : "normal"}
                       opacity={opacity}
                     >
-                      {isHigh ? "EQH" : "EQL"} x{el.touches}{isSwept ? " (swept)" : ""}
+                      {isSwept
+                        ? `${isHigh ? "EQH" : "EQL"} x${el.touches} (swept)`
+                        : el.touches >= 3
+                          ? `Proven ${isHigh ? "Resistance" : "Support"}, Retests=${el.touches}`
+                          : `${isHigh ? "EQH" : "EQL"} x${el.touches}`
+                      }
                     </text>
                   </g>
                 )
@@ -742,6 +848,50 @@ export function PriceChart({
                       height={bodyHeight}
                       fill={isBullish ? "#22c55e" : "#ef4444"}
                       stroke={isBullish ? "#22c55e" : "#ef4444"}
+                    />
+                  </g>
+                )
+              })}
+
+              {/* BOS/CHoCH Structure Labels */}
+              {structureBreaks.map((sb, idx) => {
+                const y = priceToY(sb.price, chartHeight)
+                const isBOS = sb.break_type === "BOS"
+                const isLow = sb.type === "low"
+                // BOS = trend continuation (yellow), CHoCH = reversal (cyan)
+                const color = isBOS ? "#facc15" : "#22d3ee"
+                const label = isBOS ? "BOS" : "CHoCH"
+
+                return (
+                  <g key={`struct-${idx}`}>
+                    {/* Short line at break level */}
+                    <line
+                      x1={chartWidth - rightPadding - 120}
+                      y1={y}
+                      x2={chartWidth - rightPadding - 5}
+                      y2={y}
+                      stroke={color}
+                      strokeWidth={1.5}
+                      strokeDasharray="4 3"
+                      opacity={0.7}
+                    />
+                    {/* Label above or below the line */}
+                    <text
+                      x={chartWidth - rightPadding - 62}
+                      y={isLow ? y + 13 : y - 5}
+                      fill={color}
+                      fontSize={10}
+                      fontWeight="bold"
+                      textAnchor="middle"
+                      opacity={0.9}
+                    >
+                      {label}
+                    </text>
+                    {/* Small diamond marker */}
+                    <polygon
+                      points={`${chartWidth - rightPadding - 125},${y} ${chartWidth - rightPadding - 121},${y - 4} ${chartWidth - rightPadding - 117},${y} ${chartWidth - rightPadding - 121},${y + 4}`}
+                      fill={color}
+                      opacity={0.8}
                     />
                   </g>
                 )

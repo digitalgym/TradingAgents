@@ -17,7 +17,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Literal
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field, fields, asdict
 from enum import Enum
 
 # MT5 imports
@@ -53,12 +53,36 @@ from tradingagents.trade_decisions import (
 from tradingagents.dataflows.mt5_data import get_closed_deal_by_ticket
 
 
+# Global symbol limits file (shared across all automations)
+_SYMBOL_LIMITS_FILE = Path(__file__).parent.parent.parent / "automation_symbol_limits.json"
+
+
+def _get_global_position_limits() -> Dict[str, int]:
+    """Load per-symbol max positions from automation_symbol_limits.json.
+
+    Returns dict like {"XAUUSD": 3, "XAGUSD": 1}.
+    Symbols not in the file default to 3.
+    """
+    limits: Dict[str, int] = {}
+    try:
+        with open(_SYMBOL_LIMITS_FILE) as f:
+            data = json.load(f)
+        for sym, cfg in data.items():
+            if isinstance(cfg, dict) and "max_positions" in cfg:
+                limits[sym] = cfg["max_positions"]
+    except Exception:
+        pass
+    return limits
+
+
 class PipelineType(str, Enum):
     """Available analysis pipelines."""
-    QUANT = "quant"
+    SMC_QUANT_BASIC = "smc_quant_basic"
     SMC_QUANT = "smc_quant"
     BREAKOUT_QUANT = "breakout_quant"
+    RANGE_QUANT = "range_quant"
     VOLUME_PROFILE = "volume_profile"
+    RULE_BASED = "rule_based"
     MULTI_AGENT = "multi_agent"
 
 
@@ -73,8 +97,11 @@ class AutomationStatus(str, Enum):
 @dataclass
 class QuantAutomationConfig:
     """Configuration for quant automation."""
+    # Instance identity
+    instance_name: str = ""  # Set by backend, used as trade decision source
+
     # Pipeline settings
-    pipeline: PipelineType = PipelineType.QUANT
+    pipeline: PipelineType = PipelineType.SMC_QUANT_BASIC
     symbols: List[str] = field(default_factory=lambda: ["XAUUSD"])
     timeframe: str = "H1"
 
@@ -86,9 +113,8 @@ class QuantAutomationConfig:
     auto_execute: bool = False  # Require explicit enable for auto-trading
     min_confidence: float = 0.65  # Minimum confidence to execute trades
 
-    # Position management
-    max_positions_per_symbol: int = 1
-    max_total_positions: int = 3
+    # Position management (per-automation limit)
+    max_positions_per_symbol: int = 1  # Max positions THIS automation can open per symbol
     enable_trailing_stop: bool = True
     trailing_stop_atr_multiplier: float = 1.5
     move_to_breakeven_pct: float = 1.0  # Move SL to breakeven at 1% profit
@@ -98,6 +124,10 @@ class QuantAutomationConfig:
     default_lot_size: float = 0.01
     daily_loss_limit_pct: float = 3.0
     max_consecutive_losses: int = 3
+
+    # Position assumption review settings
+    assumption_review_interval_seconds: int = 3600  # 1 hour default
+    assumption_review_auto_apply: bool = False  # Auto-apply SL/TP adjustments from review
 
     # State persistence
     state_file: str = "quant_automation_state.json"
@@ -114,7 +144,10 @@ class QuantAutomationConfig:
         """Create from dictionary."""
         if "pipeline" in data and isinstance(data["pipeline"], str):
             data["pipeline"] = PipelineType(data["pipeline"])
-        return cls(**data)
+        # Strip unknown keys (e.g. removed fields from older configs)
+        valid_fields = {f.name for f in fields(cls)}
+        filtered = {k: v for k, v in data.items() if k in valid_fields}
+        return cls(**filtered)
 
 
 @dataclass
@@ -129,6 +162,7 @@ class AnalysisCycleResult:
     stop_loss: Optional[float] = None
     take_profit: Optional[float] = None
     rationale: str = ""
+    trailing_stop_atr_multiplier: Optional[float] = None
     executed: bool = False
     execution_ticket: Optional[int] = None
     execution_error: Optional[str] = None
@@ -161,15 +195,27 @@ class QuantAutomation:
         """Initialize quant automation."""
         self.config = config or QuantAutomationConfig()
 
+        # Source identifier for trade decisions
+        self._source = (
+            self.config.instance_name
+            if self.config.instance_name
+            else f"quant_automation_{self.config.pipeline.value}"
+        )
+
         # State
         self._status = AutomationStatus.STOPPED
         self._running = False
         self._shutdown_event = asyncio.Event()
         self._last_analysis_time: Dict[str, datetime] = {}
         self._last_position_check: Optional[datetime] = None
+        self._last_assumption_review: Optional[datetime] = None
         self._analysis_results: List[AnalysisCycleResult] = []
         self._position_results: List[PositionManagementResult] = []
+        self._assumption_review_results: List[Dict[str, Any]] = []
         self._error_message: Optional[str] = None
+
+        # Lock for state file writes (multiple async loops share this)
+        self._state_lock = asyncio.Lock()
 
         # Risk management
         self.guardrails = RiskGuardrails(
@@ -192,7 +238,7 @@ class QuantAutomation:
         logs_dir = Path(self.config.logs_dir)
         logs_dir.mkdir(parents=True, exist_ok=True)
 
-        self.logger = logging.getLogger("QuantAutomation")
+        self.logger = logging.getLogger(f"QuantAutomation.{self._source}")
         self.logger.setLevel(logging.INFO)
 
         # Clear existing handlers
@@ -237,11 +283,20 @@ class QuantAutomation:
                         self._position_results.append(PositionManagementResult(**item))
                     except Exception:
                         continue
+                # Restore assumption review state
+                last_review = state.get("last_assumption_review")
+                if last_review:
+                    self._last_assumption_review = datetime.fromisoformat(last_review)
+                self._assumption_review_results = state.get("assumption_review_results", [])
             except Exception as e:
                 self.logger.warning(f"Could not load state: {e}")
 
     def _save_state(self):
-        """Save automation state to file."""
+        """Save automation state to file.
+
+        Uses atomic write (write to temp, then rename) to avoid corruption
+        when multiple async loops call this concurrently.
+        """
         state_file = Path(self.config.state_file)
         state_file.parent.mkdir(parents=True, exist_ok=True)
 
@@ -258,10 +313,24 @@ class QuantAutomation:
             "status": self._status.value,
             "analysis_results": [_serialize_result(r) for r in self._analysis_results[-100:]],
             "position_results": [_serialize_result(r) for r in self._position_results[-100:]],
+            "last_assumption_review": self._last_assumption_review.isoformat() if self._last_assumption_review else None,
+            "assumption_review_results": self._assumption_review_results,
         }
 
-        with open(state_file, "w") as f:
-            json.dump(state, f, indent=2)
+        # Atomic write: write to temp file, then rename
+        tmp_file = state_file.with_suffix(".tmp")
+        try:
+            with open(tmp_file, "w") as f:
+                json.dump(state, f, indent=2)
+            # On Windows, os.replace is atomic and overwrites the target
+            os.replace(str(tmp_file), str(state_file))
+        except Exception as e:
+            self.logger.warning(f"Failed to save state: {e}")
+            # Clean up temp file on failure
+            try:
+                tmp_file.unlink(missing_ok=True)
+            except Exception:
+                pass
 
     def _get_account_balance(self) -> float:
         """Get current account balance from MT5."""
@@ -398,6 +467,8 @@ class QuantAutomation:
         try:
             import aiohttp
 
+            self.logger.info(f"SMC Quant: calling API for {symbol} (timeout=120s)...")
+
             async with aiohttp.ClientSession() as session:
                 payload = {
                     "symbol": symbol,
@@ -408,9 +479,10 @@ class QuantAutomation:
                     json=payload,
                     timeout=aiohttp.ClientTimeout(total=120)
                 ) as response:
+                    api_duration = time.time() - start_time
                     if response.status != 200:
                         error_text = await response.text()
-                        self.logger.error(f"SMC Quant API error: {error_text}")
+                        self.logger.error(f"SMC Quant API error (HTTP {response.status}) after {api_duration:.1f}s: {error_text[:200]}")
                         return AnalysisCycleResult(
                             timestamp=datetime.now(),
                             symbol=symbol,
@@ -418,12 +490,19 @@ class QuantAutomation:
                             signal="HOLD",
                             confidence=0.0,
                             rationale=f"API Error: {response.status}",
-                            duration_seconds=time.time() - start_time,
+                            duration_seconds=api_duration,
                         )
 
                     result = await response.json()
 
-            self.logger.info(f"SMC Quant API response status: {result.get('status')}")
+            api_duration = time.time() - start_time
+            llm_duration = result.get("llm_duration_seconds")
+            timing_str = f"total={api_duration:.1f}s"
+            if llm_duration is not None:
+                timing_str += f", llm={llm_duration:.1f}s, overhead={api_duration - llm_duration:.1f}s"
+            self.logger.info(f"SMC Quant API response: status={result.get('status')} [{timing_str}]")
+            if api_duration > 60:
+                self.logger.warning(f"SMC Quant API call was SLOW ({api_duration:.1f}s) for {symbol}")
 
             # Log error details if the API returned an error
             if result.get("status") == "error":
@@ -478,11 +557,25 @@ class QuantAutomation:
                 stop_loss=decision.get("stop_loss"),
                 take_profit=decision.get("take_profit"),
                 rationale=decision.get("rationale", ""),
+                trailing_stop_atr_multiplier=decision.get("trailing_stop_atr_multiplier"),
                 duration_seconds=time.time() - start_time,
             )
 
+        except asyncio.TimeoutError:
+            elapsed = time.time() - start_time
+            self.logger.error(f"SMC Quant TIMEOUT for {symbol} after {elapsed:.1f}s - LLM likely hanging or overloaded")
+            return AnalysisCycleResult(
+                timestamp=datetime.now(),
+                symbol=symbol,
+                pipeline="smc_quant",
+                signal="HOLD",
+                confidence=0.0,
+                rationale=f"Timeout after {elapsed:.0f}s",
+                duration_seconds=elapsed,
+            )
         except Exception as e:
-            self.logger.error(f"SMC Quant analysis error for {symbol}: {e}")
+            elapsed = time.time() - start_time
+            self.logger.error(f"SMC Quant analysis error for {symbol} after {elapsed:.1f}s: {e}")
             import traceback
             self.logger.error(traceback.format_exc())
             return AnalysisCycleResult(
@@ -492,7 +585,7 @@ class QuantAutomation:
                 signal="HOLD",
                 confidence=0.0,
                 rationale=f"Error: {str(e)}",
-                duration_seconds=time.time() - start_time,
+                duration_seconds=elapsed,
             )
 
     async def _run_breakout_quant_analysis(self, symbol: str) -> AnalysisCycleResult:
@@ -501,6 +594,8 @@ class QuantAutomation:
 
         try:
             import aiohttp
+
+            self.logger.info(f"Breakout Quant: calling API for {symbol} (timeout=120s)...")
 
             async with aiohttp.ClientSession() as session:
                 payload = {
@@ -512,9 +607,10 @@ class QuantAutomation:
                     json=payload,
                     timeout=aiohttp.ClientTimeout(total=120)
                 ) as response:
+                    api_duration = time.time() - start_time
                     if response.status != 200:
                         error_text = await response.text()
-                        self.logger.error(f"Breakout Quant API error: {error_text}")
+                        self.logger.error(f"Breakout Quant API error (HTTP {response.status}) after {api_duration:.1f}s: {error_text[:200]}")
                         return AnalysisCycleResult(
                             timestamp=datetime.now(),
                             symbol=symbol,
@@ -522,12 +618,19 @@ class QuantAutomation:
                             signal="HOLD",
                             confidence=0.0,
                             rationale=f"API Error: {response.status}",
-                            duration_seconds=time.time() - start_time,
+                            duration_seconds=api_duration,
                         )
 
                     result = await response.json()
 
-            self.logger.info(f"Breakout Quant API response status: {result.get('status')}")
+            api_duration = time.time() - start_time
+            llm_duration = result.get("llm_duration_seconds")
+            timing_str = f"total={api_duration:.1f}s"
+            if llm_duration is not None:
+                timing_str += f", llm={llm_duration:.1f}s, overhead={api_duration - llm_duration:.1f}s"
+            self.logger.info(f"Breakout Quant API response: status={result.get('status')} [{timing_str}]")
+            if api_duration > 60:
+                self.logger.warning(f"Breakout Quant API call was SLOW ({api_duration:.1f}s) for {symbol}")
 
             # Log error details if the API returned an error
             if result.get("status") == "error":
@@ -593,11 +696,25 @@ class QuantAutomation:
                 stop_loss=decision.get("stop_loss"),
                 take_profit=decision.get("take_profit"),
                 rationale=decision.get("rationale", ""),
+                trailing_stop_atr_multiplier=decision.get("trailing_stop_atr_multiplier"),
                 duration_seconds=time.time() - start_time,
             )
 
+        except asyncio.TimeoutError:
+            elapsed = time.time() - start_time
+            self.logger.error(f"Breakout Quant TIMEOUT for {symbol} after {elapsed:.1f}s - LLM likely hanging or overloaded")
+            return AnalysisCycleResult(
+                timestamp=datetime.now(),
+                symbol=symbol,
+                pipeline="breakout_quant",
+                signal="HOLD",
+                confidence=0.0,
+                rationale=f"Timeout after {elapsed:.0f}s",
+                duration_seconds=elapsed,
+            )
         except Exception as e:
-            self.logger.error(f"Breakout Quant analysis error for {symbol}: {e}")
+            elapsed = time.time() - start_time
+            self.logger.error(f"Breakout Quant analysis error for {symbol} after {elapsed:.1f}s: {e}")
             import traceback
             self.logger.error(traceback.format_exc())
             return AnalysisCycleResult(
@@ -607,7 +724,144 @@ class QuantAutomation:
                 signal="HOLD",
                 confidence=0.0,
                 rationale=f"Error: {str(e)}",
+                duration_seconds=elapsed,
+            )
+
+    async def _run_range_quant_analysis(self, symbol: str) -> AnalysisCycleResult:
+        """Run dedicated Range quant pipeline analysis for a symbol."""
+        start_time = time.time()
+
+        try:
+            import aiohttp
+
+            self.logger.info(f"Range Quant: calling API for {symbol} (timeout=120s)...")
+
+            async with aiohttp.ClientSession() as session:
+                payload = {
+                    "symbol": symbol,
+                    "timeframe": self.config.timeframe,
+                }
+                async with session.post(
+                    "http://localhost:8000/api/analysis/range-quant",
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=120)
+                ) as response:
+                    api_duration = time.time() - start_time
+                    if response.status != 200:
+                        error_text = await response.text()
+                        self.logger.error(f"Range Quant API error (HTTP {response.status}) after {api_duration:.1f}s: {error_text[:200]}")
+                        return AnalysisCycleResult(
+                            timestamp=datetime.now(),
+                            symbol=symbol,
+                            pipeline="range_quant",
+                            signal="HOLD",
+                            confidence=0.0,
+                            rationale=f"API Error: {response.status}",
+                            duration_seconds=api_duration,
+                        )
+
+                    result = await response.json()
+
+            api_duration = time.time() - start_time
+            llm_duration = result.get("llm_duration_seconds")
+            timing_str = f"total={api_duration:.1f}s"
+            if llm_duration is not None:
+                timing_str += f", llm={llm_duration:.1f}s, overhead={api_duration - llm_duration:.1f}s"
+            self.logger.info(f"Range Quant API response: status={result.get('status')} [{timing_str}]")
+            if api_duration > 60:
+                self.logger.warning(f"Range Quant API call was SLOW ({api_duration:.1f}s) for {symbol}")
+
+            if result.get("status") == "error":
+                self.logger.error(f"Range Quant API error for {symbol}: {result.get('error', 'unknown')}")
+                if result.get("traceback"):
+                    self.logger.error(f"Traceback: {result['traceback'][:500]}")
+
+            # Log range info
+            range_info = result.get("range_analysis", {})
+            if range_info:
+                self.logger.info(
+                    f"Range Quant range for {symbol}: "
+                    f"is_ranging={range_info.get('is_ranging')}, "
+                    f"mr_score={range_info.get('mean_reversion_score', 0):.1f}, "
+                    f"price_position={range_info.get('price_position')}"
+                )
+
+            prompt_sent = result.get("prompt_sent")
+            if prompt_sent:
+                self.logger.info(f"\n{'='*80}\nRANGE QUANT PROMPT SENT for {symbol}\n{'='*80}\n{prompt_sent}\n{'='*80}")
+
+            decision = result.get("decision", {})
+
+            if not decision:
+                self.logger.warning(f"No decision in Range Quant API response for {symbol}")
+                return AnalysisCycleResult(
+                    timestamp=datetime.now(),
+                    symbol=symbol,
+                    pipeline="range_quant",
+                    signal="HOLD",
+                    confidence=0.0,
+                    rationale="No decision from analysis",
+                    duration_seconds=time.time() - start_time,
+                )
+
+            self.logger.info(
+                f"Range Quant decision for {symbol}: signal={decision.get('signal')}, "
+                f"confidence={decision.get('confidence')}, "
+                f"entry={decision.get('entry_price')}, "
+                f"sl={decision.get('stop_loss')}, tp={decision.get('take_profit')}"
+            )
+
+            signal = decision.get("signal", "HOLD")
+            if isinstance(signal, dict):
+                signal = signal.get("value", "HOLD")
+            signal = signal.upper()
+
+            if signal in ["BUY_TO_ENTER", "BUY"]:
+                signal = "BUY"
+            elif signal in ["SELL_TO_ENTER", "SELL"]:
+                signal = "SELL"
+            else:
+                signal = "HOLD"
+
+            return AnalysisCycleResult(
+                timestamp=datetime.now(),
+                symbol=symbol,
+                pipeline="range_quant",
+                signal=signal,
+                confidence=decision.get("confidence", 0.5),
+                entry_price=decision.get("entry_price"),
+                stop_loss=decision.get("stop_loss"),
+                take_profit=decision.get("take_profit"),
+                rationale=decision.get("rationale", ""),
+                trailing_stop_atr_multiplier=decision.get("trailing_stop_atr_multiplier"),
                 duration_seconds=time.time() - start_time,
+            )
+
+        except asyncio.TimeoutError:
+            elapsed = time.time() - start_time
+            self.logger.error(f"Range Quant TIMEOUT for {symbol} after {elapsed:.1f}s - LLM likely hanging or overloaded")
+            return AnalysisCycleResult(
+                timestamp=datetime.now(),
+                symbol=symbol,
+                pipeline="range_quant",
+                signal="HOLD",
+                confidence=0.0,
+                rationale=f"Timeout after {elapsed:.0f}s",
+                duration_seconds=elapsed,
+            )
+        except Exception as e:
+            elapsed = time.time() - start_time
+            self.logger.error(f"Range Quant analysis error for {symbol} after {elapsed:.1f}s: {e}")
+            import traceback
+            self.logger.error(traceback.format_exc())
+            return AnalysisCycleResult(
+                timestamp=datetime.now(),
+                symbol=symbol,
+                pipeline="range_quant",
+                signal="HOLD",
+                confidence=0.0,
+                rationale=f"Error: {str(e)}",
+                duration_seconds=elapsed,
             )
 
     async def _run_vp_analysis(self, symbol: str) -> AnalysisCycleResult:
@@ -616,6 +870,8 @@ class QuantAutomation:
 
         try:
             import aiohttp
+
+            self.logger.info(f"VP Quant: calling API for {symbol} (timeout=120s)...")
 
             async with aiohttp.ClientSession() as session:
                 payload = {
@@ -627,9 +883,10 @@ class QuantAutomation:
                     json=payload,
                     timeout=aiohttp.ClientTimeout(total=120)
                 ) as response:
+                    api_duration = time.time() - start_time
                     if response.status != 200:
                         error_text = await response.text()
-                        self.logger.error(f"VP quant API error: {error_text}")
+                        self.logger.error(f"VP quant API error (HTTP {response.status}) after {api_duration:.1f}s: {error_text[:200]}")
                         return AnalysisCycleResult(
                             timestamp=datetime.now(),
                             symbol=symbol,
@@ -637,12 +894,19 @@ class QuantAutomation:
                             signal="HOLD",
                             confidence=0.0,
                             rationale=f"API Error: {response.status}",
-                            duration_seconds=time.time() - start_time,
+                            duration_seconds=api_duration,
                         )
 
                     result = await response.json()
 
-            self.logger.info(f"[VP] API response status: {result.get('status')}")
+            api_duration = time.time() - start_time
+            llm_duration = result.get("llm_duration_seconds")
+            timing_str = f"total={api_duration:.1f}s"
+            if llm_duration is not None:
+                timing_str += f", llm={llm_duration:.1f}s, overhead={api_duration - llm_duration:.1f}s"
+            self.logger.info(f"[VP] API response: status={result.get('status')} [{timing_str}]")
+            if api_duration > 60:
+                self.logger.warning(f"VP Quant API call was SLOW ({api_duration:.1f}s) for {symbol}")
 
             if result.get("status") == "error":
                 self.logger.warning(f"[VP] API returned error for {symbol}: {result.get('error')}")
@@ -694,8 +958,21 @@ class QuantAutomation:
                 duration_seconds=time.time() - start_time,
             )
 
+        except asyncio.TimeoutError:
+            elapsed = time.time() - start_time
+            self.logger.error(f"VP Quant TIMEOUT for {symbol} after {elapsed:.1f}s - LLM likely hanging or overloaded")
+            return AnalysisCycleResult(
+                timestamp=datetime.now(),
+                symbol=symbol,
+                pipeline="volume_profile",
+                signal="HOLD",
+                confidence=0.0,
+                rationale=f"Timeout after {elapsed:.0f}s",
+                duration_seconds=elapsed,
+            )
         except Exception as e:
-            self.logger.error(f"VP analysis error for {symbol}: {e}")
+            elapsed = time.time() - start_time
+            self.logger.error(f"VP analysis error for {symbol} after {elapsed:.1f}s: {e}")
             import traceback
             self.logger.error(traceback.format_exc())
             return AnalysisCycleResult(
@@ -705,7 +982,114 @@ class QuantAutomation:
                 signal="HOLD",
                 confidence=0.0,
                 rationale=f"Error: {str(e)}",
-                duration_seconds=time.time() - start_time,
+                duration_seconds=elapsed,
+            )
+
+    async def _run_rule_based_analysis(self, symbol: str) -> AnalysisCycleResult:
+        """Run rule-based SMC analysis (no LLM, instant & free)."""
+        start_time = time.time()
+
+        try:
+            import aiohttp
+
+            self.logger.info(f"Rule-Based: calling API for {symbol} (no LLM)...")
+
+            async with aiohttp.ClientSession() as session:
+                payload = {
+                    "symbol": symbol,
+                    "timeframe": self.config.timeframe,
+                }
+                async with session.post(
+                    "http://localhost:8000/api/analysis/rule-based",
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=30)
+                ) as response:
+                    api_duration = time.time() - start_time
+                    if response.status != 200:
+                        error_text = await response.text()
+                        self.logger.error(f"Rule-Based API error (HTTP {response.status}) after {api_duration:.1f}s: {error_text[:200]}")
+                        return AnalysisCycleResult(
+                            timestamp=datetime.now(),
+                            symbol=symbol,
+                            pipeline="rule_based",
+                            signal="HOLD",
+                            confidence=0.0,
+                            rationale=f"API Error: {response.status}",
+                            duration_seconds=api_duration,
+                        )
+
+                    result = await response.json()
+
+            api_duration = time.time() - start_time
+            self.logger.info(f"Rule-Based API response: status={result.get('status', 'ok')} [total={api_duration:.1f}s]")
+
+            decision = result.get("decision", {})
+
+            if not decision:
+                self.logger.warning(f"No decision in Rule-Based API response for {symbol}")
+                return AnalysisCycleResult(
+                    timestamp=datetime.now(),
+                    symbol=symbol,
+                    pipeline="rule_based",
+                    signal="HOLD",
+                    confidence=0.0,
+                    rationale="No decision from rule-based analysis",
+                    duration_seconds=api_duration,
+                )
+
+            signal = decision.get("signal", "HOLD").upper()
+            if signal in ["BUY_TO_ENTER", "BUY"]:
+                signal = "BUY"
+            elif signal in ["SELL_TO_ENTER", "SELL"]:
+                signal = "SELL"
+            else:
+                signal = "HOLD"
+
+            self.logger.info(
+                f"Rule-Based decision for {symbol}: signal={signal}, "
+                f"confidence={decision.get('confidence')}, "
+                f"entry={decision.get('entry_price')}, "
+                f"sl={decision.get('stop_loss')}, tp={decision.get('take_profit')}"
+            )
+
+            return AnalysisCycleResult(
+                timestamp=datetime.now(),
+                symbol=symbol,
+                pipeline="rule_based",
+                signal=signal,
+                confidence=decision.get("confidence", 0.5),
+                entry_price=decision.get("entry_price"),
+                stop_loss=decision.get("stop_loss"),
+                take_profit=decision.get("take_profit"),
+                rationale=decision.get("rationale", ""),
+                duration_seconds=api_duration,
+            )
+
+        except asyncio.TimeoutError:
+            elapsed = time.time() - start_time
+            self.logger.error(f"Rule-Based TIMEOUT for {symbol} after {elapsed:.1f}s")
+            return AnalysisCycleResult(
+                timestamp=datetime.now(),
+                symbol=symbol,
+                pipeline="rule_based",
+                signal="HOLD",
+                confidence=0.0,
+                rationale=f"Timeout after {elapsed:.0f}s",
+                duration_seconds=elapsed,
+            )
+        except Exception as e:
+            elapsed = time.time() - start_time
+            self.logger.error(f"Rule-Based analysis error for {symbol} after {elapsed:.1f}s: {e}")
+            import traceback
+            self.logger.error(traceback.format_exc())
+            return AnalysisCycleResult(
+                timestamp=datetime.now(),
+                symbol=symbol,
+                pipeline="rule_based",
+                signal="HOLD",
+                confidence=0.0,
+                rationale=f"Error: {str(e)}",
+                duration_seconds=elapsed,
             )
 
     async def _run_multi_agent_analysis(self, symbol: str) -> AnalysisCycleResult:
@@ -797,25 +1181,49 @@ class QuantAutomation:
             )
             return result
 
-        # Check position limits (count both open positions AND pending orders)
+        # Check position limits
+        # 1) Per-automation: only count positions THIS automation owns
+        # 2) Global: per-symbol and total limits from portfolio_config.yaml
         positions = get_open_positions()
         pending = get_pending_orders()
-        symbol_positions = [p for p in positions if p.get("symbol") == result.symbol]
-        symbol_pending = [o for o in pending if o.get("symbol") == result.symbol]
-        symbol_total = len(symbol_positions) + len(symbol_pending)
-        all_total = len(positions) + len(pending)
-        self.logger.info(
-            f"Position check: {symbol_total}/{self.config.max_positions_per_symbol} "
-            f"for {result.symbol} ({len(symbol_positions)} open + {len(symbol_pending)} pending), "
-            f"{all_total}/{self.config.max_total_positions} total"
+
+        # Build owned tickets for this automation
+        my_source = self._source
+        owned_tickets = set()
+        try:
+            active_decisions = list_active_decisions()
+            for dec in active_decisions:
+                if (dec.get("source") == my_source and dec.get("mt5_ticket")):
+                    owned_tickets.add(dec["mt5_ticket"])
+        except Exception:
+            pass
+
+        # Per-automation count (owned only)
+        my_symbol_count = sum(
+            1 for p in positions
+            if p.get("symbol") == result.symbol and p.get("ticket") in owned_tickets
         )
 
-        if symbol_total >= self.config.max_positions_per_symbol:
-            self.logger.info(f"Max positions reached for {result.symbol} ({len(symbol_positions)} open + {len(symbol_pending)} pending), skipping")
+        # Global counts (all positions on the account)
+        global_symbol_count = sum(1 for p in positions if p.get("symbol") == result.symbol)
+        global_symbol_count += sum(1 for o in pending if o.get("symbol") == result.symbol)
+        global_total = len(positions) + len(pending)
+
+        # Load global per-symbol limits
+        global_limits = _get_global_position_limits()
+        global_max_symbol = global_limits.get(result.symbol, 3)  # default 3 if symbol not in file
+
+        self.logger.info(
+            f"Position limits: {result.symbol} owned={my_symbol_count}/{self.config.max_positions_per_symbol}, "
+            f"global={global_symbol_count}/{global_max_symbol}"
+        )
+
+        if my_symbol_count >= self.config.max_positions_per_symbol:
+            self.logger.info(f"Automation max positions reached for {result.symbol} ({my_symbol_count} owned), skipping")
             return result
 
-        if all_total >= self.config.max_total_positions:
-            self.logger.info(f"Max total positions reached ({all_total}: {len(positions)} open + {len(pending)} pending), skipping")
+        if global_symbol_count >= global_max_symbol:
+            self.logger.info(f"Global max for {result.symbol} reached ({global_symbol_count}/{global_max_symbol}), skipping")
             return result
 
         # Check guardrails
@@ -879,18 +1287,48 @@ class QuantAutomation:
                 result.take_profit = take_profit
 
                 # Store decision for tracking
-                store_decision(
+                decision_id = store_decision(
                     symbol=result.symbol,
                     decision_type="OPEN",
                     action=result.signal,
                     rationale=result.rationale[:500],
-                    source=f"quant_automation_{result.pipeline}",
+                    source=self._source,
                     entry_price=result.entry_price,
                     stop_loss=stop_loss,
                     take_profit=take_profit,
                     volume=lot_size,
                     mt5_ticket=result.execution_ticket,
                 )
+
+                # Store LLM-suggested trailing stop multiplier on the decision
+                if result.trailing_stop_atr_multiplier and decision_id:
+                    try:
+                        from tradingagents.trade_decisions import load_decision, DECISIONS_DIR as _DEC_DIR
+                        import json as _json
+                        dec = load_decision(decision_id)
+                        dec["trailing_stop_atr_multiplier"] = result.trailing_stop_atr_multiplier
+                        dec_file = os.path.join(_DEC_DIR, f"{decision_id}.json")
+                        with open(dec_file, "w") as _f:
+                            _json.dump(dec, _f, indent=2, default=str)
+                        self.logger.info(
+                            f"  LLM trailing stop multiplier: {result.trailing_stop_atr_multiplier}x ATR"
+                        )
+                    except Exception as e:
+                        self.logger.debug(f"  Could not save trailing multiplier: {e}")
+
+                # Post signal to X/Twitter (non-blocking, failures are swallowed)
+                try:
+                    from tradingagents.automation.x_signal_poster import post_trade_signal
+                    post_trade_signal(
+                        symbol=result.symbol,
+                        signal=result.signal,
+                        entry_price=result.entry_price,
+                        stop_loss=stop_loss,
+                        take_profit=take_profit,
+                        rationale=result.rationale,
+                    )
+                except Exception as e:
+                    self.logger.debug(f"X post skipped: {e}")
 
                 self.logger.info(
                     f"TRADE EXECUTED: {result.symbol} {result.signal} "
@@ -912,7 +1350,7 @@ class QuantAutomation:
                         decision_type="OPEN",
                         action=result.signal,
                         rationale=result.rationale[:500],
-                        source=f"quant_automation_{result.pipeline}",
+                        source=self._source,
                         entry_price=entry_price,
                         stop_loss=stop_loss,
                         take_profit=take_profit,
@@ -944,11 +1382,13 @@ class QuantAutomation:
 
     def _close_decision_for_ticket(self, ticket: int, exit_price: float, profit: float,
                                      exit_reason: str, notes: str) -> None:
-        """Find and close the trade decision linked to an MT5 ticket."""
+        """Find and close the trade decision linked to an MT5 ticket, then reflect."""
         try:
             decision = find_decision_by_ticket(ticket)
             if not decision or decision.get("status") != "active":
                 return
+
+            decision_id = decision["decision_id"]
 
             # Backfill entry_price if it was stored as 0
             if not decision.get("entry_price"):
@@ -962,24 +1402,108 @@ class QuantAutomation:
                 if pos_entry:
                     decision["entry_price"] = pos_entry
                     # Persist fix to file
-                    dec_file = os.path.join(DECISIONS_DIR, f"{decision['decision_id']}.json")
+                    dec_file = os.path.join(DECISIONS_DIR, f"{decision_id}.json")
                     if os.path.exists(dec_file):
                         with open(dec_file, "r") as f:
                             data = json.load(f)
                         data["entry_price"] = pos_entry
                         with open(dec_file, "w") as f:
                             json.dump(data, f, indent=2, default=str)
-                    self.logger.info(f"  Backfilled entry_price={pos_entry} for decision {decision['decision_id']}")
+                    self.logger.info(f"  Backfilled entry_price={pos_entry} for decision {decision_id}")
 
-            close_decision(
-                decision["decision_id"],
+            closed = close_decision(
+                decision_id,
                 exit_price=exit_price,
                 outcome_notes=f"{notes}. MT5 profit: {profit:.2f}",
                 exit_reason=exit_reason,
             )
-            self.logger.info(f"  Decision {decision['decision_id']} closed: {exit_reason}, pnl={profit:.2f}")
+            self.logger.info(f"  Decision {decision_id} closed: {exit_reason}, pnl={profit:.2f}")
+
+            # Record in guardrails for circuit breaker
+            pnl_pct = closed.get("pnl_percent", 0) if closed else 0
+            was_win = closed.get("was_correct", False) if closed else profit > 0
+            try:
+                self.guardrails.record_trade_result(
+                    was_win=was_win,
+                    pnl_pct=pnl_pct,
+                    account_balance=self._get_account_balance(),
+                )
+                self.logger.info(f"  Guardrails updated: {'win' if was_win else 'loss'} {pnl_pct:+.2f}%")
+            except Exception as e:
+                self.logger.warning(f"  Failed to update guardrails: {e}")
+
+            # SMC pattern reflection (works without full agent state)
+            self._reflect_on_closed_trade(decision_id)
+
         except Exception as e:
             self.logger.error(f"  Failed to close decision for #{ticket}: {e}")
+
+    def _reflect_on_closed_trade(self, decision_id: str) -> None:
+        """Run SMC pattern reflection on a closed trade decision.
+
+        This creates memories from the trade outcome without requiring
+        full multi-agent state. It uses the decision's rationale and
+        SMC context to generate pattern-specific lessons.
+        """
+        try:
+            from tradingagents.trade_decisions import load_decision
+            closed_decision = load_decision(decision_id)
+            if not closed_decision:
+                return
+
+            # Check if we have SMC context or a rationale to learn from
+            smc_context = closed_decision.get("smc_context", {})
+            setup_type = smc_context.get("setup_type") or closed_decision.get("setup_type")
+            rationale = closed_decision.get("rationale", "")
+
+            # Try to infer setup_type from rationale if not explicitly set
+            if not setup_type and rationale:
+                rationale_lower = rationale.lower()
+                if "fvg" in rationale_lower or "fair value gap" in rationale_lower:
+                    setup_type = "fvg_entry"
+                elif "order block" in rationale_lower or "ob " in rationale_lower:
+                    setup_type = "ob_entry"
+                elif "liquidity" in rationale_lower and "sweep" in rationale_lower:
+                    setup_type = "liquidity_sweep"
+                elif "breakout" in rationale_lower or "bos" in rationale_lower:
+                    setup_type = "bos"
+                elif "choch" in rationale_lower or "change of character" in rationale_lower:
+                    setup_type = "choch"
+                elif "volume" in rationale_lower and ("poc" in rationale_lower or "val" in rationale_lower or "vah" in rationale_lower):
+                    setup_type = "volume_profile"
+                elif "mean reversion" in rationale_lower:
+                    setup_type = "mean_reversion"
+
+                if setup_type:
+                    # Persist inferred setup_type
+                    closed_decision["setup_type"] = setup_type
+                    if "smc_context" not in closed_decision:
+                        closed_decision["smc_context"] = {}
+                    closed_decision["smc_context"]["setup_type"] = setup_type
+
+            if not setup_type:
+                self.logger.debug(f"  No setup_type for {decision_id}, skipping SMC reflection")
+                return
+
+            # Use the Reflector directly for SMC pattern memory
+            from tradingagents.graph.reflection import Reflector
+            from tradingagents.agents.utils.memory import SMCPatternMemory
+            from tradingagents.default_config import DEFAULT_CONFIG
+
+            config = DEFAULT_CONFIG.copy()
+            smc_memory = SMCPatternMemory(config)
+
+            # We don't need an LLM for SMC pattern reflection —
+            # it uses rule-based lesson generation
+            reflector = Reflector.__new__(Reflector)
+            reflector.reflect_smc_pattern(
+                decision=closed_decision,
+                smc_memory=smc_memory,
+            )
+            self.logger.info(f"  SMC pattern memory stored for {decision_id} (setup: {setup_type})")
+
+        except Exception as e:
+            self.logger.warning(f"  SMC reflection failed for {decision_id}: {e}")
 
     async def _manage_positions(self) -> List[PositionManagementResult]:
         """Manage existing positions - trailing stops, breakeven, close signals."""
@@ -996,19 +1520,43 @@ class QuantAutomation:
                     return results
 
             positions = get_open_positions()
-            managed_positions = [p for p in positions if p.get("symbol") in self.config.symbols]
+
+            # Build set of tickets owned by THIS automation (matched by source + symbol)
+            # Also cache per-ticket trailing stop multiplier from LLM
+            owned_tickets = set()
+            ticket_trail_mult = {}  # ticket -> LLM-suggested trailing ATR multiplier
+            try:
+                active_decisions = list_active_decisions()
+                my_source = self._source
+                self.logger.info(
+                    f"Ownership check: my_source='{my_source}', "
+                    f"active_decisions={len(active_decisions)}, "
+                    f"sources={[d.get('source') for d in active_decisions]}, "
+                    f"tickets={[d.get('mt5_ticket') for d in active_decisions]}"
+                )
+                for dec in active_decisions:
+                    if (dec.get("source") == my_source
+                            and dec.get("symbol") in self.config.symbols
+                            and dec.get("mt5_ticket")):
+                        owned_tickets.add(dec["mt5_ticket"])
+                        if dec.get("trailing_stop_atr_multiplier"):
+                            ticket_trail_mult[dec["mt5_ticket"]] = dec["trailing_stop_atr_multiplier"]
+            except Exception as e:
+                self.logger.error(f"Failed to load owned tickets, skipping position management: {e}")
+                return results
+
+            managed_positions = [
+                p for p in positions
+                if p.get("symbol") in self.config.symbols and p.get("ticket") in owned_tickets
+            ]
             self.logger.info(
                 f"Position check: {len(positions)} total open, "
-                f"{len(managed_positions)} managed ({', '.join(self.config.symbols)})"
+                f"{len(managed_positions)} owned by '{self._source}' ({', '.join(self.config.symbols)})"
             )
 
-            for position in positions:
+            for position in managed_positions:
                 symbol = position.get("symbol")
                 ticket = position.get("ticket")
-
-                # Skip if not in our managed symbols
-                if symbol not in self.config.symbols:
-                    continue
 
                 pos_type = position.get("type", "")
                 direction = "BUY" if "BUY" in pos_type.upper() else "SELL"
@@ -1026,13 +1574,18 @@ class QuantAutomation:
                 )
 
                 # Calculate P&L percentage
-                if entry_price > 0:
+                if entry_price > 0 and current_price > 0:
                     if direction == "BUY":
                         pnl_pct = ((current_price - entry_price) / entry_price) * 100
                     else:
                         pnl_pct = ((entry_price - current_price) / entry_price) * 100
                 else:
                     pnl_pct = 0
+                    if current_price <= 0:
+                        self.logger.warning(
+                            f"  Invalid current_price={current_price} for #{ticket}, "
+                            f"skipping SL adjustments"
+                        )
 
                 result = PositionManagementResult(
                     timestamp=datetime.now(),
@@ -1084,13 +1637,17 @@ class QuantAutomation:
 
                     # Check trailing stop condition
                     elif self.config.enable_trailing_stop and pnl_pct > 0:
-                        new_sl, should_trail = self.stop_loss_manager.calculate_trailing_stop(
-                            current_price=current_price,
-                            current_sl=current_sl,
-                            atr=atr,
-                            direction=direction,
-                        )
-                        self.logger.debug(f"  Trailing stop check: new_sl={new_sl}, should_trail={should_trail}")
+                        # Use per-trade LLM-suggested multiplier if available, else config default
+                        trail_mult = ticket_trail_mult.get(ticket, self.config.trailing_stop_atr_multiplier)
+                        trail_distance = trail_mult * atr
+                        if direction == "BUY":
+                            candidate_sl = round(current_price - trail_distance, 5)
+                            should_trail = candidate_sl > current_sl
+                        else:
+                            candidate_sl = round(current_price + trail_distance, 5)
+                            should_trail = candidate_sl < current_sl
+                        new_sl = candidate_sl if should_trail else current_sl
+                        self.logger.debug(f"  Trailing stop check: mult={trail_mult}x ATR, new_sl={new_sl}, should_trail={should_trail}")
 
                         if should_trail and new_sl and self.config.auto_execute:
                             self.logger.info(f"  Trailing SL: {current_sl:.5f} -> {new_sl:.5f}")
@@ -1100,7 +1657,7 @@ class QuantAutomation:
                                 result.action = "adjusted_sl"
                                 result.new_sl = new_sl
                                 self.logger.info(
-                                    f"  TRAILING STOP for {symbol} #{ticket}: {current_sl:.5f} -> {new_sl:.5f}"
+                                    f"  TRAILING STOP for {symbol} #{ticket}: {current_sl:.5f} -> {new_sl:.5f} ({trail_mult}x ATR)"
                                 )
                             else:
                                 self.logger.error(f"  Failed to trail stop for #{ticket}: {modify_result}")
@@ -1110,12 +1667,16 @@ class QuantAutomation:
                         self.logger.debug(f"  No SL adjustment needed: pnl_pct={pnl_pct:.2f}%, trailing={self.config.enable_trailing_stop}")
 
                     # Run quick analysis to check for close signal
-                    if self.config.pipeline in (PipelineType.QUANT, PipelineType.SMC_QUANT, PipelineType.BREAKOUT_QUANT):
+                    if self.config.pipeline in (PipelineType.SMC_QUANT_BASIC, PipelineType.SMC_QUANT, PipelineType.BREAKOUT_QUANT, PipelineType.RANGE_QUANT, PipelineType.RULE_BASED):
                         self.logger.info(f"  Running reversal check analysis for #{ticket} {symbol}...")
                         if self.config.pipeline == PipelineType.SMC_QUANT:
                             analysis = await self._run_smc_quant_analysis(symbol)
                         elif self.config.pipeline == PipelineType.BREAKOUT_QUANT:
                             analysis = await self._run_breakout_quant_analysis(symbol)
+                        elif self.config.pipeline == PipelineType.RANGE_QUANT:
+                            analysis = await self._run_range_quant_analysis(symbol)
+                        elif self.config.pipeline == PipelineType.RULE_BASED:
+                            analysis = await self._run_rule_based_analysis(symbol)
                         else:
                             analysis = await self._run_quant_analysis(symbol)
                         self.logger.info(f"  Reversal check result: signal={analysis.signal}, confidence={analysis.confidence:.2f}")
@@ -1161,10 +1722,14 @@ class QuantAutomation:
             # Detect positions that disappeared (SL/TP hit externally)
             open_tickets = {p.get("ticket") for p in managed_positions}
             try:
+                my_source = self._source
                 active_decisions = list_active_decisions()
                 for dec in active_decisions:
                     dec_ticket = dec.get("mt5_ticket")
                     dec_symbol = dec.get("symbol", "")
+                    # Only check decisions owned by this automation
+                    if dec.get("source") != my_source:
+                        continue
                     if not dec_ticket or dec_ticket in open_tickets or dec_symbol not in self.config.symbols:
                         continue
                     # This decision's position is gone - close it
@@ -1201,6 +1766,7 @@ class QuantAutomation:
 
     async def _analysis_loop(self):
         """Main analysis loop."""
+        await asyncio.sleep(0)  # Yield to let other coroutines start
         while self._running:
             try:
                 now = datetime.now()
@@ -1227,14 +1793,18 @@ class QuantAutomation:
                     self.logger.info(f"Running {self.config.pipeline.value} analysis for {symbol}...")
 
                     # Run analysis based on pipeline
-                    if self.config.pipeline == PipelineType.QUANT:
+                    if self.config.pipeline == PipelineType.SMC_QUANT_BASIC:
                         result = await self._run_quant_analysis(symbol)
                     elif self.config.pipeline == PipelineType.SMC_QUANT:
                         result = await self._run_smc_quant_analysis(symbol)
                     elif self.config.pipeline == PipelineType.BREAKOUT_QUANT:
                         result = await self._run_breakout_quant_analysis(symbol)
+                    elif self.config.pipeline == PipelineType.RANGE_QUANT:
+                        result = await self._run_range_quant_analysis(symbol)
                     elif self.config.pipeline == PipelineType.VOLUME_PROFILE:
                         result = await self._run_vp_analysis(symbol)
+                    elif self.config.pipeline == PipelineType.RULE_BASED:
+                        result = await self._run_rule_based_analysis(symbol)
                     else:
                         result = await self._run_multi_agent_analysis(symbol)
 
@@ -1273,6 +1843,7 @@ class QuantAutomation:
 
     async def _position_loop(self):
         """Position management loop."""
+        await asyncio.sleep(0)  # Yield to let other coroutines start
         self.logger.info("Position management loop started")
         while self._running:
             try:
@@ -1307,6 +1878,104 @@ class QuantAutomation:
             except asyncio.TimeoutError:
                 pass  # Normal timeout, continue loop
 
+    async def _assumption_review_loop(self):
+        """Daily assumption review loop — checks open positions against current SMC structure."""
+        self.logger.info(
+            f"Assumption review loop started "
+            f"(interval: {self.config.assumption_review_interval_seconds}s, "
+            f"auto_apply: {self.config.assumption_review_auto_apply})"
+        )
+        while self._running:
+            try:
+                now = datetime.now()
+
+                # Check if enough time has passed since last review
+                should_run = True
+                if self._last_assumption_review:
+                    elapsed = (now - self._last_assumption_review).total_seconds()
+                    if elapsed < self.config.assumption_review_interval_seconds:
+                        should_run = False
+                        self.logger.debug(f"Assumption review: {elapsed:.0f}s since last, need {self.config.assumption_review_interval_seconds}s")
+
+                self.logger.info(f"Assumption review check: should_run={should_run}, last_review={self._last_assumption_review}")
+
+                if should_run:
+                    self.logger.info("=" * 50)
+                    self.logger.info("RUNNING POSITION ASSUMPTION REVIEW")
+                    self.logger.info(f"  source_filter='{self._source}', symbols={self.config.symbols}")
+                    self.logger.info("=" * 50)
+
+                    from tradingagents.automation.position_assumption_review import (
+                        review_all_positions,
+                        format_review_summary,
+                    )
+
+                    import time as _time
+                    _t0 = _time.time()
+                    # Run synchronous review in thread to avoid blocking the event loop
+                    reports = await asyncio.get_event_loop().run_in_executor(
+                        None,
+                        lambda: review_all_positions(
+                            source_filter=self._source,
+                            symbols=self.config.symbols,
+                            timeframe=self.config.timeframe,
+                            auto_apply=self.config.assumption_review_auto_apply,
+                            use_llm=True,
+                        ),
+                    )
+                    self.logger.info(f"Assumption review completed: {len(reports)} reports in {_time.time()-_t0:.1f}s")
+
+                    self._last_assumption_review = now
+
+                    # Store summary for status endpoint
+                    self._assumption_review_results = [
+                        {
+                            "decision_id": r.decision_id,
+                            "symbol": r.symbol,
+                            "direction": r.direction,
+                            "ticket": r.ticket,
+                            "pnl_pct": r.pnl_pct,
+                            "recommended_action": r.recommended_action,
+                            "suggested_sl": r.suggested_sl,
+                            "suggested_tp": r.suggested_tp,
+                            "findings_count": len(r.findings),
+                            "has_critical": r.has_critical,
+                            "findings": [
+                                {
+                                    "category": f.category,
+                                    "severity": f.severity,
+                                    "message": f.message,
+                                    "suggested_action": f.suggested_action,
+                                    "suggested_value": f.suggested_value,
+                                }
+                                for f in r.findings
+                            ],
+                            "llm_assessment": r.llm_assessment,
+                            "error": r.error,
+                            "timestamp": r.review_timestamp.isoformat(),
+                        }
+                        for r in reports
+                    ]
+
+                    summary = format_review_summary(reports)
+                    self.logger.info(summary)
+
+                    self._save_state()
+
+            except Exception as e:
+                import traceback
+                self.logger.error(f"Assumption review error: {e}\n{traceback.format_exc()}")
+
+            # Wait for next cycle or shutdown — check every 5 minutes
+            try:
+                await asyncio.wait_for(
+                    self._shutdown_event.wait(),
+                    timeout=300,
+                )
+                break
+            except asyncio.TimeoutError:
+                pass
+
     async def start(self):
         """Start the automation."""
         if self._running:
@@ -1331,14 +2000,16 @@ class QuantAutomation:
         self.logger.info(f"Pipeline: {self.config.pipeline.value}")
         self.logger.info(f"Symbols: {', '.join(self.config.symbols)}")
         self.logger.info(f"Analysis interval: {self.config.analysis_interval_seconds}s")
+        self.logger.info(f"Assumption review interval: {self.config.assumption_review_interval_seconds}s")
         self.logger.info(f"Auto-execute: {self.config.auto_execute}")
         self.logger.info("=" * 50)
 
-        # Run both loops concurrently
+        # Run all loops concurrently
         try:
             await asyncio.gather(
                 self._analysis_loop(),
                 self._position_loop(),
+                self._assumption_review_loop(),
             )
         except Exception as e:
             self._status = AutomationStatus.ERROR
@@ -1398,13 +2069,13 @@ class QuantAutomation:
             "positions": {
                 "managed": len(positions),
                 "max_per_symbol": self.config.max_positions_per_symbol,
-                "max_total": self.config.max_total_positions,
             },
             "last_analysis": {
                 symbol: t.isoformat() if t else None
                 for symbol, t in self._last_analysis_time.items()
             },
             "last_position_check": self._last_position_check.isoformat() if self._last_position_check else None,
+            "last_assumption_review": self._last_assumption_review.isoformat() if self._last_assumption_review else None,
             "recent_results": [
                 {
                     "timestamp": r.timestamp.isoformat(),
@@ -1415,19 +2086,24 @@ class QuantAutomation:
                 }
                 for r in self._analysis_results[-10:]
             ],
+            "assumption_review": self._assumption_review_results,
             "guardrails": self.guardrails.get_status(),
         }
 
     async def run_single_analysis(self, symbol: str) -> AnalysisCycleResult:
         """Run a single analysis cycle for testing."""
-        if self.config.pipeline == PipelineType.QUANT:
+        if self.config.pipeline == PipelineType.SMC_QUANT_BASIC:
             return await self._run_quant_analysis(symbol)
         elif self.config.pipeline == PipelineType.SMC_QUANT:
             return await self._run_smc_quant_analysis(symbol)
         elif self.config.pipeline == PipelineType.BREAKOUT_QUANT:
             return await self._run_breakout_quant_analysis(symbol)
+        elif self.config.pipeline == PipelineType.RANGE_QUANT:
+            return await self._run_range_quant_analysis(symbol)
         elif self.config.pipeline == PipelineType.VOLUME_PROFILE:
             return await self._run_vp_analysis(symbol)
+        elif self.config.pipeline == PipelineType.RULE_BASED:
+            return await self._run_rule_based_analysis(symbol)
         else:
             return await self._run_multi_agent_analysis(symbol)
 

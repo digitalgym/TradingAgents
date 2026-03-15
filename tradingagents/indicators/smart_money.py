@@ -47,7 +47,7 @@ class SMCConstants:
 
     # Structural OB detection
     STRUCTURAL_OB_MIN_IMPULSE_ATR = 2.0
-    STRUCTURAL_OB_CONSOLIDATION_CANDLES = 5
+    STRUCTURAL_OB_CONSOLIDATION_CANDLES = 3  # Was 5 — too wide, use tighter zone
     STRUCTURAL_OB_STRENGTH_ATR_DIVISOR = 3.0
 
     # FVG detection
@@ -62,7 +62,7 @@ class SMCConstants:
     LIQUIDITY_MOVE_ATR_DIVISOR = 3.0
 
     # Equal levels detection
-    EQUAL_LEVEL_TOLERANCE_ATR = 0.1
+    EQUAL_LEVEL_TOLERANCE_ATR = 0.25  # Was 0.1 — too tight, missed proven support/resistance
     EQUAL_LEVEL_MIN_TOUCHES = 2
 
     # OTE (Optimal Trade Entry) Fibonacci levels
@@ -70,7 +70,7 @@ class SMCConstants:
     OTE_FIB_END = 0.79
 
     # Premium/Discount
-    PREMIUM_DISCOUNT_LOOKBACK = 50
+    PREMIUM_DISCOUNT_LOOKBACK = 100
 
     # Confluence scoring weights
     CONFLUENCE_OB_WEIGHT = 30
@@ -735,13 +735,16 @@ class SmartMoneyAnalyzer:
                     continue
 
                 zone_start_idx = max(0, sp.index - consolidation_candles)
-                zone_candles = df.iloc[zone_start_idx:sp.index + 1]
+                zone_candles_df = df.iloc[zone_start_idx:sp.index + 1]
 
-                zone_low = zone_candles['low'].min()
-                zone_high = zone_candles['high'].max()
-
-                ob_bottom = zone_low
-                ob_top = min(zone_high, sp.price + (zone_high - zone_low) * 0.5)
+                # Use the impulse candle (at swing point) as the primary OB zone
+                # rather than the entire consolidation range
+                impulse_candle = df.iloc[sp.index]
+                ob_bottom = impulse_candle['low']
+                # Cap the top: use the higher of impulse candle body top or
+                # a tight zone around the swing low
+                impulse_body_top = max(impulse_candle['open'], impulse_candle['close'])
+                ob_top = min(impulse_candle['high'], impulse_body_top + atr_at_swing * 0.5)
 
                 strength = min(move_size / (atr_at_swing * SMCConstants.STRUCTURAL_OB_STRENGTH_ATR_DIVISOR), 1.0)
 
@@ -795,13 +798,12 @@ class SmartMoneyAnalyzer:
                     continue
 
                 zone_start_idx = max(0, sp.index - consolidation_candles)
-                zone_candles = df.iloc[zone_start_idx:sp.index + 1]
 
-                zone_low = zone_candles['low'].min()
-                zone_high = zone_candles['high'].max()
-
-                ob_top = zone_high
-                ob_bottom = max(zone_low, sp.price - (zone_high - zone_low) * 0.5)
+                # Use the impulse candle (at swing point) as the primary OB zone
+                impulse_candle = df.iloc[sp.index]
+                ob_top = impulse_candle['high']
+                impulse_body_bottom = min(impulse_candle['open'], impulse_candle['close'])
+                ob_bottom = max(impulse_candle['low'], impulse_body_bottom - atr_at_swing * 0.5)
 
                 strength = min(move_size / (atr_at_swing * SMCConstants.STRUCTURAL_OB_STRENGTH_ATR_DIVISOR), 1.0)
 
@@ -1201,51 +1203,63 @@ class SmartMoneyAnalyzer:
         # Check each swing point for breaks
         for i in range(len(swing_points) - 1):
             current_sp = swing_points[i]
-            
+
             # Look for breaks after this swing point
             for j in range(current_sp.index + self.structure_break_confirm, len(df)):
                 candle = df.iloc[j]
-                
+
                 if current_sp.type == 'high' and not current_sp.broken:
-                    # Check if high is broken
+                    # Check if high is broken (close above)
                     if candle['close'] > current_sp.price:
-                        # Determine if BOS or CHOC based on trend
-                        # If previous swing low is higher (uptrend), breaking high = BOS
-                        # If previous swing low is lower (downtrend), breaking high = CHOC
-                        
+                        # Determine if BOS or CHOC based on trend context
+                        # Use both swing highs and lows for better trend assessment
                         prev_lows = [sp for sp in lows if sp.index < current_sp.index]
+                        prev_highs_before = [sp for sp in highs if sp.index < current_sp.index]
+
+                        is_uptrend = False
                         if len(prev_lows) >= 2:
-                            if prev_lows[-1].price > prev_lows[-2].price:
-                                # Uptrend, breaking high = BOS
-                                current_sp.broken = True
-                                current_sp.break_index = j
-                                current_sp.break_type = 'BOS'
-                                bos_points.append(current_sp)
-                            else:
-                                # Downtrend, breaking high = CHOC
-                                current_sp.broken = True
-                                current_sp.break_index = j
-                                current_sp.break_type = 'CHOC'
-                                choc_points.append(current_sp)
+                            is_uptrend = prev_lows[-1].price > prev_lows[-2].price
+                        elif len(prev_highs_before) >= 1 and len(prev_lows) >= 1:
+                            # Fallback: if only 1 previous low, check if recent high
+                            # was higher than recent low (basic uptrend)
+                            is_uptrend = prev_highs_before[-1].price > prev_lows[-1].price
+
+                        current_sp.broken = True
+                        current_sp.break_index = j
+                        if is_uptrend:
+                            # Uptrend, breaking high = BOS (continuation)
+                            current_sp.break_type = 'BOS'
+                            bos_points.append(current_sp)
+                        else:
+                            # Downtrend, breaking high = CHOC (reversal)
+                            current_sp.break_type = 'CHOC'
+                            choc_points.append(current_sp)
                         break
-                
+
                 elif current_sp.type == 'low' and not current_sp.broken:
-                    # Check if low is broken
+                    # Check if low is broken (close below)
                     if candle['close'] < current_sp.price:
-                        prev_highs = [sp for sp in highs if sp.index < current_sp.index]
-                        if len(prev_highs) >= 2:
-                            if prev_highs[-1].price < prev_highs[-2].price:
-                                # Downtrend, breaking low = BOS
-                                current_sp.broken = True
-                                current_sp.break_index = j
-                                current_sp.break_type = 'BOS'
-                                bos_points.append(current_sp)
-                            else:
-                                # Uptrend, breaking low = CHOC
-                                current_sp.broken = True
-                                current_sp.break_index = j
-                                current_sp.break_type = 'CHOC'
-                                choc_points.append(current_sp)
+                        prev_highs_before = [sp for sp in highs if sp.index < current_sp.index]
+                        prev_lows_before = [sp for sp in lows if sp.index < current_sp.index]
+
+                        is_downtrend = False
+                        if len(prev_highs_before) >= 2:
+                            is_downtrend = prev_highs_before[-1].price < prev_highs_before[-2].price
+                        elif len(prev_lows_before) >= 1 and len(prev_highs_before) >= 1:
+                            # Fallback: if only 1 previous high, check if recent low
+                            # was lower than recent high (basic downtrend)
+                            is_downtrend = prev_lows_before[-1].price < prev_highs_before[-1].price
+
+                        current_sp.broken = True
+                        current_sp.break_index = j
+                        if is_downtrend:
+                            # Downtrend, breaking low = BOS (continuation)
+                            current_sp.break_type = 'BOS'
+                            bos_points.append(current_sp)
+                        else:
+                            # Uptrend, breaking low = CHOC (reversal)
+                            current_sp.break_type = 'CHOC'
+                            choc_points.append(current_sp)
                         break
         
         return {'bos': bos_points, 'choc': choc_points}
@@ -1331,15 +1345,34 @@ class SmartMoneyAnalyzer:
         self,
         df: pd.DataFrame,
         current_price: Optional[float] = None,
-        use_structural_obs: bool = True
+        use_structural_obs: bool = True,
+        include_equal_levels: bool = True,
+        include_breakers: bool = True,
+        include_ote: bool = True,
+        include_sweeps: bool = True,
+        include_inducements: bool = True,
+        include_rejections: bool = True,
+        include_turtle_soup: bool = True,
     ) -> Dict[str, Any]:
         """
-        Run full smart money analysis.
+        Run full smart money analysis with all features.
+
+        Includes: Order Blocks, FVGs, Structure Breaks, Liquidity Zones,
+        Equal Highs/Lows, Breaker Blocks, Premium/Discount, OTE Zones,
+        Liquidity Sweeps, Inducements, Rejection Blocks, Turtle Soup,
+        and Confluence scoring.
 
         Args:
             df: DataFrame with OHLCV data
             current_price: Current price (uses last close if not provided)
-            use_structural_obs: Whether to include structural OB detection (default: True)
+            use_structural_obs: Include structural OB detection
+            include_equal_levels: Include equal highs/lows
+            include_breakers: Include breaker block detection
+            include_ote: Include OTE zone calculation
+            include_sweeps: Include liquidity sweep detection
+            include_inducements: Include inducement pattern detection
+            include_rejections: Include rejection block detection
+            include_turtle_soup: Include turtle soup detection
 
         Returns:
             dict with all SMC analysis
@@ -1393,15 +1426,16 @@ class SmartMoneyAnalyzer:
         nearest_support = zones['support'][0] if zones['support'] else None
         nearest_resistance = zones['resistance'][0] if zones['resistance'] else None
 
-        # Recent structure breaks
-        recent_bos = [sp for sp in structure_breaks['bos'] if sp.break_index and sp.break_index >= len(df) - 20]
-        recent_choc = [sp for sp in structure_breaks['choc'] if sp.break_index and sp.break_index >= len(df) - 20]
+        # Recent structure breaks — use 25% of lookback window
+        recent_window = max(20, len(df) // 4)
+        recent_bos = [sp for sp in structure_breaks['bos'] if sp.break_index and sp.break_index >= len(df) - recent_window]
+        recent_choc = [sp for sp in structure_breaks['choc'] if sp.break_index and sp.break_index >= len(df) - recent_window]
 
         # Separate structural and candle-based OBs for reporting
         structural_count = len([ob for ob in order_blocks if ob.detection_method == 'structural'])
         candle_count = len([ob for ob in order_blocks if ob.detection_method == 'candle'])
 
-        return {
+        analysis = {
             'current_price': current_price,
             'order_blocks': {
                 'total': len(order_blocks),
@@ -1422,6 +1456,8 @@ class SmartMoneyAnalyzer:
                 'swing_points': len(swing_points),
                 'bos_count': len(structure_breaks['bos']),
                 'choc_count': len(structure_breaks['choc']),
+                'all_bos': structure_breaks['bos'],
+                'all_choc': structure_breaks['choc'],
                 'recent_bos': recent_bos,
                 'recent_choc': recent_choc
             },
@@ -1430,6 +1466,99 @@ class SmartMoneyAnalyzer:
             'nearest_resistance': nearest_resistance,
             'bias': self._determine_bias(recent_bos, recent_choc, zones, current_price)
         }
+
+        # --- Extended features ---
+
+        # Premium/Discount zone
+        analysis['premium_discount'] = self.calculate_premium_discount(df)
+
+        # Equal levels
+        if include_equal_levels:
+            equal_levels = self.detect_equal_levels(df, swing_points)
+            analysis['equal_levels'] = {
+                'equal_highs': [el for el in equal_levels if el.type == 'equal_highs'],
+                'equal_lows': [el for el in equal_levels if el.type == 'equal_lows'],
+                'total': len(equal_levels),
+                'unswept': len([el for el in equal_levels if not el.swept])
+            }
+
+        # Breaker blocks
+        if include_breakers:
+            all_obs = analysis['order_blocks']['bullish'] + analysis['order_blocks']['bearish']
+            breaker_blocks = self.detect_breaker_blocks(df, all_obs)
+            analysis['breaker_blocks'] = {
+                'total': len(breaker_blocks),
+                'unmitigated': len([bb for bb in breaker_blocks if not bb.mitigated]),
+                'bullish': [bb for bb in breaker_blocks if bb.current_type == 'bullish'],
+                'bearish': [bb for bb in breaker_blocks if bb.current_type == 'bearish']
+            }
+
+        # OTE zones
+        if include_ote:
+            ote_zones = self.find_ote_zones(swing_points, current_price)
+            analysis['ote_zones'] = ote_zones
+
+        # Liquidity Sweeps
+        if include_sweeps:
+            sweeps = self.detect_liquidity_sweeps(df, swing_points)
+            recent_sweeps = [s for s in sweeps if s.sweep_candle_index >= len(df) - 10]
+            analysis['liquidity_sweeps'] = {
+                'total': len(sweeps),
+                'recent': recent_sweeps,
+                'bullish': [s for s in sweeps if s.type == 'bullish'],
+                'bearish': [s for s in sweeps if s.type == 'bearish'],
+                'strong_sweeps': [s for s in sweeps if s.is_strong]
+            }
+
+        # Inducements
+        if include_inducements:
+            inducements = self.detect_inducements(df, swing_points)
+            recent_inducements = [ind for ind in inducements if ind.reversal_index >= len(df) - 15]
+            analysis['inducements'] = {
+                'total': len(inducements),
+                'recent': recent_inducements,
+                'bullish': [ind for ind in inducements if ind.type == 'bullish'],
+                'bearish': [ind for ind in inducements if ind.type == 'bearish']
+            }
+
+        # Rejection Blocks
+        if include_rejections:
+            rejection_blocks = self.detect_rejection_blocks(df)
+            unmitigated_rejections = [rb for rb in rejection_blocks if not rb.mitigated]
+            analysis['rejection_blocks'] = {
+                'total': len(rejection_blocks),
+                'unmitigated': len(unmitigated_rejections),
+                'bullish': [rb for rb in rejection_blocks if rb.type == 'bullish'],
+                'bearish': [rb for rb in rejection_blocks if rb.type == 'bearish'],
+                'held': [rb for rb in rejection_blocks if rb.held]
+            }
+
+        # Turtle Soup
+        if include_turtle_soup:
+            turtle_soups = self.detect_turtle_soup(df, swing_points)
+            recent_ts = [ts for ts in turtle_soups if ts.break_candle_index >= len(df) - 10]
+            analysis['turtle_soup'] = {
+                'total': len(turtle_soups),
+                'recent': recent_ts,
+                'bullish': [ts for ts in turtle_soups if ts.type == 'bullish'],
+                'bearish': [ts for ts in turtle_soups if ts.type == 'bearish']
+            }
+
+        # Alerts
+        analysis['alerts'] = self._generate_pattern_alerts(analysis, current_price, df)
+
+        # Confluence scoring
+        if analysis['nearest_support']:
+            support_price = (analysis['nearest_support']['top'] + analysis['nearest_support']['bottom']) / 2
+            analysis['support_confluence'] = self.calculate_confluence_score(support_price, analysis)
+
+        if analysis['nearest_resistance']:
+            resistance_price = (analysis['nearest_resistance']['top'] + analysis['nearest_resistance']['bottom']) / 2
+            analysis['resistance_confluence'] = self.calculate_confluence_score(resistance_price, analysis)
+
+        analysis['current_confluence'] = self.calculate_confluence_score(current_price, analysis)
+
+        return analysis
     
     def _determine_bias(
         self,
@@ -1528,6 +1657,188 @@ class SmartMoneyAnalyzer:
     # NEW DETECTION METHODS
     # =========================================================================
 
+    def _count_wick_retests(
+        self,
+        df: pd.DataFrame,
+        level_price: float,
+        tolerance: float,
+        level_type: str,
+        swing_indices: List[int],
+    ) -> int:
+        """
+        Count additional candle wick retests of a level beyond swing points.
+
+        MT5-style: counts any candle that wicks into the zone as a retest,
+        not just swing points. Only counts separated retests (ignores
+        consecutive candles at the same level).
+
+        Args:
+            df: DataFrame with OHLC data
+            level_price: The price level to check
+            tolerance: Price tolerance for retest detection
+            level_type: 'high' or 'low'
+            swing_indices: Indices of swing points already counted
+
+        Returns:
+            Total touch count including wick retests
+        """
+        swing_set = set(swing_indices)
+        retest_indices = list(swing_indices)
+        min_gap = 3  # Minimum candles between retests to avoid double-counting
+
+        for i in range(len(df)):
+            if i in swing_set:
+                continue
+            # Check if too close to an already-counted retest
+            if any(abs(i - ri) < min_gap for ri in retest_indices):
+                continue
+
+            if level_type == 'high':
+                # Wick reaches the level but candle closes below (a rejection/retest)
+                candle = df.iloc[i]
+                if abs(candle['high'] - level_price) <= tolerance and candle['close'] < level_price:
+                    retest_indices.append(i)
+            else:
+                # Wick reaches the level but candle closes above (a bounce/retest)
+                candle = df.iloc[i]
+                if abs(candle['low'] - level_price) <= tolerance and candle['close'] > level_price:
+                    retest_indices.append(i)
+
+        return len(retest_indices)
+
+    def _find_wick_based_levels(
+        self,
+        df: pd.DataFrame,
+        tolerance: float,
+        min_touches: int,
+        existing_levels: List[float],
+    ) -> List[EqualLevel]:
+        """
+        Detect equal levels from candle wicks alone (not just swing points).
+
+        Scans for price zones where multiple candle wicks cluster,
+        even if they don't form swing points. This catches levels
+        like MT5's "Proven Support, Retests=4" at ~5023.
+
+        Args:
+            df: DataFrame with OHLC data
+            tolerance: Price tolerance for level matching
+            min_touches: Minimum wick touches to qualify
+            existing_levels: Already-detected level prices to avoid duplicates
+
+        Returns:
+            List of EqualLevel objects from wick-based detection
+        """
+        wick_levels = []
+        min_gap = 3  # Minimum candles between retests
+
+        # Only consider levels in the lower/upper 40% of the range
+        # to avoid noise from mid-range price action
+        range_high = df['high'].max()
+        range_low = df['low'].min()
+        range_size = range_high - range_low
+        low_threshold = range_low + range_size * 0.25  # Bottom 25%
+        high_threshold = range_high - range_size * 0.25  # Top 25%
+
+        # Scan lows for support levels (only in lower portion of range)
+        lows = df['low'].values
+        used_indices = set()
+
+        for i in range(len(lows)):
+            if i in used_indices:
+                continue
+
+            level = lows[i]
+            # Only consider lows in the lower portion of range (support zones)
+            if level > low_threshold:
+                continue
+            # Skip if too close to an existing swing-based level
+            if any(abs(level - ep) <= tolerance for ep in existing_levels):
+                continue
+
+            # Find all candles with lows near this level
+            touches = [i]
+            for j in range(i + min_gap, len(lows)):
+                if j in used_indices:
+                    continue
+                if abs(lows[j] - level) <= tolerance:
+                    if all(abs(j - t) >= min_gap for t in touches):
+                        touches.append(j)
+
+            if len(touches) >= min_touches:
+                avg_price = sum(lows[t] for t in touches) / len(touches)
+                for t in touches:
+                    used_indices.add(t)
+
+                # Check if swept
+                swept = False
+                sweep_idx = None
+                max_idx = max(touches)
+                for k in range(max_idx + 1, len(df)):
+                    if lows[k] < avg_price - tolerance:
+                        swept = True
+                        sweep_idx = k
+                        break
+
+                wick_levels.append(EqualLevel(
+                    type='equal_lows',
+                    price=avg_price,
+                    touches=len(touches),
+                    indices=touches,
+                    swept=swept,
+                    sweep_index=sweep_idx,
+                ))
+                existing_levels.append(avg_price)
+
+        # Scan highs for resistance levels (only in upper half of range)
+        highs = df['high'].values
+        used_indices = set()
+
+        for i in range(len(highs)):
+            if i in used_indices:
+                continue
+
+            level = highs[i]
+            # Only consider highs in the upper portion of range (resistance zones)
+            if level < high_threshold:
+                continue
+            if any(abs(level - ep) <= tolerance for ep in existing_levels):
+                continue
+
+            touches = [i]
+            for j in range(i + min_gap, len(highs)):
+                if j in used_indices:
+                    continue
+                if abs(highs[j] - level) <= tolerance:
+                    if all(abs(j - t) >= min_gap for t in touches):
+                        touches.append(j)
+
+            if len(touches) >= min_touches:
+                avg_price = sum(highs[t] for t in touches) / len(touches)
+                for t in touches:
+                    used_indices.add(t)
+
+                swept = False
+                sweep_idx = None
+                max_idx = max(touches)
+                for k in range(max_idx + 1, len(df)):
+                    if highs[k] > avg_price + tolerance:
+                        swept = True
+                        sweep_idx = k
+                        break
+
+                wick_levels.append(EqualLevel(
+                    type='equal_highs',
+                    price=avg_price,
+                    touches=len(touches),
+                    indices=touches,
+                    swept=swept,
+                    sweep_index=sweep_idx,
+                ))
+                existing_levels.append(avg_price)
+
+        return wick_levels
+
     def detect_equal_levels(
         self,
         df: pd.DataFrame,
@@ -1539,9 +1850,15 @@ class SmartMoneyAnalyzer:
         Detect equal highs and equal lows - major liquidity targets.
 
         Equal highs/lows occur when price creates multiple swing points at
-        similar prices. These are significant because:
+        similar prices, or when multiple candle wicks test the same level.
+        These are significant because:
         - EQH: Buy stops cluster above (shorts' stops)
         - EQL: Sell stops cluster below (longs' stops)
+
+        Detection uses two methods:
+        1. Swing-point based: groups swing highs/lows at similar prices
+        2. Wick-based: counts candle wicks touching the same level (MT5-style)
+        Both methods count wick retests for accurate touch counts.
 
         Args:
             df: DataFrame with OHLC data
@@ -1552,7 +1869,7 @@ class SmartMoneyAnalyzer:
         Returns:
             List of EqualLevel objects
         """
-        if len(swing_points) < 2 or len(df) < 20:
+        if len(df) < 20:
             return []
 
         equal_levels = []
@@ -1560,11 +1877,11 @@ class SmartMoneyAnalyzer:
         recent_atr = atr_series.iloc[-1] if pd.notna(atr_series.iloc[-1]) else 1.0
         tolerance = recent_atr * tolerance_atr
 
-        # Group swing highs
+        # --- Method 1: Swing-point based detection ---
         swing_highs = [sp for sp in swing_points if sp.type == 'high']
         swing_lows = [sp for sp in swing_points if sp.type == 'low']
 
-        # Find equal highs
+        # Find equal highs from swing points
         processed_highs = set()
         for i, sh1 in enumerate(swing_highs):
             if i in processed_highs:
@@ -1586,6 +1903,11 @@ class SmartMoneyAnalyzer:
             if len(matching_highs) >= min_touches:
                 avg_price = sum(h.price for h in matching_highs) / len(matching_highs)
 
+                # Count wick retests for more accurate touch count
+                total_touches = self._count_wick_retests(
+                    df, avg_price, tolerance, 'high', matching_indices
+                )
+
                 # Check if swept
                 swept = False
                 sweep_idx = None
@@ -1599,7 +1921,7 @@ class SmartMoneyAnalyzer:
                 eq = EqualLevel(
                     type='equal_highs',
                     price=avg_price,
-                    touches=len(matching_highs),
+                    touches=total_touches,
                     indices=matching_indices,
                     timestamps=matching_timestamps,
                     swept=swept,
@@ -1608,7 +1930,7 @@ class SmartMoneyAnalyzer:
                 equal_levels.append(eq)
                 processed_highs.add(i)
 
-        # Find equal lows
+        # Find equal lows from swing points
         processed_lows = set()
         for i, sl1 in enumerate(swing_lows):
             if i in processed_lows:
@@ -1630,6 +1952,11 @@ class SmartMoneyAnalyzer:
             if len(matching_lows) >= min_touches:
                 avg_price = sum(l.price for l in matching_lows) / len(matching_lows)
 
+                # Count wick retests
+                total_touches = self._count_wick_retests(
+                    df, avg_price, tolerance, 'low', matching_indices
+                )
+
                 # Check if swept
                 swept = False
                 sweep_idx = None
@@ -1643,7 +1970,7 @@ class SmartMoneyAnalyzer:
                 eq = EqualLevel(
                     type='equal_lows',
                     price=avg_price,
-                    touches=len(matching_lows),
+                    touches=total_touches,
                     indices=matching_indices,
                     timestamps=matching_timestamps,
                     swept=swept,
@@ -1651,6 +1978,14 @@ class SmartMoneyAnalyzer:
                 )
                 equal_levels.append(eq)
                 processed_lows.add(i)
+
+        # --- Method 2: Wick-based detection (catches levels missed by swing detection) ---
+        # Requires more touches (4) since these are weaker signals without swing confirmation
+        existing_prices = [el.price for el in equal_levels]
+        wick_levels = self._find_wick_based_levels(
+            df, tolerance, min_touches=4, existing_levels=existing_prices
+        )
+        equal_levels.extend(wick_levels)
 
         return equal_levels
 
@@ -2067,147 +2402,8 @@ class SmartMoneyAnalyzer:
             'aligned_resistance': aligned_resistance
         }
 
-    def analyze_full_smc_extended(
-        self,
-        df: pd.DataFrame,
-        current_price: Optional[float] = None,
-        use_structural_obs: bool = True,
-        include_equal_levels: bool = True,
-        include_breakers: bool = True,
-        include_ote: bool = True,
-        include_sweeps: bool = True,
-        include_inducements: bool = True,
-        include_rejections: bool = True,
-        include_turtle_soup: bool = True
-    ) -> Dict[str, Any]:
-        """
-        Run extended full smart money analysis with all features.
-
-        This is an enhanced version of analyze_full_smc that includes:
-        - Equal highs/lows detection
-        - Breaker blocks
-        - Premium/Discount zones
-        - OTE zones
-        - Liquidity Sweeps (NEW)
-        - Inducement patterns (NEW)
-        - Rejection Blocks (NEW)
-        - Turtle Soup patterns (NEW)
-        - Confluence scoring for key levels
-
-        Args:
-            df: DataFrame with OHLCV data
-            current_price: Current price (uses last close if not provided)
-            use_structural_obs: Include structural OB detection
-            include_equal_levels: Include equal highs/lows
-            include_breakers: Include breaker block detection
-            include_ote: Include OTE zone calculation
-            include_sweeps: Include liquidity sweep detection
-            include_inducements: Include inducement pattern detection
-            include_rejections: Include rejection block detection
-            include_turtle_soup: Include turtle soup detection
-
-        Returns:
-            Extended dict with all SMC analysis
-        """
-        # Start with base analysis
-        analysis = self.analyze_full_smc(df, current_price, use_structural_obs)
-
-        if current_price is None:
-            current_price = df.iloc[-1]['close']
-
-        swing_points = self.detect_swing_points(df)
-
-        # Add Premium/Discount zone
-        analysis['premium_discount'] = self.calculate_premium_discount(df)
-
-        # Add Equal levels
-        if include_equal_levels:
-            equal_levels = self.detect_equal_levels(df, swing_points)
-            analysis['equal_levels'] = {
-                'equal_highs': [el for el in equal_levels if el.type == 'equal_highs'],
-                'equal_lows': [el for el in equal_levels if el.type == 'equal_lows'],
-                'total': len(equal_levels),
-                'unswept': len([el for el in equal_levels if not el.swept])
-            }
-
-        # Add Breaker blocks
-        if include_breakers:
-            all_obs = analysis['order_blocks']['bullish'] + analysis['order_blocks']['bearish']
-            breaker_blocks = self.detect_breaker_blocks(df, all_obs)
-            analysis['breaker_blocks'] = {
-                'total': len(breaker_blocks),
-                'unmitigated': len([bb for bb in breaker_blocks if not bb.mitigated]),
-                'bullish': [bb for bb in breaker_blocks if bb.current_type == 'bullish'],
-                'bearish': [bb for bb in breaker_blocks if bb.current_type == 'bearish']
-            }
-
-        # Add OTE zones
-        if include_ote:
-            ote_zones = self.find_ote_zones(swing_points, current_price)
-            analysis['ote_zones'] = ote_zones
-
-        # Add Liquidity Sweeps (NEW)
-        if include_sweeps:
-            sweeps = self.detect_liquidity_sweeps(df, swing_points)
-            recent_sweeps = [s for s in sweeps if s.sweep_candle_index >= len(df) - 10]
-            analysis['liquidity_sweeps'] = {
-                'total': len(sweeps),
-                'recent': recent_sweeps,
-                'bullish': [s for s in sweeps if s.type == 'bullish'],
-                'bearish': [s for s in sweeps if s.type == 'bearish'],
-                'strong_sweeps': [s for s in sweeps if s.is_strong]
-            }
-
-        # Add Inducements (NEW)
-        if include_inducements:
-            inducements = self.detect_inducements(df, swing_points)
-            recent_inducements = [ind for ind in inducements if ind.reversal_index >= len(df) - 15]
-            analysis['inducements'] = {
-                'total': len(inducements),
-                'recent': recent_inducements,
-                'bullish': [ind for ind in inducements if ind.type == 'bullish'],
-                'bearish': [ind for ind in inducements if ind.type == 'bearish']
-            }
-
-        # Add Rejection Blocks (NEW)
-        if include_rejections:
-            rejection_blocks = self.detect_rejection_blocks(df)
-            unmitigated_rejections = [rb for rb in rejection_blocks if not rb.mitigated]
-            analysis['rejection_blocks'] = {
-                'total': len(rejection_blocks),
-                'unmitigated': len(unmitigated_rejections),
-                'bullish': [rb for rb in rejection_blocks if rb.type == 'bullish'],
-                'bearish': [rb for rb in rejection_blocks if rb.type == 'bearish'],
-                'held': [rb for rb in rejection_blocks if rb.held]
-            }
-
-        # Add Turtle Soup (NEW)
-        if include_turtle_soup:
-            turtle_soups = self.detect_turtle_soup(df, swing_points)
-            recent_ts = [ts for ts in turtle_soups if ts.break_candle_index >= len(df) - 10]
-            analysis['turtle_soup'] = {
-                'total': len(turtle_soups),
-                'recent': recent_ts,
-                'bullish': [ts for ts in turtle_soups if ts.type == 'bullish'],
-                'bearish': [ts for ts in turtle_soups if ts.type == 'bearish']
-            }
-
-        # Generate alerts for actionable patterns
-        analysis['alerts'] = self._generate_pattern_alerts(analysis, current_price, df)
-
-        # Calculate confluence for nearest support and resistance
-        if analysis['nearest_support']:
-            support_price = (analysis['nearest_support']['top'] + analysis['nearest_support']['bottom']) / 2
-            analysis['support_confluence'] = self.calculate_confluence_score(support_price, analysis)
-
-        if analysis['nearest_resistance']:
-            resistance_price = (analysis['nearest_resistance']['top'] + analysis['nearest_resistance']['bottom']) / 2
-            analysis['resistance_confluence'] = self.calculate_confluence_score(resistance_price, analysis)
-
-        # Calculate confluence at current price
-        analysis['current_confluence'] = self.calculate_confluence_score(current_price, analysis)
-
-        return analysis
+    # Backwards-compatible alias
+    analyze_full_smc_extended = analyze_full_smc
 
     def _generate_pattern_alerts(
         self,

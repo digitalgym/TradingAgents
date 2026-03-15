@@ -1,0 +1,3126 @@
+2026-03-16 07:22:36,870 | 
+================================================================================
+RANGE QUANT ANALYSIS - BTCUSD
+================================================================================
+2026-03-16 07:22:36,871 | Symbol: BTCUSD | Date: 2026-03-16 | Price: 71725.34
+2026-03-16 07:22:36,871 | Market Regime: ranging | Volatility: low
+2026-03-16 07:22:36,872 | Range Analysis: {'is_ranging': False, 'range_high': 73894.83, 'range_low': 69200.78, 'range_midpoint': 71547.805, 'range_percent': 6.560718389613775, 'mean_reversion_score': 63.24830101442671, 'price_position': 'equilibrium', 'position_pct': 53.622351700557005, 'touches_high': 1, 'touches_low': 5, 'trend_strength': 0.20851224058103113, 'adx_proxy': 7.638273763501659, 'structural_bias': 'neutral'}
+2026-03-16 07:22:36,872 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71725.34000
+- **Date**: 2026-03-16
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: low
+
+## RANGE ANALYSIS (Critical for Range Trading)
+- **Is Ranging**: No clear range
+- **Range High (Resistance)**: 73894.83000
+- **Range Low (Support)**: 69200.78000
+- **Range Midpoint (Equilibrium)**: 71547.80500
+- **Range Width**: 6.56% of price
+- **Price Position**: EQUILIBRIUM (54% within range)
+- **Mean Reversion Score**: 63/100 (higher = stronger range behavior)
+- **Touches of Range High**: 1
+- **Touches of Range Low**: 5
+- **Trend Strength**: 0.21 (lower = more range-like)
+- **Structural Bias (Higher Timeframe)**: NEUTRAL
+
+### Range Interpretation:
+- PREMIUM (>70%): Price near range top — favor SELL entries at bearish OBs/FVGs
+- DISCOUNT (<30%): Price near range bottom — favor BUY entries at bullish OBs/FVGs
+- EQUILIBRIUM (30-70%): Mid-range — wait for price to reach an extreme
+- Multiple touches = proven boundary. More touches = stronger level.
+- Mean Reversion Score >60 = strong range. >80 = very strong range.
+
+### Structural Bias Filter (IMPORTANT):
+- **BULLISH structural bias**: The broader trend is UP. Range BUYS at discount are HIGH PROBABILITY. Range SELLS at premium are LOW PROBABILITY — the range is more likely to break upward. Prefer buy-only or reduce sell confidence.
+- **BEARISH structural bias**: The broader trend is DOWN. Range SELLS at premium are HIGH PROBABILITY. Range BUYS at discount are LOW PROBABILITY — the range is more likely to break downward. Prefer sell-only or reduce buy confidence.
+- **NEUTRAL structural bias**: No dominant trend. Both buy and sell at range extremes are valid.
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BEARISH
+**Premium/Discount**: PREMIUM zone (79%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70096.91
+  - BOS HIGH at 71316.86 [RECENT]
+  - CHoCH HIGH at 68190.89 (potential reversal)
+  - CHoCH HIGH at 71774.21 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 63015.93000-65582.58000 | Strength: 80% | MITIGATED | 12.14% from price
+  - BULLISH OB: 65034.65000-67067.00000 | Strength: 80% | MITIGATED | 9.33% from price
+  - BULLISH OB: 66143.83000-68989.60000 | Strength: 80% | MITIGATED | 7.78% from price
+  - BEARISH OB: 72863.14000-74043.78000 | Strength: 80% | MITIGATED | 3.23% from price
+  - BEARISH OB: 66738.80000-67512.95000 | Strength: 67% | MITIGATED | -5.87% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 69283.21000-69747.06000 | FILLED | 3.40% below price (expect bounce UP)
+  - BULLISH FVG: 69764.77000-70369.88000 | FILLED | 2.73% below price (expect bounce UP)
+  - BULLISH FVG: 70548.04000-70955.51000 | FILLED | 1.64% below price (expect bounce UP)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71774.21000 | Strength: 93% | UNSWEPT | 0.07% above
+  - BUY-SIDE at 71316.86000 | Strength: 85% | UNSWEPT | 0.57% below
+  - SELL-SIDE at 70312.13000 | Strength: 78% | UNSWEPT | 1.97% below
+  - BUY-SIDE at 73894.83000 | Strength: 67% | UNSWEPT | 3.02% above
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 73969.30500 | Touches: 2 | FORMING | UNSWEPT | 3.13% above
+  - EQUAL HIGHS (Resistance) at 71888.96200 | Touches: 5 | PROVEN | UNSWEPT | 0.23% above
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 71563.95400 | Touches: 5 | PROVEN | SWEPT | 0.23% above
+  - EQUAL HIGHS (Resistance) at 71301.21800 | Touches: 5 | PROVEN | SWEPT | 0.59% above
+  - EQUAL LOWS (Support) at 65111.78000 | Touches: 6 | PROVEN | UNSWEPT | 9.22% below
+    >>6 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 48.1 (neutral)
+- MACD: 393.16314
+- MACD Signal: 397.34544
+- MACD Histogram: -4.18231 (bearish)
+
+### Trend
+- EMA20: 71145.80558 (Price above)
+- EMA50: 70362.91886 (Price above)
+- ADX: 11.5 (Weak trend - favorable for range trading)
+
+### Volatility
+- ATR(14): 615.67357
+- BB Upper: 72511.08465
+- BB Middle: 71306.44150
+- BB Lower: 70101.79835
+- BB Width: 3.38%
+
+2026-03-16 07:22:36,878 | 
+--- FULL PROMPT ---
+You are a range-bound market specialist using Smart Money Concepts (SMC) levels. You excel at identifying sideways markets and trading reversals at range extremes using institutional zones.
+
+## YOUR TRADING EDGE: RANGE-BOUND MARKETS WITH SMC LEVELS
+
+Most markets spend 60-70% of time in ranges. Your edge is:
+1. Identify when price is ranging (low ADX, oscillating between S/R)
+2. Map SMC zones (OBs, FVGs, equal levels) as high-probability range boundaries
+3. Enter at range extremes where SMC zones provide confluence
+4. Use liquidity sweeps as entry confirmation (smart money grabs stops then reverses)
+5. Target the opposite range extreme or equilibrium
+
+## RANGE TRADING RULES WITH SMC
+
+### 1. CONFIRMING A RANGE
+- **ADX < 25**: Weak or no trend = range conditions
+- **No dominant BOS**: No clear series of higher highs/higher lows (or lower lows/lower highs)
+- **CHoCH present**: Multiple changes of character = choppy/ranging
+- **Multiple touches**: Range high and low tested 2+ times each
+- **Mean Reversion Score > 50**: Price regularly returns to midpoint
+
+### 2. MAPPING RANGE BOUNDARIES WITH SMC
+- **Range Resistance**: Bearish OBs and bearish FVGs near range high
+- **Range Support**: Bullish OBs and bullish FVGs near range low
+- **Equal Highs/Lows**: Proven S/R levels with 3+ touches are strongest boundaries
+- **Liquidity pools**: Above range highs (buy-side) and below range lows (sell-side)
+- Unmitigated zones are active; mitigated zones are spent
+
+### 3. ENTRY STRATEGIES
+
+**Setup 1: Buy at Range Low + Bullish OB/FVG**
+- Price drops to range low (discount zone, <30% of range)
+- Bullish OB or FVG overlaps with range support
+- Enter LONG at the OB/FVG zone
+- SL: Below the OB/FVG zone (beyond the range low + ATR buffer)
+- TP: Range midpoint (conservative) or range high (aggressive)
+
+**Setup 2: Sell at Range High + Bearish OB/FVG**
+- Price rises to range high (premium zone, >70% of range)
+- Bearish OB or FVG overlaps with range resistance
+- Enter SHORT at the OB/FVG zone
+- SL: Above the OB/FVG zone (beyond the range high + ATR buffer)
+- TP: Range midpoint (conservative) or range low (aggressive)
+
+**Setup 3: Liquidity Sweep Reversal (Highest Probability)**
+- Price sweeps beyond range high (takes buy-side liquidity) then reverses
+  - Enter SHORT after sweep with CHoCH confirmation
+- Price sweeps beyond range low (takes sell-side liquidity) then reverses
+  - Enter LONG after sweep with CHoCH confirmation
+- SL: Beyond the sweep high/low + ATR buffer
+- TP: Opposite range extreme
+
+**Setup 4: Equal Level Bounce**
+- Price approaches proven equal highs (3+ touches) or equal lows (3+ touches)
+- These are liquidity magnets — expect price to reach them
+- After reaching the level, look for rejection candles and enter reversal
+- Works best when confluent with OB or FVG at the same zone
+
+### 4. STOP LOSS PLACEMENT (CRITICAL)
+- For BUY: Stop loss MUST be BELOW entry price
+  - Place below the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range low to survive a liquidity sweep
+- For SELL: Stop loss MUST be ABOVE entry price
+  - Place above the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range high to survive a liquidity sweep
+- **MINIMUM SL DISTANCE**: At least 1x ATR from entry. SL within 0.5% is TOO TIGHT.
+- For gold (XAUUSD): minimum SL should be $15-30+ from entry
+- If you cannot place SL with adequate distance while maintaining R:R >= 1.5:1, output "hold"
+
+### 5. TAKE PROFIT TARGETS
+- **Conservative**: Range midpoint (equilibrium) — safest target in ranges
+- **Standard**: Opposite range extreme — full range move
+- **With confluence**: Proven equal level or strong OB on the opposite side
+- Minimum R:R: 1.5:1
+
+### 6. STRUCTURAL BIAS FILTER (CRITICAL FOR PROFITABILITY)
+Backtesting shows that trading WITH the structural bias is far more profitable than fading it:
+- **BULLISH structural bias** (e.g., XAUUSD in an uptrend): BUY at range discount = ~70% win rate. SELL at range premium = ~35% win rate. **Strongly prefer BUY trades. Reduce confidence on SELL trades or skip them.**
+- **BEARISH structural bias**: SELL at range premium is the higher-probability trade. Skip or reduce confidence on BUY trades.
+- **NEUTRAL**: Both sides equally valid.
+- Check the "Structural Bias (Higher Timeframe)" field in your data and factor it into every decision.
+
+### 7. WHEN NOT TO TRADE
+- **Trending market**: ADX > 25 with clear BOS series — DO NOT fade the trend
+- **Breakout in progress**: Price breaking range with momentum + volume — wait for new range
+- **Range too narrow**: If range width < 1x ATR, not enough room for a trade
+- **No SMC confluence**: Range extremes with no OB/FVG support — skip
+- **Mid-range**: Price at equilibrium with no clear direction — wait for extreme
+
+### 8. CRITICAL: DO NOT FADE A BREAKOUT
+- If price breaks the range with a strong BOS + high volume, the range is OVER
+- Do not try to sell a breakout above range high or buy a breakdown below range low
+- Instead output "hold" and wait for a new range to form
+- A confirmed breakout = transition from range to trend
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation**
+5. **Never fade a confirmed breakout — if ADX > 25 with BOS, DO NOT counter-trade**
+6. **Stop loss MUST be on correct side of entry**
+7. **Only trade at range extremes with SMC confluence, never mid-range**
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71725.34000
+- **Date**: 2026-03-16
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: low
+
+## RANGE ANALYSIS (Critical for Range Trading)
+- **Is Ranging**: No clear range
+- **Range High (Resistance)**: 73894.83000
+- **Range Low (Support)**: 69200.78000
+- **Range Midpoint (Equilibrium)**: 71547.80500
+- **Range Width**: 6.56% of price
+- **Price Position**: EQUILIBRIUM (54% within range)
+- **Mean Reversion Score**: 63/100 (higher = stronger range behavior)
+- **Touches of Range High**: 1
+- **Touches of Range Low**: 5
+- **Trend Strength**: 0.21 (lower = more range-like)
+- **Structural Bias (Higher Timeframe)**: NEUTRAL
+
+### Range Interpretation:
+- PREMIUM (>70%): Price near range top — favor SELL entries at bearish OBs/FVGs
+- DISCOUNT (<30%): Price near range bottom — favor BUY entries at bullish OBs/FVGs
+- EQUILIBRIUM (30-70%): Mid-range — wait for price to reach an extreme
+- Multiple touches = proven boundary. More touches = stronger level.
+- Mean Reversion Score >60 = strong range. >80 = very strong range.
+
+### Structural Bias Filter (IMPORTANT):
+- **BULLISH structural bias**: The broader trend is UP. Range BUYS at discount are HIGH PROBABILITY. Range SELLS at premium are LOW PROBABILITY — the range is more likely to break upward. Prefer buy-only or reduce sell confidence.
+- **BEARISH structural bias**: The broader trend is DOWN. Range SELLS at premium are HIGH PROBABILITY. Range BUYS at discount are LOW PROBABILITY — the range is more likely to break downward. Prefer sell-only or reduce buy confidence.
+- **NEUTRAL structural bias**: No dominant trend. Both buy and sell at range extremes are valid.
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BEARISH
+**Premium/Discount**: PREMIUM zone (79%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70096.91
+  - BOS HIGH at 71316.86 [RECENT]
+  - CHoCH HIGH at 68190.89 (potential reversal)
+  - CHoCH HIGH at 71774.21 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 63015.93000-65582.58000 | Strength: 80% | MITIGATED | 12.14% from price
+  - BULLISH OB: 65034.65000-67067.00000 | Strength: 80% | MITIGATED | 9.33% from price
+  - BULLISH OB: 66143.83000-68989.60000 | Strength: 80% | MITIGATED | 7.78% from price
+  - BEARISH OB: 72863.14000-74043.78000 | Strength: 80% | MITIGATED | 3.23% from price
+  - BEARISH OB: 66738.80000-67512.95000 | Strength: 67% | MITIGATED | -5.87% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 69283.21000-69747.06000 | FILLED | 3.40% below price (expect bounce UP)
+  - BULLISH FVG: 69764.77000-70369.88000 | FILLED | 2.73% below price (expect bounce UP)
+  - BULLISH FVG: 70548.04000-70955.51000 | FILLED | 1.64% below price (expect bounce UP)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71774.21000 | Strength: 93% | UNSWEPT | 0.07% above
+  - BUY-SIDE at 71316.86000 | Strength: 85% | UNSWEPT | 0.57% below
+  - SELL-SIDE at 70312.13000 | Strength: 78% | UNSWEPT | 1.97% below
+  - BUY-SIDE at 73894.83000 | Strength: 67% | UNSWEPT | 3.02% above
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 73969.30500 | Touches: 2 | FORMING | UNSWEPT | 3.13% above
+  - EQUAL HIGHS (Resistance) at 71888.96200 | Touches: 5 | PROVEN | UNSWEPT | 0.23% above
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 71563.95400 | Touches: 5 | PROVEN | SWEPT | 0.23% above
+  - EQUAL HIGHS (Resistance) at 71301.21800 | Touches: 5 | PROVEN | SWEPT | 0.59% above
+  - EQUAL LOWS (Support) at 65111.78000 | Touches: 6 | PROVEN | UNSWEPT | 9.22% below
+    >>6 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 48.1 (neutral)
+- MACD: 393.16314
+- MACD Signal: 397.34544
+- MACD Histogram: -4.18231 (bearish)
+
+### Trend
+- EMA20: 71145.80558 (Price above)
+- EMA50: 70362.91886 (Price above)
+- ADX: 11.5 (Weak trend - favorable for range trading)
+
+### Volatility
+- ATR(14): 615.67357
+- BB Upper: 72511.08465
+- BB Middle: 71306.44150
+- BB Lower: 70101.79835
+- BB Width: 3.38%
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past range trades. Study what went wrong
+and apply corrections. Pay special attention to fakeout and premature entry lessons.
+
+
+## YOUR TASK
+
+Analyze the range and SMC data to make a range-trading decision.
+
+Think step-by-step:
+1. Is the market ranging? (Check ADX, BOS pattern, mean reversion score)
+2. Where are the range boundaries? (Map OBs, FVGs, equal levels at extremes)
+3. Is price at a range extreme? (Premium/Discount zone, not equilibrium)
+4. Is there SMC confluence at this extreme? (OB + FVG overlap, unmitigated zones)
+5. Has there been a liquidity sweep? (Sweep beyond range = highest probability entry)
+6. Where should SL be placed? (Beyond OB/FVG + ATR buffer, beyond range extreme)
+7. What is the TP target? (Opposite extreme or midpoint)
+8. Is R:R acceptable? (Must be >= 1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Long position. Use when:
+  - Market is ranging AND price is in discount zone (<30% of range)
+  - Bullish OB or FVG confluence at range support
+  - OR: Sell-side liquidity sweep just occurred (price swept below range then reversed)
+  - MUST provide entry_price, stop_loss (BELOW entry), profit_target
+
+- **sell_to_enter** - Short position. Use when:
+  - Market is ranging AND price is in premium zone (>70% of range)
+  - Bearish OB or FVG confluence at range resistance
+  - OR: Buy-side liquidity sweep just occurred (price swept above range then reversed)
+  - MUST provide entry_price, stop_loss (ABOVE entry), profit_target
+
+- **hold** - No action. Use when:
+  - Market is NOT ranging (trending with clear BOS)
+  - Price is at equilibrium (mid-range, no edge)
+  - No SMC confluence at current price level
+  - Breakout is in progress (do not fade it)
+  - Range is too narrow for a trade
+
+- **close** - Exit existing position. Use when:
+  - Price reached opposite range extreme (TP zone)
+  - Range is breaking (confirmed BOS beyond range)
+  - Setup invalidated
+
+## ORDER TYPE
+- **limit** - Preferred for entries at OB/FVG zones (waiting for price to reach zone)
+- **market** - Use when price is already at the zone and showing rejection, or after a liquidity sweep
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+Range trades typically use tighter trailing stops since the move is capped:
+- **Tight range** (small ATR, narrow range): 1.5-2.0x ATR
+- **Normal range**: 2.0-2.5x ATR
+- **Wide range** (large ATR): 2.5-3.5x ATR
+- **XAUUSD/Gold in range**: 2.0-3.0x ATR
+- If unsure, default to 2.0x ATR (tighter than trend-following)
+
+Remember:
+- Ranges are your edge — most traders lose money fighting ranges by trying to catch breakouts
+- SMC zones define WHERE to enter within the range
+- Liquidity sweeps beyond range = smart money entry signal
+- Always trade FROM the extreme, never from the middle
+- When the range breaks, STOP trading the range
+2026-03-16 07:22:36,898 | 
+================================================================================
+
+2026-03-16 07:22:46,997 | --- LLM RESPONSE (Structured) [took 10.1s] ---
+2026-03-16 07:22:46,998 | Signal: hold
+2026-03-16 07:22:46,998 | Confidence: 0.3
+2026-03-16 07:22:46,998 | Entry: None | SL: None | TP: None
+2026-03-16 07:22:46,999 | Justification: Price at equilibrium (54% in range), not at extreme; no unmitigated SMC confluence (OBs/FVGs all mitigated); no liquidity sweep; asymmetric touches favor caution despite ranging regime.
+2026-03-16 07:22:46,999 | Invalidation: Price breaks above range high at 73894.83 with BOS confirmation or below range low at 69200.78
+2026-03-16 07:22:47,000 | Raw decision dict: {'symbol': 'BTCUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price breaks above range high at 73894.83 with BOS confirmation or below range low at 69200.78', 'justification': 'Price at equilibrium (54% in range), not at extreme; no unmitigated SMC confluence (OBs/FVGs all mitigated); no liquidity sweep; asymmetric touches favor caution despite ranging regime.', 'confidence': 0.3, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-16 07:22:47,000 | 
+================================================================================
+
+2026-03-16 07:22:47,001 | Structured output SUCCESS - returning range_quant_decision with signal=hold
+2026-03-16 07:27:10,716 | 
+================================================================================
+RANGE QUANT ANALYSIS - BTCUSD
+================================================================================
+2026-03-16 07:27:10,743 | Symbol: BTCUSD | Date: 2026-03-16 | Price: 71782.055
+2026-03-16 07:27:10,773 | Market Regime: ranging | Volatility: low
+2026-03-16 07:27:10,804 | Range Analysis: {'is_ranging': False, 'range_high': 73894.83, 'range_low': 69200.78, 'range_midpoint': 71547.805, 'range_percent': 6.560718389613775, 'mean_reversion_score': 62.176434406596485, 'price_position': 'equilibrium', 'position_pct': 54.82962473769973, 'touches_high': 1, 'touches_low': 5, 'trend_strength': 0.2125582683898094, 'adx_proxy': 7.882575590863129, 'structural_bias': 'neutral'}
+2026-03-16 07:27:10,852 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71782.05500
+- **Date**: 2026-03-16
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: low
+
+## RANGE ANALYSIS (Critical for Range Trading)
+- **Is Ranging**: No clear range
+- **Range High (Resistance)**: 73894.83000
+- **Range Low (Support)**: 69200.78000
+- **Range Midpoint (Equilibrium)**: 71547.80500
+- **Range Width**: 6.56% of price
+- **Price Position**: EQUILIBRIUM (55% within range)
+- **Mean Reversion Score**: 62/100 (higher = stronger range behavior)
+- **Touches of Range High**: 1
+- **Touches of Range Low**: 5
+- **Trend Strength**: 0.21 (lower = more range-like)
+- **Structural Bias (Higher Timeframe)**: NEUTRAL
+
+### Range Interpretation:
+- PREMIUM (>70%): Price near range top — favor SELL entries at bearish OBs/FVGs
+- DISCOUNT (<30%): Price near range bottom — favor BUY entries at bullish OBs/FVGs
+- EQUILIBRIUM (30-70%): Mid-range — wait for price to reach an extreme
+- Multiple touches = proven boundary. More touches = stronger level.
+- Mean Reversion Score >60 = strong range. >80 = very strong range.
+
+### Structural Bias Filter (IMPORTANT):
+- **BULLISH structural bias**: The broader trend is UP. Range BUYS at discount are HIGH PROBABILITY. Range SELLS at premium are LOW PROBABILITY — the range is more likely to break upward. Prefer buy-only or reduce sell confidence.
+- **BEARISH structural bias**: The broader trend is DOWN. Range SELLS at premium are HIGH PROBABILITY. Range BUYS at discount are LOW PROBABILITY — the range is more likely to break downward. Prefer sell-only or reduce buy confidence.
+- **NEUTRAL structural bias**: No dominant trend. Both buy and sell at range extremes are valid.
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BEARISH
+**Premium/Discount**: PREMIUM zone (79%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70096.91
+  - BOS HIGH at 71316.86 [RECENT]
+  - CHoCH HIGH at 68190.89 (potential reversal)
+  - CHoCH HIGH at 71774.21 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 63015.93000-65582.58000 | Strength: 80% | MITIGATED | 12.21% from price
+  - BULLISH OB: 65034.65000-67067.00000 | Strength: 80% | MITIGATED | 9.40% from price
+  - BULLISH OB: 66143.83000-68989.60000 | Strength: 80% | MITIGATED | 7.85% from price
+  - BEARISH OB: 72863.14000-74043.78000 | Strength: 80% | MITIGATED | 3.15% from price
+  - BEARISH OB: 66738.80000-67512.95000 | Strength: 67% | MITIGATED | -5.95% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 69283.21000-69747.06000 | FILLED | 3.48% below price (expect bounce UP)
+  - BULLISH FVG: 69764.77000-70369.88000 | FILLED | 2.81% below price (expect bounce UP)
+  - BULLISH FVG: 70548.04000-70955.51000 | FILLED | 1.72% below price (expect bounce UP)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71774.21000 | Strength: 93% | UNSWEPT | 0.01% below
+  - BUY-SIDE at 71316.86000 | Strength: 85% | UNSWEPT | 0.65% below
+  - SELL-SIDE at 70312.13000 | Strength: 78% | UNSWEPT | 2.05% below
+  - BUY-SIDE at 73894.83000 | Strength: 67% | UNSWEPT | 2.94% above
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 73969.30500 | Touches: 2 | FORMING | UNSWEPT | 3.05% above
+  - EQUAL HIGHS (Resistance) at 71888.96200 | Touches: 5 | PROVEN | UNSWEPT | 0.15% above
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 71563.95400 | Touches: 5 | PROVEN | SWEPT | 0.30% above
+  - EQUAL HIGHS (Resistance) at 71301.21800 | Touches: 5 | PROVEN | SWEPT | 0.67% above
+  - EQUAL LOWS (Support) at 65111.78000 | Touches: 6 | PROVEN | UNSWEPT | 9.29% below
+    >>6 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 48.8 (neutral)
+- MACD: 397.68382
+- MACD Signal: 398.24958
+- MACD Histogram: -0.56576 (bearish)
+
+### Trend
+- EMA20: 71151.20272 (Price above)
+- EMA50: 70365.14121 (Price above)
+- ADX: 11.5 (Weak trend - favorable for range trading)
+
+### Volatility
+- ATR(14): 619.64857
+- BB Upper: 72518.25136
+- BB Middle: 71309.27500
+- BB Lower: 70100.29864
+- BB Width: 3.39%
+
+2026-03-16 07:27:10,884 | 
+--- FULL PROMPT ---
+You are a range-bound market specialist using Smart Money Concepts (SMC) levels. You excel at identifying sideways markets and trading reversals at range extremes using institutional zones.
+
+## YOUR TRADING EDGE: RANGE-BOUND MARKETS WITH SMC LEVELS
+
+Most markets spend 60-70% of time in ranges. Your edge is:
+1. Identify when price is ranging (low ADX, oscillating between S/R)
+2. Map SMC zones (OBs, FVGs, equal levels) as high-probability range boundaries
+3. Enter at range extremes where SMC zones provide confluence
+4. Use liquidity sweeps as entry confirmation (smart money grabs stops then reverses)
+5. Target the opposite range extreme or equilibrium
+
+## RANGE TRADING RULES WITH SMC
+
+### 1. CONFIRMING A RANGE
+- **ADX < 25**: Weak or no trend = range conditions
+- **No dominant BOS**: No clear series of higher highs/higher lows (or lower lows/lower highs)
+- **CHoCH present**: Multiple changes of character = choppy/ranging
+- **Multiple touches**: Range high and low tested 2+ times each
+- **Mean Reversion Score > 50**: Price regularly returns to midpoint
+
+### 2. MAPPING RANGE BOUNDARIES WITH SMC
+- **Range Resistance**: Bearish OBs and bearish FVGs near range high
+- **Range Support**: Bullish OBs and bullish FVGs near range low
+- **Equal Highs/Lows**: Proven S/R levels with 3+ touches are strongest boundaries
+- **Liquidity pools**: Above range highs (buy-side) and below range lows (sell-side)
+- Unmitigated zones are active; mitigated zones are spent
+
+### 3. ENTRY STRATEGIES
+
+**Setup 1: Buy at Range Low + Bullish OB/FVG**
+- Price drops to range low (discount zone, <30% of range)
+- Bullish OB or FVG overlaps with range support
+- Enter LONG at the OB/FVG zone
+- SL: Below the OB/FVG zone (beyond the range low + ATR buffer)
+- TP: Range midpoint (conservative) or range high (aggressive)
+
+**Setup 2: Sell at Range High + Bearish OB/FVG**
+- Price rises to range high (premium zone, >70% of range)
+- Bearish OB or FVG overlaps with range resistance
+- Enter SHORT at the OB/FVG zone
+- SL: Above the OB/FVG zone (beyond the range high + ATR buffer)
+- TP: Range midpoint (conservative) or range low (aggressive)
+
+**Setup 3: Liquidity Sweep Reversal (Highest Probability)**
+- Price sweeps beyond range high (takes buy-side liquidity) then reverses
+  - Enter SHORT after sweep with CHoCH confirmation
+- Price sweeps beyond range low (takes sell-side liquidity) then reverses
+  - Enter LONG after sweep with CHoCH confirmation
+- SL: Beyond the sweep high/low + ATR buffer
+- TP: Opposite range extreme
+
+**Setup 4: Equal Level Bounce**
+- Price approaches proven equal highs (3+ touches) or equal lows (3+ touches)
+- These are liquidity magnets — expect price to reach them
+- After reaching the level, look for rejection candles and enter reversal
+- Works best when confluent with OB or FVG at the same zone
+
+### 4. STOP LOSS PLACEMENT (CRITICAL)
+- For BUY: Stop loss MUST be BELOW entry price
+  - Place below the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range low to survive a liquidity sweep
+- For SELL: Stop loss MUST be ABOVE entry price
+  - Place above the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range high to survive a liquidity sweep
+- **MINIMUM SL DISTANCE**: At least 1x ATR from entry. SL within 0.5% is TOO TIGHT.
+- For gold (XAUUSD): minimum SL should be $15-30+ from entry
+- If you cannot place SL with adequate distance while maintaining R:R >= 1.5:1, output "hold"
+
+### 5. TAKE PROFIT TARGETS
+- **Conservative**: Range midpoint (equilibrium) — safest target in ranges
+- **Standard**: Opposite range extreme — full range move
+- **With confluence**: Proven equal level or strong OB on the opposite side
+- Minimum R:R: 1.5:1
+
+### 6. STRUCTURAL BIAS FILTER (CRITICAL FOR PROFITABILITY)
+Backtesting shows that trading WITH the structural bias is far more profitable than fading it:
+- **BULLISH structural bias** (e.g., XAUUSD in an uptrend): BUY at range discount = ~70% win rate. SELL at range premium = ~35% win rate. **Strongly prefer BUY trades. Reduce confidence on SELL trades or skip them.**
+- **BEARISH structural bias**: SELL at range premium is the higher-probability trade. Skip or reduce confidence on BUY trades.
+- **NEUTRAL**: Both sides equally valid.
+- Check the "Structural Bias (Higher Timeframe)" field in your data and factor it into every decision.
+
+### 7. WHEN NOT TO TRADE
+- **Trending market**: ADX > 25 with clear BOS series — DO NOT fade the trend
+- **Breakout in progress**: Price breaking range with momentum + volume — wait for new range
+- **Range too narrow**: If range width < 1x ATR, not enough room for a trade
+- **No SMC confluence**: Range extremes with no OB/FVG support — skip
+- **Mid-range**: Price at equilibrium with no clear direction — wait for extreme
+
+### 8. CRITICAL: DO NOT FADE A BREAKOUT
+- If price breaks the range with a strong BOS + high volume, the range is OVER
+- Do not try to sell a breakout above range high or buy a breakdown below range low
+- Instead output "hold" and wait for a new range to form
+- A confirmed breakout = transition from range to trend
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation**
+5. **Never fade a confirmed breakout — if ADX > 25 with BOS, DO NOT counter-trade**
+6. **Stop loss MUST be on correct side of entry**
+7. **Only trade at range extremes with SMC confluence, never mid-range**
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71782.05500
+- **Date**: 2026-03-16
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: low
+
+## RANGE ANALYSIS (Critical for Range Trading)
+- **Is Ranging**: No clear range
+- **Range High (Resistance)**: 73894.83000
+- **Range Low (Support)**: 69200.78000
+- **Range Midpoint (Equilibrium)**: 71547.80500
+- **Range Width**: 6.56% of price
+- **Price Position**: EQUILIBRIUM (55% within range)
+- **Mean Reversion Score**: 62/100 (higher = stronger range behavior)
+- **Touches of Range High**: 1
+- **Touches of Range Low**: 5
+- **Trend Strength**: 0.21 (lower = more range-like)
+- **Structural Bias (Higher Timeframe)**: NEUTRAL
+
+### Range Interpretation:
+- PREMIUM (>70%): Price near range top — favor SELL entries at bearish OBs/FVGs
+- DISCOUNT (<30%): Price near range bottom — favor BUY entries at bullish OBs/FVGs
+- EQUILIBRIUM (30-70%): Mid-range — wait for price to reach an extreme
+- Multiple touches = proven boundary. More touches = stronger level.
+- Mean Reversion Score >60 = strong range. >80 = very strong range.
+
+### Structural Bias Filter (IMPORTANT):
+- **BULLISH structural bias**: The broader trend is UP. Range BUYS at discount are HIGH PROBABILITY. Range SELLS at premium are LOW PROBABILITY — the range is more likely to break upward. Prefer buy-only or reduce sell confidence.
+- **BEARISH structural bias**: The broader trend is DOWN. Range SELLS at premium are HIGH PROBABILITY. Range BUYS at discount are LOW PROBABILITY — the range is more likely to break downward. Prefer sell-only or reduce buy confidence.
+- **NEUTRAL structural bias**: No dominant trend. Both buy and sell at range extremes are valid.
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BEARISH
+**Premium/Discount**: PREMIUM zone (79%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70096.91
+  - BOS HIGH at 71316.86 [RECENT]
+  - CHoCH HIGH at 68190.89 (potential reversal)
+  - CHoCH HIGH at 71774.21 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 63015.93000-65582.58000 | Strength: 80% | MITIGATED | 12.21% from price
+  - BULLISH OB: 65034.65000-67067.00000 | Strength: 80% | MITIGATED | 9.40% from price
+  - BULLISH OB: 66143.83000-68989.60000 | Strength: 80% | MITIGATED | 7.85% from price
+  - BEARISH OB: 72863.14000-74043.78000 | Strength: 80% | MITIGATED | 3.15% from price
+  - BEARISH OB: 66738.80000-67512.95000 | Strength: 67% | MITIGATED | -5.95% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 69283.21000-69747.06000 | FILLED | 3.48% below price (expect bounce UP)
+  - BULLISH FVG: 69764.77000-70369.88000 | FILLED | 2.81% below price (expect bounce UP)
+  - BULLISH FVG: 70548.04000-70955.51000 | FILLED | 1.72% below price (expect bounce UP)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71774.21000 | Strength: 93% | UNSWEPT | 0.01% below
+  - BUY-SIDE at 71316.86000 | Strength: 85% | UNSWEPT | 0.65% below
+  - SELL-SIDE at 70312.13000 | Strength: 78% | UNSWEPT | 2.05% below
+  - BUY-SIDE at 73894.83000 | Strength: 67% | UNSWEPT | 2.94% above
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 73969.30500 | Touches: 2 | FORMING | UNSWEPT | 3.05% above
+  - EQUAL HIGHS (Resistance) at 71888.96200 | Touches: 5 | PROVEN | UNSWEPT | 0.15% above
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 71563.95400 | Touches: 5 | PROVEN | SWEPT | 0.30% above
+  - EQUAL HIGHS (Resistance) at 71301.21800 | Touches: 5 | PROVEN | SWEPT | 0.67% above
+  - EQUAL LOWS (Support) at 65111.78000 | Touches: 6 | PROVEN | UNSWEPT | 9.29% below
+    >>6 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 48.8 (neutral)
+- MACD: 397.68382
+- MACD Signal: 398.24958
+- MACD Histogram: -0.56576 (bearish)
+
+### Trend
+- EMA20: 71151.20272 (Price above)
+- EMA50: 70365.14121 (Price above)
+- ADX: 11.5 (Weak trend - favorable for range trading)
+
+### Volatility
+- ATR(14): 619.64857
+- BB Upper: 72518.25136
+- BB Middle: 71309.27500
+- BB Lower: 70100.29864
+- BB Width: 3.39%
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past range trades. Study what went wrong
+and apply corrections. Pay special attention to fakeout and premature entry lessons.
+
+
+## YOUR TASK
+
+Analyze the range and SMC data to make a range-trading decision.
+
+Think step-by-step:
+1. Is the market ranging? (Check ADX, BOS pattern, mean reversion score)
+2. Where are the range boundaries? (Map OBs, FVGs, equal levels at extremes)
+3. Is price at a range extreme? (Premium/Discount zone, not equilibrium)
+4. Is there SMC confluence at this extreme? (OB + FVG overlap, unmitigated zones)
+5. Has there been a liquidity sweep? (Sweep beyond range = highest probability entry)
+6. Where should SL be placed? (Beyond OB/FVG + ATR buffer, beyond range extreme)
+7. What is the TP target? (Opposite extreme or midpoint)
+8. Is R:R acceptable? (Must be >= 1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Long position. Use when:
+  - Market is ranging AND price is in discount zone (<30% of range)
+  - Bullish OB or FVG confluence at range support
+  - OR: Sell-side liquidity sweep just occurred (price swept below range then reversed)
+  - MUST provide entry_price, stop_loss (BELOW entry), profit_target
+
+- **sell_to_enter** - Short position. Use when:
+  - Market is ranging AND price is in premium zone (>70% of range)
+  - Bearish OB or FVG confluence at range resistance
+  - OR: Buy-side liquidity sweep just occurred (price swept above range then reversed)
+  - MUST provide entry_price, stop_loss (ABOVE entry), profit_target
+
+- **hold** - No action. Use when:
+  - Market is NOT ranging (trending with clear BOS)
+  - Price is at equilibrium (mid-range, no edge)
+  - No SMC confluence at current price level
+  - Breakout is in progress (do not fade it)
+  - Range is too narrow for a trade
+
+- **close** - Exit existing position. Use when:
+  - Price reached opposite range extreme (TP zone)
+  - Range is breaking (confirmed BOS beyond range)
+  - Setup invalidated
+
+## ORDER TYPE
+- **limit** - Preferred for entries at OB/FVG zones (waiting for price to reach zone)
+- **market** - Use when price is already at the zone and showing rejection, or after a liquidity sweep
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+Range trades typically use tighter trailing stops since the move is capped:
+- **Tight range** (small ATR, narrow range): 1.5-2.0x ATR
+- **Normal range**: 2.0-2.5x ATR
+- **Wide range** (large ATR): 2.5-3.5x ATR
+- **XAUUSD/Gold in range**: 2.0-3.0x ATR
+- If unsure, default to 2.0x ATR (tighter than trend-following)
+
+Remember:
+- Ranges are your edge — most traders lose money fighting ranges by trying to catch breakouts
+- SMC zones define WHERE to enter within the range
+- Liquidity sweeps beyond range = smart money entry signal
+- Always trade FROM the extreme, never from the middle
+- When the range breaks, STOP trading the range
+2026-03-16 07:27:10,931 | 
+================================================================================
+
+2026-03-16 07:27:21,955 | --- LLM RESPONSE (Structured) [took 11.0s] ---
+2026-03-16 07:27:21,956 | Signal: hold
+2026-03-16 07:27:21,956 | Confidence: 0.3
+2026-03-16 07:27:21,957 | Entry: None | SL: None | TP: None
+2026-03-16 07:27:21,957 | Justification: Market is ranging per low ADX (11.5) and regime, but price at equilibrium (55% in range, near midpoint 71547), not at extreme; no SMC confluence (no unmitigated OB/FVG at current level, most zones mitigated or distant); 'No clear range' noted with only 1 touch of high vs 5 of low; wait for extreme with liquidity sweep or OB overlap.
+2026-03-16 07:27:21,957 | Invalidation: Price breaks above range high 73894.83 with BOS confirmation or below range low 69200.78
+2026-03-16 07:27:21,958 | Raw decision dict: {'symbol': 'BTCUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price breaks above range high 73894.83 with BOS confirmation or below range low 69200.78', 'justification': "Market is ranging per low ADX (11.5) and regime, but price at equilibrium (55% in range, near midpoint 71547), not at extreme; no SMC confluence (no unmitigated OB/FVG at current level, most zones mitigated or distant); 'No clear range' noted with only 1 touch of high vs 5 of low; wait for extreme with liquidity sweep or OB overlap.", 'confidence': 0.3, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-16 07:27:21,959 | 
+================================================================================
+
+2026-03-16 07:27:21,959 | Structured output SUCCESS - returning range_quant_decision with signal=hold
+2026-03-16 07:29:23,237 | 
+================================================================================
+RANGE QUANT ANALYSIS - BTCUSD
+================================================================================
+2026-03-16 07:29:23,239 | Symbol: BTCUSD | Date: 2026-03-16 | Price: 71743.885
+2026-03-16 07:29:23,239 | Market Regime: ranging | Volatility: low
+2026-03-16 07:29:23,240 | Range Analysis: {'is_ranging': False, 'range_high': 73894.83, 'range_low': 69200.78, 'range_midpoint': 71547.805, 'range_percent': 6.560718389613775, 'mean_reversion_score': 62.31060665827351, 'price_position': 'equilibrium', 'position_pct': 54.017745869771176, 'touches_high': 1, 'touches_low': 5, 'trend_strength': 0.20987482335626897, 'adx_proxy': 7.721407392011197, 'structural_bias': 'neutral'}
+2026-03-16 07:29:23,240 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71743.88500
+- **Date**: 2026-03-16
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: low
+
+## RANGE ANALYSIS (Critical for Range Trading)
+- **Is Ranging**: No clear range
+- **Range High (Resistance)**: 73894.83000
+- **Range Low (Support)**: 69200.78000
+- **Range Midpoint (Equilibrium)**: 71547.80500
+- **Range Width**: 6.56% of price
+- **Price Position**: EQUILIBRIUM (54% within range)
+- **Mean Reversion Score**: 62/100 (higher = stronger range behavior)
+- **Touches of Range High**: 1
+- **Touches of Range Low**: 5
+- **Trend Strength**: 0.21 (lower = more range-like)
+- **Structural Bias (Higher Timeframe)**: NEUTRAL
+
+### Range Interpretation:
+- PREMIUM (>70%): Price near range top — favor SELL entries at bearish OBs/FVGs
+- DISCOUNT (<30%): Price near range bottom — favor BUY entries at bullish OBs/FVGs
+- EQUILIBRIUM (30-70%): Mid-range — wait for price to reach an extreme
+- Multiple touches = proven boundary. More touches = stronger level.
+- Mean Reversion Score >60 = strong range. >80 = very strong range.
+
+### Structural Bias Filter (IMPORTANT):
+- **BULLISH structural bias**: The broader trend is UP. Range BUYS at discount are HIGH PROBABILITY. Range SELLS at premium are LOW PROBABILITY — the range is more likely to break upward. Prefer buy-only or reduce sell confidence.
+- **BEARISH structural bias**: The broader trend is DOWN. Range SELLS at premium are HIGH PROBABILITY. Range BUYS at discount are LOW PROBABILITY — the range is more likely to break downward. Prefer sell-only or reduce buy confidence.
+- **NEUTRAL structural bias**: No dominant trend. Both buy and sell at range extremes are valid.
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BEARISH
+**Premium/Discount**: PREMIUM zone (79%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70096.91
+  - BOS HIGH at 71316.86 [RECENT]
+  - CHoCH HIGH at 68190.89 (potential reversal)
+  - CHoCH HIGH at 71774.21 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 63015.93000-65582.58000 | Strength: 80% | MITIGATED | 12.17% from price
+  - BULLISH OB: 65034.65000-67067.00000 | Strength: 80% | MITIGATED | 9.35% from price
+  - BULLISH OB: 66143.83000-68989.60000 | Strength: 80% | MITIGATED | 7.81% from price
+  - BEARISH OB: 72863.14000-74043.78000 | Strength: 80% | MITIGATED | 3.21% from price
+  - BEARISH OB: 66738.80000-67512.95000 | Strength: 67% | MITIGATED | -5.90% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 69283.21000-69747.06000 | FILLED | 3.43% below price (expect bounce UP)
+  - BULLISH FVG: 69764.77000-70369.88000 | FILLED | 2.76% below price (expect bounce UP)
+  - BULLISH FVG: 70548.04000-70955.51000 | FILLED | 1.67% below price (expect bounce UP)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71774.21000 | Strength: 93% | UNSWEPT | 0.04% above
+  - BUY-SIDE at 71316.86000 | Strength: 85% | UNSWEPT | 0.60% below
+  - SELL-SIDE at 70312.13000 | Strength: 78% | UNSWEPT | 2.00% below
+  - BUY-SIDE at 73894.83000 | Strength: 67% | UNSWEPT | 3.00% above
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 73969.30500 | Touches: 2 | FORMING | UNSWEPT | 3.10% above
+  - EQUAL HIGHS (Resistance) at 71888.96200 | Touches: 5 | PROVEN | UNSWEPT | 0.20% above
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 71563.95400 | Touches: 5 | PROVEN | SWEPT | 0.25% above
+  - EQUAL HIGHS (Resistance) at 71301.21800 | Touches: 5 | PROVEN | SWEPT | 0.62% above
+  - EQUAL LOWS (Support) at 65111.78000 | Touches: 6 | PROVEN | UNSWEPT | 9.24% below
+    >>6 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 48.4 (neutral)
+- MACD: 394.64371
+- MACD Signal: 397.64156
+- MACD Histogram: -2.99785 (bearish)
+
+### Trend
+- EMA20: 71147.57320 (Price above)
+- EMA50: 70363.64670 (Price above)
+- ADX: 11.5 (Weak trend - favorable for range trading)
+
+### Volatility
+- ATR(14): 619.75000
+- BB Upper: 72513.37489
+- BB Middle: 71307.36950
+- BB Lower: 70101.36411
+- BB Width: 3.38%
+
+2026-03-16 07:29:23,246 | 
+--- FULL PROMPT ---
+You are a range-bound market specialist using Smart Money Concepts (SMC) levels. You excel at identifying sideways markets and trading reversals at range extremes using institutional zones.
+
+## YOUR TRADING EDGE: RANGE-BOUND MARKETS WITH SMC LEVELS
+
+Most markets spend 60-70% of time in ranges. Your edge is:
+1. Identify when price is ranging (low ADX, oscillating between S/R)
+2. Map SMC zones (OBs, FVGs, equal levels) as high-probability range boundaries
+3. Enter at range extremes where SMC zones provide confluence
+4. Use liquidity sweeps as entry confirmation (smart money grabs stops then reverses)
+5. Target the opposite range extreme or equilibrium
+
+## RANGE TRADING RULES WITH SMC
+
+### 1. CONFIRMING A RANGE
+- **ADX < 25**: Weak or no trend = range conditions
+- **No dominant BOS**: No clear series of higher highs/higher lows (or lower lows/lower highs)
+- **CHoCH present**: Multiple changes of character = choppy/ranging
+- **Multiple touches**: Range high and low tested 2+ times each
+- **Mean Reversion Score > 50**: Price regularly returns to midpoint
+
+### 2. MAPPING RANGE BOUNDARIES WITH SMC
+- **Range Resistance**: Bearish OBs and bearish FVGs near range high
+- **Range Support**: Bullish OBs and bullish FVGs near range low
+- **Equal Highs/Lows**: Proven S/R levels with 3+ touches are strongest boundaries
+- **Liquidity pools**: Above range highs (buy-side) and below range lows (sell-side)
+- Unmitigated zones are active; mitigated zones are spent
+
+### 3. ENTRY STRATEGIES
+
+**Setup 1: Buy at Range Low + Bullish OB/FVG**
+- Price drops to range low (discount zone, <30% of range)
+- Bullish OB or FVG overlaps with range support
+- Enter LONG at the OB/FVG zone
+- SL: Below the OB/FVG zone (beyond the range low + ATR buffer)
+- TP: Range midpoint (conservative) or range high (aggressive)
+
+**Setup 2: Sell at Range High + Bearish OB/FVG**
+- Price rises to range high (premium zone, >70% of range)
+- Bearish OB or FVG overlaps with range resistance
+- Enter SHORT at the OB/FVG zone
+- SL: Above the OB/FVG zone (beyond the range high + ATR buffer)
+- TP: Range midpoint (conservative) or range low (aggressive)
+
+**Setup 3: Liquidity Sweep Reversal (Highest Probability)**
+- Price sweeps beyond range high (takes buy-side liquidity) then reverses
+  - Enter SHORT after sweep with CHoCH confirmation
+- Price sweeps beyond range low (takes sell-side liquidity) then reverses
+  - Enter LONG after sweep with CHoCH confirmation
+- SL: Beyond the sweep high/low + ATR buffer
+- TP: Opposite range extreme
+
+**Setup 4: Equal Level Bounce**
+- Price approaches proven equal highs (3+ touches) or equal lows (3+ touches)
+- These are liquidity magnets — expect price to reach them
+- After reaching the level, look for rejection candles and enter reversal
+- Works best when confluent with OB or FVG at the same zone
+
+### 4. STOP LOSS PLACEMENT (CRITICAL)
+- For BUY: Stop loss MUST be BELOW entry price
+  - Place below the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range low to survive a liquidity sweep
+- For SELL: Stop loss MUST be ABOVE entry price
+  - Place above the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range high to survive a liquidity sweep
+- **MINIMUM SL DISTANCE**: At least 1x ATR from entry. SL within 0.5% is TOO TIGHT.
+- For gold (XAUUSD): minimum SL should be $15-30+ from entry
+- If you cannot place SL with adequate distance while maintaining R:R >= 1.5:1, output "hold"
+
+### 5. TAKE PROFIT TARGETS
+- **Conservative**: Range midpoint (equilibrium) — safest target in ranges
+- **Standard**: Opposite range extreme — full range move
+- **With confluence**: Proven equal level or strong OB on the opposite side
+- Minimum R:R: 1.5:1
+
+### 6. STRUCTURAL BIAS FILTER (CRITICAL FOR PROFITABILITY)
+Backtesting shows that trading WITH the structural bias is far more profitable than fading it:
+- **BULLISH structural bias** (e.g., XAUUSD in an uptrend): BUY at range discount = ~70% win rate. SELL at range premium = ~35% win rate. **Strongly prefer BUY trades. Reduce confidence on SELL trades or skip them.**
+- **BEARISH structural bias**: SELL at range premium is the higher-probability trade. Skip or reduce confidence on BUY trades.
+- **NEUTRAL**: Both sides equally valid.
+- Check the "Structural Bias (Higher Timeframe)" field in your data and factor it into every decision.
+
+### 7. WHEN NOT TO TRADE
+- **Trending market**: ADX > 25 with clear BOS series — DO NOT fade the trend
+- **Breakout in progress**: Price breaking range with momentum + volume — wait for new range
+- **Range too narrow**: If range width < 1x ATR, not enough room for a trade
+- **No SMC confluence**: Range extremes with no OB/FVG support — skip
+- **Mid-range**: Price at equilibrium with no clear direction — wait for extreme
+
+### 8. CRITICAL: DO NOT FADE A BREAKOUT
+- If price breaks the range with a strong BOS + high volume, the range is OVER
+- Do not try to sell a breakout above range high or buy a breakdown below range low
+- Instead output "hold" and wait for a new range to form
+- A confirmed breakout = transition from range to trend
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation**
+5. **Never fade a confirmed breakout — if ADX > 25 with BOS, DO NOT counter-trade**
+6. **Stop loss MUST be on correct side of entry**
+7. **Only trade at range extremes with SMC confluence, never mid-range**
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71743.88500
+- **Date**: 2026-03-16
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: low
+
+## RANGE ANALYSIS (Critical for Range Trading)
+- **Is Ranging**: No clear range
+- **Range High (Resistance)**: 73894.83000
+- **Range Low (Support)**: 69200.78000
+- **Range Midpoint (Equilibrium)**: 71547.80500
+- **Range Width**: 6.56% of price
+- **Price Position**: EQUILIBRIUM (54% within range)
+- **Mean Reversion Score**: 62/100 (higher = stronger range behavior)
+- **Touches of Range High**: 1
+- **Touches of Range Low**: 5
+- **Trend Strength**: 0.21 (lower = more range-like)
+- **Structural Bias (Higher Timeframe)**: NEUTRAL
+
+### Range Interpretation:
+- PREMIUM (>70%): Price near range top — favor SELL entries at bearish OBs/FVGs
+- DISCOUNT (<30%): Price near range bottom — favor BUY entries at bullish OBs/FVGs
+- EQUILIBRIUM (30-70%): Mid-range — wait for price to reach an extreme
+- Multiple touches = proven boundary. More touches = stronger level.
+- Mean Reversion Score >60 = strong range. >80 = very strong range.
+
+### Structural Bias Filter (IMPORTANT):
+- **BULLISH structural bias**: The broader trend is UP. Range BUYS at discount are HIGH PROBABILITY. Range SELLS at premium are LOW PROBABILITY — the range is more likely to break upward. Prefer buy-only or reduce sell confidence.
+- **BEARISH structural bias**: The broader trend is DOWN. Range SELLS at premium are HIGH PROBABILITY. Range BUYS at discount are LOW PROBABILITY — the range is more likely to break downward. Prefer sell-only or reduce buy confidence.
+- **NEUTRAL structural bias**: No dominant trend. Both buy and sell at range extremes are valid.
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BEARISH
+**Premium/Discount**: PREMIUM zone (79%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70096.91
+  - BOS HIGH at 71316.86 [RECENT]
+  - CHoCH HIGH at 68190.89 (potential reversal)
+  - CHoCH HIGH at 71774.21 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 63015.93000-65582.58000 | Strength: 80% | MITIGATED | 12.17% from price
+  - BULLISH OB: 65034.65000-67067.00000 | Strength: 80% | MITIGATED | 9.35% from price
+  - BULLISH OB: 66143.83000-68989.60000 | Strength: 80% | MITIGATED | 7.81% from price
+  - BEARISH OB: 72863.14000-74043.78000 | Strength: 80% | MITIGATED | 3.21% from price
+  - BEARISH OB: 66738.80000-67512.95000 | Strength: 67% | MITIGATED | -5.90% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 69283.21000-69747.06000 | FILLED | 3.43% below price (expect bounce UP)
+  - BULLISH FVG: 69764.77000-70369.88000 | FILLED | 2.76% below price (expect bounce UP)
+  - BULLISH FVG: 70548.04000-70955.51000 | FILLED | 1.67% below price (expect bounce UP)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71774.21000 | Strength: 93% | UNSWEPT | 0.04% above
+  - BUY-SIDE at 71316.86000 | Strength: 85% | UNSWEPT | 0.60% below
+  - SELL-SIDE at 70312.13000 | Strength: 78% | UNSWEPT | 2.00% below
+  - BUY-SIDE at 73894.83000 | Strength: 67% | UNSWEPT | 3.00% above
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 73969.30500 | Touches: 2 | FORMING | UNSWEPT | 3.10% above
+  - EQUAL HIGHS (Resistance) at 71888.96200 | Touches: 5 | PROVEN | UNSWEPT | 0.20% above
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 71563.95400 | Touches: 5 | PROVEN | SWEPT | 0.25% above
+  - EQUAL HIGHS (Resistance) at 71301.21800 | Touches: 5 | PROVEN | SWEPT | 0.62% above
+  - EQUAL LOWS (Support) at 65111.78000 | Touches: 6 | PROVEN | UNSWEPT | 9.24% below
+    >>6 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 48.4 (neutral)
+- MACD: 394.64371
+- MACD Signal: 397.64156
+- MACD Histogram: -2.99785 (bearish)
+
+### Trend
+- EMA20: 71147.57320 (Price above)
+- EMA50: 70363.64670 (Price above)
+- ADX: 11.5 (Weak trend - favorable for range trading)
+
+### Volatility
+- ATR(14): 619.75000
+- BB Upper: 72513.37489
+- BB Middle: 71307.36950
+- BB Lower: 70101.36411
+- BB Width: 3.38%
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past range trades. Study what went wrong
+and apply corrections. Pay special attention to fakeout and premature entry lessons.
+
+
+## YOUR TASK
+
+Analyze the range and SMC data to make a range-trading decision.
+
+Think step-by-step:
+1. Is the market ranging? (Check ADX, BOS pattern, mean reversion score)
+2. Where are the range boundaries? (Map OBs, FVGs, equal levels at extremes)
+3. Is price at a range extreme? (Premium/Discount zone, not equilibrium)
+4. Is there SMC confluence at this extreme? (OB + FVG overlap, unmitigated zones)
+5. Has there been a liquidity sweep? (Sweep beyond range = highest probability entry)
+6. Where should SL be placed? (Beyond OB/FVG + ATR buffer, beyond range extreme)
+7. What is the TP target? (Opposite extreme or midpoint)
+8. Is R:R acceptable? (Must be >= 1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Long position. Use when:
+  - Market is ranging AND price is in discount zone (<30% of range)
+  - Bullish OB or FVG confluence at range support
+  - OR: Sell-side liquidity sweep just occurred (price swept below range then reversed)
+  - MUST provide entry_price, stop_loss (BELOW entry), profit_target
+
+- **sell_to_enter** - Short position. Use when:
+  - Market is ranging AND price is in premium zone (>70% of range)
+  - Bearish OB or FVG confluence at range resistance
+  - OR: Buy-side liquidity sweep just occurred (price swept above range then reversed)
+  - MUST provide entry_price, stop_loss (ABOVE entry), profit_target
+
+- **hold** - No action. Use when:
+  - Market is NOT ranging (trending with clear BOS)
+  - Price is at equilibrium (mid-range, no edge)
+  - No SMC confluence at current price level
+  - Breakout is in progress (do not fade it)
+  - Range is too narrow for a trade
+
+- **close** - Exit existing position. Use when:
+  - Price reached opposite range extreme (TP zone)
+  - Range is breaking (confirmed BOS beyond range)
+  - Setup invalidated
+
+## ORDER TYPE
+- **limit** - Preferred for entries at OB/FVG zones (waiting for price to reach zone)
+- **market** - Use when price is already at the zone and showing rejection, or after a liquidity sweep
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+Range trades typically use tighter trailing stops since the move is capped:
+- **Tight range** (small ATR, narrow range): 1.5-2.0x ATR
+- **Normal range**: 2.0-2.5x ATR
+- **Wide range** (large ATR): 2.5-3.5x ATR
+- **XAUUSD/Gold in range**: 2.0-3.0x ATR
+- If unsure, default to 2.0x ATR (tighter than trend-following)
+
+Remember:
+- Ranges are your edge — most traders lose money fighting ranges by trying to catch breakouts
+- SMC zones define WHERE to enter within the range
+- Liquidity sweeps beyond range = smart money entry signal
+- Always trade FROM the extreme, never from the middle
+- When the range breaks, STOP trading the range
+2026-03-16 07:29:23,266 | 
+================================================================================
+
+2026-03-16 07:29:31,316 | --- LLM RESPONSE (Structured) [took 8.1s] ---
+2026-03-16 07:29:31,318 | Signal: hold
+2026-03-16 07:29:31,318 | Confidence: 0.85
+2026-03-16 07:29:31,318 | Entry: None | SL: None | TP: None
+2026-03-16 07:29:31,318 | Justification: Price is at equilibrium (54% within range), not at a range extreme, lacking clear SMC confluence for entry; wait for price to approach extremes per range trading rules.
+2026-03-16 07:29:31,319 | Invalidation: Price reaches premium zone (>70% of range) with bearish OB/FVG confluence or discount zone (<30%) with bullish OB/FVG confluence
+2026-03-16 07:29:31,319 | Raw decision dict: {'symbol': 'BTCUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price reaches premium zone (>70% of range) with bearish OB/FVG confluence or discount zone (<30%) with bullish OB/FVG confluence', 'justification': 'Price is at equilibrium (54% within range), not at a range extreme, lacking clear SMC confluence for entry; wait for price to approach extremes per range trading rules.', 'confidence': 0.85, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-16 07:29:31,320 | 
+================================================================================
+
+2026-03-16 07:29:31,320 | Structured output SUCCESS - returning range_quant_decision with signal=hold
+2026-03-16 07:32:32,003 | 
+================================================================================
+RANGE QUANT ANALYSIS - BTCUSD
+================================================================================
+2026-03-16 07:32:32,003 | Symbol: BTCUSD | Date: 2026-03-16 | Price: 71818.775
+2026-03-16 07:32:32,003 | Market Regime: ranging | Volatility: low
+2026-03-16 07:32:32,004 | Range Analysis: {'is_ranging': False, 'range_high': 73894.83, 'range_low': 69200.78, 'range_midpoint': 71547.805, 'range_percent': 6.560718389613775, 'mean_reversion_score': 62.0478856544697, 'price_position': 'equilibrium', 'position_pct': 55.611678614416135, 'touches_high': 1, 'touches_low': 5, 'trend_strength': 0.21512924343234496, 'adx_proxy': 8.036665520557785, 'structural_bias': 'neutral'}
+2026-03-16 07:32:32,004 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71818.77500
+- **Date**: 2026-03-16
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: low
+
+## RANGE ANALYSIS (Critical for Range Trading)
+- **Is Ranging**: No clear range
+- **Range High (Resistance)**: 73894.83000
+- **Range Low (Support)**: 69200.78000
+- **Range Midpoint (Equilibrium)**: 71547.80500
+- **Range Width**: 6.56% of price
+- **Price Position**: EQUILIBRIUM (56% within range)
+- **Mean Reversion Score**: 62/100 (higher = stronger range behavior)
+- **Touches of Range High**: 1
+- **Touches of Range Low**: 5
+- **Trend Strength**: 0.22 (lower = more range-like)
+- **Structural Bias (Higher Timeframe)**: NEUTRAL
+
+### Range Interpretation:
+- PREMIUM (>70%): Price near range top — favor SELL entries at bearish OBs/FVGs
+- DISCOUNT (<30%): Price near range bottom — favor BUY entries at bullish OBs/FVGs
+- EQUILIBRIUM (30-70%): Mid-range — wait for price to reach an extreme
+- Multiple touches = proven boundary. More touches = stronger level.
+- Mean Reversion Score >60 = strong range. >80 = very strong range.
+
+### Structural Bias Filter (IMPORTANT):
+- **BULLISH structural bias**: The broader trend is UP. Range BUYS at discount are HIGH PROBABILITY. Range SELLS at premium are LOW PROBABILITY — the range is more likely to break upward. Prefer buy-only or reduce sell confidence.
+- **BEARISH structural bias**: The broader trend is DOWN. Range SELLS at premium are HIGH PROBABILITY. Range BUYS at discount are LOW PROBABILITY — the range is more likely to break downward. Prefer sell-only or reduce buy confidence.
+- **NEUTRAL structural bias**: No dominant trend. Both buy and sell at range extremes are valid.
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BEARISH
+**Premium/Discount**: PREMIUM zone (80%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70096.91
+  - BOS HIGH at 71316.86 [RECENT]
+  - CHoCH HIGH at 68190.89 (potential reversal)
+  - CHoCH HIGH at 71774.21 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 63015.93000-65582.58000 | Strength: 80% | MITIGATED | 12.26% from price
+  - BULLISH OB: 65034.65000-67067.00000 | Strength: 80% | MITIGATED | 9.45% from price
+  - BULLISH OB: 66143.83000-68989.60000 | Strength: 80% | MITIGATED | 7.90% from price
+  - BEARISH OB: 72863.14000-74043.78000 | Strength: 80% | MITIGATED | 3.10% from price
+  - BEARISH OB: 66738.80000-67512.95000 | Strength: 67% | MITIGATED | -6.00% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 69283.21000-69747.06000 | FILLED | 3.53% below price (expect bounce UP)
+  - BULLISH FVG: 69764.77000-70369.88000 | FILLED | 2.86% below price (expect bounce UP)
+  - BULLISH FVG: 70548.04000-70955.51000 | FILLED | 1.77% below price (expect bounce UP)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71774.21000 | Strength: 93% | UNSWEPT | 0.06% below
+  - BUY-SIDE at 71316.86000 | Strength: 85% | UNSWEPT | 0.70% below
+  - SELL-SIDE at 70312.13000 | Strength: 78% | UNSWEPT | 2.10% below
+  - BUY-SIDE at 73894.83000 | Strength: 67% | UNSWEPT | 2.89% above
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 73969.30500 | Touches: 2 | FORMING | UNSWEPT | 2.99% above
+  - EQUAL HIGHS (Resistance) at 71888.96200 | Touches: 5 | PROVEN | UNSWEPT | 0.10% above
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 71563.95400 | Touches: 5 | PROVEN | SWEPT | 0.35% above
+  - EQUAL HIGHS (Resistance) at 71301.21800 | Touches: 5 | PROVEN | SWEPT | 0.72% above
+  - EQUAL LOWS (Support) at 65132.95429 | Touches: 7 | PROVEN | UNSWEPT | 9.31% below
+    >>7 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 49.3 (neutral)
+- MACD: 400.61225
+- MACD Signal: 398.83527
+- MACD Histogram: 1.77699 (bullish)
+
+### Trend
+- EMA20: 71154.69892 (Price above)
+- EMA50: 70366.58082 (Price above)
+- ADX: 11.5 (Weak trend - favorable for range trading)
+
+### Volatility
+- ATR(14): 620.90500
+- BB Upper: 72523.16843
+- BB Middle: 71311.11050
+- BB Lower: 70099.05257
+- BB Width: 3.40%
+
+2026-03-16 07:32:32,011 | 
+--- FULL PROMPT ---
+You are a range-bound market specialist using Smart Money Concepts (SMC) levels. You excel at identifying sideways markets and trading reversals at range extremes using institutional zones.
+
+## YOUR TRADING EDGE: RANGE-BOUND MARKETS WITH SMC LEVELS
+
+Most markets spend 60-70% of time in ranges. Your edge is:
+1. Identify when price is ranging (low ADX, oscillating between S/R)
+2. Map SMC zones (OBs, FVGs, equal levels) as high-probability range boundaries
+3. Enter at range extremes where SMC zones provide confluence
+4. Use liquidity sweeps as entry confirmation (smart money grabs stops then reverses)
+5. Target the opposite range extreme or equilibrium
+
+## RANGE TRADING RULES WITH SMC
+
+### 1. CONFIRMING A RANGE
+- **ADX < 25**: Weak or no trend = range conditions
+- **No dominant BOS**: No clear series of higher highs/higher lows (or lower lows/lower highs)
+- **CHoCH present**: Multiple changes of character = choppy/ranging
+- **Multiple touches**: Range high and low tested 2+ times each
+- **Mean Reversion Score > 50**: Price regularly returns to midpoint
+
+### 2. MAPPING RANGE BOUNDARIES WITH SMC
+- **Range Resistance**: Bearish OBs and bearish FVGs near range high
+- **Range Support**: Bullish OBs and bullish FVGs near range low
+- **Equal Highs/Lows**: Proven S/R levels with 3+ touches are strongest boundaries
+- **Liquidity pools**: Above range highs (buy-side) and below range lows (sell-side)
+- Unmitigated zones are active; mitigated zones are spent
+
+### 3. ENTRY STRATEGIES
+
+**Setup 1: Buy at Range Low + Bullish OB/FVG**
+- Price drops to range low (discount zone, <30% of range)
+- Bullish OB or FVG overlaps with range support
+- Enter LONG at the OB/FVG zone
+- SL: Below the OB/FVG zone (beyond the range low + ATR buffer)
+- TP: Range midpoint (conservative) or range high (aggressive)
+
+**Setup 2: Sell at Range High + Bearish OB/FVG**
+- Price rises to range high (premium zone, >70% of range)
+- Bearish OB or FVG overlaps with range resistance
+- Enter SHORT at the OB/FVG zone
+- SL: Above the OB/FVG zone (beyond the range high + ATR buffer)
+- TP: Range midpoint (conservative) or range low (aggressive)
+
+**Setup 3: Liquidity Sweep Reversal (Highest Probability)**
+- Price sweeps beyond range high (takes buy-side liquidity) then reverses
+  - Enter SHORT after sweep with CHoCH confirmation
+- Price sweeps beyond range low (takes sell-side liquidity) then reverses
+  - Enter LONG after sweep with CHoCH confirmation
+- SL: Beyond the sweep high/low + ATR buffer
+- TP: Opposite range extreme
+
+**Setup 4: Equal Level Bounce**
+- Price approaches proven equal highs (3+ touches) or equal lows (3+ touches)
+- These are liquidity magnets — expect price to reach them
+- After reaching the level, look for rejection candles and enter reversal
+- Works best when confluent with OB or FVG at the same zone
+
+### 4. STOP LOSS PLACEMENT (CRITICAL)
+- For BUY: Stop loss MUST be BELOW entry price
+  - Place below the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range low to survive a liquidity sweep
+- For SELL: Stop loss MUST be ABOVE entry price
+  - Place above the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range high to survive a liquidity sweep
+- **MINIMUM SL DISTANCE**: At least 1x ATR from entry. SL within 0.5% is TOO TIGHT.
+- For gold (XAUUSD): minimum SL should be $15-30+ from entry
+- If you cannot place SL with adequate distance while maintaining R:R >= 1.5:1, output "hold"
+
+### 5. TAKE PROFIT TARGETS
+- **Conservative**: Range midpoint (equilibrium) — safest target in ranges
+- **Standard**: Opposite range extreme — full range move
+- **With confluence**: Proven equal level or strong OB on the opposite side
+- Minimum R:R: 1.5:1
+
+### 6. STRUCTURAL BIAS FILTER (CRITICAL FOR PROFITABILITY)
+Backtesting shows that trading WITH the structural bias is far more profitable than fading it:
+- **BULLISH structural bias** (e.g., XAUUSD in an uptrend): BUY at range discount = ~70% win rate. SELL at range premium = ~35% win rate. **Strongly prefer BUY trades. Reduce confidence on SELL trades or skip them.**
+- **BEARISH structural bias**: SELL at range premium is the higher-probability trade. Skip or reduce confidence on BUY trades.
+- **NEUTRAL**: Both sides equally valid.
+- Check the "Structural Bias (Higher Timeframe)" field in your data and factor it into every decision.
+
+### 7. WHEN NOT TO TRADE
+- **Trending market**: ADX > 25 with clear BOS series — DO NOT fade the trend
+- **Breakout in progress**: Price breaking range with momentum + volume — wait for new range
+- **Range too narrow**: If range width < 1x ATR, not enough room for a trade
+- **No SMC confluence**: Range extremes with no OB/FVG support — skip
+- **Mid-range**: Price at equilibrium with no clear direction — wait for extreme
+
+### 8. CRITICAL: DO NOT FADE A BREAKOUT
+- If price breaks the range with a strong BOS + high volume, the range is OVER
+- Do not try to sell a breakout above range high or buy a breakdown below range low
+- Instead output "hold" and wait for a new range to form
+- A confirmed breakout = transition from range to trend
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation**
+5. **Never fade a confirmed breakout — if ADX > 25 with BOS, DO NOT counter-trade**
+6. **Stop loss MUST be on correct side of entry**
+7. **Only trade at range extremes with SMC confluence, never mid-range**
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71818.77500
+- **Date**: 2026-03-16
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: low
+
+## RANGE ANALYSIS (Critical for Range Trading)
+- **Is Ranging**: No clear range
+- **Range High (Resistance)**: 73894.83000
+- **Range Low (Support)**: 69200.78000
+- **Range Midpoint (Equilibrium)**: 71547.80500
+- **Range Width**: 6.56% of price
+- **Price Position**: EQUILIBRIUM (56% within range)
+- **Mean Reversion Score**: 62/100 (higher = stronger range behavior)
+- **Touches of Range High**: 1
+- **Touches of Range Low**: 5
+- **Trend Strength**: 0.22 (lower = more range-like)
+- **Structural Bias (Higher Timeframe)**: NEUTRAL
+
+### Range Interpretation:
+- PREMIUM (>70%): Price near range top — favor SELL entries at bearish OBs/FVGs
+- DISCOUNT (<30%): Price near range bottom — favor BUY entries at bullish OBs/FVGs
+- EQUILIBRIUM (30-70%): Mid-range — wait for price to reach an extreme
+- Multiple touches = proven boundary. More touches = stronger level.
+- Mean Reversion Score >60 = strong range. >80 = very strong range.
+
+### Structural Bias Filter (IMPORTANT):
+- **BULLISH structural bias**: The broader trend is UP. Range BUYS at discount are HIGH PROBABILITY. Range SELLS at premium are LOW PROBABILITY — the range is more likely to break upward. Prefer buy-only or reduce sell confidence.
+- **BEARISH structural bias**: The broader trend is DOWN. Range SELLS at premium are HIGH PROBABILITY. Range BUYS at discount are LOW PROBABILITY — the range is more likely to break downward. Prefer sell-only or reduce buy confidence.
+- **NEUTRAL structural bias**: No dominant trend. Both buy and sell at range extremes are valid.
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BEARISH
+**Premium/Discount**: PREMIUM zone (80%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70096.91
+  - BOS HIGH at 71316.86 [RECENT]
+  - CHoCH HIGH at 68190.89 (potential reversal)
+  - CHoCH HIGH at 71774.21 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 63015.93000-65582.58000 | Strength: 80% | MITIGATED | 12.26% from price
+  - BULLISH OB: 65034.65000-67067.00000 | Strength: 80% | MITIGATED | 9.45% from price
+  - BULLISH OB: 66143.83000-68989.60000 | Strength: 80% | MITIGATED | 7.90% from price
+  - BEARISH OB: 72863.14000-74043.78000 | Strength: 80% | MITIGATED | 3.10% from price
+  - BEARISH OB: 66738.80000-67512.95000 | Strength: 67% | MITIGATED | -6.00% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 69283.21000-69747.06000 | FILLED | 3.53% below price (expect bounce UP)
+  - BULLISH FVG: 69764.77000-70369.88000 | FILLED | 2.86% below price (expect bounce UP)
+  - BULLISH FVG: 70548.04000-70955.51000 | FILLED | 1.77% below price (expect bounce UP)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71774.21000 | Strength: 93% | UNSWEPT | 0.06% below
+  - BUY-SIDE at 71316.86000 | Strength: 85% | UNSWEPT | 0.70% below
+  - SELL-SIDE at 70312.13000 | Strength: 78% | UNSWEPT | 2.10% below
+  - BUY-SIDE at 73894.83000 | Strength: 67% | UNSWEPT | 2.89% above
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 73969.30500 | Touches: 2 | FORMING | UNSWEPT | 2.99% above
+  - EQUAL HIGHS (Resistance) at 71888.96200 | Touches: 5 | PROVEN | UNSWEPT | 0.10% above
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 71563.95400 | Touches: 5 | PROVEN | SWEPT | 0.35% above
+  - EQUAL HIGHS (Resistance) at 71301.21800 | Touches: 5 | PROVEN | SWEPT | 0.72% above
+  - EQUAL LOWS (Support) at 65132.95429 | Touches: 7 | PROVEN | UNSWEPT | 9.31% below
+    >>7 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 49.3 (neutral)
+- MACD: 400.61225
+- MACD Signal: 398.83527
+- MACD Histogram: 1.77699 (bullish)
+
+### Trend
+- EMA20: 71154.69892 (Price above)
+- EMA50: 70366.58082 (Price above)
+- ADX: 11.5 (Weak trend - favorable for range trading)
+
+### Volatility
+- ATR(14): 620.90500
+- BB Upper: 72523.16843
+- BB Middle: 71311.11050
+- BB Lower: 70099.05257
+- BB Width: 3.40%
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past range trades. Study what went wrong
+and apply corrections. Pay special attention to fakeout and premature entry lessons.
+
+
+## YOUR TASK
+
+Analyze the range and SMC data to make a range-trading decision.
+
+Think step-by-step:
+1. Is the market ranging? (Check ADX, BOS pattern, mean reversion score)
+2. Where are the range boundaries? (Map OBs, FVGs, equal levels at extremes)
+3. Is price at a range extreme? (Premium/Discount zone, not equilibrium)
+4. Is there SMC confluence at this extreme? (OB + FVG overlap, unmitigated zones)
+5. Has there been a liquidity sweep? (Sweep beyond range = highest probability entry)
+6. Where should SL be placed? (Beyond OB/FVG + ATR buffer, beyond range extreme)
+7. What is the TP target? (Opposite extreme or midpoint)
+8. Is R:R acceptable? (Must be >= 1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Long position. Use when:
+  - Market is ranging AND price is in discount zone (<30% of range)
+  - Bullish OB or FVG confluence at range support
+  - OR: Sell-side liquidity sweep just occurred (price swept below range then reversed)
+  - MUST provide entry_price, stop_loss (BELOW entry), profit_target
+
+- **sell_to_enter** - Short position. Use when:
+  - Market is ranging AND price is in premium zone (>70% of range)
+  - Bearish OB or FVG confluence at range resistance
+  - OR: Buy-side liquidity sweep just occurred (price swept above range then reversed)
+  - MUST provide entry_price, stop_loss (ABOVE entry), profit_target
+
+- **hold** - No action. Use when:
+  - Market is NOT ranging (trending with clear BOS)
+  - Price is at equilibrium (mid-range, no edge)
+  - No SMC confluence at current price level
+  - Breakout is in progress (do not fade it)
+  - Range is too narrow for a trade
+
+- **close** - Exit existing position. Use when:
+  - Price reached opposite range extreme (TP zone)
+  - Range is breaking (confirmed BOS beyond range)
+  - Setup invalidated
+
+## ORDER TYPE
+- **limit** - Preferred for entries at OB/FVG zones (waiting for price to reach zone)
+- **market** - Use when price is already at the zone and showing rejection, or after a liquidity sweep
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+Range trades typically use tighter trailing stops since the move is capped:
+- **Tight range** (small ATR, narrow range): 1.5-2.0x ATR
+- **Normal range**: 2.0-2.5x ATR
+- **Wide range** (large ATR): 2.5-3.5x ATR
+- **XAUUSD/Gold in range**: 2.0-3.0x ATR
+- If unsure, default to 2.0x ATR (tighter than trend-following)
+
+Remember:
+- Ranges are your edge — most traders lose money fighting ranges by trying to catch breakouts
+- SMC zones define WHERE to enter within the range
+- Liquidity sweeps beyond range = smart money entry signal
+- Always trade FROM the extreme, never from the middle
+- When the range breaks, STOP trading the range
+2026-03-16 07:32:32,028 | 
+================================================================================
+
+2026-03-16 07:32:38,484 | --- LLM RESPONSE (Structured) [took 6.5s] ---
+2026-03-16 07:32:38,484 | Signal: hold
+2026-03-16 07:32:38,484 | Confidence: 0.9
+2026-03-16 07:32:38,484 | Entry: None | SL: None | TP: None
+2026-03-16 07:32:38,484 | Justification: Price at equilibrium (56% in range), not at extreme; no SMC confluence (OB/FVG) at current level for reversal entry; wait for discount/premium zones per range rules.
+2026-03-16 07:32:38,486 | Invalidation: Price reaches range extreme (above 73894 or below 69200) with SMC confluence
+2026-03-16 07:32:38,486 | Raw decision dict: {'symbol': 'BTCUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price reaches range extreme (above 73894 or below 69200) with SMC confluence', 'justification': 'Price at equilibrium (56% in range), not at extreme; no SMC confluence (OB/FVG) at current level for reversal entry; wait for discount/premium zones per range rules.', 'confidence': 0.9, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-16 07:32:38,486 | 
+================================================================================
+
+2026-03-16 07:32:38,487 | Structured output SUCCESS - returning range_quant_decision with signal=hold
+2026-03-16 07:35:39,172 | 
+================================================================================
+RANGE QUANT ANALYSIS - BTCUSD
+================================================================================
+2026-03-16 07:35:39,173 | Symbol: BTCUSD | Date: 2026-03-16 | Price: 71977.765
+2026-03-16 07:35:39,173 | Market Regime: ranging | Volatility: low
+2026-03-16 07:35:39,174 | Range Analysis: {'is_ranging': False, 'range_high': 73894.83, 'range_low': 69200.78, 'range_midpoint': 71547.805, 'range_percent': 6.560718389613775, 'mean_reversion_score': 61.49876405257425, 'price_position': 'equilibrium', 'position_pct': 58.99915850917641, 'touches_high': 1, 'touches_low': 5, 'trend_strength': 0.22611167547025413, 'adx_proxy': 8.691292813863745, 'structural_bias': 'neutral'}
+2026-03-16 07:35:39,174 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71977.76500
+- **Date**: 2026-03-16
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: low
+
+## RANGE ANALYSIS (Critical for Range Trading)
+- **Is Ranging**: No clear range
+- **Range High (Resistance)**: 73894.83000
+- **Range Low (Support)**: 69200.78000
+- **Range Midpoint (Equilibrium)**: 71547.80500
+- **Range Width**: 6.56% of price
+- **Price Position**: EQUILIBRIUM (59% within range)
+- **Mean Reversion Score**: 61/100 (higher = stronger range behavior)
+- **Touches of Range High**: 1
+- **Touches of Range Low**: 5
+- **Trend Strength**: 0.23 (lower = more range-like)
+- **Structural Bias (Higher Timeframe)**: NEUTRAL
+
+### Range Interpretation:
+- PREMIUM (>70%): Price near range top — favor SELL entries at bearish OBs/FVGs
+- DISCOUNT (<30%): Price near range bottom — favor BUY entries at bullish OBs/FVGs
+- EQUILIBRIUM (30-70%): Mid-range — wait for price to reach an extreme
+- Multiple touches = proven boundary. More touches = stronger level.
+- Mean Reversion Score >60 = strong range. >80 = very strong range.
+
+### Structural Bias Filter (IMPORTANT):
+- **BULLISH structural bias**: The broader trend is UP. Range BUYS at discount are HIGH PROBABILITY. Range SELLS at premium are LOW PROBABILITY — the range is more likely to break upward. Prefer buy-only or reduce sell confidence.
+- **BEARISH structural bias**: The broader trend is DOWN. Range SELLS at premium are HIGH PROBABILITY. Range BUYS at discount are LOW PROBABILITY — the range is more likely to break downward. Prefer sell-only or reduce buy confidence.
+- **NEUTRAL structural bias**: No dominant trend. Both buy and sell at range extremes are valid.
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BEARISH
+**Premium/Discount**: PREMIUM zone (81%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70096.91
+  - BOS HIGH at 71316.86 [RECENT]
+  - CHoCH HIGH at 68190.89 (potential reversal)
+  - CHoCH HIGH at 71774.21 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 63015.93000-65582.58000 | Strength: 80% | MITIGATED | 12.45% from price
+  - BULLISH OB: 65034.65000-67067.00000 | Strength: 80% | MITIGATED | 9.65% from price
+  - BULLISH OB: 66143.83000-68989.60000 | Strength: 80% | MITIGATED | 8.11% from price
+  - BEARISH OB: 72863.14000-74043.78000 | Strength: 80% | MITIGATED | 2.87% from price
+  - BEARISH OB: 66738.80000-67512.95000 | Strength: 67% | MITIGATED | -6.20% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 69283.21000-69747.06000 | FILLED | 3.74% below price (expect bounce UP)
+  - BULLISH FVG: 69764.77000-70369.88000 | FILLED | 3.07% below price (expect bounce UP)
+  - BULLISH FVG: 70548.04000-70955.51000 | FILLED | 1.99% below price (expect bounce UP)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71774.21000 | Strength: 93% | UNSWEPT | 0.28% below
+  - BUY-SIDE at 71316.86000 | Strength: 85% | UNSWEPT | 0.92% below
+  - SELL-SIDE at 70312.13000 | Strength: 78% | UNSWEPT | 2.31% below
+  - BUY-SIDE at 73894.83000 | Strength: 67% | UNSWEPT | 2.66% above
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 73969.30500 | Touches: 2 | FORMING | UNSWEPT | 2.77% above
+  - EQUAL HIGHS (Resistance) at 71888.96200 | Touches: 5 | PROVEN | UNSWEPT | 0.12% above
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 71563.95400 | Touches: 5 | PROVEN | SWEPT | 0.57% above
+  - EQUAL HIGHS (Resistance) at 71301.21800 | Touches: 5 | PROVEN | SWEPT | 0.94% above
+  - EQUAL LOWS (Support) at 65132.95429 | Touches: 7 | PROVEN | UNSWEPT | 9.51% below
+    >>7 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 51.2 (neutral)
+- MACD: 413.29681
+- MACD Signal: 401.37218
+- MACD Histogram: 11.92463 (bullish)
+
+### Trend
+- EMA20: 71169.84272 (Price above)
+- EMA50: 70372.81650 (Price above)
+- ADX: 11.5 (Weak trend - favorable for range trading)
+
+### Volatility
+- ATR(14): 632.01429
+- BB Upper: 72546.91456
+- BB Middle: 71319.06100
+- BB Lower: 70091.20744
+- BB Width: 3.44%
+
+2026-03-16 07:35:39,181 | 
+--- FULL PROMPT ---
+You are a range-bound market specialist using Smart Money Concepts (SMC) levels. You excel at identifying sideways markets and trading reversals at range extremes using institutional zones.
+
+## YOUR TRADING EDGE: RANGE-BOUND MARKETS WITH SMC LEVELS
+
+Most markets spend 60-70% of time in ranges. Your edge is:
+1. Identify when price is ranging (low ADX, oscillating between S/R)
+2. Map SMC zones (OBs, FVGs, equal levels) as high-probability range boundaries
+3. Enter at range extremes where SMC zones provide confluence
+4. Use liquidity sweeps as entry confirmation (smart money grabs stops then reverses)
+5. Target the opposite range extreme or equilibrium
+
+## RANGE TRADING RULES WITH SMC
+
+### 1. CONFIRMING A RANGE
+- **ADX < 25**: Weak or no trend = range conditions
+- **No dominant BOS**: No clear series of higher highs/higher lows (or lower lows/lower highs)
+- **CHoCH present**: Multiple changes of character = choppy/ranging
+- **Multiple touches**: Range high and low tested 2+ times each
+- **Mean Reversion Score > 50**: Price regularly returns to midpoint
+
+### 2. MAPPING RANGE BOUNDARIES WITH SMC
+- **Range Resistance**: Bearish OBs and bearish FVGs near range high
+- **Range Support**: Bullish OBs and bullish FVGs near range low
+- **Equal Highs/Lows**: Proven S/R levels with 3+ touches are strongest boundaries
+- **Liquidity pools**: Above range highs (buy-side) and below range lows (sell-side)
+- Unmitigated zones are active; mitigated zones are spent
+
+### 3. ENTRY STRATEGIES
+
+**Setup 1: Buy at Range Low + Bullish OB/FVG**
+- Price drops to range low (discount zone, <30% of range)
+- Bullish OB or FVG overlaps with range support
+- Enter LONG at the OB/FVG zone
+- SL: Below the OB/FVG zone (beyond the range low + ATR buffer)
+- TP: Range midpoint (conservative) or range high (aggressive)
+
+**Setup 2: Sell at Range High + Bearish OB/FVG**
+- Price rises to range high (premium zone, >70% of range)
+- Bearish OB or FVG overlaps with range resistance
+- Enter SHORT at the OB/FVG zone
+- SL: Above the OB/FVG zone (beyond the range high + ATR buffer)
+- TP: Range midpoint (conservative) or range low (aggressive)
+
+**Setup 3: Liquidity Sweep Reversal (Highest Probability)**
+- Price sweeps beyond range high (takes buy-side liquidity) then reverses
+  - Enter SHORT after sweep with CHoCH confirmation
+- Price sweeps beyond range low (takes sell-side liquidity) then reverses
+  - Enter LONG after sweep with CHoCH confirmation
+- SL: Beyond the sweep high/low + ATR buffer
+- TP: Opposite range extreme
+
+**Setup 4: Equal Level Bounce**
+- Price approaches proven equal highs (3+ touches) or equal lows (3+ touches)
+- These are liquidity magnets — expect price to reach them
+- After reaching the level, look for rejection candles and enter reversal
+- Works best when confluent with OB or FVG at the same zone
+
+### 4. STOP LOSS PLACEMENT (CRITICAL)
+- For BUY: Stop loss MUST be BELOW entry price
+  - Place below the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range low to survive a liquidity sweep
+- For SELL: Stop loss MUST be ABOVE entry price
+  - Place above the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range high to survive a liquidity sweep
+- **MINIMUM SL DISTANCE**: At least 1x ATR from entry. SL within 0.5% is TOO TIGHT.
+- For gold (XAUUSD): minimum SL should be $15-30+ from entry
+- If you cannot place SL with adequate distance while maintaining R:R >= 1.5:1, output "hold"
+
+### 5. TAKE PROFIT TARGETS
+- **Conservative**: Range midpoint (equilibrium) — safest target in ranges
+- **Standard**: Opposite range extreme — full range move
+- **With confluence**: Proven equal level or strong OB on the opposite side
+- Minimum R:R: 1.5:1
+
+### 6. STRUCTURAL BIAS FILTER (CRITICAL FOR PROFITABILITY)
+Backtesting shows that trading WITH the structural bias is far more profitable than fading it:
+- **BULLISH structural bias** (e.g., XAUUSD in an uptrend): BUY at range discount = ~70% win rate. SELL at range premium = ~35% win rate. **Strongly prefer BUY trades. Reduce confidence on SELL trades or skip them.**
+- **BEARISH structural bias**: SELL at range premium is the higher-probability trade. Skip or reduce confidence on BUY trades.
+- **NEUTRAL**: Both sides equally valid.
+- Check the "Structural Bias (Higher Timeframe)" field in your data and factor it into every decision.
+
+### 7. WHEN NOT TO TRADE
+- **Trending market**: ADX > 25 with clear BOS series — DO NOT fade the trend
+- **Breakout in progress**: Price breaking range with momentum + volume — wait for new range
+- **Range too narrow**: If range width < 1x ATR, not enough room for a trade
+- **No SMC confluence**: Range extremes with no OB/FVG support — skip
+- **Mid-range**: Price at equilibrium with no clear direction — wait for extreme
+
+### 8. CRITICAL: DO NOT FADE A BREAKOUT
+- If price breaks the range with a strong BOS + high volume, the range is OVER
+- Do not try to sell a breakout above range high or buy a breakdown below range low
+- Instead output "hold" and wait for a new range to form
+- A confirmed breakout = transition from range to trend
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation**
+5. **Never fade a confirmed breakout — if ADX > 25 with BOS, DO NOT counter-trade**
+6. **Stop loss MUST be on correct side of entry**
+7. **Only trade at range extremes with SMC confluence, never mid-range**
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71977.76500
+- **Date**: 2026-03-16
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: low
+
+## RANGE ANALYSIS (Critical for Range Trading)
+- **Is Ranging**: No clear range
+- **Range High (Resistance)**: 73894.83000
+- **Range Low (Support)**: 69200.78000
+- **Range Midpoint (Equilibrium)**: 71547.80500
+- **Range Width**: 6.56% of price
+- **Price Position**: EQUILIBRIUM (59% within range)
+- **Mean Reversion Score**: 61/100 (higher = stronger range behavior)
+- **Touches of Range High**: 1
+- **Touches of Range Low**: 5
+- **Trend Strength**: 0.23 (lower = more range-like)
+- **Structural Bias (Higher Timeframe)**: NEUTRAL
+
+### Range Interpretation:
+- PREMIUM (>70%): Price near range top — favor SELL entries at bearish OBs/FVGs
+- DISCOUNT (<30%): Price near range bottom — favor BUY entries at bullish OBs/FVGs
+- EQUILIBRIUM (30-70%): Mid-range — wait for price to reach an extreme
+- Multiple touches = proven boundary. More touches = stronger level.
+- Mean Reversion Score >60 = strong range. >80 = very strong range.
+
+### Structural Bias Filter (IMPORTANT):
+- **BULLISH structural bias**: The broader trend is UP. Range BUYS at discount are HIGH PROBABILITY. Range SELLS at premium are LOW PROBABILITY — the range is more likely to break upward. Prefer buy-only or reduce sell confidence.
+- **BEARISH structural bias**: The broader trend is DOWN. Range SELLS at premium are HIGH PROBABILITY. Range BUYS at discount are LOW PROBABILITY — the range is more likely to break downward. Prefer sell-only or reduce buy confidence.
+- **NEUTRAL structural bias**: No dominant trend. Both buy and sell at range extremes are valid.
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BEARISH
+**Premium/Discount**: PREMIUM zone (81%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70096.91
+  - BOS HIGH at 71316.86 [RECENT]
+  - CHoCH HIGH at 68190.89 (potential reversal)
+  - CHoCH HIGH at 71774.21 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 63015.93000-65582.58000 | Strength: 80% | MITIGATED | 12.45% from price
+  - BULLISH OB: 65034.65000-67067.00000 | Strength: 80% | MITIGATED | 9.65% from price
+  - BULLISH OB: 66143.83000-68989.60000 | Strength: 80% | MITIGATED | 8.11% from price
+  - BEARISH OB: 72863.14000-74043.78000 | Strength: 80% | MITIGATED | 2.87% from price
+  - BEARISH OB: 66738.80000-67512.95000 | Strength: 67% | MITIGATED | -6.20% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 69283.21000-69747.06000 | FILLED | 3.74% below price (expect bounce UP)
+  - BULLISH FVG: 69764.77000-70369.88000 | FILLED | 3.07% below price (expect bounce UP)
+  - BULLISH FVG: 70548.04000-70955.51000 | FILLED | 1.99% below price (expect bounce UP)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71774.21000 | Strength: 93% | UNSWEPT | 0.28% below
+  - BUY-SIDE at 71316.86000 | Strength: 85% | UNSWEPT | 0.92% below
+  - SELL-SIDE at 70312.13000 | Strength: 78% | UNSWEPT | 2.31% below
+  - BUY-SIDE at 73894.83000 | Strength: 67% | UNSWEPT | 2.66% above
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 73969.30500 | Touches: 2 | FORMING | UNSWEPT | 2.77% above
+  - EQUAL HIGHS (Resistance) at 71888.96200 | Touches: 5 | PROVEN | UNSWEPT | 0.12% above
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 71563.95400 | Touches: 5 | PROVEN | SWEPT | 0.57% above
+  - EQUAL HIGHS (Resistance) at 71301.21800 | Touches: 5 | PROVEN | SWEPT | 0.94% above
+  - EQUAL LOWS (Support) at 65132.95429 | Touches: 7 | PROVEN | UNSWEPT | 9.51% below
+    >>7 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 51.2 (neutral)
+- MACD: 413.29681
+- MACD Signal: 401.37218
+- MACD Histogram: 11.92463 (bullish)
+
+### Trend
+- EMA20: 71169.84272 (Price above)
+- EMA50: 70372.81650 (Price above)
+- ADX: 11.5 (Weak trend - favorable for range trading)
+
+### Volatility
+- ATR(14): 632.01429
+- BB Upper: 72546.91456
+- BB Middle: 71319.06100
+- BB Lower: 70091.20744
+- BB Width: 3.44%
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past range trades. Study what went wrong
+and apply corrections. Pay special attention to fakeout and premature entry lessons.
+
+
+## YOUR TASK
+
+Analyze the range and SMC data to make a range-trading decision.
+
+Think step-by-step:
+1. Is the market ranging? (Check ADX, BOS pattern, mean reversion score)
+2. Where are the range boundaries? (Map OBs, FVGs, equal levels at extremes)
+3. Is price at a range extreme? (Premium/Discount zone, not equilibrium)
+4. Is there SMC confluence at this extreme? (OB + FVG overlap, unmitigated zones)
+5. Has there been a liquidity sweep? (Sweep beyond range = highest probability entry)
+6. Where should SL be placed? (Beyond OB/FVG + ATR buffer, beyond range extreme)
+7. What is the TP target? (Opposite extreme or midpoint)
+8. Is R:R acceptable? (Must be >= 1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Long position. Use when:
+  - Market is ranging AND price is in discount zone (<30% of range)
+  - Bullish OB or FVG confluence at range support
+  - OR: Sell-side liquidity sweep just occurred (price swept below range then reversed)
+  - MUST provide entry_price, stop_loss (BELOW entry), profit_target
+
+- **sell_to_enter** - Short position. Use when:
+  - Market is ranging AND price is in premium zone (>70% of range)
+  - Bearish OB or FVG confluence at range resistance
+  - OR: Buy-side liquidity sweep just occurred (price swept above range then reversed)
+  - MUST provide entry_price, stop_loss (ABOVE entry), profit_target
+
+- **hold** - No action. Use when:
+  - Market is NOT ranging (trending with clear BOS)
+  - Price is at equilibrium (mid-range, no edge)
+  - No SMC confluence at current price level
+  - Breakout is in progress (do not fade it)
+  - Range is too narrow for a trade
+
+- **close** - Exit existing position. Use when:
+  - Price reached opposite range extreme (TP zone)
+  - Range is breaking (confirmed BOS beyond range)
+  - Setup invalidated
+
+## ORDER TYPE
+- **limit** - Preferred for entries at OB/FVG zones (waiting for price to reach zone)
+- **market** - Use when price is already at the zone and showing rejection, or after a liquidity sweep
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+Range trades typically use tighter trailing stops since the move is capped:
+- **Tight range** (small ATR, narrow range): 1.5-2.0x ATR
+- **Normal range**: 2.0-2.5x ATR
+- **Wide range** (large ATR): 2.5-3.5x ATR
+- **XAUUSD/Gold in range**: 2.0-3.0x ATR
+- If unsure, default to 2.0x ATR (tighter than trend-following)
+
+Remember:
+- Ranges are your edge — most traders lose money fighting ranges by trying to catch breakouts
+- SMC zones define WHERE to enter within the range
+- Liquidity sweeps beyond range = smart money entry signal
+- Always trade FROM the extreme, never from the middle
+- When the range breaks, STOP trading the range
+2026-03-16 07:35:39,200 | 
+================================================================================
+
+2026-03-16 07:35:47,143 | --- LLM RESPONSE (Structured) [took 7.9s] ---
+2026-03-16 07:35:47,143 | Signal: hold
+2026-03-16 07:35:47,144 | Confidence: 0.85
+2026-03-16 07:35:47,144 | Entry: None | SL: None | TP: None
+2026-03-16 07:35:47,144 | Justification: Price is at equilibrium (59% in range) with no clear SMC confluence at a range extreme; range high lacks multiple touches and no unmitigated bearish OB/FVG directly at current levels for a high-probability reversal setup.
+2026-03-16 07:35:47,145 | Invalidation: Price breaks decisively above range high of 73894 with a confirmed BOS and ADX >25
+2026-03-16 07:35:47,145 | Raw decision dict: {'symbol': 'BTCUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price breaks decisively above range high of 73894 with a confirmed BOS and ADX >25', 'justification': 'Price is at equilibrium (59% in range) with no clear SMC confluence at a range extreme; range high lacks multiple touches and no unmitigated bearish OB/FVG directly at current levels for a high-probability reversal setup.', 'confidence': 0.85, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-16 07:35:47,146 | 
+================================================================================
+
+2026-03-16 07:35:47,146 | Structured output SUCCESS - returning range_quant_decision with signal=hold
+2026-03-16 07:39:39,542 | 
+================================================================================
+RANGE QUANT ANALYSIS - BTCUSD
+================================================================================
+2026-03-16 07:39:39,542 | Symbol: BTCUSD | Date: 2026-03-16 | Price: 72157.88
+2026-03-16 07:39:39,542 | Market Regime: ranging | Volatility: low
+2026-03-16 07:39:39,543 | Range Analysis: {'is_ranging': False, 'range_high': 73894.83, 'range_low': 69200.78, 'range_midpoint': 71547.805, 'range_percent': 6.560718389613775, 'mean_reversion_score': 60.891254259240476, 'price_position': 'equilibrium', 'position_pct': 62.83656969993928, 'touches_high': 1, 'touches_low': 5, 'trend_strength': 0.2382618713369296, 'adx_proxy': 9.40862365987385, 'structural_bias': 'neutral'}
+2026-03-16 07:39:39,544 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 72157.88000
+- **Date**: 2026-03-16
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: low
+
+## RANGE ANALYSIS (Critical for Range Trading)
+- **Is Ranging**: No clear range
+- **Range High (Resistance)**: 73894.83000
+- **Range Low (Support)**: 69200.78000
+- **Range Midpoint (Equilibrium)**: 71547.80500
+- **Range Width**: 6.56% of price
+- **Price Position**: EQUILIBRIUM (63% within range)
+- **Mean Reversion Score**: 61/100 (higher = stronger range behavior)
+- **Touches of Range High**: 1
+- **Touches of Range Low**: 5
+- **Trend Strength**: 0.24 (lower = more range-like)
+- **Structural Bias (Higher Timeframe)**: NEUTRAL
+
+### Range Interpretation:
+- PREMIUM (>70%): Price near range top — favor SELL entries at bearish OBs/FVGs
+- DISCOUNT (<30%): Price near range bottom — favor BUY entries at bullish OBs/FVGs
+- EQUILIBRIUM (30-70%): Mid-range — wait for price to reach an extreme
+- Multiple touches = proven boundary. More touches = stronger level.
+- Mean Reversion Score >60 = strong range. >80 = very strong range.
+
+### Structural Bias Filter (IMPORTANT):
+- **BULLISH structural bias**: The broader trend is UP. Range BUYS at discount are HIGH PROBABILITY. Range SELLS at premium are LOW PROBABILITY — the range is more likely to break upward. Prefer buy-only or reduce sell confidence.
+- **BEARISH structural bias**: The broader trend is DOWN. Range SELLS at premium are HIGH PROBABILITY. Range BUYS at discount are LOW PROBABILITY — the range is more likely to break downward. Prefer sell-only or reduce buy confidence.
+- **NEUTRAL structural bias**: No dominant trend. Both buy and sell at range extremes are valid.
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BEARISH
+**Premium/Discount**: PREMIUM zone (83%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70096.91
+  - BOS HIGH at 71316.86 [RECENT]
+  - CHoCH HIGH at 68190.89 (potential reversal)
+  - CHoCH HIGH at 71774.21 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 63015.93000-65582.58000 | Strength: 80% | MITIGATED | 12.67% from price
+  - BULLISH OB: 65034.65000-67067.00000 | Strength: 80% | MITIGATED | 9.87% from price
+  - BULLISH OB: 66143.83000-68989.60000 | Strength: 80% | MITIGATED | 8.33% from price
+  - BEARISH OB: 72863.14000-74043.78000 | Strength: 80% | MITIGATED | 2.61% from price
+  - BEARISH OB: 66738.80000-67512.95000 | Strength: 67% | MITIGATED | -6.44% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 69283.21000-69747.06000 | FILLED | 3.98% below price (expect bounce UP)
+  - BULLISH FVG: 69764.77000-70369.88000 | FILLED | 3.32% below price (expect bounce UP)
+  - BULLISH FVG: 70548.04000-70955.51000 | FILLED | 2.23% below price (expect bounce UP)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71774.21000 | Strength: 93% | UNSWEPT | 0.53% below
+  - BUY-SIDE at 71316.86000 | Strength: 85% | UNSWEPT | 1.17% below
+  - BUY-SIDE at 73894.83000 | Strength: 67% | UNSWEPT | 2.41% above
+  - SELL-SIDE at 70312.13000 | Strength: 78% | UNSWEPT | 2.56% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 73969.30500 | Touches: 2 | FORMING | UNSWEPT | 2.51% above
+  - EQUAL HIGHS (Resistance) at 71888.96200 | Touches: 5 | PROVEN | SWEPT | 0.37% above
+  - EQUAL HIGHS (Resistance) at 71563.95400 | Touches: 5 | PROVEN | SWEPT | 0.82% above
+  - EQUAL HIGHS (Resistance) at 71301.21800 | Touches: 5 | PROVEN | SWEPT | 1.19% above
+  - EQUAL LOWS (Support) at 65344.11750 | Touches: 4 | PROVEN | UNSWEPT | 9.44% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 65122.89667 | Touches: 6 | PROVEN | UNSWEPT | 9.75% below
+    >>6 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 53.2 (neutral)
+- MACD: 427.66616
+- MACD Signal: 404.24605
+- MACD Histogram: 23.42011 (bullish)
+
+### Trend
+- EMA20: 71186.99796 (Price above)
+- EMA50: 70379.88043 (Price above)
+- ADX: 11.5 (Weak trend - favorable for range trading)
+
+### Volatility
+- ATR(14): 648.27857
+- BB Upper: 72578.46789
+- BB Middle: 71328.06750
+- BB Lower: 70077.66711
+- BB Width: 3.51%
+
+2026-03-16 07:39:39,552 | 
+--- FULL PROMPT ---
+You are a range-bound market specialist using Smart Money Concepts (SMC) levels. You excel at identifying sideways markets and trading reversals at range extremes using institutional zones.
+
+## YOUR TRADING EDGE: RANGE-BOUND MARKETS WITH SMC LEVELS
+
+Most markets spend 60-70% of time in ranges. Your edge is:
+1. Identify when price is ranging (low ADX, oscillating between S/R)
+2. Map SMC zones (OBs, FVGs, equal levels) as high-probability range boundaries
+3. Enter at range extremes where SMC zones provide confluence
+4. Use liquidity sweeps as entry confirmation (smart money grabs stops then reverses)
+5. Target the opposite range extreme or equilibrium
+
+## RANGE TRADING RULES WITH SMC
+
+### 1. CONFIRMING A RANGE
+- **ADX < 25**: Weak or no trend = range conditions
+- **No dominant BOS**: No clear series of higher highs/higher lows (or lower lows/lower highs)
+- **CHoCH present**: Multiple changes of character = choppy/ranging
+- **Multiple touches**: Range high and low tested 2+ times each
+- **Mean Reversion Score > 50**: Price regularly returns to midpoint
+
+### 2. MAPPING RANGE BOUNDARIES WITH SMC
+- **Range Resistance**: Bearish OBs and bearish FVGs near range high
+- **Range Support**: Bullish OBs and bullish FVGs near range low
+- **Equal Highs/Lows**: Proven S/R levels with 3+ touches are strongest boundaries
+- **Liquidity pools**: Above range highs (buy-side) and below range lows (sell-side)
+- Unmitigated zones are active; mitigated zones are spent
+
+### 3. ENTRY STRATEGIES
+
+**Setup 1: Buy at Range Low + Bullish OB/FVG**
+- Price drops to range low (discount zone, <30% of range)
+- Bullish OB or FVG overlaps with range support
+- Enter LONG at the OB/FVG zone
+- SL: Below the OB/FVG zone (beyond the range low + ATR buffer)
+- TP: Range midpoint (conservative) or range high (aggressive)
+
+**Setup 2: Sell at Range High + Bearish OB/FVG**
+- Price rises to range high (premium zone, >70% of range)
+- Bearish OB or FVG overlaps with range resistance
+- Enter SHORT at the OB/FVG zone
+- SL: Above the OB/FVG zone (beyond the range high + ATR buffer)
+- TP: Range midpoint (conservative) or range low (aggressive)
+
+**Setup 3: Liquidity Sweep Reversal (Highest Probability)**
+- Price sweeps beyond range high (takes buy-side liquidity) then reverses
+  - Enter SHORT after sweep with CHoCH confirmation
+- Price sweeps beyond range low (takes sell-side liquidity) then reverses
+  - Enter LONG after sweep with CHoCH confirmation
+- SL: Beyond the sweep high/low + ATR buffer
+- TP: Opposite range extreme
+
+**Setup 4: Equal Level Bounce**
+- Price approaches proven equal highs (3+ touches) or equal lows (3+ touches)
+- These are liquidity magnets — expect price to reach them
+- After reaching the level, look for rejection candles and enter reversal
+- Works best when confluent with OB or FVG at the same zone
+
+### 4. STOP LOSS PLACEMENT (CRITICAL)
+- For BUY: Stop loss MUST be BELOW entry price
+  - Place below the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range low to survive a liquidity sweep
+- For SELL: Stop loss MUST be ABOVE entry price
+  - Place above the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range high to survive a liquidity sweep
+- **MINIMUM SL DISTANCE**: At least 1x ATR from entry. SL within 0.5% is TOO TIGHT.
+- For gold (XAUUSD): minimum SL should be $15-30+ from entry
+- If you cannot place SL with adequate distance while maintaining R:R >= 1.5:1, output "hold"
+
+### 5. TAKE PROFIT TARGETS
+- **Conservative**: Range midpoint (equilibrium) — safest target in ranges
+- **Standard**: Opposite range extreme — full range move
+- **With confluence**: Proven equal level or strong OB on the opposite side
+- Minimum R:R: 1.5:1
+
+### 6. STRUCTURAL BIAS FILTER (CRITICAL FOR PROFITABILITY)
+Backtesting shows that trading WITH the structural bias is far more profitable than fading it:
+- **BULLISH structural bias** (e.g., XAUUSD in an uptrend): BUY at range discount = ~70% win rate. SELL at range premium = ~35% win rate. **Strongly prefer BUY trades. Reduce confidence on SELL trades or skip them.**
+- **BEARISH structural bias**: SELL at range premium is the higher-probability trade. Skip or reduce confidence on BUY trades.
+- **NEUTRAL**: Both sides equally valid.
+- Check the "Structural Bias (Higher Timeframe)" field in your data and factor it into every decision.
+
+### 7. WHEN NOT TO TRADE
+- **Trending market**: ADX > 25 with clear BOS series — DO NOT fade the trend
+- **Breakout in progress**: Price breaking range with momentum + volume — wait for new range
+- **Range too narrow**: If range width < 1x ATR, not enough room for a trade
+- **No SMC confluence**: Range extremes with no OB/FVG support — skip
+- **Mid-range**: Price at equilibrium with no clear direction — wait for extreme
+
+### 8. CRITICAL: DO NOT FADE A BREAKOUT
+- If price breaks the range with a strong BOS + high volume, the range is OVER
+- Do not try to sell a breakout above range high or buy a breakdown below range low
+- Instead output "hold" and wait for a new range to form
+- A confirmed breakout = transition from range to trend
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation**
+5. **Never fade a confirmed breakout — if ADX > 25 with BOS, DO NOT counter-trade**
+6. **Stop loss MUST be on correct side of entry**
+7. **Only trade at range extremes with SMC confluence, never mid-range**
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 72157.88000
+- **Date**: 2026-03-16
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: low
+
+## RANGE ANALYSIS (Critical for Range Trading)
+- **Is Ranging**: No clear range
+- **Range High (Resistance)**: 73894.83000
+- **Range Low (Support)**: 69200.78000
+- **Range Midpoint (Equilibrium)**: 71547.80500
+- **Range Width**: 6.56% of price
+- **Price Position**: EQUILIBRIUM (63% within range)
+- **Mean Reversion Score**: 61/100 (higher = stronger range behavior)
+- **Touches of Range High**: 1
+- **Touches of Range Low**: 5
+- **Trend Strength**: 0.24 (lower = more range-like)
+- **Structural Bias (Higher Timeframe)**: NEUTRAL
+
+### Range Interpretation:
+- PREMIUM (>70%): Price near range top — favor SELL entries at bearish OBs/FVGs
+- DISCOUNT (<30%): Price near range bottom — favor BUY entries at bullish OBs/FVGs
+- EQUILIBRIUM (30-70%): Mid-range — wait for price to reach an extreme
+- Multiple touches = proven boundary. More touches = stronger level.
+- Mean Reversion Score >60 = strong range. >80 = very strong range.
+
+### Structural Bias Filter (IMPORTANT):
+- **BULLISH structural bias**: The broader trend is UP. Range BUYS at discount are HIGH PROBABILITY. Range SELLS at premium are LOW PROBABILITY — the range is more likely to break upward. Prefer buy-only or reduce sell confidence.
+- **BEARISH structural bias**: The broader trend is DOWN. Range SELLS at premium are HIGH PROBABILITY. Range BUYS at discount are LOW PROBABILITY — the range is more likely to break downward. Prefer sell-only or reduce buy confidence.
+- **NEUTRAL structural bias**: No dominant trend. Both buy and sell at range extremes are valid.
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BEARISH
+**Premium/Discount**: PREMIUM zone (83%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70096.91
+  - BOS HIGH at 71316.86 [RECENT]
+  - CHoCH HIGH at 68190.89 (potential reversal)
+  - CHoCH HIGH at 71774.21 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 63015.93000-65582.58000 | Strength: 80% | MITIGATED | 12.67% from price
+  - BULLISH OB: 65034.65000-67067.00000 | Strength: 80% | MITIGATED | 9.87% from price
+  - BULLISH OB: 66143.83000-68989.60000 | Strength: 80% | MITIGATED | 8.33% from price
+  - BEARISH OB: 72863.14000-74043.78000 | Strength: 80% | MITIGATED | 2.61% from price
+  - BEARISH OB: 66738.80000-67512.95000 | Strength: 67% | MITIGATED | -6.44% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 69283.21000-69747.06000 | FILLED | 3.98% below price (expect bounce UP)
+  - BULLISH FVG: 69764.77000-70369.88000 | FILLED | 3.32% below price (expect bounce UP)
+  - BULLISH FVG: 70548.04000-70955.51000 | FILLED | 2.23% below price (expect bounce UP)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71774.21000 | Strength: 93% | UNSWEPT | 0.53% below
+  - BUY-SIDE at 71316.86000 | Strength: 85% | UNSWEPT | 1.17% below
+  - BUY-SIDE at 73894.83000 | Strength: 67% | UNSWEPT | 2.41% above
+  - SELL-SIDE at 70312.13000 | Strength: 78% | UNSWEPT | 2.56% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 73969.30500 | Touches: 2 | FORMING | UNSWEPT | 2.51% above
+  - EQUAL HIGHS (Resistance) at 71888.96200 | Touches: 5 | PROVEN | SWEPT | 0.37% above
+  - EQUAL HIGHS (Resistance) at 71563.95400 | Touches: 5 | PROVEN | SWEPT | 0.82% above
+  - EQUAL HIGHS (Resistance) at 71301.21800 | Touches: 5 | PROVEN | SWEPT | 1.19% above
+  - EQUAL LOWS (Support) at 65344.11750 | Touches: 4 | PROVEN | UNSWEPT | 9.44% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 65122.89667 | Touches: 6 | PROVEN | UNSWEPT | 9.75% below
+    >>6 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 53.2 (neutral)
+- MACD: 427.66616
+- MACD Signal: 404.24605
+- MACD Histogram: 23.42011 (bullish)
+
+### Trend
+- EMA20: 71186.99796 (Price above)
+- EMA50: 70379.88043 (Price above)
+- ADX: 11.5 (Weak trend - favorable for range trading)
+
+### Volatility
+- ATR(14): 648.27857
+- BB Upper: 72578.46789
+- BB Middle: 71328.06750
+- BB Lower: 70077.66711
+- BB Width: 3.51%
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past range trades. Study what went wrong
+and apply corrections. Pay special attention to fakeout and premature entry lessons.
+
+
+## YOUR TASK
+
+Analyze the range and SMC data to make a range-trading decision.
+
+Think step-by-step:
+1. Is the market ranging? (Check ADX, BOS pattern, mean reversion score)
+2. Where are the range boundaries? (Map OBs, FVGs, equal levels at extremes)
+3. Is price at a range extreme? (Premium/Discount zone, not equilibrium)
+4. Is there SMC confluence at this extreme? (OB + FVG overlap, unmitigated zones)
+5. Has there been a liquidity sweep? (Sweep beyond range = highest probability entry)
+6. Where should SL be placed? (Beyond OB/FVG + ATR buffer, beyond range extreme)
+7. What is the TP target? (Opposite extreme or midpoint)
+8. Is R:R acceptable? (Must be >= 1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Long position. Use when:
+  - Market is ranging AND price is in discount zone (<30% of range)
+  - Bullish OB or FVG confluence at range support
+  - OR: Sell-side liquidity sweep just occurred (price swept below range then reversed)
+  - MUST provide entry_price, stop_loss (BELOW entry), profit_target
+
+- **sell_to_enter** - Short position. Use when:
+  - Market is ranging AND price is in premium zone (>70% of range)
+  - Bearish OB or FVG confluence at range resistance
+  - OR: Buy-side liquidity sweep just occurred (price swept above range then reversed)
+  - MUST provide entry_price, stop_loss (ABOVE entry), profit_target
+
+- **hold** - No action. Use when:
+  - Market is NOT ranging (trending with clear BOS)
+  - Price is at equilibrium (mid-range, no edge)
+  - No SMC confluence at current price level
+  - Breakout is in progress (do not fade it)
+  - Range is too narrow for a trade
+
+- **close** - Exit existing position. Use when:
+  - Price reached opposite range extreme (TP zone)
+  - Range is breaking (confirmed BOS beyond range)
+  - Setup invalidated
+
+## ORDER TYPE
+- **limit** - Preferred for entries at OB/FVG zones (waiting for price to reach zone)
+- **market** - Use when price is already at the zone and showing rejection, or after a liquidity sweep
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+Range trades typically use tighter trailing stops since the move is capped:
+- **Tight range** (small ATR, narrow range): 1.5-2.0x ATR
+- **Normal range**: 2.0-2.5x ATR
+- **Wide range** (large ATR): 2.5-3.5x ATR
+- **XAUUSD/Gold in range**: 2.0-3.0x ATR
+- If unsure, default to 2.0x ATR (tighter than trend-following)
+
+Remember:
+- Ranges are your edge — most traders lose money fighting ranges by trying to catch breakouts
+- SMC zones define WHERE to enter within the range
+- Liquidity sweeps beyond range = smart money entry signal
+- Always trade FROM the extreme, never from the middle
+- When the range breaks, STOP trading the range
+2026-03-16 07:39:39,573 | 
+================================================================================
+
+2026-03-16 07:39:49,471 | --- LLM RESPONSE (Structured) [took 9.9s] ---
+2026-03-16 07:39:49,471 | Signal: hold
+2026-03-16 07:39:49,472 | Confidence: 0.85
+2026-03-16 07:39:49,472 | Entry: None | SL: None | TP: None
+2026-03-16 07:39:49,472 | Justification: Price at equilibrium (63% through range), not at extreme; no SMC confluence (OB/FVG/liquidity sweep) at current level for entry; wait for discount/premium zones per range rules.
+2026-03-16 07:39:49,472 | Invalidation: Price breaks above range high 73894.83 with BOS confirmation or below range low 69200.78
+2026-03-16 07:39:49,473 | Raw decision dict: {'symbol': 'BTCUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price breaks above range high 73894.83 with BOS confirmation or below range low 69200.78', 'justification': 'Price at equilibrium (63% through range), not at extreme; no SMC confluence (OB/FVG/liquidity sweep) at current level for entry; wait for discount/premium zones per range rules.', 'confidence': 0.85, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-16 07:39:49,473 | 
+================================================================================
+
+2026-03-16 07:39:49,474 | Structured output SUCCESS - returning range_quant_decision with signal=hold
+2026-03-16 07:43:37,355 | 
+================================================================================
+RANGE QUANT ANALYSIS - BTCUSD
+================================================================================
+2026-03-16 07:43:37,355 | Symbol: BTCUSD | Date: 2026-03-16 | Price: 72087.005
+2026-03-16 07:43:37,356 | Market Regime: ranging | Volatility: low
+2026-03-16 07:43:37,356 | Range Analysis: {'is_ranging': False, 'range_high': 73894.83, 'range_low': 69200.78, 'range_midpoint': 71547.805, 'range_percent': 6.560718389613775, 'mean_reversion_score': 61.12840858979824, 'price_position': 'equilibrium', 'position_pct': 61.327212108946306, 'touches_high': 1, 'touches_low': 5, 'trend_strength': 0.23351878472577414, 'adx_proxy': 9.129470872354029, 'structural_bias': 'neutral'}
+2026-03-16 07:43:37,356 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 72087.00500
+- **Date**: 2026-03-16
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: low
+
+## RANGE ANALYSIS (Critical for Range Trading)
+- **Is Ranging**: No clear range
+- **Range High (Resistance)**: 73894.83000
+- **Range Low (Support)**: 69200.78000
+- **Range Midpoint (Equilibrium)**: 71547.80500
+- **Range Width**: 6.56% of price
+- **Price Position**: EQUILIBRIUM (61% within range)
+- **Mean Reversion Score**: 61/100 (higher = stronger range behavior)
+- **Touches of Range High**: 1
+- **Touches of Range Low**: 5
+- **Trend Strength**: 0.23 (lower = more range-like)
+- **Structural Bias (Higher Timeframe)**: NEUTRAL
+
+### Range Interpretation:
+- PREMIUM (>70%): Price near range top — favor SELL entries at bearish OBs/FVGs
+- DISCOUNT (<30%): Price near range bottom — favor BUY entries at bullish OBs/FVGs
+- EQUILIBRIUM (30-70%): Mid-range — wait for price to reach an extreme
+- Multiple touches = proven boundary. More touches = stronger level.
+- Mean Reversion Score >60 = strong range. >80 = very strong range.
+
+### Structural Bias Filter (IMPORTANT):
+- **BULLISH structural bias**: The broader trend is UP. Range BUYS at discount are HIGH PROBABILITY. Range SELLS at premium are LOW PROBABILITY — the range is more likely to break upward. Prefer buy-only or reduce sell confidence.
+- **BEARISH structural bias**: The broader trend is DOWN. Range SELLS at premium are HIGH PROBABILITY. Range BUYS at discount are LOW PROBABILITY — the range is more likely to break downward. Prefer sell-only or reduce buy confidence.
+- **NEUTRAL structural bias**: No dominant trend. Both buy and sell at range extremes are valid.
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BEARISH
+**Premium/Discount**: PREMIUM zone (82%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70096.91
+  - BOS HIGH at 71316.86 [RECENT]
+  - CHoCH HIGH at 68190.89 (potential reversal)
+  - CHoCH HIGH at 71774.21 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 63015.93000-65582.58000 | Strength: 80% | MITIGATED | 12.58% from price
+  - BULLISH OB: 65034.65000-67067.00000 | Strength: 80% | MITIGATED | 9.78% from price
+  - BULLISH OB: 66143.83000-68989.60000 | Strength: 80% | MITIGATED | 8.24% from price
+  - BEARISH OB: 72863.14000-74043.78000 | Strength: 80% | MITIGATED | 2.71% from price
+  - BEARISH OB: 66738.80000-67512.95000 | Strength: 67% | MITIGATED | -6.35% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 69283.21000-69747.06000 | FILLED | 3.89% below price (expect bounce UP)
+  - BULLISH FVG: 69764.77000-70369.88000 | FILLED | 3.22% below price (expect bounce UP)
+  - BULLISH FVG: 70548.04000-70955.51000 | FILLED | 2.13% below price (expect bounce UP)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71774.21000 | Strength: 93% | UNSWEPT | 0.43% below
+  - BUY-SIDE at 71316.86000 | Strength: 85% | UNSWEPT | 1.07% below
+  - SELL-SIDE at 70312.13000 | Strength: 78% | UNSWEPT | 2.46% below
+  - BUY-SIDE at 73894.83000 | Strength: 67% | UNSWEPT | 2.51% above
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 73969.30500 | Touches: 2 | FORMING | UNSWEPT | 2.61% above
+  - EQUAL HIGHS (Resistance) at 71888.96200 | Touches: 5 | PROVEN | SWEPT | 0.27% above
+  - EQUAL HIGHS (Resistance) at 71563.95400 | Touches: 5 | PROVEN | SWEPT | 0.73% above
+  - EQUAL HIGHS (Resistance) at 71301.21800 | Touches: 5 | PROVEN | SWEPT | 1.09% above
+  - EQUAL LOWS (Support) at 65344.11750 | Touches: 4 | PROVEN | UNSWEPT | 9.35% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 65122.89667 | Touches: 6 | PROVEN | UNSWEPT | 9.66% below
+    >>6 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 52.4 (neutral)
+- MACD: 422.01430
+- MACD Signal: 403.11568
+- MACD Histogram: 18.89863 (bullish)
+
+### Trend
+- EMA20: 71180.25034 (Price above)
+- EMA50: 70377.10199 (Price above)
+- ADX: 11.5 (Weak trend - favorable for range trading)
+
+### Volatility
+- ATR(14): 648.27857
+- BB Upper: 72565.48221
+- BB Middle: 71324.52500
+- BB Lower: 70083.56779
+- BB Width: 3.48%
+
+2026-03-16 07:43:37,364 | 
+--- FULL PROMPT ---
+You are a range-bound market specialist using Smart Money Concepts (SMC) levels. You excel at identifying sideways markets and trading reversals at range extremes using institutional zones.
+
+## YOUR TRADING EDGE: RANGE-BOUND MARKETS WITH SMC LEVELS
+
+Most markets spend 60-70% of time in ranges. Your edge is:
+1. Identify when price is ranging (low ADX, oscillating between S/R)
+2. Map SMC zones (OBs, FVGs, equal levels) as high-probability range boundaries
+3. Enter at range extremes where SMC zones provide confluence
+4. Use liquidity sweeps as entry confirmation (smart money grabs stops then reverses)
+5. Target the opposite range extreme or equilibrium
+
+## RANGE TRADING RULES WITH SMC
+
+### 1. CONFIRMING A RANGE
+- **ADX < 25**: Weak or no trend = range conditions
+- **No dominant BOS**: No clear series of higher highs/higher lows (or lower lows/lower highs)
+- **CHoCH present**: Multiple changes of character = choppy/ranging
+- **Multiple touches**: Range high and low tested 2+ times each
+- **Mean Reversion Score > 50**: Price regularly returns to midpoint
+
+### 2. MAPPING RANGE BOUNDARIES WITH SMC
+- **Range Resistance**: Bearish OBs and bearish FVGs near range high
+- **Range Support**: Bullish OBs and bullish FVGs near range low
+- **Equal Highs/Lows**: Proven S/R levels with 3+ touches are strongest boundaries
+- **Liquidity pools**: Above range highs (buy-side) and below range lows (sell-side)
+- Unmitigated zones are active; mitigated zones are spent
+
+### 3. ENTRY STRATEGIES
+
+**Setup 1: Buy at Range Low + Bullish OB/FVG**
+- Price drops to range low (discount zone, <30% of range)
+- Bullish OB or FVG overlaps with range support
+- Enter LONG at the OB/FVG zone
+- SL: Below the OB/FVG zone (beyond the range low + ATR buffer)
+- TP: Range midpoint (conservative) or range high (aggressive)
+
+**Setup 2: Sell at Range High + Bearish OB/FVG**
+- Price rises to range high (premium zone, >70% of range)
+- Bearish OB or FVG overlaps with range resistance
+- Enter SHORT at the OB/FVG zone
+- SL: Above the OB/FVG zone (beyond the range high + ATR buffer)
+- TP: Range midpoint (conservative) or range low (aggressive)
+
+**Setup 3: Liquidity Sweep Reversal (Highest Probability)**
+- Price sweeps beyond range high (takes buy-side liquidity) then reverses
+  - Enter SHORT after sweep with CHoCH confirmation
+- Price sweeps beyond range low (takes sell-side liquidity) then reverses
+  - Enter LONG after sweep with CHoCH confirmation
+- SL: Beyond the sweep high/low + ATR buffer
+- TP: Opposite range extreme
+
+**Setup 4: Equal Level Bounce**
+- Price approaches proven equal highs (3+ touches) or equal lows (3+ touches)
+- These are liquidity magnets — expect price to reach them
+- After reaching the level, look for rejection candles and enter reversal
+- Works best when confluent with OB or FVG at the same zone
+
+### 4. STOP LOSS PLACEMENT (CRITICAL)
+- For BUY: Stop loss MUST be BELOW entry price
+  - Place below the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range low to survive a liquidity sweep
+- For SELL: Stop loss MUST be ABOVE entry price
+  - Place above the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range high to survive a liquidity sweep
+- **MINIMUM SL DISTANCE**: At least 1x ATR from entry. SL within 0.5% is TOO TIGHT.
+- For gold (XAUUSD): minimum SL should be $15-30+ from entry
+- If you cannot place SL with adequate distance while maintaining R:R >= 1.5:1, output "hold"
+
+### 5. TAKE PROFIT TARGETS
+- **Conservative**: Range midpoint (equilibrium) — safest target in ranges
+- **Standard**: Opposite range extreme — full range move
+- **With confluence**: Proven equal level or strong OB on the opposite side
+- Minimum R:R: 1.5:1
+
+### 6. STRUCTURAL BIAS FILTER (CRITICAL FOR PROFITABILITY)
+Backtesting shows that trading WITH the structural bias is far more profitable than fading it:
+- **BULLISH structural bias** (e.g., XAUUSD in an uptrend): BUY at range discount = ~70% win rate. SELL at range premium = ~35% win rate. **Strongly prefer BUY trades. Reduce confidence on SELL trades or skip them.**
+- **BEARISH structural bias**: SELL at range premium is the higher-probability trade. Skip or reduce confidence on BUY trades.
+- **NEUTRAL**: Both sides equally valid.
+- Check the "Structural Bias (Higher Timeframe)" field in your data and factor it into every decision.
+
+### 7. WHEN NOT TO TRADE
+- **Trending market**: ADX > 25 with clear BOS series — DO NOT fade the trend
+- **Breakout in progress**: Price breaking range with momentum + volume — wait for new range
+- **Range too narrow**: If range width < 1x ATR, not enough room for a trade
+- **No SMC confluence**: Range extremes with no OB/FVG support — skip
+- **Mid-range**: Price at equilibrium with no clear direction — wait for extreme
+
+### 8. CRITICAL: DO NOT FADE A BREAKOUT
+- If price breaks the range with a strong BOS + high volume, the range is OVER
+- Do not try to sell a breakout above range high or buy a breakdown below range low
+- Instead output "hold" and wait for a new range to form
+- A confirmed breakout = transition from range to trend
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation**
+5. **Never fade a confirmed breakout — if ADX > 25 with BOS, DO NOT counter-trade**
+6. **Stop loss MUST be on correct side of entry**
+7. **Only trade at range extremes with SMC confluence, never mid-range**
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 72087.00500
+- **Date**: 2026-03-16
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: low
+
+## RANGE ANALYSIS (Critical for Range Trading)
+- **Is Ranging**: No clear range
+- **Range High (Resistance)**: 73894.83000
+- **Range Low (Support)**: 69200.78000
+- **Range Midpoint (Equilibrium)**: 71547.80500
+- **Range Width**: 6.56% of price
+- **Price Position**: EQUILIBRIUM (61% within range)
+- **Mean Reversion Score**: 61/100 (higher = stronger range behavior)
+- **Touches of Range High**: 1
+- **Touches of Range Low**: 5
+- **Trend Strength**: 0.23 (lower = more range-like)
+- **Structural Bias (Higher Timeframe)**: NEUTRAL
+
+### Range Interpretation:
+- PREMIUM (>70%): Price near range top — favor SELL entries at bearish OBs/FVGs
+- DISCOUNT (<30%): Price near range bottom — favor BUY entries at bullish OBs/FVGs
+- EQUILIBRIUM (30-70%): Mid-range — wait for price to reach an extreme
+- Multiple touches = proven boundary. More touches = stronger level.
+- Mean Reversion Score >60 = strong range. >80 = very strong range.
+
+### Structural Bias Filter (IMPORTANT):
+- **BULLISH structural bias**: The broader trend is UP. Range BUYS at discount are HIGH PROBABILITY. Range SELLS at premium are LOW PROBABILITY — the range is more likely to break upward. Prefer buy-only or reduce sell confidence.
+- **BEARISH structural bias**: The broader trend is DOWN. Range SELLS at premium are HIGH PROBABILITY. Range BUYS at discount are LOW PROBABILITY — the range is more likely to break downward. Prefer sell-only or reduce buy confidence.
+- **NEUTRAL structural bias**: No dominant trend. Both buy and sell at range extremes are valid.
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BEARISH
+**Premium/Discount**: PREMIUM zone (82%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70096.91
+  - BOS HIGH at 71316.86 [RECENT]
+  - CHoCH HIGH at 68190.89 (potential reversal)
+  - CHoCH HIGH at 71774.21 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 63015.93000-65582.58000 | Strength: 80% | MITIGATED | 12.58% from price
+  - BULLISH OB: 65034.65000-67067.00000 | Strength: 80% | MITIGATED | 9.78% from price
+  - BULLISH OB: 66143.83000-68989.60000 | Strength: 80% | MITIGATED | 8.24% from price
+  - BEARISH OB: 72863.14000-74043.78000 | Strength: 80% | MITIGATED | 2.71% from price
+  - BEARISH OB: 66738.80000-67512.95000 | Strength: 67% | MITIGATED | -6.35% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 69283.21000-69747.06000 | FILLED | 3.89% below price (expect bounce UP)
+  - BULLISH FVG: 69764.77000-70369.88000 | FILLED | 3.22% below price (expect bounce UP)
+  - BULLISH FVG: 70548.04000-70955.51000 | FILLED | 2.13% below price (expect bounce UP)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71774.21000 | Strength: 93% | UNSWEPT | 0.43% below
+  - BUY-SIDE at 71316.86000 | Strength: 85% | UNSWEPT | 1.07% below
+  - SELL-SIDE at 70312.13000 | Strength: 78% | UNSWEPT | 2.46% below
+  - BUY-SIDE at 73894.83000 | Strength: 67% | UNSWEPT | 2.51% above
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 73969.30500 | Touches: 2 | FORMING | UNSWEPT | 2.61% above
+  - EQUAL HIGHS (Resistance) at 71888.96200 | Touches: 5 | PROVEN | SWEPT | 0.27% above
+  - EQUAL HIGHS (Resistance) at 71563.95400 | Touches: 5 | PROVEN | SWEPT | 0.73% above
+  - EQUAL HIGHS (Resistance) at 71301.21800 | Touches: 5 | PROVEN | SWEPT | 1.09% above
+  - EQUAL LOWS (Support) at 65344.11750 | Touches: 4 | PROVEN | UNSWEPT | 9.35% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 65122.89667 | Touches: 6 | PROVEN | UNSWEPT | 9.66% below
+    >>6 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 52.4 (neutral)
+- MACD: 422.01430
+- MACD Signal: 403.11568
+- MACD Histogram: 18.89863 (bullish)
+
+### Trend
+- EMA20: 71180.25034 (Price above)
+- EMA50: 70377.10199 (Price above)
+- ADX: 11.5 (Weak trend - favorable for range trading)
+
+### Volatility
+- ATR(14): 648.27857
+- BB Upper: 72565.48221
+- BB Middle: 71324.52500
+- BB Lower: 70083.56779
+- BB Width: 3.48%
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past range trades. Study what went wrong
+and apply corrections. Pay special attention to fakeout and premature entry lessons.
+
+
+## YOUR TASK
+
+Analyze the range and SMC data to make a range-trading decision.
+
+Think step-by-step:
+1. Is the market ranging? (Check ADX, BOS pattern, mean reversion score)
+2. Where are the range boundaries? (Map OBs, FVGs, equal levels at extremes)
+3. Is price at a range extreme? (Premium/Discount zone, not equilibrium)
+4. Is there SMC confluence at this extreme? (OB + FVG overlap, unmitigated zones)
+5. Has there been a liquidity sweep? (Sweep beyond range = highest probability entry)
+6. Where should SL be placed? (Beyond OB/FVG + ATR buffer, beyond range extreme)
+7. What is the TP target? (Opposite extreme or midpoint)
+8. Is R:R acceptable? (Must be >= 1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Long position. Use when:
+  - Market is ranging AND price is in discount zone (<30% of range)
+  - Bullish OB or FVG confluence at range support
+  - OR: Sell-side liquidity sweep just occurred (price swept below range then reversed)
+  - MUST provide entry_price, stop_loss (BELOW entry), profit_target
+
+- **sell_to_enter** - Short position. Use when:
+  - Market is ranging AND price is in premium zone (>70% of range)
+  - Bearish OB or FVG confluence at range resistance
+  - OR: Buy-side liquidity sweep just occurred (price swept above range then reversed)
+  - MUST provide entry_price, stop_loss (ABOVE entry), profit_target
+
+- **hold** - No action. Use when:
+  - Market is NOT ranging (trending with clear BOS)
+  - Price is at equilibrium (mid-range, no edge)
+  - No SMC confluence at current price level
+  - Breakout is in progress (do not fade it)
+  - Range is too narrow for a trade
+
+- **close** - Exit existing position. Use when:
+  - Price reached opposite range extreme (TP zone)
+  - Range is breaking (confirmed BOS beyond range)
+  - Setup invalidated
+
+## ORDER TYPE
+- **limit** - Preferred for entries at OB/FVG zones (waiting for price to reach zone)
+- **market** - Use when price is already at the zone and showing rejection, or after a liquidity sweep
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+Range trades typically use tighter trailing stops since the move is capped:
+- **Tight range** (small ATR, narrow range): 1.5-2.0x ATR
+- **Normal range**: 2.0-2.5x ATR
+- **Wide range** (large ATR): 2.5-3.5x ATR
+- **XAUUSD/Gold in range**: 2.0-3.0x ATR
+- If unsure, default to 2.0x ATR (tighter than trend-following)
+
+Remember:
+- Ranges are your edge — most traders lose money fighting ranges by trying to catch breakouts
+- SMC zones define WHERE to enter within the range
+- Liquidity sweeps beyond range = smart money entry signal
+- Always trade FROM the extreme, never from the middle
+- When the range breaks, STOP trading the range
+2026-03-16 07:43:37,384 | 
+================================================================================
+
+2026-03-16 07:43:43,202 | --- LLM RESPONSE (Structured) [took 5.8s] ---
+2026-03-16 07:43:43,202 | Signal: hold
+2026-03-16 07:43:43,202 | Confidence: 0.85
+2026-03-16 07:43:43,203 | Entry: None | SL: None | TP: None
+2026-03-16 07:43:43,203 | Justification: Price is at equilibrium (61% within range), mid-range with no SMC confluence at extremes for entry; wait for price to reach discount/premium zones with OB/FVG support per range trading rules.
+2026-03-16 07:43:43,203 | Invalidation: Price breaks above range high of 73894.83 with strong BOS and ADX >25, confirming trend resumption
+2026-03-16 07:43:43,204 | Raw decision dict: {'symbol': 'BTCUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price breaks above range high of 73894.83 with strong BOS and ADX >25, confirming trend resumption', 'justification': 'Price is at equilibrium (61% within range), mid-range with no SMC confluence at extremes for entry; wait for price to reach discount/premium zones with OB/FVG support per range trading rules.', 'confidence': 0.85, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-16 07:43:43,204 | 
+================================================================================
+
+2026-03-16 07:43:43,205 | Structured output SUCCESS - returning range_quant_decision with signal=hold
+2026-03-16 07:46:43,874 | 
+================================================================================
+RANGE QUANT ANALYSIS - BTCUSD
+================================================================================
+2026-03-16 07:46:43,875 | Symbol: BTCUSD | Date: 2026-03-16 | Price: 72150.22
+2026-03-16 07:46:43,875 | Market Regime: ranging | Volatility: low
+2026-03-16 07:46:43,875 | Range Analysis: {'is_ranging': False, 'range_high': 73894.83, 'range_low': 69200.78, 'range_midpoint': 71547.805, 'range_percent': 6.560718389613775, 'mean_reversion_score': 60.91678398116933, 'price_position': 'equilibrium', 'position_pct': 62.67338439087774, 'touches_high': 1, 'touches_low': 5, 'trend_strength': 0.23775127689835243, 'adx_proxy': 9.378626839407596, 'structural_bias': 'neutral'}
+2026-03-16 07:46:43,876 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 72150.22000
+- **Date**: 2026-03-16
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: low
+
+## RANGE ANALYSIS (Critical for Range Trading)
+- **Is Ranging**: No clear range
+- **Range High (Resistance)**: 73894.83000
+- **Range Low (Support)**: 69200.78000
+- **Range Midpoint (Equilibrium)**: 71547.80500
+- **Range Width**: 6.56% of price
+- **Price Position**: EQUILIBRIUM (63% within range)
+- **Mean Reversion Score**: 61/100 (higher = stronger range behavior)
+- **Touches of Range High**: 1
+- **Touches of Range Low**: 5
+- **Trend Strength**: 0.24 (lower = more range-like)
+- **Structural Bias (Higher Timeframe)**: NEUTRAL
+
+### Range Interpretation:
+- PREMIUM (>70%): Price near range top — favor SELL entries at bearish OBs/FVGs
+- DISCOUNT (<30%): Price near range bottom — favor BUY entries at bullish OBs/FVGs
+- EQUILIBRIUM (30-70%): Mid-range — wait for price to reach an extreme
+- Multiple touches = proven boundary. More touches = stronger level.
+- Mean Reversion Score >60 = strong range. >80 = very strong range.
+
+### Structural Bias Filter (IMPORTANT):
+- **BULLISH structural bias**: The broader trend is UP. Range BUYS at discount are HIGH PROBABILITY. Range SELLS at premium are LOW PROBABILITY — the range is more likely to break upward. Prefer buy-only or reduce sell confidence.
+- **BEARISH structural bias**: The broader trend is DOWN. Range SELLS at premium are HIGH PROBABILITY. Range BUYS at discount are LOW PROBABILITY — the range is more likely to break downward. Prefer sell-only or reduce buy confidence.
+- **NEUTRAL structural bias**: No dominant trend. Both buy and sell at range extremes are valid.
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BEARISH
+**Premium/Discount**: PREMIUM zone (83%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70096.91
+  - BOS HIGH at 71316.86 [RECENT]
+  - CHoCH HIGH at 68190.89 (potential reversal)
+  - CHoCH HIGH at 71774.21 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 63015.93000-65582.58000 | Strength: 80% | MITIGATED | 12.66% from price
+  - BULLISH OB: 65034.65000-67067.00000 | Strength: 80% | MITIGATED | 9.86% from price
+  - BULLISH OB: 66143.83000-68989.60000 | Strength: 80% | MITIGATED | 8.32% from price
+  - BEARISH OB: 72863.14000-74043.78000 | Strength: 80% | MITIGATED | 2.62% from price
+  - BEARISH OB: 66738.80000-67512.95000 | Strength: 67% | MITIGATED | -6.43% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 69283.21000-69747.06000 | FILLED | 3.97% below price (expect bounce UP)
+  - BULLISH FVG: 69764.77000-70369.88000 | FILLED | 3.31% below price (expect bounce UP)
+  - BULLISH FVG: 70548.04000-70955.51000 | FILLED | 2.22% below price (expect bounce UP)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71774.21000 | Strength: 93% | UNSWEPT | 0.52% below
+  - BUY-SIDE at 71316.86000 | Strength: 85% | UNSWEPT | 1.16% below
+  - BUY-SIDE at 73894.83000 | Strength: 67% | UNSWEPT | 2.42% above
+  - SELL-SIDE at 70312.13000 | Strength: 78% | UNSWEPT | 2.55% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 73969.30500 | Touches: 2 | FORMING | UNSWEPT | 2.52% above
+  - EQUAL HIGHS (Resistance) at 71888.96200 | Touches: 5 | PROVEN | SWEPT | 0.36% above
+  - EQUAL HIGHS (Resistance) at 71563.95400 | Touches: 5 | PROVEN | SWEPT | 0.81% above
+  - EQUAL HIGHS (Resistance) at 71301.21800 | Touches: 5 | PROVEN | SWEPT | 1.18% above
+  - EQUAL LOWS (Support) at 65344.11750 | Touches: 4 | PROVEN | UNSWEPT | 9.43% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 65122.89667 | Touches: 6 | PROVEN | UNSWEPT | 9.74% below
+    >>6 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 53.1 (neutral)
+- MACD: 427.05510
+- MACD Signal: 404.12384
+- MACD Histogram: 22.93127 (bullish)
+
+### Trend
+- EMA20: 71186.26844 (Price above)
+- EMA50: 70379.58003 (Price above)
+- ADX: 11.5 (Weak trend - favorable for range trading)
+
+### Volatility
+- ATR(14): 649.33000
+- BB Upper: 72577.02863
+- BB Middle: 71327.68450
+- BB Lower: 70078.34037
+- BB Width: 3.50%
+
+2026-03-16 07:46:43,882 | 
+--- FULL PROMPT ---
+You are a range-bound market specialist using Smart Money Concepts (SMC) levels. You excel at identifying sideways markets and trading reversals at range extremes using institutional zones.
+
+## YOUR TRADING EDGE: RANGE-BOUND MARKETS WITH SMC LEVELS
+
+Most markets spend 60-70% of time in ranges. Your edge is:
+1. Identify when price is ranging (low ADX, oscillating between S/R)
+2. Map SMC zones (OBs, FVGs, equal levels) as high-probability range boundaries
+3. Enter at range extremes where SMC zones provide confluence
+4. Use liquidity sweeps as entry confirmation (smart money grabs stops then reverses)
+5. Target the opposite range extreme or equilibrium
+
+## RANGE TRADING RULES WITH SMC
+
+### 1. CONFIRMING A RANGE
+- **ADX < 25**: Weak or no trend = range conditions
+- **No dominant BOS**: No clear series of higher highs/higher lows (or lower lows/lower highs)
+- **CHoCH present**: Multiple changes of character = choppy/ranging
+- **Multiple touches**: Range high and low tested 2+ times each
+- **Mean Reversion Score > 50**: Price regularly returns to midpoint
+
+### 2. MAPPING RANGE BOUNDARIES WITH SMC
+- **Range Resistance**: Bearish OBs and bearish FVGs near range high
+- **Range Support**: Bullish OBs and bullish FVGs near range low
+- **Equal Highs/Lows**: Proven S/R levels with 3+ touches are strongest boundaries
+- **Liquidity pools**: Above range highs (buy-side) and below range lows (sell-side)
+- Unmitigated zones are active; mitigated zones are spent
+
+### 3. ENTRY STRATEGIES
+
+**Setup 1: Buy at Range Low + Bullish OB/FVG**
+- Price drops to range low (discount zone, <30% of range)
+- Bullish OB or FVG overlaps with range support
+- Enter LONG at the OB/FVG zone
+- SL: Below the OB/FVG zone (beyond the range low + ATR buffer)
+- TP: Range midpoint (conservative) or range high (aggressive)
+
+**Setup 2: Sell at Range High + Bearish OB/FVG**
+- Price rises to range high (premium zone, >70% of range)
+- Bearish OB or FVG overlaps with range resistance
+- Enter SHORT at the OB/FVG zone
+- SL: Above the OB/FVG zone (beyond the range high + ATR buffer)
+- TP: Range midpoint (conservative) or range low (aggressive)
+
+**Setup 3: Liquidity Sweep Reversal (Highest Probability)**
+- Price sweeps beyond range high (takes buy-side liquidity) then reverses
+  - Enter SHORT after sweep with CHoCH confirmation
+- Price sweeps beyond range low (takes sell-side liquidity) then reverses
+  - Enter LONG after sweep with CHoCH confirmation
+- SL: Beyond the sweep high/low + ATR buffer
+- TP: Opposite range extreme
+
+**Setup 4: Equal Level Bounce**
+- Price approaches proven equal highs (3+ touches) or equal lows (3+ touches)
+- These are liquidity magnets — expect price to reach them
+- After reaching the level, look for rejection candles and enter reversal
+- Works best when confluent with OB or FVG at the same zone
+
+### 4. STOP LOSS PLACEMENT (CRITICAL)
+- For BUY: Stop loss MUST be BELOW entry price
+  - Place below the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range low to survive a liquidity sweep
+- For SELL: Stop loss MUST be ABOVE entry price
+  - Place above the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range high to survive a liquidity sweep
+- **MINIMUM SL DISTANCE**: At least 1x ATR from entry. SL within 0.5% is TOO TIGHT.
+- For gold (XAUUSD): minimum SL should be $15-30+ from entry
+- If you cannot place SL with adequate distance while maintaining R:R >= 1.5:1, output "hold"
+
+### 5. TAKE PROFIT TARGETS
+- **Conservative**: Range midpoint (equilibrium) — safest target in ranges
+- **Standard**: Opposite range extreme — full range move
+- **With confluence**: Proven equal level or strong OB on the opposite side
+- Minimum R:R: 1.5:1
+
+### 6. STRUCTURAL BIAS FILTER (CRITICAL FOR PROFITABILITY)
+Backtesting shows that trading WITH the structural bias is far more profitable than fading it:
+- **BULLISH structural bias** (e.g., XAUUSD in an uptrend): BUY at range discount = ~70% win rate. SELL at range premium = ~35% win rate. **Strongly prefer BUY trades. Reduce confidence on SELL trades or skip them.**
+- **BEARISH structural bias**: SELL at range premium is the higher-probability trade. Skip or reduce confidence on BUY trades.
+- **NEUTRAL**: Both sides equally valid.
+- Check the "Structural Bias (Higher Timeframe)" field in your data and factor it into every decision.
+
+### 7. WHEN NOT TO TRADE
+- **Trending market**: ADX > 25 with clear BOS series — DO NOT fade the trend
+- **Breakout in progress**: Price breaking range with momentum + volume — wait for new range
+- **Range too narrow**: If range width < 1x ATR, not enough room for a trade
+- **No SMC confluence**: Range extremes with no OB/FVG support — skip
+- **Mid-range**: Price at equilibrium with no clear direction — wait for extreme
+
+### 8. CRITICAL: DO NOT FADE A BREAKOUT
+- If price breaks the range with a strong BOS + high volume, the range is OVER
+- Do not try to sell a breakout above range high or buy a breakdown below range low
+- Instead output "hold" and wait for a new range to form
+- A confirmed breakout = transition from range to trend
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation**
+5. **Never fade a confirmed breakout — if ADX > 25 with BOS, DO NOT counter-trade**
+6. **Stop loss MUST be on correct side of entry**
+7. **Only trade at range extremes with SMC confluence, never mid-range**
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 72150.22000
+- **Date**: 2026-03-16
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: low
+
+## RANGE ANALYSIS (Critical for Range Trading)
+- **Is Ranging**: No clear range
+- **Range High (Resistance)**: 73894.83000
+- **Range Low (Support)**: 69200.78000
+- **Range Midpoint (Equilibrium)**: 71547.80500
+- **Range Width**: 6.56% of price
+- **Price Position**: EQUILIBRIUM (63% within range)
+- **Mean Reversion Score**: 61/100 (higher = stronger range behavior)
+- **Touches of Range High**: 1
+- **Touches of Range Low**: 5
+- **Trend Strength**: 0.24 (lower = more range-like)
+- **Structural Bias (Higher Timeframe)**: NEUTRAL
+
+### Range Interpretation:
+- PREMIUM (>70%): Price near range top — favor SELL entries at bearish OBs/FVGs
+- DISCOUNT (<30%): Price near range bottom — favor BUY entries at bullish OBs/FVGs
+- EQUILIBRIUM (30-70%): Mid-range — wait for price to reach an extreme
+- Multiple touches = proven boundary. More touches = stronger level.
+- Mean Reversion Score >60 = strong range. >80 = very strong range.
+
+### Structural Bias Filter (IMPORTANT):
+- **BULLISH structural bias**: The broader trend is UP. Range BUYS at discount are HIGH PROBABILITY. Range SELLS at premium are LOW PROBABILITY — the range is more likely to break upward. Prefer buy-only or reduce sell confidence.
+- **BEARISH structural bias**: The broader trend is DOWN. Range SELLS at premium are HIGH PROBABILITY. Range BUYS at discount are LOW PROBABILITY — the range is more likely to break downward. Prefer sell-only or reduce buy confidence.
+- **NEUTRAL structural bias**: No dominant trend. Both buy and sell at range extremes are valid.
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BEARISH
+**Premium/Discount**: PREMIUM zone (83%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70096.91
+  - BOS HIGH at 71316.86 [RECENT]
+  - CHoCH HIGH at 68190.89 (potential reversal)
+  - CHoCH HIGH at 71774.21 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 63015.93000-65582.58000 | Strength: 80% | MITIGATED | 12.66% from price
+  - BULLISH OB: 65034.65000-67067.00000 | Strength: 80% | MITIGATED | 9.86% from price
+  - BULLISH OB: 66143.83000-68989.60000 | Strength: 80% | MITIGATED | 8.32% from price
+  - BEARISH OB: 72863.14000-74043.78000 | Strength: 80% | MITIGATED | 2.62% from price
+  - BEARISH OB: 66738.80000-67512.95000 | Strength: 67% | MITIGATED | -6.43% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 69283.21000-69747.06000 | FILLED | 3.97% below price (expect bounce UP)
+  - BULLISH FVG: 69764.77000-70369.88000 | FILLED | 3.31% below price (expect bounce UP)
+  - BULLISH FVG: 70548.04000-70955.51000 | FILLED | 2.22% below price (expect bounce UP)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71774.21000 | Strength: 93% | UNSWEPT | 0.52% below
+  - BUY-SIDE at 71316.86000 | Strength: 85% | UNSWEPT | 1.16% below
+  - BUY-SIDE at 73894.83000 | Strength: 67% | UNSWEPT | 2.42% above
+  - SELL-SIDE at 70312.13000 | Strength: 78% | UNSWEPT | 2.55% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 73969.30500 | Touches: 2 | FORMING | UNSWEPT | 2.52% above
+  - EQUAL HIGHS (Resistance) at 71888.96200 | Touches: 5 | PROVEN | SWEPT | 0.36% above
+  - EQUAL HIGHS (Resistance) at 71563.95400 | Touches: 5 | PROVEN | SWEPT | 0.81% above
+  - EQUAL HIGHS (Resistance) at 71301.21800 | Touches: 5 | PROVEN | SWEPT | 1.18% above
+  - EQUAL LOWS (Support) at 65344.11750 | Touches: 4 | PROVEN | UNSWEPT | 9.43% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 65122.89667 | Touches: 6 | PROVEN | UNSWEPT | 9.74% below
+    >>6 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 53.1 (neutral)
+- MACD: 427.05510
+- MACD Signal: 404.12384
+- MACD Histogram: 22.93127 (bullish)
+
+### Trend
+- EMA20: 71186.26844 (Price above)
+- EMA50: 70379.58003 (Price above)
+- ADX: 11.5 (Weak trend - favorable for range trading)
+
+### Volatility
+- ATR(14): 649.33000
+- BB Upper: 72577.02863
+- BB Middle: 71327.68450
+- BB Lower: 70078.34037
+- BB Width: 3.50%
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past range trades. Study what went wrong
+and apply corrections. Pay special attention to fakeout and premature entry lessons.
+
+
+## YOUR TASK
+
+Analyze the range and SMC data to make a range-trading decision.
+
+Think step-by-step:
+1. Is the market ranging? (Check ADX, BOS pattern, mean reversion score)
+2. Where are the range boundaries? (Map OBs, FVGs, equal levels at extremes)
+3. Is price at a range extreme? (Premium/Discount zone, not equilibrium)
+4. Is there SMC confluence at this extreme? (OB + FVG overlap, unmitigated zones)
+5. Has there been a liquidity sweep? (Sweep beyond range = highest probability entry)
+6. Where should SL be placed? (Beyond OB/FVG + ATR buffer, beyond range extreme)
+7. What is the TP target? (Opposite extreme or midpoint)
+8. Is R:R acceptable? (Must be >= 1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Long position. Use when:
+  - Market is ranging AND price is in discount zone (<30% of range)
+  - Bullish OB or FVG confluence at range support
+  - OR: Sell-side liquidity sweep just occurred (price swept below range then reversed)
+  - MUST provide entry_price, stop_loss (BELOW entry), profit_target
+
+- **sell_to_enter** - Short position. Use when:
+  - Market is ranging AND price is in premium zone (>70% of range)
+  - Bearish OB or FVG confluence at range resistance
+  - OR: Buy-side liquidity sweep just occurred (price swept above range then reversed)
+  - MUST provide entry_price, stop_loss (ABOVE entry), profit_target
+
+- **hold** - No action. Use when:
+  - Market is NOT ranging (trending with clear BOS)
+  - Price is at equilibrium (mid-range, no edge)
+  - No SMC confluence at current price level
+  - Breakout is in progress (do not fade it)
+  - Range is too narrow for a trade
+
+- **close** - Exit existing position. Use when:
+  - Price reached opposite range extreme (TP zone)
+  - Range is breaking (confirmed BOS beyond range)
+  - Setup invalidated
+
+## ORDER TYPE
+- **limit** - Preferred for entries at OB/FVG zones (waiting for price to reach zone)
+- **market** - Use when price is already at the zone and showing rejection, or after a liquidity sweep
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+Range trades typically use tighter trailing stops since the move is capped:
+- **Tight range** (small ATR, narrow range): 1.5-2.0x ATR
+- **Normal range**: 2.0-2.5x ATR
+- **Wide range** (large ATR): 2.5-3.5x ATR
+- **XAUUSD/Gold in range**: 2.0-3.0x ATR
+- If unsure, default to 2.0x ATR (tighter than trend-following)
+
+Remember:
+- Ranges are your edge — most traders lose money fighting ranges by trying to catch breakouts
+- SMC zones define WHERE to enter within the range
+- Liquidity sweeps beyond range = smart money entry signal
+- Always trade FROM the extreme, never from the middle
+- When the range breaks, STOP trading the range
+2026-03-16 07:46:43,902 | 
+================================================================================
+
+2026-03-16 07:46:51,336 | --- LLM RESPONSE (Structured) [took 7.4s] ---
+2026-03-16 07:46:51,336 | Signal: hold
+2026-03-16 07:46:51,337 | Confidence: 0.95
+2026-03-16 07:46:51,337 | Entry: None | SL: None | TP: None
+2026-03-16 07:46:51,337 | Justification: Price is at equilibrium (63% within range), mid-range with no SMC confluence (no unmitigated OB/FVG at current levels or range extremes touched insufficiently); rules dictate waiting for extremes in ranging market.
+2026-03-16 07:46:51,338 | Invalidation: Price reaches premium (>70%) or discount (<30%) zone with SMC confluence (OB/FVG at range extreme)
+2026-03-16 07:46:51,338 | Raw decision dict: {'symbol': 'BTCUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price reaches premium (>70%) or discount (<30%) zone with SMC confluence (OB/FVG at range extreme)', 'justification': 'Price is at equilibrium (63% within range), mid-range with no SMC confluence (no unmitigated OB/FVG at current levels or range extremes touched insufficiently); rules dictate waiting for extremes in ranging market.', 'confidence': 0.95, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-16 07:46:51,339 | 
+================================================================================
+
+2026-03-16 07:46:51,339 | Structured output SUCCESS - returning range_quant_decision with signal=hold

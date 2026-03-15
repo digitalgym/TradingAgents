@@ -460,21 +460,24 @@ Markets alternate between consolidation (range) and expansion (trend). Your edge
 - **Breakout Entry**: Enter on breakout with confirmation
   - BUY when price breaks ABOVE range high with momentum
   - SELL when price breaks BELOW range low with momentum
-  - SL: Just inside the range (below breakout level for buys)
+  - SL: Beyond the opposite side of the breakout level (at least 1x ATR buffer)
 
 ### 4. STOP LOSS PLACEMENT (CRITICAL)
 - For BUY: Stop loss MUST be BELOW entry price
-  - Anticipation buy: SL below range low
-  - Breakout buy: SL below the breakout level (former resistance)
+  - Anticipation buy: SL below range low minus 1x ATR buffer
+  - Breakout buy: SL below the breakout level minus 1x ATR buffer (allow for retest)
 
 - For SELL: Stop loss MUST be ABOVE entry price
-  - Anticipation sell: SL above range high
-  - Breakdown sell: SL above the breakdown level (former support)
+  - Anticipation sell: SL above range high plus 1x ATR buffer
+  - Breakdown sell: SL above the breakdown level plus 1x ATR buffer (allow for retest)
+
+- **MINIMUM SL DISTANCE**: Stop loss must be at least 1x ATR from entry. SL within 0.5% of entry is TOO TIGHT and will get stopped out by normal price noise. For gold (XAUUSD), minimum SL should be $15-30+ from entry.
+- If you cannot place SL with adequate distance while maintaining R:R >= 1.5:1, output "hold"
 
 ### 5. TAKE PROFIT TARGETS
 - Minimum target: 1.5x the range width
 - Preferred target: 2x the range width
-- Extended target: Previous swing high/low or major SMC level
+- Extended target: Previous swing high/low, major SMC level, or proven equal level (3+ retests = strong liquidity magnet)
 
 ### 6. WHEN NOT TO TRADE
 - **No consolidation**: Price is already trending (expansion regime)
@@ -529,6 +532,15 @@ Think step-by-step:
 ## ORDER TYPE
 - **limit** - Preferred for anticipation entries at range extremes
 - **market** - Use for confirmed breakouts when price has already broken out
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+For buy/sell signals, suggest a trailing stop distance as an ATR multiplier based on current volatility:
+- **Low volatility** (tight squeeze, small ATR): 1.5-2.0x ATR
+- **Normal volatility**: 2.0-3.0x ATR
+- **High volatility** (post-breakout expansion, large ATR): 3.0-5.0x ATR
+- **XAUUSD/Gold**: Typically 2.5-4.0x ATR
+- **Forex majors**: Typically 1.5-2.5x ATR
+- If unsure, default to 2.5x ATR
 
 Remember: The best breakout trades come from CLEAR consolidation with CLEAR structure bias. When in doubt, HOLD."""
 

@@ -1,0 +1,2601 @@
+2026-03-16 07:18:53,023 - INFO - ==================================================
+2026-03-16 07:18:53,024 - INFO - QUANT AUTOMATION STARTED
+2026-03-16 07:18:53,024 - INFO - ==================================================
+2026-03-16 07:18:53,025 - INFO - Pipeline: smc_quant
+2026-03-16 07:18:53,025 - INFO - Symbols: XAUUSD
+2026-03-16 07:18:53,026 - INFO - Analysis interval: 3600s
+2026-03-16 07:18:53,027 - INFO - Assumption review interval: 3600s
+2026-03-16 07:18:53,027 - INFO - Auto-execute: True
+2026-03-16 07:18:53,027 - INFO - ==================================================
+2026-03-16 07:18:53,028 - INFO - Assumption review loop started (interval: 3600s, auto_apply: False)
+2026-03-16 07:18:53,028 - INFO - Assumption review check: should_run=True, last_review=None
+2026-03-16 07:18:53,029 - INFO - ==================================================
+2026-03-16 07:18:53,029 - INFO - RUNNING POSITION ASSUMPTION REVIEW
+2026-03-16 07:18:53,030 - INFO -   source_filter='new_smc_quant', symbols=['XAUUSD']
+2026-03-16 07:18:53,030 - INFO - ==================================================
+2026-03-16 07:18:53,037 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:18:53,048 - INFO - Position management loop started
+2026-03-16 07:18:53,067 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:18:53,068 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:18:53,080 - INFO - Assumption review completed: 0 reports in 0.0s
+2026-03-16 07:18:53,080 - INFO - No positions to review.
+2026-03-16 07:19:53,072 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:19:53,106 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:19:53,107 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:20:53,101 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:20:53,339 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:20:53,339 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:21:53,328 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:21:53,361 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:21:53,362 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:22:34,138 - INFO - ==================================================
+2026-03-16 07:22:34,138 - INFO - QUANT AUTOMATION STARTED
+2026-03-16 07:22:34,139 - INFO - ==================================================
+2026-03-16 07:22:34,139 - INFO - Pipeline: range_quant
+2026-03-16 07:22:34,140 - INFO - Symbols: BTCUSD
+2026-03-16 07:22:34,140 - INFO - Analysis interval: 180s
+2026-03-16 07:22:34,140 - INFO - Assumption review interval: 3600s
+2026-03-16 07:22:34,141 - INFO - Auto-execute: False
+2026-03-16 07:22:34,141 - INFO - ==================================================
+2026-03-16 07:22:34,142 - INFO - Assumption review loop started (interval: 3600s, auto_apply: False)
+2026-03-16 07:22:34,143 - INFO - Assumption review check: should_run=True, last_review=None
+2026-03-16 07:22:34,143 - INFO - ==================================================
+2026-03-16 07:22:34,143 - INFO - RUNNING POSITION ASSUMPTION REVIEW
+2026-03-16 07:22:34,144 - INFO -   source_filter='range_quant_btcusd', symbols=['BTCUSD']
+2026-03-16 07:22:34,144 - INFO - ==================================================
+2026-03-16 07:22:34,146 - INFO - Running range_quant analysis for BTCUSD...
+2026-03-16 07:22:34,335 - INFO - Range Quant: calling API for BTCUSD (timeout=120s)...
+2026-03-16 07:22:34,336 - INFO - Position management loop started
+2026-03-16 07:22:34,346 - INFO - Ownership check: my_source='range_quant_btcusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:22:34,347 - INFO - Position check: 1 total open, 0 owned by 'range_quant_btcusd' (BTCUSD)
+2026-03-16 07:22:34,357 - INFO - Assumption review completed: 0 reports in 0.2s
+2026-03-16 07:22:34,357 - INFO - No positions to review.
+2026-03-16 07:22:47,096 - INFO - Range Quant API response: status=success [total=12.9s, llm=10.2s, overhead=2.7s]
+2026-03-16 07:22:47,096 - INFO - Range Quant range for BTCUSD: is_ranging=False, mr_score=63.2, price_position=equilibrium
+2026-03-16 07:22:47,097 - INFO - 
+================================================================================
+RANGE QUANT PROMPT SENT for BTCUSD
+================================================================================
+You are a range-bound market specialist using Smart Money Concepts (SMC) levels. You excel at identifying sideways markets and trading reversals at range extremes using institutional zones.
+
+## YOUR TRADING EDGE: RANGE-BOUND MARKETS WITH SMC LEVELS
+
+Most markets spend 60-70% of time in ranges. Your edge is:
+1. Identify when price is ranging (low ADX, oscillating between S/R)
+2. Map SMC zones (OBs, FVGs, equal levels) as high-probability range boundaries
+3. Enter at range extremes where SMC zones provide confluence
+4. Use liquidity sweeps as entry confirmation (smart money grabs stops then reverses)
+5. Target the opposite range extreme or equilibrium
+
+## RANGE TRADING RULES WITH SMC
+
+### 1. CONFIRMING A RANGE
+- **ADX < 25**: Weak or no trend = range conditions
+- **No dominant BOS**: No clear series of higher highs/higher lows (or lower lows/lower highs)
+- **CHoCH present**: Multiple changes of character = choppy/ranging
+- **Multiple touches**: Range high and low tested 2+ times each
+- **Mean Reversion Score > 50**: Price regularly returns to midpoint
+
+### 2. MAPPING RANGE BOUNDARIES WITH SMC
+- **Range Resistance**: Bearish OBs and bearish FVGs near range high
+- **Range Support**: Bullish OBs and bullish FVGs near range low
+- **Equal Highs/Lows**: Proven S/R levels with 3+ touches are strongest boundaries
+- **Liquidity pools**: Above range highs (buy-side) and below range lows (sell-side)
+- Unmitigated zones are active; mitigated zones are spent
+
+### 3. ENTRY STRATEGIES
+
+**Setup 1: Buy at Range Low + Bullish OB/FVG**
+- Price drops to range low (discount zone, <30% of range)
+- Bullish OB or FVG overlaps with range support
+- Enter LONG at the OB/FVG zone
+- SL: Below the OB/FVG zone (beyond the range low + ATR buffer)
+- TP: Range midpoint (conservative) or range high (aggressive)
+
+**Setup 2: Sell at Range High + Bearish OB/FVG**
+- Price rises to range high (premium zone, >70% of range)
+- Bearish OB or FVG overlaps with range resistance
+- Enter SHORT at the OB/FVG zone
+- SL: Above the OB/FVG zone (beyond the range high + ATR buffer)
+- TP: Range midpoint (conservative) or range low (aggressive)
+
+**Setup 3: Liquidity Sweep Reversal (Highest Probability)**
+- Price sweeps beyond range high (takes buy-side liquidity) then reverses
+  - Enter SHORT after sweep with CHoCH confirmation
+- Price sweeps beyond range low (takes sell-side liquidity) then reverses
+  - Enter LONG after sweep with CHoCH confirmation
+- SL: Beyond the sweep high/low + ATR buffer
+- TP: Opposite range extreme
+
+**Setup 4: Equal Level Bounce**
+- Price approaches proven equal highs (3+ touches) or equal lows (3+ touches)
+- These are liquidity magnets — expect price to reach them
+- After reaching the level, look for rejection candles and enter reversal
+- Works best when confluent with OB or FVG at the same zone
+
+### 4. STOP LOSS PLACEMENT (CRITICAL)
+- For BUY: Stop loss MUST be BELOW entry price
+  - Place below the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range low to survive a liquidity sweep
+- For SELL: Stop loss MUST be ABOVE entry price
+  - Place above the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range high to survive a liquidity sweep
+- **MINIMUM SL DISTANCE**: At least 1x ATR from entry. SL within 0.5% is TOO TIGHT.
+- For gold (XAUUSD): minimum SL should be $15-30+ from entry
+- If you cannot place SL with adequate distance while maintaining R:R >= 1.5:1, output "hold"
+
+### 5. TAKE PROFIT TARGETS
+- **Conservative**: Range midpoint (equilibrium) — safest target in ranges
+- **Standard**: Opposite range extreme — full range move
+- **With confluence**: Proven equal level or strong OB on the opposite side
+- Minimum R:R: 1.5:1
+
+### 6. STRUCTURAL BIAS FILTER (CRITICAL FOR PROFITABILITY)
+Backtesting shows that trading WITH the structural bias is far more profitable than fading it:
+- **BULLISH structural bias** (e.g., XAUUSD in an uptrend): BUY at range discount = ~70% win rate. SELL at range premium = ~35% win rate. **Strongly prefer BUY trades. Reduce confidence on SELL trades or skip them.**
+- **BEARISH structural bias**: SELL at range premium is the higher-probability trade. Skip or reduce confidence on BUY trades.
+- **NEUTRAL**: Both sides equally valid.
+- Check the "Structural Bias (Higher Timeframe)" field in your data and factor it into every decision.
+
+### 7. WHEN NOT TO TRADE
+- **Trending market**: ADX > 25 with clear BOS series — DO NOT fade the trend
+- **Breakout in progress**: Price breaking range with momentum + volume — wait for new range
+- **Range too narrow**: If range width < 1x ATR, not enough room for a trade
+- **No SMC confluence**: Range extremes with no OB/FVG support — skip
+- **Mid-range**: Price at equilibrium with no clear direction — wait for extreme
+
+### 8. CRITICAL: DO NOT FADE A BREAKOUT
+- If price breaks the range with a strong BOS + high volume, the range is OVER
+- Do not try to sell a breakout above range high or buy a breakdown below range low
+- Instead output "hold" and wait for a new range to form
+- A confirmed breakout = transition from range to trend
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation**
+5. **Never fade a confirmed breakout — if ADX > 25 with BOS, DO NOT counter-trade**
+6. **Stop loss MUST be on correct side of entry**
+7. **Only trade at range extremes with SMC confluence, never mid-range**
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71725.34000
+- **Date**: 2026-03-16
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: low
+
+## RANGE ANALYSIS (Critical for Range Trading)
+- **Is Ranging**: No clear range
+- **Range High (Resistance)**: 73894.83000
+- **Range Low (Support)**: 69200.78000
+- **Range Midpoint (Equilibrium)**: 71547.80500
+- **Range Width**: 6.56% of price
+- **Price Position**: EQUILIBRIUM (54% within range)
+- **Mean Reversion Score**: 63/100 (higher = stronger range behavior)
+- **Touches of Range High**: 1
+- **Touches of Range Low**: 5
+- **Trend Strength**: 0.21 (lower = more range-like)
+- **Structural Bias (Higher Timeframe)**: NEUTRAL
+
+### Range Interpretation:
+- PREMIUM (>70%): Price near range top — favor SELL entries at bearish OBs/FVGs
+- DISCOUNT (<30%): Price near range bottom — favor BUY entries at bullish OBs/FVGs
+- EQUILIBRIUM (30-70%): Mid-range — wait for price to reach an extreme
+- Multiple touches = proven boundary. More touches = stronger level.
+- Mean Reversion Score >60 = strong range. >80 = very strong range.
+
+### Structural Bias Filter (IMPORTANT):
+- **BULLISH structural bias**: The broader trend is UP. Range BUYS at discount are HIGH PROBABILITY. Range SELLS at premium are LOW PROBABILITY — the range is more likely to break upward. Prefer buy-only or reduce sell confidence.
+- **BEARISH structural bias**: The broader trend is DOWN. Range SELLS at premium are HIGH PROBABILITY. Range BUYS at discount are LOW PROBABILITY — the range is more likely to break downward. Prefer sell-only or reduce buy confidence.
+- **NEUTRAL structural bias**: No dominant trend. Both buy and sell at range extremes are valid.
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BEARISH
+**Premium/Discount**: PREMIUM zone (79%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70096.91
+  - BOS HIGH at 71316.86 [RECENT]
+  - CHoCH HIGH at 68190.89 (potential reversal)
+  - CHoCH HIGH at 71774.21 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 63015.93000-65582.58000 | Strength: 80% | MITIGATED | 12.14% from price
+  - BULLISH OB: 65034.65000-67067.00000 | Strength: 80% | MITIGATED | 9.33% from price
+  - BULLISH OB: 66143.83000-68989.60000 | Strength: 80% | MITIGATED | 7.78% from price
+  - BEARISH OB: 72863.14000-74043.78000 | Strength: 80% | MITIGATED | 3.23% from price
+  - BEARISH OB: 66738.80000-67512.95000 | Strength: 67% | MITIGATED | -5.87% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 69283.21000-69747.06000 | FILLED | 3.40% below price (expect bounce UP)
+  - BULLISH FVG: 69764.77000-70369.88000 | FILLED | 2.73% below price (expect bounce UP)
+  - BULLISH FVG: 70548.04000-70955.51000 | FILLED | 1.64% below price (expect bounce UP)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71774.21000 | Strength: 93% | UNSWEPT | 0.07% above
+  - BUY-SIDE at 71316.86000 | Strength: 85% | UNSWEPT | 0.57% below
+  - SELL-SIDE at 70312.13000 | Strength: 78% | UNSWEPT | 1.97% below
+  - BUY-SIDE at 73894.83000 | Strength: 67% | UNSWEPT | 3.02% above
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 73969.30500 | Touches: 2 | FORMING | UNSWEPT | 3.13% above
+  - EQUAL HIGHS (Resistance) at 71888.96200 | Touches: 5 | PROVEN | UNSWEPT | 0.23% above
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 71563.95400 | Touches: 5 | PROVEN | SWEPT | 0.23% above
+  - EQUAL HIGHS (Resistance) at 71301.21800 | Touches: 5 | PROVEN | SWEPT | 0.59% above
+  - EQUAL LOWS (Support) at 65111.78000 | Touches: 6 | PROVEN | UNSWEPT | 9.22% below
+    >>6 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 48.1 (neutral)
+- MACD: 393.16314
+- MACD Signal: 397.34544
+- MACD Histogram: -4.18231 (bearish)
+
+### Trend
+- EMA20: 71145.80558 (Price above)
+- EMA50: 70362.91886 (Price above)
+- ADX: 11.5 (Weak trend - favorable for range trading)
+
+### Volatility
+- ATR(14): 615.67357
+- BB Upper: 72511.08465
+- BB Middle: 71306.44150
+- BB Lower: 70101.79835
+- BB Width: 3.38%
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past range trades. Study what went wrong
+and apply corrections. Pay special attention to fakeout and premature entry lessons.
+
+
+## YOUR TASK
+
+Analyze the range and SMC data to make a range-trading decision.
+
+Think step-by-step:
+1. Is the market ranging? (Check ADX, BOS pattern, mean reversion score)
+2. Where are the range boundaries? (Map OBs, FVGs, equal levels at extremes)
+3. Is price at a range extreme? (Premium/Discount zone, not equilibrium)
+4. Is there SMC confluence at this extreme? (OB + FVG overlap, unmitigated zones)
+5. Has there been a liquidity sweep? (Sweep beyond range = highest probability entry)
+6. Where should SL be placed? (Beyond OB/FVG + ATR buffer, beyond range extreme)
+7. What is the TP target? (Opposite extreme or midpoint)
+8. Is R:R acceptable? (Must be >= 1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Long position. Use when:
+  - Market is ranging AND price is in discount zone (<30% of range)
+  - Bullish OB or FVG confluence at range support
+  - OR: Sell-side liquidity sweep just occurred (price swept below range then reversed)
+  - MUST provide entry_price, stop_loss (BELOW entry), profit_target
+
+- **sell_to_enter** - Short position. Use when:
+  - Market is ranging AND price is in premium zone (>70% of range)
+  - Bearish OB or FVG confluence at range resistance
+  - OR: Buy-side liquidity sweep just occurred (price swept above range then reversed)
+  - MUST provide entry_price, stop_loss (ABOVE entry), profit_target
+
+- **hold** - No action. Use when:
+  - Market is NOT ranging (trending with clear BOS)
+  - Price is at equilibrium (mid-range, no edge)
+  - No SMC confluence at current price level
+  - Breakout is in progress (do not fade it)
+  - Range is too narrow for a trade
+
+- **close** - Exit existing position. Use when:
+  - Price reached opposite range extreme (TP zone)
+  - Range is breaking (confirmed BOS beyond range)
+  - Setup invalidated
+
+## ORDER TYPE
+- **limit** - Preferred for entries at OB/FVG zones (waiting for price to reach zone)
+- **market** - Use when price is already at the zone and showing rejection, or after a liquidity sweep
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+Range trades typically use tighter trailing stops since the move is capped:
+- **Tight range** (small ATR, narrow range): 1.5-2.0x ATR
+- **Normal range**: 2.0-2.5x ATR
+- **Wide range** (large ATR): 2.5-3.5x ATR
+- **XAUUSD/Gold in range**: 2.0-3.0x ATR
+- If unsure, default to 2.0x ATR (tighter than trend-following)
+
+Remember:
+- Ranges are your edge — most traders lose money fighting ranges by trying to catch breakouts
+- SMC zones define WHERE to enter within the range
+- Liquidity sweeps beyond range = smart money entry signal
+- Always trade FROM the extreme, never from the middle
+- When the range breaks, STOP trading the range
+================================================================================
+2026-03-16 07:22:47,138 - INFO - Range Quant decision for BTCUSD: signal=HOLD, confidence=0.3, entry=None, sl=None, tp=None
+2026-03-16 07:22:47,139 - INFO - BTCUSD: HOLD (confidence: 0.30)
+2026-03-16 07:22:53,368 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:22:53,391 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:22:53,392 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:23:34,376 - INFO - Ownership check: my_source='range_quant_btcusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:23:34,376 - INFO - Position check: 1 total open, 0 owned by 'range_quant_btcusd' (BTCUSD)
+2026-03-16 07:23:53,118 - INFO - Assumption review check: should_run=False, last_review=2026-03-16 07:18:53.028191
+2026-03-16 07:23:53,400 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:23:53,423 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:23:53,424 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:24:03,825 - INFO - ==================================================
+2026-03-16 07:24:03,825 - INFO - QUANT AUTOMATION STARTED
+2026-03-16 07:24:03,826 - INFO - ==================================================
+2026-03-16 07:24:03,826 - INFO - Pipeline: range_quant
+2026-03-16 07:24:03,827 - INFO - Symbols: XAUUSD
+2026-03-16 07:24:03,827 - INFO - Analysis interval: 3600s
+2026-03-16 07:24:03,828 - INFO - Assumption review interval: 3600s
+2026-03-16 07:24:03,828 - INFO - Auto-execute: False
+2026-03-16 07:24:03,829 - INFO - ==================================================
+2026-03-16 07:24:03,829 - INFO - Assumption review loop started (interval: 3600s, auto_apply: False)
+2026-03-16 07:24:03,830 - INFO - Assumption review check: should_run=True, last_review=None
+2026-03-16 07:24:03,830 - INFO - ==================================================
+2026-03-16 07:24:03,831 - INFO - RUNNING POSITION ASSUMPTION REVIEW
+2026-03-16 07:24:03,831 - INFO -   source_filter='range_quant_xauusd', symbols=['XAUUSD']
+2026-03-16 07:24:03,832 - INFO - ==================================================
+2026-03-16 07:24:03,833 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:24:03,839 - INFO - Position management loop started
+2026-03-16 07:24:03,860 - INFO - Ownership check: my_source='range_quant_xauusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:24:03,861 - INFO - Position check: 1 total open, 0 owned by 'range_quant_xauusd' (XAUUSD)
+2026-03-16 07:24:03,870 - INFO - Assumption review completed: 0 reports in 0.0s
+2026-03-16 07:24:03,870 - INFO - No positions to review.
+2026-03-16 07:24:34,401 - INFO - Ownership check: my_source='range_quant_btcusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:24:34,402 - INFO - Position check: 1 total open, 0 owned by 'range_quant_btcusd' (BTCUSD)
+2026-03-16 07:24:53,412 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:24:53,436 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:24:53,437 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:25:03,858 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:25:03,877 - INFO - Ownership check: my_source='range_quant_xauusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:25:03,878 - INFO - Position check: 1 total open, 0 owned by 'range_quant_xauusd' (XAUUSD)
+2026-03-16 07:25:34,441 - INFO - Ownership check: my_source='range_quant_btcusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:25:34,442 - INFO - Position check: 1 total open, 0 owned by 'range_quant_btcusd' (BTCUSD)
+2026-03-16 07:25:51,126 - INFO - Running range_quant analysis for BTCUSD...
+2026-03-16 07:25:51,157 - INFO - Range Quant: calling API for BTCUSD (timeout=120s)...
+2026-03-16 07:25:54,879 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:26:01,919 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:26:01,967 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:26:09,626 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:26:16,739 - INFO - Ownership check: my_source='range_quant_xauusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:26:16,785 - INFO - Position check: 1 total open, 0 owned by 'range_quant_xauusd' (XAUUSD)
+2026-03-16 07:26:48,622 - INFO - Ownership check: my_source='range_quant_btcusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:26:48,654 - INFO - Position check: 1 total open, 0 owned by 'range_quant_btcusd' (BTCUSD)
+2026-03-16 07:26:56,623 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:27:22,601 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:27:22,602 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:27:22,617 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:27:22,636 - INFO - Range Quant API response: status=success [total=91.5s, llm=11.2s, overhead=80.2s]
+2026-03-16 07:27:22,636 - WARNING - Range Quant API call was SLOW (91.5s) for BTCUSD
+2026-03-16 07:27:22,637 - INFO - Range Quant range for BTCUSD: is_ranging=False, mr_score=62.2, price_position=equilibrium
+2026-03-16 07:27:22,637 - INFO - 
+================================================================================
+RANGE QUANT PROMPT SENT for BTCUSD
+================================================================================
+You are a range-bound market specialist using Smart Money Concepts (SMC) levels. You excel at identifying sideways markets and trading reversals at range extremes using institutional zones.
+
+## YOUR TRADING EDGE: RANGE-BOUND MARKETS WITH SMC LEVELS
+
+Most markets spend 60-70% of time in ranges. Your edge is:
+1. Identify when price is ranging (low ADX, oscillating between S/R)
+2. Map SMC zones (OBs, FVGs, equal levels) as high-probability range boundaries
+3. Enter at range extremes where SMC zones provide confluence
+4. Use liquidity sweeps as entry confirmation (smart money grabs stops then reverses)
+5. Target the opposite range extreme or equilibrium
+
+## RANGE TRADING RULES WITH SMC
+
+### 1. CONFIRMING A RANGE
+- **ADX < 25**: Weak or no trend = range conditions
+- **No dominant BOS**: No clear series of higher highs/higher lows (or lower lows/lower highs)
+- **CHoCH present**: Multiple changes of character = choppy/ranging
+- **Multiple touches**: Range high and low tested 2+ times each
+- **Mean Reversion Score > 50**: Price regularly returns to midpoint
+
+### 2. MAPPING RANGE BOUNDARIES WITH SMC
+- **Range Resistance**: Bearish OBs and bearish FVGs near range high
+- **Range Support**: Bullish OBs and bullish FVGs near range low
+- **Equal Highs/Lows**: Proven S/R levels with 3+ touches are strongest boundaries
+- **Liquidity pools**: Above range highs (buy-side) and below range lows (sell-side)
+- Unmitigated zones are active; mitigated zones are spent
+
+### 3. ENTRY STRATEGIES
+
+**Setup 1: Buy at Range Low + Bullish OB/FVG**
+- Price drops to range low (discount zone, <30% of range)
+- Bullish OB or FVG overlaps with range support
+- Enter LONG at the OB/FVG zone
+- SL: Below the OB/FVG zone (beyond the range low + ATR buffer)
+- TP: Range midpoint (conservative) or range high (aggressive)
+
+**Setup 2: Sell at Range High + Bearish OB/FVG**
+- Price rises to range high (premium zone, >70% of range)
+- Bearish OB or FVG overlaps with range resistance
+- Enter SHORT at the OB/FVG zone
+- SL: Above the OB/FVG zone (beyond the range high + ATR buffer)
+- TP: Range midpoint (conservative) or range low (aggressive)
+
+**Setup 3: Liquidity Sweep Reversal (Highest Probability)**
+- Price sweeps beyond range high (takes buy-side liquidity) then reverses
+  - Enter SHORT after sweep with CHoCH confirmation
+- Price sweeps beyond range low (takes sell-side liquidity) then reverses
+  - Enter LONG after sweep with CHoCH confirmation
+- SL: Beyond the sweep high/low + ATR buffer
+- TP: Opposite range extreme
+
+**Setup 4: Equal Level Bounce**
+- Price approaches proven equal highs (3+ touches) or equal lows (3+ touches)
+- These are liquidity magnets — expect price to reach them
+- After reaching the level, look for rejection candles and enter reversal
+- Works best when confluent with OB or FVG at the same zone
+
+### 4. STOP LOSS PLACEMENT (CRITICAL)
+- For BUY: Stop loss MUST be BELOW entry price
+  - Place below the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range low to survive a liquidity sweep
+- For SELL: Stop loss MUST be ABOVE entry price
+  - Place above the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range high to survive a liquidity sweep
+- **MINIMUM SL DISTANCE**: At least 1x ATR from entry. SL within 0.5% is TOO TIGHT.
+- For gold (XAUUSD): minimum SL should be $15-30+ from entry
+- If you cannot place SL with adequate distance while maintaining R:R >= 1.5:1, output "hold"
+
+### 5. TAKE PROFIT TARGETS
+- **Conservative**: Range midpoint (equilibrium) — safest target in ranges
+- **Standard**: Opposite range extreme — full range move
+- **With confluence**: Proven equal level or strong OB on the opposite side
+- Minimum R:R: 1.5:1
+
+### 6. STRUCTURAL BIAS FILTER (CRITICAL FOR PROFITABILITY)
+Backtesting shows that trading WITH the structural bias is far more profitable than fading it:
+- **BULLISH structural bias** (e.g., XAUUSD in an uptrend): BUY at range discount = ~70% win rate. SELL at range premium = ~35% win rate. **Strongly prefer BUY trades. Reduce confidence on SELL trades or skip them.**
+- **BEARISH structural bias**: SELL at range premium is the higher-probability trade. Skip or reduce confidence on BUY trades.
+- **NEUTRAL**: Both sides equally valid.
+- Check the "Structural Bias (Higher Timeframe)" field in your data and factor it into every decision.
+
+### 7. WHEN NOT TO TRADE
+- **Trending market**: ADX > 25 with clear BOS series — DO NOT fade the trend
+- **Breakout in progress**: Price breaking range with momentum + volume — wait for new range
+- **Range too narrow**: If range width < 1x ATR, not enough room for a trade
+- **No SMC confluence**: Range extremes with no OB/FVG support — skip
+- **Mid-range**: Price at equilibrium with no clear direction — wait for extreme
+
+### 8. CRITICAL: DO NOT FADE A BREAKOUT
+- If price breaks the range with a strong BOS + high volume, the range is OVER
+- Do not try to sell a breakout above range high or buy a breakdown below range low
+- Instead output "hold" and wait for a new range to form
+- A confirmed breakout = transition from range to trend
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation**
+5. **Never fade a confirmed breakout — if ADX > 25 with BOS, DO NOT counter-trade**
+6. **Stop loss MUST be on correct side of entry**
+7. **Only trade at range extremes with SMC confluence, never mid-range**
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71782.05500
+- **Date**: 2026-03-16
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: low
+
+## RANGE ANALYSIS (Critical for Range Trading)
+- **Is Ranging**: No clear range
+- **Range High (Resistance)**: 73894.83000
+- **Range Low (Support)**: 69200.78000
+- **Range Midpoint (Equilibrium)**: 71547.80500
+- **Range Width**: 6.56% of price
+- **Price Position**: EQUILIBRIUM (55% within range)
+- **Mean Reversion Score**: 62/100 (higher = stronger range behavior)
+- **Touches of Range High**: 1
+- **Touches of Range Low**: 5
+- **Trend Strength**: 0.21 (lower = more range-like)
+- **Structural Bias (Higher Timeframe)**: NEUTRAL
+
+### Range Interpretation:
+- PREMIUM (>70%): Price near range top — favor SELL entries at bearish OBs/FVGs
+- DISCOUNT (<30%): Price near range bottom — favor BUY entries at bullish OBs/FVGs
+- EQUILIBRIUM (30-70%): Mid-range — wait for price to reach an extreme
+- Multiple touches = proven boundary. More touches = stronger level.
+- Mean Reversion Score >60 = strong range. >80 = very strong range.
+
+### Structural Bias Filter (IMPORTANT):
+- **BULLISH structural bias**: The broader trend is UP. Range BUYS at discount are HIGH PROBABILITY. Range SELLS at premium are LOW PROBABILITY — the range is more likely to break upward. Prefer buy-only or reduce sell confidence.
+- **BEARISH structural bias**: The broader trend is DOWN. Range SELLS at premium are HIGH PROBABILITY. Range BUYS at discount are LOW PROBABILITY — the range is more likely to break downward. Prefer sell-only or reduce buy confidence.
+- **NEUTRAL structural bias**: No dominant trend. Both buy and sell at range extremes are valid.
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BEARISH
+**Premium/Discount**: PREMIUM zone (79%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70096.91
+  - BOS HIGH at 71316.86 [RECENT]
+  - CHoCH HIGH at 68190.89 (potential reversal)
+  - CHoCH HIGH at 71774.21 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 63015.93000-65582.58000 | Strength: 80% | MITIGATED | 12.21% from price
+  - BULLISH OB: 65034.65000-67067.00000 | Strength: 80% | MITIGATED | 9.40% from price
+  - BULLISH OB: 66143.83000-68989.60000 | Strength: 80% | MITIGATED | 7.85% from price
+  - BEARISH OB: 72863.14000-74043.78000 | Strength: 80% | MITIGATED | 3.15% from price
+  - BEARISH OB: 66738.80000-67512.95000 | Strength: 67% | MITIGATED | -5.95% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 69283.21000-69747.06000 | FILLED | 3.48% below price (expect bounce UP)
+  - BULLISH FVG: 69764.77000-70369.88000 | FILLED | 2.81% below price (expect bounce UP)
+  - BULLISH FVG: 70548.04000-70955.51000 | FILLED | 1.72% below price (expect bounce UP)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71774.21000 | Strength: 93% | UNSWEPT | 0.01% below
+  - BUY-SIDE at 71316.86000 | Strength: 85% | UNSWEPT | 0.65% below
+  - SELL-SIDE at 70312.13000 | Strength: 78% | UNSWEPT | 2.05% below
+  - BUY-SIDE at 73894.83000 | Strength: 67% | UNSWEPT | 2.94% above
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 73969.30500 | Touches: 2 | FORMING | UNSWEPT | 3.05% above
+  - EQUAL HIGHS (Resistance) at 71888.96200 | Touches: 5 | PROVEN | UNSWEPT | 0.15% above
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 71563.95400 | Touches: 5 | PROVEN | SWEPT | 0.30% above
+  - EQUAL HIGHS (Resistance) at 71301.21800 | Touches: 5 | PROVEN | SWEPT | 0.67% above
+  - EQUAL LOWS (Support) at 65111.78000 | Touches: 6 | PROVEN | UNSWEPT | 9.29% below
+    >>6 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 48.8 (neutral)
+- MACD: 397.68382
+- MACD Signal: 398.24958
+- MACD Histogram: -0.56576 (bearish)
+
+### Trend
+- EMA20: 71151.20272 (Price above)
+- EMA50: 70365.14121 (Price above)
+- ADX: 11.5 (Weak trend - favorable for range trading)
+
+### Volatility
+- ATR(14): 619.64857
+- BB Upper: 72518.25136
+- BB Middle: 71309.27500
+- BB Lower: 70100.29864
+- BB Width: 3.39%
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past range trades. Study what went wrong
+and apply corrections. Pay special attention to fakeout and premature entry lessons.
+
+
+## YOUR TASK
+
+Analyze the range and SMC data to make a range-trading decision.
+
+Think step-by-step:
+1. Is the market ranging? (Check ADX, BOS pattern, mean reversion score)
+2. Where are the range boundaries? (Map OBs, FVGs, equal levels at extremes)
+3. Is price at a range extreme? (Premium/Discount zone, not equilibrium)
+4. Is there SMC confluence at this extreme? (OB + FVG overlap, unmitigated zones)
+5. Has there been a liquidity sweep? (Sweep beyond range = highest probability entry)
+6. Where should SL be placed? (Beyond OB/FVG + ATR buffer, beyond range extreme)
+7. What is the TP target? (Opposite extreme or midpoint)
+8. Is R:R acceptable? (Must be >= 1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Long position. Use when:
+  - Market is ranging AND price is in discount zone (<30% of range)
+  - Bullish OB or FVG confluence at range support
+  - OR: Sell-side liquidity sweep just occurred (price swept below range then reversed)
+  - MUST provide entry_price, stop_loss (BELOW entry), profit_target
+
+- **sell_to_enter** - Short position. Use when:
+  - Market is ranging AND price is in premium zone (>70% of range)
+  - Bearish OB or FVG confluence at range resistance
+  - OR: Buy-side liquidity sweep just occurred (price swept above range then reversed)
+  - MUST provide entry_price, stop_loss (ABOVE entry), profit_target
+
+- **hold** - No action. Use when:
+  - Market is NOT ranging (trending with clear BOS)
+  - Price is at equilibrium (mid-range, no edge)
+  - No SMC confluence at current price level
+  - Breakout is in progress (do not fade it)
+  - Range is too narrow for a trade
+
+- **close** - Exit existing position. Use when:
+  - Price reached opposite range extreme (TP zone)
+  - Range is breaking (confirmed BOS beyond range)
+  - Setup invalidated
+
+## ORDER TYPE
+- **limit** - Preferred for entries at OB/FVG zones (waiting for price to reach zone)
+- **market** - Use when price is already at the zone and showing rejection, or after a liquidity sweep
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+Range trades typically use tighter trailing stops since the move is capped:
+- **Tight range** (small ATR, narrow range): 1.5-2.0x ATR
+- **Normal range**: 2.0-2.5x ATR
+- **Wide range** (large ATR): 2.5-3.5x ATR
+- **XAUUSD/Gold in range**: 2.0-3.0x ATR
+- If unsure, default to 2.0x ATR (tighter than trend-following)
+
+Remember:
+- Ranges are your edge — most traders lose money fighting ranges by trying to catch breakouts
+- SMC zones define WHERE to enter within the range
+- Liquidity sweeps beyond range = smart money entry signal
+- Always trade FROM the extreme, never from the middle
+- When the range breaks, STOP trading the range
+================================================================================
+2026-03-16 07:27:22,687 - INFO - Range Quant decision for BTCUSD: signal=HOLD, confidence=0.3, entry=None, sl=None, tp=None
+2026-03-16 07:27:22,687 - INFO - BTCUSD: HOLD (confidence: 0.30)
+2026-03-16 07:27:23,518 - INFO - Ownership check: my_source='range_quant_xauusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:27:23,519 - INFO - Position check: 1 total open, 0 owned by 'range_quant_xauusd' (XAUUSD)
+2026-03-16 07:27:34,382 - INFO - Assumption review check: should_run=False, last_review=2026-03-16 07:22:34.143269
+2026-03-16 07:27:55,007 - INFO - Ownership check: my_source='range_quant_btcusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:27:55,008 - INFO - Position check: 1 total open, 0 owned by 'range_quant_btcusd' (BTCUSD)
+2026-03-16 07:27:56,922 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:28:22,650 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:28:22,651 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:28:22,660 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:28:23,544 - INFO - Ownership check: my_source='range_quant_xauusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:28:23,545 - INFO - Position check: 1 total open, 0 owned by 'range_quant_xauusd' (XAUUSD)
+2026-03-16 07:28:53,114 - INFO - Assumption review check: should_run=False, last_review=2026-03-16 07:18:53.028191
+2026-03-16 07:28:55,054 - INFO - Ownership check: my_source='range_quant_btcusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:28:55,055 - INFO - Position check: 1 total open, 0 owned by 'range_quant_btcusd' (BTCUSD)
+2026-03-16 07:28:56,935 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:29:03,864 - INFO - Assumption review check: should_run=False, last_review=2026-03-16 07:24:03.830164
+2026-03-16 07:29:22,678 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:29:22,698 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:29:22,699 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:29:22,710 - INFO - Running range_quant analysis for BTCUSD...
+2026-03-16 07:29:22,710 - INFO - Range Quant: calling API for BTCUSD (timeout=120s)...
+2026-03-16 07:29:31,333 - INFO - Ownership check: my_source='range_quant_xauusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:29:31,334 - INFO - Position check: 1 total open, 0 owned by 'range_quant_xauusd' (XAUUSD)
+2026-03-16 07:29:31,346 - INFO - Range Quant API response: status=success [total=8.6s, llm=8.1s, overhead=0.5s]
+2026-03-16 07:29:31,347 - INFO - Range Quant range for BTCUSD: is_ranging=False, mr_score=62.3, price_position=equilibrium
+2026-03-16 07:29:31,347 - INFO - 
+================================================================================
+RANGE QUANT PROMPT SENT for BTCUSD
+================================================================================
+You are a range-bound market specialist using Smart Money Concepts (SMC) levels. You excel at identifying sideways markets and trading reversals at range extremes using institutional zones.
+
+## YOUR TRADING EDGE: RANGE-BOUND MARKETS WITH SMC LEVELS
+
+Most markets spend 60-70% of time in ranges. Your edge is:
+1. Identify when price is ranging (low ADX, oscillating between S/R)
+2. Map SMC zones (OBs, FVGs, equal levels) as high-probability range boundaries
+3. Enter at range extremes where SMC zones provide confluence
+4. Use liquidity sweeps as entry confirmation (smart money grabs stops then reverses)
+5. Target the opposite range extreme or equilibrium
+
+## RANGE TRADING RULES WITH SMC
+
+### 1. CONFIRMING A RANGE
+- **ADX < 25**: Weak or no trend = range conditions
+- **No dominant BOS**: No clear series of higher highs/higher lows (or lower lows/lower highs)
+- **CHoCH present**: Multiple changes of character = choppy/ranging
+- **Multiple touches**: Range high and low tested 2+ times each
+- **Mean Reversion Score > 50**: Price regularly returns to midpoint
+
+### 2. MAPPING RANGE BOUNDARIES WITH SMC
+- **Range Resistance**: Bearish OBs and bearish FVGs near range high
+- **Range Support**: Bullish OBs and bullish FVGs near range low
+- **Equal Highs/Lows**: Proven S/R levels with 3+ touches are strongest boundaries
+- **Liquidity pools**: Above range highs (buy-side) and below range lows (sell-side)
+- Unmitigated zones are active; mitigated zones are spent
+
+### 3. ENTRY STRATEGIES
+
+**Setup 1: Buy at Range Low + Bullish OB/FVG**
+- Price drops to range low (discount zone, <30% of range)
+- Bullish OB or FVG overlaps with range support
+- Enter LONG at the OB/FVG zone
+- SL: Below the OB/FVG zone (beyond the range low + ATR buffer)
+- TP: Range midpoint (conservative) or range high (aggressive)
+
+**Setup 2: Sell at Range High + Bearish OB/FVG**
+- Price rises to range high (premium zone, >70% of range)
+- Bearish OB or FVG overlaps with range resistance
+- Enter SHORT at the OB/FVG zone
+- SL: Above the OB/FVG zone (beyond the range high + ATR buffer)
+- TP: Range midpoint (conservative) or range low (aggressive)
+
+**Setup 3: Liquidity Sweep Reversal (Highest Probability)**
+- Price sweeps beyond range high (takes buy-side liquidity) then reverses
+  - Enter SHORT after sweep with CHoCH confirmation
+- Price sweeps beyond range low (takes sell-side liquidity) then reverses
+  - Enter LONG after sweep with CHoCH confirmation
+- SL: Beyond the sweep high/low + ATR buffer
+- TP: Opposite range extreme
+
+**Setup 4: Equal Level Bounce**
+- Price approaches proven equal highs (3+ touches) or equal lows (3+ touches)
+- These are liquidity magnets — expect price to reach them
+- After reaching the level, look for rejection candles and enter reversal
+- Works best when confluent with OB or FVG at the same zone
+
+### 4. STOP LOSS PLACEMENT (CRITICAL)
+- For BUY: Stop loss MUST be BELOW entry price
+  - Place below the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range low to survive a liquidity sweep
+- For SELL: Stop loss MUST be ABOVE entry price
+  - Place above the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range high to survive a liquidity sweep
+- **MINIMUM SL DISTANCE**: At least 1x ATR from entry. SL within 0.5% is TOO TIGHT.
+- For gold (XAUUSD): minimum SL should be $15-30+ from entry
+- If you cannot place SL with adequate distance while maintaining R:R >= 1.5:1, output "hold"
+
+### 5. TAKE PROFIT TARGETS
+- **Conservative**: Range midpoint (equilibrium) — safest target in ranges
+- **Standard**: Opposite range extreme — full range move
+- **With confluence**: Proven equal level or strong OB on the opposite side
+- Minimum R:R: 1.5:1
+
+### 6. STRUCTURAL BIAS FILTER (CRITICAL FOR PROFITABILITY)
+Backtesting shows that trading WITH the structural bias is far more profitable than fading it:
+- **BULLISH structural bias** (e.g., XAUUSD in an uptrend): BUY at range discount = ~70% win rate. SELL at range premium = ~35% win rate. **Strongly prefer BUY trades. Reduce confidence on SELL trades or skip them.**
+- **BEARISH structural bias**: SELL at range premium is the higher-probability trade. Skip or reduce confidence on BUY trades.
+- **NEUTRAL**: Both sides equally valid.
+- Check the "Structural Bias (Higher Timeframe)" field in your data and factor it into every decision.
+
+### 7. WHEN NOT TO TRADE
+- **Trending market**: ADX > 25 with clear BOS series — DO NOT fade the trend
+- **Breakout in progress**: Price breaking range with momentum + volume — wait for new range
+- **Range too narrow**: If range width < 1x ATR, not enough room for a trade
+- **No SMC confluence**: Range extremes with no OB/FVG support — skip
+- **Mid-range**: Price at equilibrium with no clear direction — wait for extreme
+
+### 8. CRITICAL: DO NOT FADE A BREAKOUT
+- If price breaks the range with a strong BOS + high volume, the range is OVER
+- Do not try to sell a breakout above range high or buy a breakdown below range low
+- Instead output "hold" and wait for a new range to form
+- A confirmed breakout = transition from range to trend
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation**
+5. **Never fade a confirmed breakout — if ADX > 25 with BOS, DO NOT counter-trade**
+6. **Stop loss MUST be on correct side of entry**
+7. **Only trade at range extremes with SMC confluence, never mid-range**
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71743.88500
+- **Date**: 2026-03-16
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: low
+
+## RANGE ANALYSIS (Critical for Range Trading)
+- **Is Ranging**: No clear range
+- **Range High (Resistance)**: 73894.83000
+- **Range Low (Support)**: 69200.78000
+- **Range Midpoint (Equilibrium)**: 71547.80500
+- **Range Width**: 6.56% of price
+- **Price Position**: EQUILIBRIUM (54% within range)
+- **Mean Reversion Score**: 62/100 (higher = stronger range behavior)
+- **Touches of Range High**: 1
+- **Touches of Range Low**: 5
+- **Trend Strength**: 0.21 (lower = more range-like)
+- **Structural Bias (Higher Timeframe)**: NEUTRAL
+
+### Range Interpretation:
+- PREMIUM (>70%): Price near range top — favor SELL entries at bearish OBs/FVGs
+- DISCOUNT (<30%): Price near range bottom — favor BUY entries at bullish OBs/FVGs
+- EQUILIBRIUM (30-70%): Mid-range — wait for price to reach an extreme
+- Multiple touches = proven boundary. More touches = stronger level.
+- Mean Reversion Score >60 = strong range. >80 = very strong range.
+
+### Structural Bias Filter (IMPORTANT):
+- **BULLISH structural bias**: The broader trend is UP. Range BUYS at discount are HIGH PROBABILITY. Range SELLS at premium are LOW PROBABILITY — the range is more likely to break upward. Prefer buy-only or reduce sell confidence.
+- **BEARISH structural bias**: The broader trend is DOWN. Range SELLS at premium are HIGH PROBABILITY. Range BUYS at discount are LOW PROBABILITY — the range is more likely to break downward. Prefer sell-only or reduce buy confidence.
+- **NEUTRAL structural bias**: No dominant trend. Both buy and sell at range extremes are valid.
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BEARISH
+**Premium/Discount**: PREMIUM zone (79%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70096.91
+  - BOS HIGH at 71316.86 [RECENT]
+  - CHoCH HIGH at 68190.89 (potential reversal)
+  - CHoCH HIGH at 71774.21 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 63015.93000-65582.58000 | Strength: 80% | MITIGATED | 12.17% from price
+  - BULLISH OB: 65034.65000-67067.00000 | Strength: 80% | MITIGATED | 9.35% from price
+  - BULLISH OB: 66143.83000-68989.60000 | Strength: 80% | MITIGATED | 7.81% from price
+  - BEARISH OB: 72863.14000-74043.78000 | Strength: 80% | MITIGATED | 3.21% from price
+  - BEARISH OB: 66738.80000-67512.95000 | Strength: 67% | MITIGATED | -5.90% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 69283.21000-69747.06000 | FILLED | 3.43% below price (expect bounce UP)
+  - BULLISH FVG: 69764.77000-70369.88000 | FILLED | 2.76% below price (expect bounce UP)
+  - BULLISH FVG: 70548.04000-70955.51000 | FILLED | 1.67% below price (expect bounce UP)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71774.21000 | Strength: 93% | UNSWEPT | 0.04% above
+  - BUY-SIDE at 71316.86000 | Strength: 85% | UNSWEPT | 0.60% below
+  - SELL-SIDE at 70312.13000 | Strength: 78% | UNSWEPT | 2.00% below
+  - BUY-SIDE at 73894.83000 | Strength: 67% | UNSWEPT | 3.00% above
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 73969.30500 | Touches: 2 | FORMING | UNSWEPT | 3.10% above
+  - EQUAL HIGHS (Resistance) at 71888.96200 | Touches: 5 | PROVEN | UNSWEPT | 0.20% above
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 71563.95400 | Touches: 5 | PROVEN | SWEPT | 0.25% above
+  - EQUAL HIGHS (Resistance) at 71301.21800 | Touches: 5 | PROVEN | SWEPT | 0.62% above
+  - EQUAL LOWS (Support) at 65111.78000 | Touches: 6 | PROVEN | UNSWEPT | 9.24% below
+    >>6 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 48.4 (neutral)
+- MACD: 394.64371
+- MACD Signal: 397.64156
+- MACD Histogram: -2.99785 (bearish)
+
+### Trend
+- EMA20: 71147.57320 (Price above)
+- EMA50: 70363.64670 (Price above)
+- ADX: 11.5 (Weak trend - favorable for range trading)
+
+### Volatility
+- ATR(14): 619.75000
+- BB Upper: 72513.37489
+- BB Middle: 71307.36950
+- BB Lower: 70101.36411
+- BB Width: 3.38%
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past range trades. Study what went wrong
+and apply corrections. Pay special attention to fakeout and premature entry lessons.
+
+
+## YOUR TASK
+
+Analyze the range and SMC data to make a range-trading decision.
+
+Think step-by-step:
+1. Is the market ranging? (Check ADX, BOS pattern, mean reversion score)
+2. Where are the range boundaries? (Map OBs, FVGs, equal levels at extremes)
+3. Is price at a range extreme? (Premium/Discount zone, not equilibrium)
+4. Is there SMC confluence at this extreme? (OB + FVG overlap, unmitigated zones)
+5. Has there been a liquidity sweep? (Sweep beyond range = highest probability entry)
+6. Where should SL be placed? (Beyond OB/FVG + ATR buffer, beyond range extreme)
+7. What is the TP target? (Opposite extreme or midpoint)
+8. Is R:R acceptable? (Must be >= 1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Long position. Use when:
+  - Market is ranging AND price is in discount zone (<30% of range)
+  - Bullish OB or FVG confluence at range support
+  - OR: Sell-side liquidity sweep just occurred (price swept below range then reversed)
+  - MUST provide entry_price, stop_loss (BELOW entry), profit_target
+
+- **sell_to_enter** - Short position. Use when:
+  - Market is ranging AND price is in premium zone (>70% of range)
+  - Bearish OB or FVG confluence at range resistance
+  - OR: Buy-side liquidity sweep just occurred (price swept above range then reversed)
+  - MUST provide entry_price, stop_loss (ABOVE entry), profit_target
+
+- **hold** - No action. Use when:
+  - Market is NOT ranging (trending with clear BOS)
+  - Price is at equilibrium (mid-range, no edge)
+  - No SMC confluence at current price level
+  - Breakout is in progress (do not fade it)
+  - Range is too narrow for a trade
+
+- **close** - Exit existing position. Use when:
+  - Price reached opposite range extreme (TP zone)
+  - Range is breaking (confirmed BOS beyond range)
+  - Setup invalidated
+
+## ORDER TYPE
+- **limit** - Preferred for entries at OB/FVG zones (waiting for price to reach zone)
+- **market** - Use when price is already at the zone and showing rejection, or after a liquidity sweep
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+Range trades typically use tighter trailing stops since the move is capped:
+- **Tight range** (small ATR, narrow range): 1.5-2.0x ATR
+- **Normal range**: 2.0-2.5x ATR
+- **Wide range** (large ATR): 2.5-3.5x ATR
+- **XAUUSD/Gold in range**: 2.0-3.0x ATR
+- If unsure, default to 2.0x ATR (tighter than trend-following)
+
+Remember:
+- Ranges are your edge — most traders lose money fighting ranges by trying to catch breakouts
+- SMC zones define WHERE to enter within the range
+- Liquidity sweeps beyond range = smart money entry signal
+- Always trade FROM the extreme, never from the middle
+- When the range breaks, STOP trading the range
+================================================================================
+2026-03-16 07:29:31,384 - INFO - Range Quant decision for BTCUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-16 07:29:31,385 - INFO - BTCUSD: HOLD (confidence: 0.85)
+2026-03-16 07:29:55,063 - INFO - Ownership check: my_source='range_quant_btcusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:29:55,063 - INFO - Position check: 1 total open, 0 owned by 'range_quant_btcusd' (BTCUSD)
+2026-03-16 07:29:56,968 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:30:22,681 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:30:22,724 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:30:22,725 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:30:31,350 - INFO - Ownership check: my_source='range_quant_xauusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:30:31,350 - INFO - Position check: 1 total open, 0 owned by 'range_quant_xauusd' (XAUUSD)
+2026-03-16 07:30:55,082 - INFO - Ownership check: my_source='range_quant_btcusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:30:55,083 - INFO - Position check: 1 total open, 0 owned by 'range_quant_btcusd' (BTCUSD)
+2026-03-16 07:30:56,978 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:31:22,691 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:31:22,752 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:31:22,753 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:31:31,380 - INFO - Ownership check: my_source='range_quant_xauusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:31:31,381 - INFO - Position check: 1 total open, 0 owned by 'range_quant_xauusd' (XAUUSD)
+2026-03-16 07:31:55,109 - INFO - Ownership check: my_source='range_quant_btcusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:31:55,109 - INFO - Position check: 1 total open, 0 owned by 'range_quant_btcusd' (BTCUSD)
+2026-03-16 07:31:57,007 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:32:22,710 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:32:22,753 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:32:22,754 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:32:31,405 - INFO - Ownership check: my_source='range_quant_xauusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:32:31,406 - INFO - Position check: 1 total open, 0 owned by 'range_quant_xauusd' (XAUUSD)
+2026-03-16 07:32:31,417 - INFO - Running range_quant analysis for BTCUSD...
+2026-03-16 07:32:31,417 - INFO - Range Quant: calling API for BTCUSD (timeout=120s)...
+2026-03-16 07:32:38,491 - INFO - Assumption review check: should_run=False, last_review=2026-03-16 07:22:34.143269
+2026-03-16 07:32:38,540 - INFO - Range Quant API response: status=success [total=7.1s, llm=6.5s, overhead=0.6s]
+2026-03-16 07:32:38,541 - INFO - Range Quant range for BTCUSD: is_ranging=False, mr_score=62.0, price_position=equilibrium
+2026-03-16 07:32:38,542 - INFO - 
+================================================================================
+RANGE QUANT PROMPT SENT for BTCUSD
+================================================================================
+You are a range-bound market specialist using Smart Money Concepts (SMC) levels. You excel at identifying sideways markets and trading reversals at range extremes using institutional zones.
+
+## YOUR TRADING EDGE: RANGE-BOUND MARKETS WITH SMC LEVELS
+
+Most markets spend 60-70% of time in ranges. Your edge is:
+1. Identify when price is ranging (low ADX, oscillating between S/R)
+2. Map SMC zones (OBs, FVGs, equal levels) as high-probability range boundaries
+3. Enter at range extremes where SMC zones provide confluence
+4. Use liquidity sweeps as entry confirmation (smart money grabs stops then reverses)
+5. Target the opposite range extreme or equilibrium
+
+## RANGE TRADING RULES WITH SMC
+
+### 1. CONFIRMING A RANGE
+- **ADX < 25**: Weak or no trend = range conditions
+- **No dominant BOS**: No clear series of higher highs/higher lows (or lower lows/lower highs)
+- **CHoCH present**: Multiple changes of character = choppy/ranging
+- **Multiple touches**: Range high and low tested 2+ times each
+- **Mean Reversion Score > 50**: Price regularly returns to midpoint
+
+### 2. MAPPING RANGE BOUNDARIES WITH SMC
+- **Range Resistance**: Bearish OBs and bearish FVGs near range high
+- **Range Support**: Bullish OBs and bullish FVGs near range low
+- **Equal Highs/Lows**: Proven S/R levels with 3+ touches are strongest boundaries
+- **Liquidity pools**: Above range highs (buy-side) and below range lows (sell-side)
+- Unmitigated zones are active; mitigated zones are spent
+
+### 3. ENTRY STRATEGIES
+
+**Setup 1: Buy at Range Low + Bullish OB/FVG**
+- Price drops to range low (discount zone, <30% of range)
+- Bullish OB or FVG overlaps with range support
+- Enter LONG at the OB/FVG zone
+- SL: Below the OB/FVG zone (beyond the range low + ATR buffer)
+- TP: Range midpoint (conservative) or range high (aggressive)
+
+**Setup 2: Sell at Range High + Bearish OB/FVG**
+- Price rises to range high (premium zone, >70% of range)
+- Bearish OB or FVG overlaps with range resistance
+- Enter SHORT at the OB/FVG zone
+- SL: Above the OB/FVG zone (beyond the range high + ATR buffer)
+- TP: Range midpoint (conservative) or range low (aggressive)
+
+**Setup 3: Liquidity Sweep Reversal (Highest Probability)**
+- Price sweeps beyond range high (takes buy-side liquidity) then reverses
+  - Enter SHORT after sweep with CHoCH confirmation
+- Price sweeps beyond range low (takes sell-side liquidity) then reverses
+  - Enter LONG after sweep with CHoCH confirmation
+- SL: Beyond the sweep high/low + ATR buffer
+- TP: Opposite range extreme
+
+**Setup 4: Equal Level Bounce**
+- Price approaches proven equal highs (3+ touches) or equal lows (3+ touches)
+- These are liquidity magnets — expect price to reach them
+- After reaching the level, look for rejection candles and enter reversal
+- Works best when confluent with OB or FVG at the same zone
+
+### 4. STOP LOSS PLACEMENT (CRITICAL)
+- For BUY: Stop loss MUST be BELOW entry price
+  - Place below the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range low to survive a liquidity sweep
+- For SELL: Stop loss MUST be ABOVE entry price
+  - Place above the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range high to survive a liquidity sweep
+- **MINIMUM SL DISTANCE**: At least 1x ATR from entry. SL within 0.5% is TOO TIGHT.
+- For gold (XAUUSD): minimum SL should be $15-30+ from entry
+- If you cannot place SL with adequate distance while maintaining R:R >= 1.5:1, output "hold"
+
+### 5. TAKE PROFIT TARGETS
+- **Conservative**: Range midpoint (equilibrium) — safest target in ranges
+- **Standard**: Opposite range extreme — full range move
+- **With confluence**: Proven equal level or strong OB on the opposite side
+- Minimum R:R: 1.5:1
+
+### 6. STRUCTURAL BIAS FILTER (CRITICAL FOR PROFITABILITY)
+Backtesting shows that trading WITH the structural bias is far more profitable than fading it:
+- **BULLISH structural bias** (e.g., XAUUSD in an uptrend): BUY at range discount = ~70% win rate. SELL at range premium = ~35% win rate. **Strongly prefer BUY trades. Reduce confidence on SELL trades or skip them.**
+- **BEARISH structural bias**: SELL at range premium is the higher-probability trade. Skip or reduce confidence on BUY trades.
+- **NEUTRAL**: Both sides equally valid.
+- Check the "Structural Bias (Higher Timeframe)" field in your data and factor it into every decision.
+
+### 7. WHEN NOT TO TRADE
+- **Trending market**: ADX > 25 with clear BOS series — DO NOT fade the trend
+- **Breakout in progress**: Price breaking range with momentum + volume — wait for new range
+- **Range too narrow**: If range width < 1x ATR, not enough room for a trade
+- **No SMC confluence**: Range extremes with no OB/FVG support — skip
+- **Mid-range**: Price at equilibrium with no clear direction — wait for extreme
+
+### 8. CRITICAL: DO NOT FADE A BREAKOUT
+- If price breaks the range with a strong BOS + high volume, the range is OVER
+- Do not try to sell a breakout above range high or buy a breakdown below range low
+- Instead output "hold" and wait for a new range to form
+- A confirmed breakout = transition from range to trend
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation**
+5. **Never fade a confirmed breakout — if ADX > 25 with BOS, DO NOT counter-trade**
+6. **Stop loss MUST be on correct side of entry**
+7. **Only trade at range extremes with SMC confluence, never mid-range**
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71818.77500
+- **Date**: 2026-03-16
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: low
+
+## RANGE ANALYSIS (Critical for Range Trading)
+- **Is Ranging**: No clear range
+- **Range High (Resistance)**: 73894.83000
+- **Range Low (Support)**: 69200.78000
+- **Range Midpoint (Equilibrium)**: 71547.80500
+- **Range Width**: 6.56% of price
+- **Price Position**: EQUILIBRIUM (56% within range)
+- **Mean Reversion Score**: 62/100 (higher = stronger range behavior)
+- **Touches of Range High**: 1
+- **Touches of Range Low**: 5
+- **Trend Strength**: 0.22 (lower = more range-like)
+- **Structural Bias (Higher Timeframe)**: NEUTRAL
+
+### Range Interpretation:
+- PREMIUM (>70%): Price near range top — favor SELL entries at bearish OBs/FVGs
+- DISCOUNT (<30%): Price near range bottom — favor BUY entries at bullish OBs/FVGs
+- EQUILIBRIUM (30-70%): Mid-range — wait for price to reach an extreme
+- Multiple touches = proven boundary. More touches = stronger level.
+- Mean Reversion Score >60 = strong range. >80 = very strong range.
+
+### Structural Bias Filter (IMPORTANT):
+- **BULLISH structural bias**: The broader trend is UP. Range BUYS at discount are HIGH PROBABILITY. Range SELLS at premium are LOW PROBABILITY — the range is more likely to break upward. Prefer buy-only or reduce sell confidence.
+- **BEARISH structural bias**: The broader trend is DOWN. Range SELLS at premium are HIGH PROBABILITY. Range BUYS at discount are LOW PROBABILITY — the range is more likely to break downward. Prefer sell-only or reduce buy confidence.
+- **NEUTRAL structural bias**: No dominant trend. Both buy and sell at range extremes are valid.
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BEARISH
+**Premium/Discount**: PREMIUM zone (80%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70096.91
+  - BOS HIGH at 71316.86 [RECENT]
+  - CHoCH HIGH at 68190.89 (potential reversal)
+  - CHoCH HIGH at 71774.21 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 63015.93000-65582.58000 | Strength: 80% | MITIGATED | 12.26% from price
+  - BULLISH OB: 65034.65000-67067.00000 | Strength: 80% | MITIGATED | 9.45% from price
+  - BULLISH OB: 66143.83000-68989.60000 | Strength: 80% | MITIGATED | 7.90% from price
+  - BEARISH OB: 72863.14000-74043.78000 | Strength: 80% | MITIGATED | 3.10% from price
+  - BEARISH OB: 66738.80000-67512.95000 | Strength: 67% | MITIGATED | -6.00% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 69283.21000-69747.06000 | FILLED | 3.53% below price (expect bounce UP)
+  - BULLISH FVG: 69764.77000-70369.88000 | FILLED | 2.86% below price (expect bounce UP)
+  - BULLISH FVG: 70548.04000-70955.51000 | FILLED | 1.77% below price (expect bounce UP)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71774.21000 | Strength: 93% | UNSWEPT | 0.06% below
+  - BUY-SIDE at 71316.86000 | Strength: 85% | UNSWEPT | 0.70% below
+  - SELL-SIDE at 70312.13000 | Strength: 78% | UNSWEPT | 2.10% below
+  - BUY-SIDE at 73894.83000 | Strength: 67% | UNSWEPT | 2.89% above
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 73969.30500 | Touches: 2 | FORMING | UNSWEPT | 2.99% above
+  - EQUAL HIGHS (Resistance) at 71888.96200 | Touches: 5 | PROVEN | UNSWEPT | 0.10% above
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 71563.95400 | Touches: 5 | PROVEN | SWEPT | 0.35% above
+  - EQUAL HIGHS (Resistance) at 71301.21800 | Touches: 5 | PROVEN | SWEPT | 0.72% above
+  - EQUAL LOWS (Support) at 65132.95429 | Touches: 7 | PROVEN | UNSWEPT | 9.31% below
+    >>7 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 49.3 (neutral)
+- MACD: 400.61225
+- MACD Signal: 398.83527
+- MACD Histogram: 1.77699 (bullish)
+
+### Trend
+- EMA20: 71154.69892 (Price above)
+- EMA50: 70366.58082 (Price above)
+- ADX: 11.5 (Weak trend - favorable for range trading)
+
+### Volatility
+- ATR(14): 620.90500
+- BB Upper: 72523.16843
+- BB Middle: 71311.11050
+- BB Lower: 70099.05257
+- BB Width: 3.40%
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past range trades. Study what went wrong
+and apply corrections. Pay special attention to fakeout and premature entry lessons.
+
+
+## YOUR TASK
+
+Analyze the range and SMC data to make a range-trading decision.
+
+Think step-by-step:
+1. Is the market ranging? (Check ADX, BOS pattern, mean reversion score)
+2. Where are the range boundaries? (Map OBs, FVGs, equal levels at extremes)
+3. Is price at a range extreme? (Premium/Discount zone, not equilibrium)
+4. Is there SMC confluence at this extreme? (OB + FVG overlap, unmitigated zones)
+5. Has there been a liquidity sweep? (Sweep beyond range = highest probability entry)
+6. Where should SL be placed? (Beyond OB/FVG + ATR buffer, beyond range extreme)
+7. What is the TP target? (Opposite extreme or midpoint)
+8. Is R:R acceptable? (Must be >= 1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Long position. Use when:
+  - Market is ranging AND price is in discount zone (<30% of range)
+  - Bullish OB or FVG confluence at range support
+  - OR: Sell-side liquidity sweep just occurred (price swept below range then reversed)
+  - MUST provide entry_price, stop_loss (BELOW entry), profit_target
+
+- **sell_to_enter** - Short position. Use when:
+  - Market is ranging AND price is in premium zone (>70% of range)
+  - Bearish OB or FVG confluence at range resistance
+  - OR: Buy-side liquidity sweep just occurred (price swept above range then reversed)
+  - MUST provide entry_price, stop_loss (ABOVE entry), profit_target
+
+- **hold** - No action. Use when:
+  - Market is NOT ranging (trending with clear BOS)
+  - Price is at equilibrium (mid-range, no edge)
+  - No SMC confluence at current price level
+  - Breakout is in progress (do not fade it)
+  - Range is too narrow for a trade
+
+- **close** - Exit existing position. Use when:
+  - Price reached opposite range extreme (TP zone)
+  - Range is breaking (confirmed BOS beyond range)
+  - Setup invalidated
+
+## ORDER TYPE
+- **limit** - Preferred for entries at OB/FVG zones (waiting for price to reach zone)
+- **market** - Use when price is already at the zone and showing rejection, or after a liquidity sweep
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+Range trades typically use tighter trailing stops since the move is capped:
+- **Tight range** (small ATR, narrow range): 1.5-2.0x ATR
+- **Normal range**: 2.0-2.5x ATR
+- **Wide range** (large ATR): 2.5-3.5x ATR
+- **XAUUSD/Gold in range**: 2.0-3.0x ATR
+- If unsure, default to 2.0x ATR (tighter than trend-following)
+
+Remember:
+- Ranges are your edge — most traders lose money fighting ranges by trying to catch breakouts
+- SMC zones define WHERE to enter within the range
+- Liquidity sweeps beyond range = smart money entry signal
+- Always trade FROM the extreme, never from the middle
+- When the range breaks, STOP trading the range
+================================================================================
+2026-03-16 07:32:38,580 - INFO - Range Quant decision for BTCUSD: signal=HOLD, confidence=0.9, entry=None, sl=None, tp=None
+2026-03-16 07:32:38,580 - INFO - BTCUSD: HOLD (confidence: 0.90)
+2026-03-16 07:32:55,136 - INFO - Ownership check: my_source='range_quant_btcusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:32:55,137 - INFO - Position check: 1 total open, 0 owned by 'range_quant_btcusd' (BTCUSD)
+2026-03-16 07:32:57,028 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:33:22,708 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:33:22,782 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:33:22,783 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:33:31,442 - INFO - Ownership check: my_source='range_quant_xauusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:33:31,442 - INFO - Position check: 1 total open, 0 owned by 'range_quant_xauusd' (XAUUSD)
+2026-03-16 07:33:53,128 - INFO - Assumption review check: should_run=False, last_review=2026-03-16 07:18:53.028191
+2026-03-16 07:33:55,190 - INFO - Ownership check: my_source='range_quant_btcusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:33:55,191 - INFO - Position check: 1 total open, 0 owned by 'range_quant_btcusd' (BTCUSD)
+2026-03-16 07:33:57,038 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:34:03,867 - INFO - Assumption review check: should_run=False, last_review=2026-03-16 07:24:03.830164
+2026-03-16 07:34:22,714 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:34:22,819 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:34:22,820 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:34:31,458 - INFO - Ownership check: my_source='range_quant_xauusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:34:31,459 - INFO - Position check: 1 total open, 0 owned by 'range_quant_xauusd' (XAUUSD)
+2026-03-16 07:34:55,206 - INFO - Ownership check: my_source='range_quant_btcusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:34:55,207 - INFO - Position check: 1 total open, 0 owned by 'range_quant_btcusd' (BTCUSD)
+2026-03-16 07:34:57,045 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:35:22,695 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:35:22,849 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:35:22,850 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:35:31,473 - INFO - Ownership check: my_source='range_quant_xauusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:35:31,474 - INFO - Position check: 1 total open, 0 owned by 'range_quant_xauusd' (XAUUSD)
+2026-03-16 07:35:38,581 - INFO - Running range_quant analysis for BTCUSD...
+2026-03-16 07:35:38,581 - INFO - Range Quant: calling API for BTCUSD (timeout=120s)...
+2026-03-16 07:35:47,236 - INFO - Range Quant API response: status=success [total=8.7s, llm=8.0s, overhead=0.7s]
+2026-03-16 07:35:47,236 - INFO - Range Quant range for BTCUSD: is_ranging=False, mr_score=61.5, price_position=equilibrium
+2026-03-16 07:35:47,237 - INFO - 
+================================================================================
+RANGE QUANT PROMPT SENT for BTCUSD
+================================================================================
+You are a range-bound market specialist using Smart Money Concepts (SMC) levels. You excel at identifying sideways markets and trading reversals at range extremes using institutional zones.
+
+## YOUR TRADING EDGE: RANGE-BOUND MARKETS WITH SMC LEVELS
+
+Most markets spend 60-70% of time in ranges. Your edge is:
+1. Identify when price is ranging (low ADX, oscillating between S/R)
+2. Map SMC zones (OBs, FVGs, equal levels) as high-probability range boundaries
+3. Enter at range extremes where SMC zones provide confluence
+4. Use liquidity sweeps as entry confirmation (smart money grabs stops then reverses)
+5. Target the opposite range extreme or equilibrium
+
+## RANGE TRADING RULES WITH SMC
+
+### 1. CONFIRMING A RANGE
+- **ADX < 25**: Weak or no trend = range conditions
+- **No dominant BOS**: No clear series of higher highs/higher lows (or lower lows/lower highs)
+- **CHoCH present**: Multiple changes of character = choppy/ranging
+- **Multiple touches**: Range high and low tested 2+ times each
+- **Mean Reversion Score > 50**: Price regularly returns to midpoint
+
+### 2. MAPPING RANGE BOUNDARIES WITH SMC
+- **Range Resistance**: Bearish OBs and bearish FVGs near range high
+- **Range Support**: Bullish OBs and bullish FVGs near range low
+- **Equal Highs/Lows**: Proven S/R levels with 3+ touches are strongest boundaries
+- **Liquidity pools**: Above range highs (buy-side) and below range lows (sell-side)
+- Unmitigated zones are active; mitigated zones are spent
+
+### 3. ENTRY STRATEGIES
+
+**Setup 1: Buy at Range Low + Bullish OB/FVG**
+- Price drops to range low (discount zone, <30% of range)
+- Bullish OB or FVG overlaps with range support
+- Enter LONG at the OB/FVG zone
+- SL: Below the OB/FVG zone (beyond the range low + ATR buffer)
+- TP: Range midpoint (conservative) or range high (aggressive)
+
+**Setup 2: Sell at Range High + Bearish OB/FVG**
+- Price rises to range high (premium zone, >70% of range)
+- Bearish OB or FVG overlaps with range resistance
+- Enter SHORT at the OB/FVG zone
+- SL: Above the OB/FVG zone (beyond the range high + ATR buffer)
+- TP: Range midpoint (conservative) or range low (aggressive)
+
+**Setup 3: Liquidity Sweep Reversal (Highest Probability)**
+- Price sweeps beyond range high (takes buy-side liquidity) then reverses
+  - Enter SHORT after sweep with CHoCH confirmation
+- Price sweeps beyond range low (takes sell-side liquidity) then reverses
+  - Enter LONG after sweep with CHoCH confirmation
+- SL: Beyond the sweep high/low + ATR buffer
+- TP: Opposite range extreme
+
+**Setup 4: Equal Level Bounce**
+- Price approaches proven equal highs (3+ touches) or equal lows (3+ touches)
+- These are liquidity magnets — expect price to reach them
+- After reaching the level, look for rejection candles and enter reversal
+- Works best when confluent with OB or FVG at the same zone
+
+### 4. STOP LOSS PLACEMENT (CRITICAL)
+- For BUY: Stop loss MUST be BELOW entry price
+  - Place below the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range low to survive a liquidity sweep
+- For SELL: Stop loss MUST be ABOVE entry price
+  - Place above the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range high to survive a liquidity sweep
+- **MINIMUM SL DISTANCE**: At least 1x ATR from entry. SL within 0.5% is TOO TIGHT.
+- For gold (XAUUSD): minimum SL should be $15-30+ from entry
+- If you cannot place SL with adequate distance while maintaining R:R >= 1.5:1, output "hold"
+
+### 5. TAKE PROFIT TARGETS
+- **Conservative**: Range midpoint (equilibrium) — safest target in ranges
+- **Standard**: Opposite range extreme — full range move
+- **With confluence**: Proven equal level or strong OB on the opposite side
+- Minimum R:R: 1.5:1
+
+### 6. STRUCTURAL BIAS FILTER (CRITICAL FOR PROFITABILITY)
+Backtesting shows that trading WITH the structural bias is far more profitable than fading it:
+- **BULLISH structural bias** (e.g., XAUUSD in an uptrend): BUY at range discount = ~70% win rate. SELL at range premium = ~35% win rate. **Strongly prefer BUY trades. Reduce confidence on SELL trades or skip them.**
+- **BEARISH structural bias**: SELL at range premium is the higher-probability trade. Skip or reduce confidence on BUY trades.
+- **NEUTRAL**: Both sides equally valid.
+- Check the "Structural Bias (Higher Timeframe)" field in your data and factor it into every decision.
+
+### 7. WHEN NOT TO TRADE
+- **Trending market**: ADX > 25 with clear BOS series — DO NOT fade the trend
+- **Breakout in progress**: Price breaking range with momentum + volume — wait for new range
+- **Range too narrow**: If range width < 1x ATR, not enough room for a trade
+- **No SMC confluence**: Range extremes with no OB/FVG support — skip
+- **Mid-range**: Price at equilibrium with no clear direction — wait for extreme
+
+### 8. CRITICAL: DO NOT FADE A BREAKOUT
+- If price breaks the range with a strong BOS + high volume, the range is OVER
+- Do not try to sell a breakout above range high or buy a breakdown below range low
+- Instead output "hold" and wait for a new range to form
+- A confirmed breakout = transition from range to trend
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation**
+5. **Never fade a confirmed breakout — if ADX > 25 with BOS, DO NOT counter-trade**
+6. **Stop loss MUST be on correct side of entry**
+7. **Only trade at range extremes with SMC confluence, never mid-range**
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 71977.76500
+- **Date**: 2026-03-16
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: low
+
+## RANGE ANALYSIS (Critical for Range Trading)
+- **Is Ranging**: No clear range
+- **Range High (Resistance)**: 73894.83000
+- **Range Low (Support)**: 69200.78000
+- **Range Midpoint (Equilibrium)**: 71547.80500
+- **Range Width**: 6.56% of price
+- **Price Position**: EQUILIBRIUM (59% within range)
+- **Mean Reversion Score**: 61/100 (higher = stronger range behavior)
+- **Touches of Range High**: 1
+- **Touches of Range Low**: 5
+- **Trend Strength**: 0.23 (lower = more range-like)
+- **Structural Bias (Higher Timeframe)**: NEUTRAL
+
+### Range Interpretation:
+- PREMIUM (>70%): Price near range top — favor SELL entries at bearish OBs/FVGs
+- DISCOUNT (<30%): Price near range bottom — favor BUY entries at bullish OBs/FVGs
+- EQUILIBRIUM (30-70%): Mid-range — wait for price to reach an extreme
+- Multiple touches = proven boundary. More touches = stronger level.
+- Mean Reversion Score >60 = strong range. >80 = very strong range.
+
+### Structural Bias Filter (IMPORTANT):
+- **BULLISH structural bias**: The broader trend is UP. Range BUYS at discount are HIGH PROBABILITY. Range SELLS at premium are LOW PROBABILITY — the range is more likely to break upward. Prefer buy-only or reduce sell confidence.
+- **BEARISH structural bias**: The broader trend is DOWN. Range SELLS at premium are HIGH PROBABILITY. Range BUYS at discount are LOW PROBABILITY — the range is more likely to break downward. Prefer sell-only or reduce buy confidence.
+- **NEUTRAL structural bias**: No dominant trend. Both buy and sell at range extremes are valid.
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BEARISH
+**Premium/Discount**: PREMIUM zone (81%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70096.91
+  - BOS HIGH at 71316.86 [RECENT]
+  - CHoCH HIGH at 68190.89 (potential reversal)
+  - CHoCH HIGH at 71774.21 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 63015.93000-65582.58000 | Strength: 80% | MITIGATED | 12.45% from price
+  - BULLISH OB: 65034.65000-67067.00000 | Strength: 80% | MITIGATED | 9.65% from price
+  - BULLISH OB: 66143.83000-68989.60000 | Strength: 80% | MITIGATED | 8.11% from price
+  - BEARISH OB: 72863.14000-74043.78000 | Strength: 80% | MITIGATED | 2.87% from price
+  - BEARISH OB: 66738.80000-67512.95000 | Strength: 67% | MITIGATED | -6.20% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 69283.21000-69747.06000 | FILLED | 3.74% below price (expect bounce UP)
+  - BULLISH FVG: 69764.77000-70369.88000 | FILLED | 3.07% below price (expect bounce UP)
+  - BULLISH FVG: 70548.04000-70955.51000 | FILLED | 1.99% below price (expect bounce UP)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71774.21000 | Strength: 93% | UNSWEPT | 0.28% below
+  - BUY-SIDE at 71316.86000 | Strength: 85% | UNSWEPT | 0.92% below
+  - SELL-SIDE at 70312.13000 | Strength: 78% | UNSWEPT | 2.31% below
+  - BUY-SIDE at 73894.83000 | Strength: 67% | UNSWEPT | 2.66% above
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 73969.30500 | Touches: 2 | FORMING | UNSWEPT | 2.77% above
+  - EQUAL HIGHS (Resistance) at 71888.96200 | Touches: 5 | PROVEN | UNSWEPT | 0.12% above
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 71563.95400 | Touches: 5 | PROVEN | SWEPT | 0.57% above
+  - EQUAL HIGHS (Resistance) at 71301.21800 | Touches: 5 | PROVEN | SWEPT | 0.94% above
+  - EQUAL LOWS (Support) at 65132.95429 | Touches: 7 | PROVEN | UNSWEPT | 9.51% below
+    >>7 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 51.2 (neutral)
+- MACD: 413.29681
+- MACD Signal: 401.37218
+- MACD Histogram: 11.92463 (bullish)
+
+### Trend
+- EMA20: 71169.84272 (Price above)
+- EMA50: 70372.81650 (Price above)
+- ADX: 11.5 (Weak trend - favorable for range trading)
+
+### Volatility
+- ATR(14): 632.01429
+- BB Upper: 72546.91456
+- BB Middle: 71319.06100
+- BB Lower: 70091.20744
+- BB Width: 3.44%
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past range trades. Study what went wrong
+and apply corrections. Pay special attention to fakeout and premature entry lessons.
+
+
+## YOUR TASK
+
+Analyze the range and SMC data to make a range-trading decision.
+
+Think step-by-step:
+1. Is the market ranging? (Check ADX, BOS pattern, mean reversion score)
+2. Where are the range boundaries? (Map OBs, FVGs, equal levels at extremes)
+3. Is price at a range extreme? (Premium/Discount zone, not equilibrium)
+4. Is there SMC confluence at this extreme? (OB + FVG overlap, unmitigated zones)
+5. Has there been a liquidity sweep? (Sweep beyond range = highest probability entry)
+6. Where should SL be placed? (Beyond OB/FVG + ATR buffer, beyond range extreme)
+7. What is the TP target? (Opposite extreme or midpoint)
+8. Is R:R acceptable? (Must be >= 1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Long position. Use when:
+  - Market is ranging AND price is in discount zone (<30% of range)
+  - Bullish OB or FVG confluence at range support
+  - OR: Sell-side liquidity sweep just occurred (price swept below range then reversed)
+  - MUST provide entry_price, stop_loss (BELOW entry), profit_target
+
+- **sell_to_enter** - Short position. Use when:
+  - Market is ranging AND price is in premium zone (>70% of range)
+  - Bearish OB or FVG confluence at range resistance
+  - OR: Buy-side liquidity sweep just occurred (price swept above range then reversed)
+  - MUST provide entry_price, stop_loss (ABOVE entry), profit_target
+
+- **hold** - No action. Use when:
+  - Market is NOT ranging (trending with clear BOS)
+  - Price is at equilibrium (mid-range, no edge)
+  - No SMC confluence at current price level
+  - Breakout is in progress (do not fade it)
+  - Range is too narrow for a trade
+
+- **close** - Exit existing position. Use when:
+  - Price reached opposite range extreme (TP zone)
+  - Range is breaking (confirmed BOS beyond range)
+  - Setup invalidated
+
+## ORDER TYPE
+- **limit** - Preferred for entries at OB/FVG zones (waiting for price to reach zone)
+- **market** - Use when price is already at the zone and showing rejection, or after a liquidity sweep
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+Range trades typically use tighter trailing stops since the move is capped:
+- **Tight range** (small ATR, narrow range): 1.5-2.0x ATR
+- **Normal range**: 2.0-2.5x ATR
+- **Wide range** (large ATR): 2.5-3.5x ATR
+- **XAUUSD/Gold in range**: 2.0-3.0x ATR
+- If unsure, default to 2.0x ATR (tighter than trend-following)
+
+Remember:
+- Ranges are your edge — most traders lose money fighting ranges by trying to catch breakouts
+- SMC zones define WHERE to enter within the range
+- Liquidity sweeps beyond range = smart money entry signal
+- Always trade FROM the extreme, never from the middle
+- When the range breaks, STOP trading the range
+================================================================================
+2026-03-16 07:35:47,276 - INFO - Range Quant decision for BTCUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-16 07:35:47,277 - INFO - BTCUSD: HOLD (confidence: 0.85)
+2026-03-16 07:35:55,232 - INFO - Ownership check: my_source='range_quant_btcusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:35:55,233 - INFO - Position check: 1 total open, 0 owned by 'range_quant_btcusd' (BTCUSD)
+2026-03-16 07:35:57,059 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:36:22,719 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:36:22,870 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:36:22,871 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:36:31,491 - INFO - Ownership check: my_source='range_quant_xauusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:36:31,491 - INFO - Position check: 1 total open, 0 owned by 'range_quant_xauusd' (XAUUSD)
+2026-03-16 07:36:55,274 - INFO - Ownership check: my_source='range_quant_btcusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:36:55,274 - INFO - Position check: 1 total open, 0 owned by 'range_quant_btcusd' (BTCUSD)
+2026-03-16 07:36:57,095 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:37:12,751 - INFO - ==================================================
+2026-03-16 07:37:12,751 - INFO - QUANT AUTOMATION STARTED
+2026-03-16 07:37:12,752 - INFO - ==================================================
+2026-03-16 07:37:12,752 - INFO - Pipeline: smc_quant
+2026-03-16 07:37:12,753 - INFO - Symbols: XAUUSD
+2026-03-16 07:37:12,753 - INFO - Analysis interval: 3600s
+2026-03-16 07:37:12,754 - INFO - Assumption review interval: 3600s
+2026-03-16 07:37:12,754 - INFO - Auto-execute: False
+2026-03-16 07:37:12,754 - INFO - ==================================================
+2026-03-16 07:37:12,755 - INFO - Assumption review loop started (interval: 3600s, auto_apply: False)
+2026-03-16 07:37:12,755 - INFO - Assumption review check: should_run=True, last_review=None
+2026-03-16 07:37:12,756 - INFO - ==================================================
+2026-03-16 07:37:12,756 - INFO - RUNNING POSITION ASSUMPTION REVIEW
+2026-03-16 07:37:12,757 - INFO -   source_filter='smc_xagusd', symbols=['XAUUSD']
+2026-03-16 07:37:12,757 - INFO - ==================================================
+2026-03-16 07:37:12,758 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:37:12,765 - INFO - Position management loop started
+2026-03-16 07:37:12,785 - INFO - Ownership check: my_source='smc_xagusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:37:12,786 - INFO - Position check: 1 total open, 0 owned by 'smc_xagusd' (XAUUSD)
+2026-03-16 07:37:12,795 - INFO - Assumption review completed: 0 reports in 0.0s
+2026-03-16 07:37:12,795 - INFO - No positions to review.
+2026-03-16 07:37:22,735 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:37:22,901 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:37:22,901 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:37:31,519 - INFO - Ownership check: my_source='range_quant_xauusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:37:31,520 - INFO - Position check: 1 total open, 0 owned by 'range_quant_xauusd' (XAUUSD)
+2026-03-16 07:37:38,509 - INFO - Assumption review check: should_run=False, last_review=2026-03-16 07:22:34.143269
+2026-03-16 07:37:55,309 - INFO - Ownership check: my_source='range_quant_btcusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:37:55,309 - INFO - Position check: 1 total open, 0 owned by 'range_quant_btcusd' (BTCUSD)
+2026-03-16 07:37:57,110 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:38:20,775 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:38:25,102 - INFO - Ownership check: my_source='smc_xagusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:38:25,139 - INFO - Position check: 1 total open, 0 owned by 'smc_xagusd' (XAUUSD)
+2026-03-16 07:38:27,545 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:38:34,348 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:38:34,395 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:38:44,372 - INFO - Ownership check: my_source='range_quant_xauusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:38:44,454 - INFO - Position check: 1 total open, 0 owned by 'range_quant_xauusd' (XAUUSD)
+2026-03-16 07:38:51,917 - INFO - Running range_quant analysis for BTCUSD...
+2026-03-16 07:38:51,964 - INFO - Range Quant: calling API for BTCUSD (timeout=120s)...
+2026-03-16 07:39:06,668 - INFO - Assumption review check: should_run=False, last_review=2026-03-16 07:18:53.028191
+2026-03-16 07:39:13,360 - INFO - Ownership check: my_source='range_quant_btcusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:39:13,392 - INFO - Position check: 1 total open, 0 owned by 'range_quant_btcusd' (BTCUSD)
+2026-03-16 07:39:18,860 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:39:19,113 - INFO - Assumption review check: should_run=False, last_review=2026-03-16 07:24:03.830164
+2026-03-16 07:39:28,103 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:39:35,657 - INFO - Ownership check: my_source='smc_xagusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:39:35,721 - INFO - Position check: 1 total open, 0 owned by 'smc_xagusd' (XAUUSD)
+2026-03-16 07:39:38,630 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:39:49,508 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:39:49,509 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:39:49,527 - INFO - Range Quant API response: status=success [total=57.6s, llm=9.9s, overhead=47.6s]
+2026-03-16 07:39:49,527 - INFO - Range Quant range for BTCUSD: is_ranging=False, mr_score=60.9, price_position=equilibrium
+2026-03-16 07:39:49,528 - INFO - 
+================================================================================
+RANGE QUANT PROMPT SENT for BTCUSD
+================================================================================
+You are a range-bound market specialist using Smart Money Concepts (SMC) levels. You excel at identifying sideways markets and trading reversals at range extremes using institutional zones.
+
+## YOUR TRADING EDGE: RANGE-BOUND MARKETS WITH SMC LEVELS
+
+Most markets spend 60-70% of time in ranges. Your edge is:
+1. Identify when price is ranging (low ADX, oscillating between S/R)
+2. Map SMC zones (OBs, FVGs, equal levels) as high-probability range boundaries
+3. Enter at range extremes where SMC zones provide confluence
+4. Use liquidity sweeps as entry confirmation (smart money grabs stops then reverses)
+5. Target the opposite range extreme or equilibrium
+
+## RANGE TRADING RULES WITH SMC
+
+### 1. CONFIRMING A RANGE
+- **ADX < 25**: Weak or no trend = range conditions
+- **No dominant BOS**: No clear series of higher highs/higher lows (or lower lows/lower highs)
+- **CHoCH present**: Multiple changes of character = choppy/ranging
+- **Multiple touches**: Range high and low tested 2+ times each
+- **Mean Reversion Score > 50**: Price regularly returns to midpoint
+
+### 2. MAPPING RANGE BOUNDARIES WITH SMC
+- **Range Resistance**: Bearish OBs and bearish FVGs near range high
+- **Range Support**: Bullish OBs and bullish FVGs near range low
+- **Equal Highs/Lows**: Proven S/R levels with 3+ touches are strongest boundaries
+- **Liquidity pools**: Above range highs (buy-side) and below range lows (sell-side)
+- Unmitigated zones are active; mitigated zones are spent
+
+### 3. ENTRY STRATEGIES
+
+**Setup 1: Buy at Range Low + Bullish OB/FVG**
+- Price drops to range low (discount zone, <30% of range)
+- Bullish OB or FVG overlaps with range support
+- Enter LONG at the OB/FVG zone
+- SL: Below the OB/FVG zone (beyond the range low + ATR buffer)
+- TP: Range midpoint (conservative) or range high (aggressive)
+
+**Setup 2: Sell at Range High + Bearish OB/FVG**
+- Price rises to range high (premium zone, >70% of range)
+- Bearish OB or FVG overlaps with range resistance
+- Enter SHORT at the OB/FVG zone
+- SL: Above the OB/FVG zone (beyond the range high + ATR buffer)
+- TP: Range midpoint (conservative) or range low (aggressive)
+
+**Setup 3: Liquidity Sweep Reversal (Highest Probability)**
+- Price sweeps beyond range high (takes buy-side liquidity) then reverses
+  - Enter SHORT after sweep with CHoCH confirmation
+- Price sweeps beyond range low (takes sell-side liquidity) then reverses
+  - Enter LONG after sweep with CHoCH confirmation
+- SL: Beyond the sweep high/low + ATR buffer
+- TP: Opposite range extreme
+
+**Setup 4: Equal Level Bounce**
+- Price approaches proven equal highs (3+ touches) or equal lows (3+ touches)
+- These are liquidity magnets — expect price to reach them
+- After reaching the level, look for rejection candles and enter reversal
+- Works best when confluent with OB or FVG at the same zone
+
+### 4. STOP LOSS PLACEMENT (CRITICAL)
+- For BUY: Stop loss MUST be BELOW entry price
+  - Place below the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range low to survive a liquidity sweep
+- For SELL: Stop loss MUST be ABOVE entry price
+  - Place above the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range high to survive a liquidity sweep
+- **MINIMUM SL DISTANCE**: At least 1x ATR from entry. SL within 0.5% is TOO TIGHT.
+- For gold (XAUUSD): minimum SL should be $15-30+ from entry
+- If you cannot place SL with adequate distance while maintaining R:R >= 1.5:1, output "hold"
+
+### 5. TAKE PROFIT TARGETS
+- **Conservative**: Range midpoint (equilibrium) — safest target in ranges
+- **Standard**: Opposite range extreme — full range move
+- **With confluence**: Proven equal level or strong OB on the opposite side
+- Minimum R:R: 1.5:1
+
+### 6. STRUCTURAL BIAS FILTER (CRITICAL FOR PROFITABILITY)
+Backtesting shows that trading WITH the structural bias is far more profitable than fading it:
+- **BULLISH structural bias** (e.g., XAUUSD in an uptrend): BUY at range discount = ~70% win rate. SELL at range premium = ~35% win rate. **Strongly prefer BUY trades. Reduce confidence on SELL trades or skip them.**
+- **BEARISH structural bias**: SELL at range premium is the higher-probability trade. Skip or reduce confidence on BUY trades.
+- **NEUTRAL**: Both sides equally valid.
+- Check the "Structural Bias (Higher Timeframe)" field in your data and factor it into every decision.
+
+### 7. WHEN NOT TO TRADE
+- **Trending market**: ADX > 25 with clear BOS series — DO NOT fade the trend
+- **Breakout in progress**: Price breaking range with momentum + volume — wait for new range
+- **Range too narrow**: If range width < 1x ATR, not enough room for a trade
+- **No SMC confluence**: Range extremes with no OB/FVG support — skip
+- **Mid-range**: Price at equilibrium with no clear direction — wait for extreme
+
+### 8. CRITICAL: DO NOT FADE A BREAKOUT
+- If price breaks the range with a strong BOS + high volume, the range is OVER
+- Do not try to sell a breakout above range high or buy a breakdown below range low
+- Instead output "hold" and wait for a new range to form
+- A confirmed breakout = transition from range to trend
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation**
+5. **Never fade a confirmed breakout — if ADX > 25 with BOS, DO NOT counter-trade**
+6. **Stop loss MUST be on correct side of entry**
+7. **Only trade at range extremes with SMC confluence, never mid-range**
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 72157.88000
+- **Date**: 2026-03-16
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: low
+
+## RANGE ANALYSIS (Critical for Range Trading)
+- **Is Ranging**: No clear range
+- **Range High (Resistance)**: 73894.83000
+- **Range Low (Support)**: 69200.78000
+- **Range Midpoint (Equilibrium)**: 71547.80500
+- **Range Width**: 6.56% of price
+- **Price Position**: EQUILIBRIUM (63% within range)
+- **Mean Reversion Score**: 61/100 (higher = stronger range behavior)
+- **Touches of Range High**: 1
+- **Touches of Range Low**: 5
+- **Trend Strength**: 0.24 (lower = more range-like)
+- **Structural Bias (Higher Timeframe)**: NEUTRAL
+
+### Range Interpretation:
+- PREMIUM (>70%): Price near range top — favor SELL entries at bearish OBs/FVGs
+- DISCOUNT (<30%): Price near range bottom — favor BUY entries at bullish OBs/FVGs
+- EQUILIBRIUM (30-70%): Mid-range — wait for price to reach an extreme
+- Multiple touches = proven boundary. More touches = stronger level.
+- Mean Reversion Score >60 = strong range. >80 = very strong range.
+
+### Structural Bias Filter (IMPORTANT):
+- **BULLISH structural bias**: The broader trend is UP. Range BUYS at discount are HIGH PROBABILITY. Range SELLS at premium are LOW PROBABILITY — the range is more likely to break upward. Prefer buy-only or reduce sell confidence.
+- **BEARISH structural bias**: The broader trend is DOWN. Range SELLS at premium are HIGH PROBABILITY. Range BUYS at discount are LOW PROBABILITY — the range is more likely to break downward. Prefer sell-only or reduce buy confidence.
+- **NEUTRAL structural bias**: No dominant trend. Both buy and sell at range extremes are valid.
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BEARISH
+**Premium/Discount**: PREMIUM zone (83%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70096.91
+  - BOS HIGH at 71316.86 [RECENT]
+  - CHoCH HIGH at 68190.89 (potential reversal)
+  - CHoCH HIGH at 71774.21 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 63015.93000-65582.58000 | Strength: 80% | MITIGATED | 12.67% from price
+  - BULLISH OB: 65034.65000-67067.00000 | Strength: 80% | MITIGATED | 9.87% from price
+  - BULLISH OB: 66143.83000-68989.60000 | Strength: 80% | MITIGATED | 8.33% from price
+  - BEARISH OB: 72863.14000-74043.78000 | Strength: 80% | MITIGATED | 2.61% from price
+  - BEARISH OB: 66738.80000-67512.95000 | Strength: 67% | MITIGATED | -6.44% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 69283.21000-69747.06000 | FILLED | 3.98% below price (expect bounce UP)
+  - BULLISH FVG: 69764.77000-70369.88000 | FILLED | 3.32% below price (expect bounce UP)
+  - BULLISH FVG: 70548.04000-70955.51000 | FILLED | 2.23% below price (expect bounce UP)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71774.21000 | Strength: 93% | UNSWEPT | 0.53% below
+  - BUY-SIDE at 71316.86000 | Strength: 85% | UNSWEPT | 1.17% below
+  - BUY-SIDE at 73894.83000 | Strength: 67% | UNSWEPT | 2.41% above
+  - SELL-SIDE at 70312.13000 | Strength: 78% | UNSWEPT | 2.56% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 73969.30500 | Touches: 2 | FORMING | UNSWEPT | 2.51% above
+  - EQUAL HIGHS (Resistance) at 71888.96200 | Touches: 5 | PROVEN | SWEPT | 0.37% above
+  - EQUAL HIGHS (Resistance) at 71563.95400 | Touches: 5 | PROVEN | SWEPT | 0.82% above
+  - EQUAL HIGHS (Resistance) at 71301.21800 | Touches: 5 | PROVEN | SWEPT | 1.19% above
+  - EQUAL LOWS (Support) at 65344.11750 | Touches: 4 | PROVEN | UNSWEPT | 9.44% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 65122.89667 | Touches: 6 | PROVEN | UNSWEPT | 9.75% below
+    >>6 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 53.2 (neutral)
+- MACD: 427.66616
+- MACD Signal: 404.24605
+- MACD Histogram: 23.42011 (bullish)
+
+### Trend
+- EMA20: 71186.99796 (Price above)
+- EMA50: 70379.88043 (Price above)
+- ADX: 11.5 (Weak trend - favorable for range trading)
+
+### Volatility
+- ATR(14): 648.27857
+- BB Upper: 72578.46789
+- BB Middle: 71328.06750
+- BB Lower: 70077.66711
+- BB Width: 3.51%
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past range trades. Study what went wrong
+and apply corrections. Pay special attention to fakeout and premature entry lessons.
+
+
+## YOUR TASK
+
+Analyze the range and SMC data to make a range-trading decision.
+
+Think step-by-step:
+1. Is the market ranging? (Check ADX, BOS pattern, mean reversion score)
+2. Where are the range boundaries? (Map OBs, FVGs, equal levels at extremes)
+3. Is price at a range extreme? (Premium/Discount zone, not equilibrium)
+4. Is there SMC confluence at this extreme? (OB + FVG overlap, unmitigated zones)
+5. Has there been a liquidity sweep? (Sweep beyond range = highest probability entry)
+6. Where should SL be placed? (Beyond OB/FVG + ATR buffer, beyond range extreme)
+7. What is the TP target? (Opposite extreme or midpoint)
+8. Is R:R acceptable? (Must be >= 1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Long position. Use when:
+  - Market is ranging AND price is in discount zone (<30% of range)
+  - Bullish OB or FVG confluence at range support
+  - OR: Sell-side liquidity sweep just occurred (price swept below range then reversed)
+  - MUST provide entry_price, stop_loss (BELOW entry), profit_target
+
+- **sell_to_enter** - Short position. Use when:
+  - Market is ranging AND price is in premium zone (>70% of range)
+  - Bearish OB or FVG confluence at range resistance
+  - OR: Buy-side liquidity sweep just occurred (price swept above range then reversed)
+  - MUST provide entry_price, stop_loss (ABOVE entry), profit_target
+
+- **hold** - No action. Use when:
+  - Market is NOT ranging (trending with clear BOS)
+  - Price is at equilibrium (mid-range, no edge)
+  - No SMC confluence at current price level
+  - Breakout is in progress (do not fade it)
+  - Range is too narrow for a trade
+
+- **close** - Exit existing position. Use when:
+  - Price reached opposite range extreme (TP zone)
+  - Range is breaking (confirmed BOS beyond range)
+  - Setup invalidated
+
+## ORDER TYPE
+- **limit** - Preferred for entries at OB/FVG zones (waiting for price to reach zone)
+- **market** - Use when price is already at the zone and showing rejection, or after a liquidity sweep
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+Range trades typically use tighter trailing stops since the move is capped:
+- **Tight range** (small ATR, narrow range): 1.5-2.0x ATR
+- **Normal range**: 2.0-2.5x ATR
+- **Wide range** (large ATR): 2.5-3.5x ATR
+- **XAUUSD/Gold in range**: 2.0-3.0x ATR
+- If unsure, default to 2.0x ATR (tighter than trend-following)
+
+Remember:
+- Ranges are your edge — most traders lose money fighting ranges by trying to catch breakouts
+- SMC zones define WHERE to enter within the range
+- Liquidity sweeps beyond range = smart money entry signal
+- Always trade FROM the extreme, never from the middle
+- When the range breaks, STOP trading the range
+================================================================================
+2026-03-16 07:39:49,577 - INFO - Range Quant decision for BTCUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-16 07:39:49,577 - INFO - BTCUSD: HOLD (confidence: 0.85)
+2026-03-16 07:39:50,996 - INFO - Ownership check: my_source='range_quant_xauusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:39:50,996 - INFO - Position check: 1 total open, 0 owned by 'range_quant_xauusd' (XAUUSD)
+2026-03-16 07:40:18,892 - INFO - Ownership check: my_source='range_quant_btcusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:40:18,893 - INFO - Position check: 1 total open, 0 owned by 'range_quant_btcusd' (BTCUSD)
+2026-03-16 07:40:19,113 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:40:28,306 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:40:38,651 - INFO - Ownership check: my_source='smc_xagusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:40:38,652 - INFO - Position check: 1 total open, 0 owned by 'smc_xagusd' (XAUUSD)
+2026-03-16 07:40:38,662 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:40:49,531 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:40:49,532 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:40:51,033 - INFO - Ownership check: my_source='range_quant_xauusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:40:51,034 - INFO - Position check: 1 total open, 0 owned by 'range_quant_xauusd' (XAUUSD)
+2026-03-16 07:41:18,918 - INFO - Ownership check: my_source='range_quant_btcusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:41:18,919 - INFO - Position check: 1 total open, 0 owned by 'range_quant_btcusd' (BTCUSD)
+2026-03-16 07:41:19,139 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:41:28,312 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:41:38,673 - INFO - Ownership check: my_source='smc_xagusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:41:38,674 - INFO - Position check: 1 total open, 0 owned by 'smc_xagusd' (XAUUSD)
+2026-03-16 07:41:38,684 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:41:49,554 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:41:49,555 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:41:51,075 - INFO - Ownership check: my_source='range_quant_xauusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:41:51,075 - INFO - Position check: 1 total open, 0 owned by 'range_quant_xauusd' (XAUUSD)
+2026-03-16 07:42:13,247 - INFO - Assumption review check: should_run=False, last_review=2026-03-16 07:37:12.755877
+2026-03-16 07:42:29,113 - INFO - Ownership check: my_source='range_quant_btcusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:42:29,161 - INFO - Position check: 1 total open, 0 owned by 'range_quant_btcusd' (BTCUSD)
+2026-03-16 07:42:35,907 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:42:36,663 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:42:51,424 - INFO - Assumption review check: should_run=False, last_review=2026-03-16 07:22:34.143269
+2026-03-16 07:42:51,898 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:42:53,998 - INFO - Ownership check: my_source='smc_xagusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:42:54,042 - INFO - Position check: 1 total open, 0 owned by 'smc_xagusd' (XAUUSD)
+2026-03-16 07:43:06,414 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:43:06,445 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:43:11,980 - INFO - Running range_quant analysis for BTCUSD...
+2026-03-16 07:43:12,011 - INFO - Range Quant: calling API for BTCUSD (timeout=120s)...
+2026-03-16 07:43:18,347 - INFO - Ownership check: my_source='range_quant_xauusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:43:18,379 - INFO - Position check: 1 total open, 0 owned by 'range_quant_xauusd' (XAUUSD)
+2026-03-16 07:43:36,517 - INFO - Ownership check: my_source='range_quant_btcusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:43:36,518 - INFO - Position check: 1 total open, 0 owned by 'range_quant_btcusd' (BTCUSD)
+2026-03-16 07:43:36,529 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:43:43,213 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:43:43,233 - INFO - Range Quant API response: status=success [total=31.2s, llm=5.8s, overhead=25.4s]
+2026-03-16 07:43:43,234 - INFO - Range Quant range for BTCUSD: is_ranging=False, mr_score=61.1, price_position=equilibrium
+2026-03-16 07:43:43,235 - INFO - 
+================================================================================
+RANGE QUANT PROMPT SENT for BTCUSD
+================================================================================
+You are a range-bound market specialist using Smart Money Concepts (SMC) levels. You excel at identifying sideways markets and trading reversals at range extremes using institutional zones.
+
+## YOUR TRADING EDGE: RANGE-BOUND MARKETS WITH SMC LEVELS
+
+Most markets spend 60-70% of time in ranges. Your edge is:
+1. Identify when price is ranging (low ADX, oscillating between S/R)
+2. Map SMC zones (OBs, FVGs, equal levels) as high-probability range boundaries
+3. Enter at range extremes where SMC zones provide confluence
+4. Use liquidity sweeps as entry confirmation (smart money grabs stops then reverses)
+5. Target the opposite range extreme or equilibrium
+
+## RANGE TRADING RULES WITH SMC
+
+### 1. CONFIRMING A RANGE
+- **ADX < 25**: Weak or no trend = range conditions
+- **No dominant BOS**: No clear series of higher highs/higher lows (or lower lows/lower highs)
+- **CHoCH present**: Multiple changes of character = choppy/ranging
+- **Multiple touches**: Range high and low tested 2+ times each
+- **Mean Reversion Score > 50**: Price regularly returns to midpoint
+
+### 2. MAPPING RANGE BOUNDARIES WITH SMC
+- **Range Resistance**: Bearish OBs and bearish FVGs near range high
+- **Range Support**: Bullish OBs and bullish FVGs near range low
+- **Equal Highs/Lows**: Proven S/R levels with 3+ touches are strongest boundaries
+- **Liquidity pools**: Above range highs (buy-side) and below range lows (sell-side)
+- Unmitigated zones are active; mitigated zones are spent
+
+### 3. ENTRY STRATEGIES
+
+**Setup 1: Buy at Range Low + Bullish OB/FVG**
+- Price drops to range low (discount zone, <30% of range)
+- Bullish OB or FVG overlaps with range support
+- Enter LONG at the OB/FVG zone
+- SL: Below the OB/FVG zone (beyond the range low + ATR buffer)
+- TP: Range midpoint (conservative) or range high (aggressive)
+
+**Setup 2: Sell at Range High + Bearish OB/FVG**
+- Price rises to range high (premium zone, >70% of range)
+- Bearish OB or FVG overlaps with range resistance
+- Enter SHORT at the OB/FVG zone
+- SL: Above the OB/FVG zone (beyond the range high + ATR buffer)
+- TP: Range midpoint (conservative) or range low (aggressive)
+
+**Setup 3: Liquidity Sweep Reversal (Highest Probability)**
+- Price sweeps beyond range high (takes buy-side liquidity) then reverses
+  - Enter SHORT after sweep with CHoCH confirmation
+- Price sweeps beyond range low (takes sell-side liquidity) then reverses
+  - Enter LONG after sweep with CHoCH confirmation
+- SL: Beyond the sweep high/low + ATR buffer
+- TP: Opposite range extreme
+
+**Setup 4: Equal Level Bounce**
+- Price approaches proven equal highs (3+ touches) or equal lows (3+ touches)
+- These are liquidity magnets — expect price to reach them
+- After reaching the level, look for rejection candles and enter reversal
+- Works best when confluent with OB or FVG at the same zone
+
+### 4. STOP LOSS PLACEMENT (CRITICAL)
+- For BUY: Stop loss MUST be BELOW entry price
+  - Place below the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range low to survive a liquidity sweep
+- For SELL: Stop loss MUST be ABOVE entry price
+  - Place above the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range high to survive a liquidity sweep
+- **MINIMUM SL DISTANCE**: At least 1x ATR from entry. SL within 0.5% is TOO TIGHT.
+- For gold (XAUUSD): minimum SL should be $15-30+ from entry
+- If you cannot place SL with adequate distance while maintaining R:R >= 1.5:1, output "hold"
+
+### 5. TAKE PROFIT TARGETS
+- **Conservative**: Range midpoint (equilibrium) — safest target in ranges
+- **Standard**: Opposite range extreme — full range move
+- **With confluence**: Proven equal level or strong OB on the opposite side
+- Minimum R:R: 1.5:1
+
+### 6. STRUCTURAL BIAS FILTER (CRITICAL FOR PROFITABILITY)
+Backtesting shows that trading WITH the structural bias is far more profitable than fading it:
+- **BULLISH structural bias** (e.g., XAUUSD in an uptrend): BUY at range discount = ~70% win rate. SELL at range premium = ~35% win rate. **Strongly prefer BUY trades. Reduce confidence on SELL trades or skip them.**
+- **BEARISH structural bias**: SELL at range premium is the higher-probability trade. Skip or reduce confidence on BUY trades.
+- **NEUTRAL**: Both sides equally valid.
+- Check the "Structural Bias (Higher Timeframe)" field in your data and factor it into every decision.
+
+### 7. WHEN NOT TO TRADE
+- **Trending market**: ADX > 25 with clear BOS series — DO NOT fade the trend
+- **Breakout in progress**: Price breaking range with momentum + volume — wait for new range
+- **Range too narrow**: If range width < 1x ATR, not enough room for a trade
+- **No SMC confluence**: Range extremes with no OB/FVG support — skip
+- **Mid-range**: Price at equilibrium with no clear direction — wait for extreme
+
+### 8. CRITICAL: DO NOT FADE A BREAKOUT
+- If price breaks the range with a strong BOS + high volume, the range is OVER
+- Do not try to sell a breakout above range high or buy a breakdown below range low
+- Instead output "hold" and wait for a new range to form
+- A confirmed breakout = transition from range to trend
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation**
+5. **Never fade a confirmed breakout — if ADX > 25 with BOS, DO NOT counter-trade**
+6. **Stop loss MUST be on correct side of entry**
+7. **Only trade at range extremes with SMC confluence, never mid-range**
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 72087.00500
+- **Date**: 2026-03-16
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: low
+
+## RANGE ANALYSIS (Critical for Range Trading)
+- **Is Ranging**: No clear range
+- **Range High (Resistance)**: 73894.83000
+- **Range Low (Support)**: 69200.78000
+- **Range Midpoint (Equilibrium)**: 71547.80500
+- **Range Width**: 6.56% of price
+- **Price Position**: EQUILIBRIUM (61% within range)
+- **Mean Reversion Score**: 61/100 (higher = stronger range behavior)
+- **Touches of Range High**: 1
+- **Touches of Range Low**: 5
+- **Trend Strength**: 0.23 (lower = more range-like)
+- **Structural Bias (Higher Timeframe)**: NEUTRAL
+
+### Range Interpretation:
+- PREMIUM (>70%): Price near range top — favor SELL entries at bearish OBs/FVGs
+- DISCOUNT (<30%): Price near range bottom — favor BUY entries at bullish OBs/FVGs
+- EQUILIBRIUM (30-70%): Mid-range — wait for price to reach an extreme
+- Multiple touches = proven boundary. More touches = stronger level.
+- Mean Reversion Score >60 = strong range. >80 = very strong range.
+
+### Structural Bias Filter (IMPORTANT):
+- **BULLISH structural bias**: The broader trend is UP. Range BUYS at discount are HIGH PROBABILITY. Range SELLS at premium are LOW PROBABILITY — the range is more likely to break upward. Prefer buy-only or reduce sell confidence.
+- **BEARISH structural bias**: The broader trend is DOWN. Range SELLS at premium are HIGH PROBABILITY. Range BUYS at discount are LOW PROBABILITY — the range is more likely to break downward. Prefer sell-only or reduce buy confidence.
+- **NEUTRAL structural bias**: No dominant trend. Both buy and sell at range extremes are valid.
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BEARISH
+**Premium/Discount**: PREMIUM zone (82%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70096.91
+  - BOS HIGH at 71316.86 [RECENT]
+  - CHoCH HIGH at 68190.89 (potential reversal)
+  - CHoCH HIGH at 71774.21 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 63015.93000-65582.58000 | Strength: 80% | MITIGATED | 12.58% from price
+  - BULLISH OB: 65034.65000-67067.00000 | Strength: 80% | MITIGATED | 9.78% from price
+  - BULLISH OB: 66143.83000-68989.60000 | Strength: 80% | MITIGATED | 8.24% from price
+  - BEARISH OB: 72863.14000-74043.78000 | Strength: 80% | MITIGATED | 2.71% from price
+  - BEARISH OB: 66738.80000-67512.95000 | Strength: 67% | MITIGATED | -6.35% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 69283.21000-69747.06000 | FILLED | 3.89% below price (expect bounce UP)
+  - BULLISH FVG: 69764.77000-70369.88000 | FILLED | 3.22% below price (expect bounce UP)
+  - BULLISH FVG: 70548.04000-70955.51000 | FILLED | 2.13% below price (expect bounce UP)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71774.21000 | Strength: 93% | UNSWEPT | 0.43% below
+  - BUY-SIDE at 71316.86000 | Strength: 85% | UNSWEPT | 1.07% below
+  - SELL-SIDE at 70312.13000 | Strength: 78% | UNSWEPT | 2.46% below
+  - BUY-SIDE at 73894.83000 | Strength: 67% | UNSWEPT | 2.51% above
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 73969.30500 | Touches: 2 | FORMING | UNSWEPT | 2.61% above
+  - EQUAL HIGHS (Resistance) at 71888.96200 | Touches: 5 | PROVEN | SWEPT | 0.27% above
+  - EQUAL HIGHS (Resistance) at 71563.95400 | Touches: 5 | PROVEN | SWEPT | 0.73% above
+  - EQUAL HIGHS (Resistance) at 71301.21800 | Touches: 5 | PROVEN | SWEPT | 1.09% above
+  - EQUAL LOWS (Support) at 65344.11750 | Touches: 4 | PROVEN | UNSWEPT | 9.35% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 65122.89667 | Touches: 6 | PROVEN | UNSWEPT | 9.66% below
+    >>6 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 52.4 (neutral)
+- MACD: 422.01430
+- MACD Signal: 403.11568
+- MACD Histogram: 18.89863 (bullish)
+
+### Trend
+- EMA20: 71180.25034 (Price above)
+- EMA50: 70377.10199 (Price above)
+- ADX: 11.5 (Weak trend - favorable for range trading)
+
+### Volatility
+- ATR(14): 648.27857
+- BB Upper: 72565.48221
+- BB Middle: 71324.52500
+- BB Lower: 70083.56779
+- BB Width: 3.48%
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past range trades. Study what went wrong
+and apply corrections. Pay special attention to fakeout and premature entry lessons.
+
+
+## YOUR TASK
+
+Analyze the range and SMC data to make a range-trading decision.
+
+Think step-by-step:
+1. Is the market ranging? (Check ADX, BOS pattern, mean reversion score)
+2. Where are the range boundaries? (Map OBs, FVGs, equal levels at extremes)
+3. Is price at a range extreme? (Premium/Discount zone, not equilibrium)
+4. Is there SMC confluence at this extreme? (OB + FVG overlap, unmitigated zones)
+5. Has there been a liquidity sweep? (Sweep beyond range = highest probability entry)
+6. Where should SL be placed? (Beyond OB/FVG + ATR buffer, beyond range extreme)
+7. What is the TP target? (Opposite extreme or midpoint)
+8. Is R:R acceptable? (Must be >= 1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Long position. Use when:
+  - Market is ranging AND price is in discount zone (<30% of range)
+  - Bullish OB or FVG confluence at range support
+  - OR: Sell-side liquidity sweep just occurred (price swept below range then reversed)
+  - MUST provide entry_price, stop_loss (BELOW entry), profit_target
+
+- **sell_to_enter** - Short position. Use when:
+  - Market is ranging AND price is in premium zone (>70% of range)
+  - Bearish OB or FVG confluence at range resistance
+  - OR: Buy-side liquidity sweep just occurred (price swept above range then reversed)
+  - MUST provide entry_price, stop_loss (ABOVE entry), profit_target
+
+- **hold** - No action. Use when:
+  - Market is NOT ranging (trending with clear BOS)
+  - Price is at equilibrium (mid-range, no edge)
+  - No SMC confluence at current price level
+  - Breakout is in progress (do not fade it)
+  - Range is too narrow for a trade
+
+- **close** - Exit existing position. Use when:
+  - Price reached opposite range extreme (TP zone)
+  - Range is breaking (confirmed BOS beyond range)
+  - Setup invalidated
+
+## ORDER TYPE
+- **limit** - Preferred for entries at OB/FVG zones (waiting for price to reach zone)
+- **market** - Use when price is already at the zone and showing rejection, or after a liquidity sweep
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+Range trades typically use tighter trailing stops since the move is capped:
+- **Tight range** (small ATR, narrow range): 1.5-2.0x ATR
+- **Normal range**: 2.0-2.5x ATR
+- **Wide range** (large ATR): 2.5-3.5x ATR
+- **XAUUSD/Gold in range**: 2.0-3.0x ATR
+- If unsure, default to 2.0x ATR (tighter than trend-following)
+
+Remember:
+- Ranges are your edge — most traders lose money fighting ranges by trying to catch breakouts
+- SMC zones define WHERE to enter within the range
+- Liquidity sweeps beyond range = smart money entry signal
+- Always trade FROM the extreme, never from the middle
+- When the range breaks, STOP trading the range
+================================================================================
+2026-03-16 07:43:43,274 - INFO - Range Quant decision for BTCUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-16 07:43:43,275 - INFO - BTCUSD: HOLD (confidence: 0.85)
+2026-03-16 07:43:52,343 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:44:00,499 - INFO - Ownership check: my_source='smc_xagusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:44:00,500 - INFO - Position check: 1 total open, 0 owned by 'smc_xagusd' (XAUUSD)
+2026-03-16 07:44:06,720 - INFO - Assumption review check: should_run=False, last_review=2026-03-16 07:18:53.028191
+2026-03-16 07:44:11,996 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:44:11,997 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:44:19,181 - INFO - Assumption review check: should_run=False, last_review=2026-03-16 07:24:03.830164
+2026-03-16 07:44:24,822 - INFO - Ownership check: my_source='range_quant_xauusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:44:24,823 - INFO - Position check: 1 total open, 0 owned by 'range_quant_xauusd' (XAUUSD)
+2026-03-16 07:44:36,554 - INFO - Ownership check: my_source='range_quant_btcusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:44:36,554 - INFO - Position check: 1 total open, 0 owned by 'range_quant_btcusd' (BTCUSD)
+2026-03-16 07:44:36,564 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:44:43,233 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:44:52,345 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:45:00,511 - INFO - Ownership check: my_source='smc_xagusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:45:00,511 - INFO - Position check: 1 total open, 0 owned by 'smc_xagusd' (XAUUSD)
+2026-03-16 07:45:12,025 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:45:12,026 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:45:24,865 - INFO - Ownership check: my_source='range_quant_xauusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:45:24,866 - INFO - Position check: 1 total open, 0 owned by 'range_quant_xauusd' (XAUUSD)
+2026-03-16 07:45:36,590 - INFO - Ownership check: my_source='range_quant_btcusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:45:36,591 - INFO - Position check: 1 total open, 0 owned by 'range_quant_btcusd' (BTCUSD)
+2026-03-16 07:45:36,600 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:45:43,251 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:45:52,360 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:46:00,532 - INFO - Ownership check: my_source='smc_xagusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:46:00,533 - INFO - Position check: 1 total open, 0 owned by 'smc_xagusd' (XAUUSD)
+2026-03-16 07:46:12,082 - INFO - Ownership check: my_source='new_smc_quant', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:46:12,083 - INFO - Position check: 1 total open, 0 owned by 'new_smc_quant' (XAUUSD)
+2026-03-16 07:46:24,902 - INFO - Ownership check: my_source='range_quant_xauusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:46:24,903 - INFO - Position check: 1 total open, 0 owned by 'range_quant_xauusd' (XAUUSD)
+2026-03-16 07:46:36,585 - INFO - Ownership check: my_source='range_quant_btcusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:46:36,586 - INFO - Position check: 1 total open, 0 owned by 'range_quant_btcusd' (BTCUSD)
+2026-03-16 07:46:36,622 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:46:43,279 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:46:43,326 - INFO - Running range_quant analysis for BTCUSD...
+2026-03-16 07:46:43,326 - INFO - Range Quant: calling API for BTCUSD (timeout=120s)...
+2026-03-16 07:46:51,343 - INFO - Range Quant API response: status=success [total=8.0s, llm=7.5s, overhead=0.5s]
+2026-03-16 07:46:51,344 - INFO - Range Quant range for BTCUSD: is_ranging=False, mr_score=60.9, price_position=equilibrium
+2026-03-16 07:46:51,344 - INFO - 
+================================================================================
+RANGE QUANT PROMPT SENT for BTCUSD
+================================================================================
+You are a range-bound market specialist using Smart Money Concepts (SMC) levels. You excel at identifying sideways markets and trading reversals at range extremes using institutional zones.
+
+## YOUR TRADING EDGE: RANGE-BOUND MARKETS WITH SMC LEVELS
+
+Most markets spend 60-70% of time in ranges. Your edge is:
+1. Identify when price is ranging (low ADX, oscillating between S/R)
+2. Map SMC zones (OBs, FVGs, equal levels) as high-probability range boundaries
+3. Enter at range extremes where SMC zones provide confluence
+4. Use liquidity sweeps as entry confirmation (smart money grabs stops then reverses)
+5. Target the opposite range extreme or equilibrium
+
+## RANGE TRADING RULES WITH SMC
+
+### 1. CONFIRMING A RANGE
+- **ADX < 25**: Weak or no trend = range conditions
+- **No dominant BOS**: No clear series of higher highs/higher lows (or lower lows/lower highs)
+- **CHoCH present**: Multiple changes of character = choppy/ranging
+- **Multiple touches**: Range high and low tested 2+ times each
+- **Mean Reversion Score > 50**: Price regularly returns to midpoint
+
+### 2. MAPPING RANGE BOUNDARIES WITH SMC
+- **Range Resistance**: Bearish OBs and bearish FVGs near range high
+- **Range Support**: Bullish OBs and bullish FVGs near range low
+- **Equal Highs/Lows**: Proven S/R levels with 3+ touches are strongest boundaries
+- **Liquidity pools**: Above range highs (buy-side) and below range lows (sell-side)
+- Unmitigated zones are active; mitigated zones are spent
+
+### 3. ENTRY STRATEGIES
+
+**Setup 1: Buy at Range Low + Bullish OB/FVG**
+- Price drops to range low (discount zone, <30% of range)
+- Bullish OB or FVG overlaps with range support
+- Enter LONG at the OB/FVG zone
+- SL: Below the OB/FVG zone (beyond the range low + ATR buffer)
+- TP: Range midpoint (conservative) or range high (aggressive)
+
+**Setup 2: Sell at Range High + Bearish OB/FVG**
+- Price rises to range high (premium zone, >70% of range)
+- Bearish OB or FVG overlaps with range resistance
+- Enter SHORT at the OB/FVG zone
+- SL: Above the OB/FVG zone (beyond the range high + ATR buffer)
+- TP: Range midpoint (conservative) or range low (aggressive)
+
+**Setup 3: Liquidity Sweep Reversal (Highest Probability)**
+- Price sweeps beyond range high (takes buy-side liquidity) then reverses
+  - Enter SHORT after sweep with CHoCH confirmation
+- Price sweeps beyond range low (takes sell-side liquidity) then reverses
+  - Enter LONG after sweep with CHoCH confirmation
+- SL: Beyond the sweep high/low + ATR buffer
+- TP: Opposite range extreme
+
+**Setup 4: Equal Level Bounce**
+- Price approaches proven equal highs (3+ touches) or equal lows (3+ touches)
+- These are liquidity magnets — expect price to reach them
+- After reaching the level, look for rejection candles and enter reversal
+- Works best when confluent with OB or FVG at the same zone
+
+### 4. STOP LOSS PLACEMENT (CRITICAL)
+- For BUY: Stop loss MUST be BELOW entry price
+  - Place below the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range low to survive a liquidity sweep
+- For SELL: Stop loss MUST be ABOVE entry price
+  - Place above the OB/FVG zone + at least 1x ATR buffer
+  - Must be beyond the range high to survive a liquidity sweep
+- **MINIMUM SL DISTANCE**: At least 1x ATR from entry. SL within 0.5% is TOO TIGHT.
+- For gold (XAUUSD): minimum SL should be $15-30+ from entry
+- If you cannot place SL with adequate distance while maintaining R:R >= 1.5:1, output "hold"
+
+### 5. TAKE PROFIT TARGETS
+- **Conservative**: Range midpoint (equilibrium) — safest target in ranges
+- **Standard**: Opposite range extreme — full range move
+- **With confluence**: Proven equal level or strong OB on the opposite side
+- Minimum R:R: 1.5:1
+
+### 6. STRUCTURAL BIAS FILTER (CRITICAL FOR PROFITABILITY)
+Backtesting shows that trading WITH the structural bias is far more profitable than fading it:
+- **BULLISH structural bias** (e.g., XAUUSD in an uptrend): BUY at range discount = ~70% win rate. SELL at range premium = ~35% win rate. **Strongly prefer BUY trades. Reduce confidence on SELL trades or skip them.**
+- **BEARISH structural bias**: SELL at range premium is the higher-probability trade. Skip or reduce confidence on BUY trades.
+- **NEUTRAL**: Both sides equally valid.
+- Check the "Structural Bias (Higher Timeframe)" field in your data and factor it into every decision.
+
+### 7. WHEN NOT TO TRADE
+- **Trending market**: ADX > 25 with clear BOS series — DO NOT fade the trend
+- **Breakout in progress**: Price breaking range with momentum + volume — wait for new range
+- **Range too narrow**: If range width < 1x ATR, not enough room for a trade
+- **No SMC confluence**: Range extremes with no OB/FVG support — skip
+- **Mid-range**: Price at equilibrium with no clear direction — wait for extreme
+
+### 8. CRITICAL: DO NOT FADE A BREAKOUT
+- If price breaks the range with a strong BOS + high volume, the range is OVER
+- Do not try to sell a breakout above range high or buy a breakdown below range low
+- Instead output "hold" and wait for a new range to form
+- A confirmed breakout = transition from range to trend
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation**
+5. **Never fade a confirmed breakout — if ADX > 25 with BOS, DO NOT counter-trade**
+6. **Stop loss MUST be on correct side of entry**
+7. **Only trade at range extremes with SMC confluence, never mid-range**
+
+## CURRENT MARKET DATA
+- **Symbol**: BTCUSD
+- **Current Price**: 72150.22000
+- **Date**: 2026-03-16
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: low
+
+## RANGE ANALYSIS (Critical for Range Trading)
+- **Is Ranging**: No clear range
+- **Range High (Resistance)**: 73894.83000
+- **Range Low (Support)**: 69200.78000
+- **Range Midpoint (Equilibrium)**: 71547.80500
+- **Range Width**: 6.56% of price
+- **Price Position**: EQUILIBRIUM (63% within range)
+- **Mean Reversion Score**: 61/100 (higher = stronger range behavior)
+- **Touches of Range High**: 1
+- **Touches of Range Low**: 5
+- **Trend Strength**: 0.24 (lower = more range-like)
+- **Structural Bias (Higher Timeframe)**: NEUTRAL
+
+### Range Interpretation:
+- PREMIUM (>70%): Price near range top — favor SELL entries at bearish OBs/FVGs
+- DISCOUNT (<30%): Price near range bottom — favor BUY entries at bullish OBs/FVGs
+- EQUILIBRIUM (30-70%): Mid-range — wait for price to reach an extreme
+- Multiple touches = proven boundary. More touches = stronger level.
+- Mean Reversion Score >60 = strong range. >80 = very strong range.
+
+### Structural Bias Filter (IMPORTANT):
+- **BULLISH structural bias**: The broader trend is UP. Range BUYS at discount are HIGH PROBABILITY. Range SELLS at premium are LOW PROBABILITY — the range is more likely to break upward. Prefer buy-only or reduce sell confidence.
+- **BEARISH structural bias**: The broader trend is DOWN. Range SELLS at premium are HIGH PROBABILITY. Range BUYS at discount are LOW PROBABILITY — the range is more likely to break downward. Prefer sell-only or reduce buy confidence.
+- **NEUTRAL structural bias**: No dominant trend. Both buy and sell at range extremes are valid.
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BEARISH
+**Premium/Discount**: PREMIUM zone (83%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 70096.91
+  - BOS HIGH at 71316.86 [RECENT]
+  - CHoCH HIGH at 68190.89 (potential reversal)
+  - CHoCH HIGH at 71774.21 (potential reversal) [RECENT]
+    >> Recent CHoCH = possible trend reversal in progress
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 63015.93000-65582.58000 | Strength: 80% | MITIGATED | 12.66% from price
+  - BULLISH OB: 65034.65000-67067.00000 | Strength: 80% | MITIGATED | 9.86% from price
+  - BULLISH OB: 66143.83000-68989.60000 | Strength: 80% | MITIGATED | 8.32% from price
+  - BEARISH OB: 72863.14000-74043.78000 | Strength: 80% | MITIGATED | 2.62% from price
+  - BEARISH OB: 66738.80000-67512.95000 | Strength: 67% | MITIGATED | -6.43% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 69283.21000-69747.06000 | FILLED | 3.97% below price (expect bounce UP)
+  - BULLISH FVG: 69764.77000-70369.88000 | FILLED | 3.31% below price (expect bounce UP)
+  - BULLISH FVG: 70548.04000-70955.51000 | FILLED | 2.22% below price (expect bounce UP)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - BUY-SIDE at 71774.21000 | Strength: 93% | UNSWEPT | 0.52% below
+  - BUY-SIDE at 71316.86000 | Strength: 85% | UNSWEPT | 1.16% below
+  - BUY-SIDE at 73894.83000 | Strength: 67% | UNSWEPT | 2.42% above
+  - SELL-SIDE at 70312.13000 | Strength: 78% | UNSWEPT | 2.55% below
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 73969.30500 | Touches: 2 | FORMING | UNSWEPT | 2.52% above
+  - EQUAL HIGHS (Resistance) at 71888.96200 | Touches: 5 | PROVEN | SWEPT | 0.36% above
+  - EQUAL HIGHS (Resistance) at 71563.95400 | Touches: 5 | PROVEN | SWEPT | 0.81% above
+  - EQUAL HIGHS (Resistance) at 71301.21800 | Touches: 5 | PROVEN | SWEPT | 1.18% above
+  - EQUAL LOWS (Support) at 65344.11750 | Touches: 4 | PROVEN | UNSWEPT | 9.43% below
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 65122.89667 | Touches: 6 | PROVEN | UNSWEPT | 9.74% below
+    >>6 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 53.1 (neutral)
+- MACD: 427.05510
+- MACD Signal: 404.12384
+- MACD Histogram: 22.93127 (bullish)
+
+### Trend
+- EMA20: 71186.26844 (Price above)
+- EMA50: 70379.58003 (Price above)
+- ADX: 11.5 (Weak trend - favorable for range trading)
+
+### Volatility
+- ATR(14): 649.33000
+- BB Upper: 72577.02863
+- BB Middle: 71327.68450
+- BB Lower: 70078.34037
+- BB Width: 3.50%
+
+
+
+## LESSONS FROM YOUR PAST TRADES (BTCUSD)
+
+### Performance (last 2 trades)
+- Win rate: 0% (0/2) | Total P/L: $-1796.00 | Avg: $-898.00
+- Direction accuracy: 0% (0/2)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. SELL @ 70643.19 -> SL hit @ 71429.06 | -785.87 | SL 1.1% from entry
+2. BUY @ 71382.71 -> SL hit @ 70372.58 | -1010.13 | SL 1.4% from entry
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 2x)
+
+IMPORTANT: The above lessons are from YOUR past range trades. Study what went wrong
+and apply corrections. Pay special attention to fakeout and premature entry lessons.
+
+
+## YOUR TASK
+
+Analyze the range and SMC data to make a range-trading decision.
+
+Think step-by-step:
+1. Is the market ranging? (Check ADX, BOS pattern, mean reversion score)
+2. Where are the range boundaries? (Map OBs, FVGs, equal levels at extremes)
+3. Is price at a range extreme? (Premium/Discount zone, not equilibrium)
+4. Is there SMC confluence at this extreme? (OB + FVG overlap, unmitigated zones)
+5. Has there been a liquidity sweep? (Sweep beyond range = highest probability entry)
+6. Where should SL be placed? (Beyond OB/FVG + ATR buffer, beyond range extreme)
+7. What is the TP target? (Opposite extreme or midpoint)
+8. Is R:R acceptable? (Must be >= 1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Long position. Use when:
+  - Market is ranging AND price is in discount zone (<30% of range)
+  - Bullish OB or FVG confluence at range support
+  - OR: Sell-side liquidity sweep just occurred (price swept below range then reversed)
+  - MUST provide entry_price, stop_loss (BELOW entry), profit_target
+
+- **sell_to_enter** - Short position. Use when:
+  - Market is ranging AND price is in premium zone (>70% of range)
+  - Bearish OB or FVG confluence at range resistance
+  - OR: Buy-side liquidity sweep just occurred (price swept above range then reversed)
+  - MUST provide entry_price, stop_loss (ABOVE entry), profit_target
+
+- **hold** - No action. Use when:
+  - Market is NOT ranging (trending with clear BOS)
+  - Price is at equilibrium (mid-range, no edge)
+  - No SMC confluence at current price level
+  - Breakout is in progress (do not fade it)
+  - Range is too narrow for a trade
+
+- **close** - Exit existing position. Use when:
+  - Price reached opposite range extreme (TP zone)
+  - Range is breaking (confirmed BOS beyond range)
+  - Setup invalidated
+
+## ORDER TYPE
+- **limit** - Preferred for entries at OB/FVG zones (waiting for price to reach zone)
+- **market** - Use when price is already at the zone and showing rejection, or after a liquidity sweep
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+Range trades typically use tighter trailing stops since the move is capped:
+- **Tight range** (small ATR, narrow range): 1.5-2.0x ATR
+- **Normal range**: 2.0-2.5x ATR
+- **Wide range** (large ATR): 2.5-3.5x ATR
+- **XAUUSD/Gold in range**: 2.0-3.0x ATR
+- If unsure, default to 2.0x ATR (tighter than trend-following)
+
+Remember:
+- Ranges are your edge — most traders lose money fighting ranges by trying to catch breakouts
+- SMC zones define WHERE to enter within the range
+- Liquidity sweeps beyond range = smart money entry signal
+- Always trade FROM the extreme, never from the middle
+- When the range breaks, STOP trading the range
+================================================================================
+2026-03-16 07:46:51,380 - INFO - Range Quant decision for BTCUSD: signal=HOLD, confidence=0.95, entry=None, sl=None, tp=None
+2026-03-16 07:46:51,380 - INFO - BTCUSD: HOLD (confidence: 0.95)
+2026-03-16 07:46:52,368 - INFO - Market closed for XAUUSD: Weekend (Sunday, market opens ~22:00 UTC), skipping analysis
+2026-03-16 07:47:00,583 - INFO - Ownership check: my_source='smc_xagusd', active_decisions=11, sources=['btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-16 07:47:00,584 - INFO - Position check: 1 total open, 0 owned by 'smc_xagusd' (XAUUSD)
+2026-03-16 07:47:02,546 - INFO - Quant automation stopped
+2026-03-16 07:47:02,547 - INFO - Quant automation stopped
+2026-03-16 07:47:02,547 - INFO - Quant automation stopped
+2026-03-16 07:47:02,548 - INFO - Quant automation stopped
