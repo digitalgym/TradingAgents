@@ -329,7 +329,6 @@ def select_data_vendor(category: str, is_commodity: bool = False) -> str:
         "core_stock_apis": {
             "stock": [
                 ("yfinance - Free Yahoo Finance data", "yfinance"),
-                ("Alpha Vantage - Premium market data", "alpha_vantage"),
                 ("Local - Cached/offline data", "local"),
             ],
             "commodity": [
@@ -339,15 +338,12 @@ def select_data_vendor(category: str, is_commodity: bool = False) -> str:
         },
         "news_data": {
             "stock": [
-                ("Alpha Vantage - News from Alpha Vantage API", "alpha_vantage"),
-                ("Google - Google News search", "google"),
                 ("xAI - Grok web search (real-time)", "xai"),
                 ("OpenAI - AI-generated news summary", "openai"),
             ],
             "commodity": [
                 ("xAI - Grok web search (real-time, recommended)", "xai"),
-                ("Google - Google News search", "google"),
-                ("Alpha Vantage - News from Alpha Vantage API", "alpha_vantage"),
+                ("OpenAI - AI-generated news summary", "openai"),
             ],
         },
     }

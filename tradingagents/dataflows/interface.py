@@ -2,8 +2,7 @@ import logging
 from typing import Annotated
 
 # Import from vendor-specific modules
-from .local import get_finnhub_news, get_finnhub_company_insider_sentiment, get_finnhub_company_insider_transactions, get_reddit_global_news, get_reddit_company_news
-from .google import get_google_news, get_google_global_news
+from .local import get_finnhub_news, get_finnhub_company_insider_sentiment, get_finnhub_company_insider_transactions
 from .openai import get_stock_news_openai, get_global_news_openai, get_fundamentals_openai
 from .xai import get_xai_news, get_xai_global_news, get_x_sentiment, get_x_news
 from .mt5_data import get_mt5_data, get_asset_type, get_mt5_indicator
@@ -57,7 +56,6 @@ TOOLS_CATEGORIES = {
 VENDOR_LIST = [
     "local",
     "openai",
-    "google",
     "mt5",
     "xai",
 ]
@@ -91,15 +89,12 @@ VENDOR_METHODS = {
     "get_news": {
         "xai": get_xai_news,
         "openai": get_stock_news_openai,
-        "google": get_google_news,
         "x": get_x_news,
-        "local": [get_finnhub_news, get_reddit_company_news, get_google_news],
+        "local": get_finnhub_news,
     },
     "get_global_news": {
         "xai": get_xai_global_news,
-        "google": get_google_global_news,
         "openai": get_global_news_openai,
-        "local": get_reddit_global_news
     },
     "get_insider_sentiment": {
         "xai": get_x_sentiment,
