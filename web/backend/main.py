@@ -5789,6 +5789,172 @@ The systematic SMC rules did not identify a high-probability trade setup at this
         }
 
 
+# ----- SMC MTF Analysis (Multi-Timeframe OTE & Channel, No LLM) -----
+
+class SmcMtfAnalysisRequest(BaseModel):
+    symbol: str
+    timeframe: str = "D1"  # Higher timeframe (lower TF derived automatically)
+
+
+@app.post("/api/analysis/smc-mtf")
+async def run_smc_mtf_analysis(request: SmcMtfAnalysisRequest):
+    """
+    Run SMC Multi-Timeframe analysis (OTE + Channel + Weekend Gap).
+    No LLM calls — pure math like rule-based but with dual-timeframe alignment.
+    """
+    try:
+        import MetaTrader5 as mt5
+        import pandas as pd
+        import numpy as np
+
+        if not mt5.initialize():
+            raise HTTPException(status_code=500, detail="MT5 not initialized")
+
+        symbol_info = mt5.symbol_info_tick(request.symbol)
+        if symbol_info is None:
+            raise HTTPException(status_code=400, detail=f"Symbol {request.symbol} not found")
+
+        current_price = (symbol_info.bid + symbol_info.ask) / 2
+
+        # Map timeframes
+        tf_map = {
+            "M15": mt5.TIMEFRAME_M15, "M30": mt5.TIMEFRAME_M30,
+            "H1": mt5.TIMEFRAME_H1, "H4": mt5.TIMEFRAME_H4,
+            "D1": mt5.TIMEFRAME_D1, "W1": mt5.TIMEFRAME_W1,
+        }
+
+        # Higher TF from request, derive lower TF
+        htf_name = request.timeframe.upper()
+        ltf_map = {"D1": "H4", "H4": "H1", "H1": "M15", "W1": "D1"}
+        ltf_name = ltf_map.get(htf_name, "H1")
+
+        htf = tf_map.get(htf_name, mt5.TIMEFRAME_D1)
+        ltf = tf_map.get(ltf_name, mt5.TIMEFRAME_H1)
+
+        # Load data for both timeframes
+        htf_rates = mt5.copy_rates_from_pos(request.symbol, htf, 0, 200)
+        ltf_rates = mt5.copy_rates_from_pos(request.symbol, ltf, 0, 400)
+
+        if htf_rates is None or len(htf_rates) == 0:
+            raise HTTPException(status_code=400, detail=f"Failed to get {htf_name} data")
+        if ltf_rates is None or len(ltf_rates) == 0:
+            raise HTTPException(status_code=400, detail=f"Failed to get {ltf_name} data")
+
+        htf_df = pd.DataFrame(htf_rates)
+        htf_df['time'] = pd.to_datetime(htf_df['time'], unit='s')
+        ltf_df = pd.DataFrame(ltf_rates)
+        ltf_df['time'] = pd.to_datetime(ltf_df['time'], unit='s')
+
+        # Run MTF analysis
+        from tradingagents.agents.analysts.smc_mtf_quant import (
+            run_mtf_analysis, calculate_atr, _format_mtf_analysis_for_prompt
+        )
+
+        analysis = run_mtf_analysis(
+            higher_tf_df=htf_df,
+            lower_tf_df=ltf_df,
+            current_price=current_price,
+        )
+
+        atr = calculate_atr(
+            ltf_df['high'].values, ltf_df['low'].values, ltf_df['close'].values
+        )
+        if np.isnan(atr) or atr <= 0:
+            atr = current_price * 0.01
+
+        # Convert MTF analysis to trade decision
+        signal = "HOLD"
+        confidence = 0.0
+        entry_price = None
+        stop_loss = None
+        take_profit = None
+
+        bias = analysis.trade_bias
+        score = analysis.alignment_score
+
+        if score >= 50 and bias in ("bullish", "bearish"):
+            signal = "BUY" if bias == "bullish" else "SELL"
+            # Map score 50-100 → confidence 0.55-0.95
+            confidence = 0.55 + (score - 50) * 0.40 / 50
+
+            # Entry, SL, TP from OTE zone + ATR
+            if analysis.ote_zone:
+                ote = analysis.ote_zone
+                if signal == "BUY":
+                    entry_price = round(ote.fib_618, 5)  # OTE level
+                    stop_loss = round(ote.swing_low - atr * 0.5, 5)
+                    take_profit = round(ote.fib_ext_1272, 5)
+                else:
+                    entry_price = round(ote.fib_618, 5)
+                    stop_loss = round(ote.swing_high + atr * 0.5, 5)
+                    take_profit = round(ote.fib_ext_1272, 5)
+            else:
+                # Fallback: use current price + ATR-based levels
+                if signal == "BUY":
+                    entry_price = round(current_price, 5)
+                    stop_loss = round(current_price - atr * 2, 5)
+                    take_profit = round(current_price + atr * 3, 5)
+                else:
+                    entry_price = round(current_price, 5)
+                    stop_loss = round(current_price + atr * 2, 5)
+                    take_profit = round(current_price - atr * 3, 5)
+
+            # Require entry confirmation for high-confidence signals
+            if not analysis.has_entry_confirmation and confidence > 0.7:
+                confidence = 0.65  # Downgrade without confirmation
+
+        # Build rationale
+        rationale = _format_mtf_analysis_for_prompt(analysis, current_price, atr)
+        rationale += f"\n\n### Alignment Score: {score}/100"
+        rationale += f"\n- Trade Bias: **{bias.upper()}**"
+        rationale += f"\n- Entry Confirmation: {'Yes (' + analysis.confirmation_type + ')' if analysis.has_entry_confirmation else 'No'}"
+        rationale += f"\n- Price in OTE: {'Yes' if analysis.price_in_ote else 'No'}"
+        rationale += f"\n- Channel Support: {'Yes' if analysis.price_in_or_touches_channel else 'No'}"
+        rationale += "\n\n---\n*SMC Multi-Timeframe analysis (no LLM). HTF={}, LTF={}*".format(htf_name, ltf_name)
+
+        decision = {
+            "signal": signal,
+            "confidence": round(confidence, 3),
+            "entry_price": entry_price,
+            "stop_loss": stop_loss,
+            "take_profit": take_profit,
+            "rationale": rationale,
+            "analysis_mode": "smc_mtf",
+        }
+
+        return {
+            "status": "completed",
+            "symbol": request.symbol,
+            "timeframe": request.timeframe,
+            "higher_tf": htf_name,
+            "lower_tf": ltf_name,
+            "current_price": round(current_price, 5),
+            "decision": decision,
+            "mtf_details": {
+                "alignment_score": score,
+                "trade_bias": bias,
+                "htf_bias": analysis.higher_tf_bias,
+                "ltf_bias": analysis.lower_tf_bias,
+                "price_in_ote": analysis.price_in_ote,
+                "has_entry_confirmation": analysis.has_entry_confirmation,
+                "confirmation_type": analysis.confirmation_type,
+                "price_in_channel": analysis.price_in_channel,
+            },
+            "analysis_mode": "smc_mtf",
+            "llm_used": False,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        return {
+            "status": "error",
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+        }
+
+
 # ----- Quant Analysis (SMC + Indicators, Single LLM Call) -----
 
 class QuantAnalysisRequest(BaseModel):
@@ -8326,7 +8492,7 @@ class QuantAutomationConfigRequest(BaseModel):
     max_positions_per_symbol: int = 1  # Per-automation limit per symbol
     enable_trailing_stop: bool = True
     trailing_stop_atr_multiplier: float = 1.5
-    move_to_breakeven_pct: float = 1.0
+    move_to_breakeven_atr_mult: float = 1.5  # Move SL to breakeven after profit >= 1.5x ATR
     max_risk_per_trade_pct: float = 1.0
     default_lot_size: float = 0.01
     daily_loss_limit_pct: float = 3.0
@@ -8554,7 +8720,7 @@ async def start_quant_automation(config: QuantAutomationConfigRequest):
             max_positions_per_symbol=config.max_positions_per_symbol,
             enable_trailing_stop=config.enable_trailing_stop,
             trailing_stop_atr_multiplier=config.trailing_stop_atr_multiplier,
-            move_to_breakeven_pct=config.move_to_breakeven_pct,
+            move_to_breakeven_atr_mult=config.move_to_breakeven_atr_mult,
             max_risk_per_trade_pct=config.max_risk_per_trade_pct,
             default_lot_size=config.default_lot_size,
             daily_loss_limit_pct=config.daily_loss_limit_pct,
@@ -8710,6 +8876,45 @@ async def test_quant_analysis(symbol: str, pipeline: str = Query(default="smc_qu
             "take_profit": result.take_profit,
             "rationale": result.rationale,
             "duration_seconds": result.duration_seconds,
+        }
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/decisions/cleanup-stale")
+async def cleanup_stale_decisions_endpoint(dry_run: bool = Query(default=True)):
+    """Find and close active decisions whose MT5 positions no longer exist.
+
+    Args:
+        dry_run: If True (default), only report stale decisions. If False, close them.
+    """
+    import asyncio
+    try:
+        from tradingagents.trade_decisions import cleanup_stale_decisions
+
+        stale = await asyncio.get_event_loop().run_in_executor(
+            None,
+            lambda: cleanup_stale_decisions(dry_run=dry_run),
+        )
+
+        return {
+            "dry_run": dry_run,
+            "stale_count": len(stale),
+            "stale_decisions": [
+                {
+                    "decision_id": d.get("decision_id"),
+                    "symbol": d.get("symbol"),
+                    "action": d.get("action"),
+                    "source": d.get("source"),
+                    "mt5_ticket": d.get("mt5_ticket"),
+                    "entry_price": d.get("entry_price"),
+                    "created_at": d.get("created_at"),
+                }
+                for d in stale
+            ],
         }
 
     except Exception as e:

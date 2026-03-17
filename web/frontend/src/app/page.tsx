@@ -43,6 +43,7 @@ export default function Dashboard() {
   const pipelineLabels: Record<string, string> = {
     smc_quant_basic: "SMC Quant Basic",
     smc_quant: "SMC Quant",
+    smc_mtf: "SMC MTF",
     breakout_quant: "Breakout",
     range_quant: "Range",
     volume_profile: "Volume Profile",
@@ -53,6 +54,7 @@ export default function Dashboard() {
   const pipelineColors: Record<string, string> = {
     smc_quant_basic: "text-purple-500",
     smc_quant: "text-emerald-500",
+    smc_mtf: "text-indigo-500",
     breakout_quant: "text-orange-500",
     range_quant: "text-teal-500",
     volume_profile: "text-blue-500",

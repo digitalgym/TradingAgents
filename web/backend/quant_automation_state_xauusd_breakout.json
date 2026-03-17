@@ -1,58 +1,10 @@
 {
   "last_analysis_time": {
-    "XAUUSD": "2026-03-17T17:56:22.608191"
+    "XAUUSD": "2026-03-18T06:05:03.977640"
   },
-  "last_updated": "2026-03-17T17:56:27.888624",
+  "last_updated": "2026-03-18T07:53:39.612036",
   "status": "running",
   "analysis_results": [
-    {
-      "timestamp": "2026-03-16T18:03:35.456896",
-      "symbol": "XAUUSD",
-      "pipeline": "breakout_quant",
-      "signal": "HOLD",
-      "confidence": 0.85,
-      "entry_price": null,
-      "stop_loss": null,
-      "take_profit": null,
-      "rationale": "Market is explicitly not consolidating, no BB squeeze despite low volatility, price near range low but bearish structure favors sells near range high which is not the case, unclear entry zone per breakout rules.\n\n**Invalidation**: Formation of a clear consolidation range with BB squeeze and defined structure bias",
-      "trailing_stop_atr_multiplier": null,
-      "executed": false,
-      "execution_ticket": null,
-      "execution_error": null,
-      "duration_seconds": 8.721696138381958
-    },
-    {
-      "timestamp": "2026-03-16T18:19:31.372585",
-      "symbol": "XAUUSD",
-      "pipeline": "breakout_quant",
-      "signal": "HOLD",
-      "confidence": 0.3,
-      "entry_price": null,
-      "stop_loss": null,
-      "take_profit": null,
-      "rationale": "Market is ranging but explicitly not consolidating with no BB squeeze; price near range low but bearish structure favors sells near range high or downside breakdown which has not occurred; conflicting signals with discount zone favoring longs; poor R:R potential without clear setup.\n\n**Invalidation**: N/A - no trade setup",
-      "trailing_stop_atr_multiplier": null,
-      "executed": false,
-      "execution_ticket": null,
-      "execution_error": null,
-      "duration_seconds": 8.176379442214966
-    },
-    {
-      "timestamp": "2026-03-16T18:35:30.026956",
-      "symbol": "XAUUSD",
-      "pipeline": "breakout_quant",
-      "signal": "HOLD",
-      "confidence": 0.2,
-      "entry_price": null,
-      "stop_loss": null,
-      "take_profit": null,
-      "rationale": "Market is ranging but not in clear consolidation (no BB squeeze, explicitly not consolidating), structure bearish but price mid-to-low range without breakout confirmation or anticipation entry zone alignment; poor setup quality per breakout rules.\n\n**Invalidation**: N/A - no trade setup",
-      "trailing_stop_atr_multiplier": null,
-      "executed": false,
-      "execution_ticket": null,
-      "execution_error": null,
-      "duration_seconds": 8.036082983016968
-    },
     {
       "timestamp": "2026-03-16T18:50:46.867094",
       "symbol": "XAUUSD",
@@ -1604,11 +1556,59 @@
       "execution_ticket": null,
       "execution_error": null,
       "duration_seconds": 5.278435707092285
+    },
+    {
+      "timestamp": "2026-03-17T22:04:40.508376",
+      "symbol": "XAUUSD",
+      "pipeline": "breakout_quant",
+      "signal": "HOLD",
+      "confidence": 0.9,
+      "entry_price": null,
+      "stop_loss": null,
+      "take_profit": null,
+      "rationale": "Market is not consolidating (no BB squeeze, wide 11% range, extreme volatility), neutral structure bias, no volume contraction, no breakout confirmed; per rules, hold when no clear setup.\n\n**Invalidation**: No clear consolidation forming or breakout confirmation with volume surge",
+      "trailing_stop_atr_multiplier": null,
+      "executed": false,
+      "execution_ticket": null,
+      "execution_error": null,
+      "duration_seconds": 57.34323525428772
+    },
+    {
+      "timestamp": "2026-03-18T02:05:00.407362",
+      "symbol": "XAUUSD",
+      "pipeline": "breakout_quant",
+      "signal": "HOLD",
+      "confidence": 0.95,
+      "entry_price": null,
+      "stop_loss": null,
+      "take_profit": null,
+      "rationale": "Market is not consolidating (explicitly stated), no BB squeeze, neutral structure bias, no volume contraction, no breakout confirmed, and extreme volatility regime indicate no valid breakout setup; wait for proper consolidation to form.\n\n**Invalidation**: Formation of clear consolidation range with volume contraction and defined structure bias (higher lows or lower highs).",
+      "trailing_stop_atr_multiplier": null,
+      "executed": false,
+      "execution_ticket": null,
+      "execution_error": null,
+      "duration_seconds": 14.211606502532959
+    },
+    {
+      "timestamp": "2026-03-18T06:05:10.563274",
+      "symbol": "XAUUSD",
+      "pipeline": "breakout_quant",
+      "signal": "HOLD",
+      "confidence": 0.95,
+      "entry_price": null,
+      "stop_loss": null,
+      "take_profit": null,
+      "rationale": "No consolidation present (explicitly 'Not consolidating', no BB squeeze), neutral structure bias, no volume contraction, no breakout confirmed, extreme volatility regime unsuitable for breakout entries; wait for clear range formation with structure bias and volume dry-up.\n\n**Invalidation**: Price breaks above range high 5419.24 with volume surge >1.5x average, confirming bullish breakout",
+      "trailing_stop_atr_multiplier": null,
+      "executed": false,
+      "execution_ticket": null,
+      "execution_error": null,
+      "duration_seconds": 6.5846168994903564
     }
   ],
   "position_results": [
     {
-      "timestamp": "2026-03-17T15:37:49.647016",
+      "timestamp": "2026-03-17T23:46:40.229120",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1620,7 +1620,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T15:39:06.935389",
+      "timestamp": "2026-03-17T23:47:47.719166",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1632,7 +1632,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T15:40:36.506504",
+      "timestamp": "2026-03-17T23:48:55.227773",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1644,7 +1644,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T15:41:49.033516",
+      "timestamp": "2026-03-17T23:50:01.217988",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1656,7 +1656,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T15:43:06.829540",
+      "timestamp": "2026-03-17T23:51:08.355587",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1668,7 +1668,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T15:44:24.404994",
+      "timestamp": "2026-03-17T23:52:15.369987",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1680,7 +1680,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T15:45:42.957038",
+      "timestamp": "2026-03-17T23:53:20.109613",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1692,7 +1692,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T15:46:58.897531",
+      "timestamp": "2026-03-17T23:54:27.684656",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1704,7 +1704,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T15:48:16.788777",
+      "timestamp": "2026-03-17T23:55:35.059975",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1716,7 +1716,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T15:49:30.026176",
+      "timestamp": "2026-03-17T23:56:42.305145",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1728,7 +1728,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T15:50:48.125226",
+      "timestamp": "2026-03-17T23:57:50.033734",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1740,7 +1740,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T15:52:03.188141",
+      "timestamp": "2026-03-17T23:59:13.759470",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1752,7 +1752,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T15:53:15.729472",
+      "timestamp": "2026-03-18T00:00:19.794289",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1764,7 +1764,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T15:54:30.151868",
+      "timestamp": "2026-03-18T00:01:25.992458",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1776,7 +1776,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T15:56:14.780936",
+      "timestamp": "2026-03-18T00:02:32.325089",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1788,7 +1788,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T15:57:34.550891",
+      "timestamp": "2026-03-18T00:03:39.581659",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1800,7 +1800,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T15:58:56.972730",
+      "timestamp": "2026-03-18T00:04:46.778202",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1812,7 +1812,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:00:14.240634",
+      "timestamp": "2026-03-18T00:05:53.165241",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1824,7 +1824,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:01:33.885674",
+      "timestamp": "2026-03-18T00:06:59.091112",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1836,7 +1836,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:02:51.494712",
+      "timestamp": "2026-03-18T00:08:07.541532",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1848,7 +1848,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:04:16.070235",
+      "timestamp": "2026-03-18T00:09:13.342582",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1860,7 +1860,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:05:36.691563",
+      "timestamp": "2026-03-18T00:10:21.307695",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1872,7 +1872,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:07:14.854378",
+      "timestamp": "2026-03-18T00:11:29.300599",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1884,7 +1884,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:08:48.723320",
+      "timestamp": "2026-03-18T00:12:37.536545",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1896,7 +1896,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:10:00.377449",
+      "timestamp": "2026-03-18T00:13:43.775987",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1908,7 +1908,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:11:08.446027",
+      "timestamp": "2026-03-18T00:14:51.555499",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1920,7 +1920,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:12:48.876063",
+      "timestamp": "2026-03-18T00:15:59.670322",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1932,7 +1932,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:14:05.030990",
+      "timestamp": "2026-03-18T00:17:06.514703",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1944,7 +1944,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:15:21.141636",
+      "timestamp": "2026-03-18T00:18:13.616833",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1956,7 +1956,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:16:43.427166",
+      "timestamp": "2026-03-18T00:19:20.645312",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1968,7 +1968,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:18:24.686097",
+      "timestamp": "2026-03-18T00:20:28.918771",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1980,7 +1980,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:20:13.657789",
+      "timestamp": "2026-03-18T00:21:35.689067",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -1992,7 +1992,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:21:34.929703",
+      "timestamp": "2026-03-18T00:22:42.879318",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2004,7 +2004,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:22:57.554159",
+      "timestamp": "2026-03-18T00:23:48.747805",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2016,7 +2016,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:24:16.376316",
+      "timestamp": "2026-03-18T00:24:56.549652",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2028,7 +2028,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:25:26.858380",
+      "timestamp": "2026-03-18T00:26:02.120487",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2040,7 +2040,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:26:49.485032",
+      "timestamp": "2026-03-18T00:27:09.671289",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2052,7 +2052,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:28:04.602163",
+      "timestamp": "2026-03-18T00:28:15.261361",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2064,7 +2064,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:29:33.864535",
+      "timestamp": "2026-03-18T00:29:21.629650",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2076,7 +2076,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:30:43.735858",
+      "timestamp": "2026-03-18T00:30:26.893981",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2088,7 +2088,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:32:07.811531",
+      "timestamp": "2026-03-18T00:31:32.414257",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2100,7 +2100,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:33:43.693535",
+      "timestamp": "2026-03-18T00:32:38.641953",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2112,7 +2112,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:35:08.620220",
+      "timestamp": "2026-03-18T00:33:44.445329",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2124,7 +2124,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:36:27.894207",
+      "timestamp": "2026-03-18T00:34:49.832963",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2136,7 +2136,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:37:52.673366",
+      "timestamp": "2026-03-18T00:35:56.759651",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2148,7 +2148,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:39:11.326579",
+      "timestamp": "2026-03-18T00:37:02.438614",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2160,7 +2160,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:40:25.666894",
+      "timestamp": "2026-03-18T00:38:09.314123",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2172,7 +2172,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:42:14.396508",
+      "timestamp": "2026-03-18T00:39:17.089296",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2184,7 +2184,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:43:28.158840",
+      "timestamp": "2026-03-18T00:40:22.591098",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2196,7 +2196,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:44:43.140136",
+      "timestamp": "2026-03-18T00:41:28.789868",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2208,7 +2208,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:46:07.816339",
+      "timestamp": "2026-03-18T00:42:36.662961",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2220,7 +2220,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:47:32.392770",
+      "timestamp": "2026-03-18T00:43:41.575666",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2232,7 +2232,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:49:07.043112",
+      "timestamp": "2026-03-18T00:44:48.078820",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2244,7 +2244,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:50:23.405674",
+      "timestamp": "2026-03-18T00:45:53.922052",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2256,7 +2256,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:51:48.572181",
+      "timestamp": "2026-03-18T00:46:59.984643",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2268,7 +2268,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:53:05.448819",
+      "timestamp": "2026-03-18T00:48:06.888665",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2280,7 +2280,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:54:27.702229",
+      "timestamp": "2026-03-18T00:49:14.441723",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2292,7 +2292,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:55:38.659420",
+      "timestamp": "2026-03-18T00:50:20.396854",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2304,7 +2304,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:57:16.844910",
+      "timestamp": "2026-03-18T00:51:26.623421",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2316,7 +2316,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T16:58:34.570488",
+      "timestamp": "2026-03-18T00:52:32.602381",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2328,7 +2328,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:00:36.990371",
+      "timestamp": "2026-03-18T00:53:40.830094",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2340,7 +2340,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:02:16.887280",
+      "timestamp": "2026-03-18T00:54:46.771183",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2352,7 +2352,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:03:43.471196",
+      "timestamp": "2026-03-18T00:55:53.443356",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2364,7 +2364,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:05:11.479562",
+      "timestamp": "2026-03-18T00:56:58.995337",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2376,7 +2376,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:06:31.573358",
+      "timestamp": "2026-03-18T00:58:06.375393",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2388,7 +2388,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:07:55.747577",
+      "timestamp": "2026-03-18T00:59:12.895698",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2400,7 +2400,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:09:24.287474",
+      "timestamp": "2026-03-18T01:00:20.839227",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2412,7 +2412,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:10:52.339369",
+      "timestamp": "2026-03-18T01:01:28.274612",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2424,7 +2424,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:12:10.250525",
+      "timestamp": "2026-03-18T01:02:34.748376",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2436,7 +2436,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:13:28.902855",
+      "timestamp": "2026-03-18T01:03:40.946250",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2448,7 +2448,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:14:39.700638",
+      "timestamp": "2026-03-18T01:04:47.196449",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2460,7 +2460,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:15:57.424407",
+      "timestamp": "2026-03-18T01:05:53.900086",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2472,7 +2472,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:17:13.428460",
+      "timestamp": "2026-03-18T01:07:00.866869",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2484,7 +2484,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:18:40.498734",
+      "timestamp": "2026-03-18T01:08:07.325555",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2496,7 +2496,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:20:26.983467",
+      "timestamp": "2026-03-18T01:09:13.935785",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2508,7 +2508,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:21:47.356839",
+      "timestamp": "2026-03-18T01:10:19.107705",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2520,7 +2520,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:23:27.096172",
+      "timestamp": "2026-03-18T01:11:27.831496",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2532,7 +2532,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:24:37.451437",
+      "timestamp": "2026-03-18T01:12:34.331841",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2544,7 +2544,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:26:25.445838",
+      "timestamp": "2026-03-18T01:13:41.710437",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2556,7 +2556,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:27:53.200917",
+      "timestamp": "2026-03-18T01:14:50.269069",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2568,7 +2568,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:29:14.777029",
+      "timestamp": "2026-03-18T01:15:56.904089",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2580,7 +2580,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:30:22.228340",
+      "timestamp": "2026-03-18T01:17:03.877260",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2592,7 +2592,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:31:34.803058",
+      "timestamp": "2026-03-18T01:18:11.846104",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2604,7 +2604,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:32:59.052111",
+      "timestamp": "2026-03-18T01:19:17.404411",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2616,7 +2616,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:34:12.286636",
+      "timestamp": "2026-03-18T01:20:24.374941",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2628,7 +2628,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:35:36.899749",
+      "timestamp": "2026-03-18T01:21:31.271249",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2640,7 +2640,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:36:56.053159",
+      "timestamp": "2026-03-18T01:22:36.461795",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2652,7 +2652,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:38:37.788626",
+      "timestamp": "2026-03-18T01:23:42.608683",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2664,7 +2664,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:40:08.713391",
+      "timestamp": "2026-03-18T01:24:48.509986",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2676,7 +2676,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:41:28.238484",
+      "timestamp": "2026-03-18T01:25:54.881338",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2688,7 +2688,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:42:49.341473",
+      "timestamp": "2026-03-18T01:27:01.438827",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2700,7 +2700,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:44:10.675596",
+      "timestamp": "2026-03-18T01:28:07.887642",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2712,7 +2712,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:45:19.565104",
+      "timestamp": "2026-03-18T01:29:15.149756",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2724,7 +2724,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:47:15.413485",
+      "timestamp": "2026-03-18T01:30:22.329300",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2736,7 +2736,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:48:43.893132",
+      "timestamp": "2026-03-18T01:31:28.476130",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2748,7 +2748,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:49:58.619354",
+      "timestamp": "2026-03-18T01:32:34.367017",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2760,7 +2760,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:51:19.620446",
+      "timestamp": "2026-03-18T01:33:40.653870",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2772,7 +2772,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:52:39.111345",
+      "timestamp": "2026-03-18T01:34:48.380511",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2784,7 +2784,7 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:54:36.978691",
+      "timestamp": "2026-03-18T01:35:54.374672",
       "ticket": 1627016,
       "symbol": "XAUUSD",
       "action": "no_change",
@@ -2796,57 +2796,18 @@
       "pnl": null
     },
     {
-      "timestamp": "2026-03-17T17:55:56.923047",
+      "timestamp": "2026-03-18T01:37:02.871667",
       "ticket": 1627016,
       "symbol": "XAUUSD",
-      "action": "no_change",
-      "old_sl": 4988.7,
+      "action": "closed",
+      "old_sl": null,
       "new_sl": null,
-      "old_tp": 5130.89,
+      "old_tp": null,
       "new_tp": null,
-      "close_reason": null,
-      "pnl": null
+      "close_reason": "breakeven_stop",
+      "pnl": 0.0
     }
   ],
-  "last_assumption_review": "2026-03-17T17:35:37.040373",
-  "assumption_review_results": [
-    {
-      "decision_id": "XAUUSD_20260317_022226",
-      "symbol": "XAUUSD",
-      "direction": "BUY",
-      "ticket": 1627016,
-      "pnl_pct": 0.716820013229904,
-      "recommended_action": "adjust_sl",
-      "suggested_sl": 4997.375357142857,
-      "suggested_tp": null,
-      "findings_count": 3,
-      "has_critical": true,
-      "findings": [
-        {
-          "category": "bias_shift",
-          "severity": "critical",
-          "message": "Market bias is now BEARISH \u2014 against your BUY position. Original trade assumed bullish conditions.",
-          "suggested_action": "monitor",
-          "suggested_value": null
-        },
-        {
-          "category": "zone_mitigated",
-          "severity": "warning",
-          "message": "No unmitigated support zones remain below current price. The order blocks or FVGs that supported the original entry may have been filled.",
-          "suggested_action": "monitor",
-          "suggested_value": null
-        },
-        {
-          "category": "zone_emerged",
-          "severity": "info",
-          "message": "New ATR (1.5x) has formed between entry and current price. Trailing stop can be tightened from 4988.70000 to 4997.37536.",
-          "suggested_action": "adjust_sl",
-          "suggested_value": 4997.375357142857
-        }
-      ],
-      "llm_assessment": "1. The original bullish assumptions have been invalidated by the current bearish market bias and lack of unmitigated support zones below, though the price movement to 5024.46000 initially validated the upside breakout potential; the anticipated liquidity sweep hasn't occurred, and the 8% discount zone entry is now at risk.\n\n2. The SL at 4988.70000 remains safe based on current structure, but should be adjusted higher to 4997.37536 to account for the new ATR and protect profits; TP at 5130.89000 is still feasible but faces resistance at 5083.47500, making it less appropriate in this bearish context.\n\n3. Two new unmitigated bearish FVGs have emerged, reinforcing the bearish picture and increasing downside risk with no identified support levels below the current price.\n\n4. ADJUST: Tighten SL to 4997.37536 immediately to lock in profits, monitor for further bearish shifts, and consider closing if price approaches resistance at 5083.47500 without bullish confirmation.",
-      "error": null,
-      "timestamp": "2026-03-17T17:35:37.111185"
-    }
-  ]
+  "last_assumption_review": "2026-03-18T07:08:37.186303",
+  "assumption_review_results": []
 }

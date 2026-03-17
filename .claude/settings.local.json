@@ -49,7 +49,18 @@
       "Bash(python -c \"from tradingagents.automation.quant_automation import QuantAutomation, QuantAutomationConfig; c = QuantAutomationConfig\\(\\); print\\(f''review interval: {c.assumption_review_interval_seconds}s, auto_apply: {c.assumption_review_auto_apply}''\\); print\\(''quant_automation OK''\\)\")",
       "Bash(python -c \":*)",
       "Bash(python -c \"from tradingagents.automation.quant_automation import QuantAutomation, QuantAutomationConfig; print\\(''OK''\\)\")",
-      "Bash(wc -l tradingagents/dataflows/data_cache/AAPL*.csv tradingagents/dataflows/data_cache/SPY*.csv)"
+      "Bash(wc -l tradingagents/dataflows/data_cache/AAPL*.csv tradingagents/dataflows/data_cache/SPY*.csv)",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Bash(done)",
+      "Bash(wc -l /d/Documents/TradingAgents/tradingagents/learning/*.py)",
+      "Bash(wc -l /d/Documents/TradingAgents/tradingagents/graph/*.py)",
+      "Bash(sed 's/export const //')",
+      "Bash(sed 's/ .*//')",
+      "Bash(wc -l /d/Documents/TradingAgents/tradingagents/agents/analysts/*.py)",
+      "Bash(wc -l /d/Documents/TradingAgents/tradingagents/agents/*/*.py)",
+      "Bash(wc -l /d/Documents/TradingAgents/tradingagents/dataflows/*.py)",
+      "Bash(wc -l /d/Documents/TradingAgents/tradingagents/automation/*.py)"
     ]
   }
 }

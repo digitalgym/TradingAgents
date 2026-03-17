@@ -54,8 +54,11 @@ from tradingagents.trade_decisions import (
 from tradingagents.dataflows.mt5_data import get_closed_deal_by_ticket
 
 
+# Project root for resolving state/config files regardless of CWD
+_PROJECT_ROOT = Path(__file__).parent.parent.parent
+
 # Global symbol limits file (shared across all automations)
-_SYMBOL_LIMITS_FILE = Path(__file__).parent.parent.parent / "automation_symbol_limits.json"
+_SYMBOL_LIMITS_FILE = _PROJECT_ROOT / "automation_symbol_limits.json"
 
 
 def _get_global_position_limits() -> Dict[str, int]:
@@ -80,6 +83,7 @@ class PipelineType(str, Enum):
     """Available analysis pipelines."""
     SMC_QUANT_BASIC = "smc_quant_basic"
     SMC_QUANT = "smc_quant"
+    SMC_MTF = "smc_mtf"
     BREAKOUT_QUANT = "breakout_quant"
     RANGE_QUANT = "range_quant"
     VOLUME_PROFILE = "volume_profile"
@@ -118,7 +122,7 @@ class QuantAutomationConfig:
     max_positions_per_symbol: int = 1  # Max positions THIS automation can open per symbol
     enable_trailing_stop: bool = True
     trailing_stop_atr_multiplier: float = 1.5
-    move_to_breakeven_pct: float = 1.0  # Move SL to breakeven at 1% profit
+    move_to_breakeven_atr_mult: float = 1.5  # Move SL to breakeven after profit >= 1.5x ATR
 
     # Risk settings
     max_risk_per_trade_pct: float = 1.0  # 1% of account per trade
@@ -145,6 +149,10 @@ class QuantAutomationConfig:
         """Create from dictionary."""
         if "pipeline" in data and isinstance(data["pipeline"], str):
             data["pipeline"] = PipelineType(data["pipeline"])
+        # Backward compat: migrate old move_to_breakeven_pct to move_to_breakeven_atr_mult
+        if "move_to_breakeven_pct" in data and "move_to_breakeven_atr_mult" not in data:
+            # Old configs used %, new uses ATR multiplier. Default to 1.5x ATR.
+            data["move_to_breakeven_atr_mult"] = 1.5
         # Strip unknown keys (e.g. removed fields from older configs)
         valid_fields = {f.name for f in fields(cls)}
         filtered = {k: v for k, v in data.items() if k in valid_fields}
@@ -236,7 +244,7 @@ class QuantAutomation:
 
     def _setup_logging(self):
         """Setup logging."""
-        logs_dir = Path(self.config.logs_dir)
+        logs_dir = _PROJECT_ROOT / self.config.logs_dir
         logs_dir.mkdir(parents=True, exist_ok=True)
 
         self.logger = logging.getLogger(f"QuantAutomation.{self._source}")
@@ -262,7 +270,7 @@ class QuantAutomation:
 
     def _load_state(self):
         """Load automation state from file."""
-        state_file = Path(self.config.state_file)
+        state_file = _PROJECT_ROOT / self.config.state_file
         if state_file.exists():
             try:
                 with open(state_file, "r") as f:
@@ -298,7 +306,7 @@ class QuantAutomation:
         Uses atomic write (write to temp, then rename) to avoid corruption
         when multiple async loops call this concurrently.
         """
-        state_file = Path(self.config.state_file)
+        state_file = _PROJECT_ROOT / self.config.state_file
         state_file.parent.mkdir(parents=True, exist_ok=True)
 
         def _serialize_result(r):
@@ -1093,6 +1101,122 @@ class QuantAutomation:
                 duration_seconds=elapsed,
             )
 
+    async def _run_smc_mtf_analysis(self, symbol: str) -> AnalysisCycleResult:
+        """Run SMC Multi-Timeframe analysis (OTE + Channel, no LLM)."""
+        start_time = time.time()
+
+        try:
+            import aiohttp
+
+            self.logger.info(f"SMC MTF: calling API for {symbol} (no LLM)...")
+
+            async with aiohttp.ClientSession() as session:
+                payload = {
+                    "symbol": symbol,
+                    "timeframe": self.config.timeframe,
+                }
+                async with session.post(
+                    "http://localhost:8000/api/analysis/smc-mtf",
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=30)
+                ) as response:
+                    api_duration = time.time() - start_time
+                    if response.status != 200:
+                        error_text = await response.text()
+                        self.logger.error(f"SMC MTF API error (HTTP {response.status}) after {api_duration:.1f}s: {error_text[:200]}")
+                        return AnalysisCycleResult(
+                            timestamp=datetime.now(),
+                            symbol=symbol,
+                            pipeline="smc_mtf",
+                            signal="HOLD",
+                            confidence=0.0,
+                            rationale=f"API Error: {response.status}",
+                            duration_seconds=api_duration,
+                        )
+
+                    result = await response.json()
+
+            api_duration = time.time() - start_time
+            self.logger.info(f"SMC MTF API response: status={result.get('status', 'ok')} [total={api_duration:.1f}s]")
+
+            # Log MTF alignment details
+            mtf_details = result.get("mtf_details", {})
+            self.logger.info(
+                f"SMC MTF details: score={mtf_details.get('alignment_score')}, "
+                f"bias={mtf_details.get('trade_bias')}, htf={mtf_details.get('htf_bias')}, "
+                f"ltf={mtf_details.get('ltf_bias')}, ote={mtf_details.get('price_in_ote')}, "
+                f"confirmation={mtf_details.get('has_entry_confirmation')}"
+            )
+
+            decision = result.get("decision", {})
+
+            if not decision:
+                self.logger.warning(f"No decision in SMC MTF API response for {symbol}")
+                return AnalysisCycleResult(
+                    timestamp=datetime.now(),
+                    symbol=symbol,
+                    pipeline="smc_mtf",
+                    signal="HOLD",
+                    confidence=0.0,
+                    rationale="No decision from MTF analysis",
+                    duration_seconds=api_duration,
+                )
+
+            signal = decision.get("signal", "HOLD").upper()
+            if signal in ["BUY_TO_ENTER", "BUY"]:
+                signal = "BUY"
+            elif signal in ["SELL_TO_ENTER", "SELL"]:
+                signal = "SELL"
+            else:
+                signal = "HOLD"
+
+            self.logger.info(
+                f"SMC MTF decision for {symbol}: signal={signal}, "
+                f"confidence={decision.get('confidence')}, "
+                f"entry={decision.get('entry_price')}, "
+                f"sl={decision.get('stop_loss')}, tp={decision.get('take_profit')}"
+            )
+
+            return AnalysisCycleResult(
+                timestamp=datetime.now(),
+                symbol=symbol,
+                pipeline="smc_mtf",
+                signal=signal,
+                confidence=decision.get("confidence", 0.5),
+                entry_price=decision.get("entry_price"),
+                stop_loss=decision.get("stop_loss"),
+                take_profit=decision.get("take_profit"),
+                rationale=decision.get("rationale", ""),
+                duration_seconds=api_duration,
+            )
+
+        except asyncio.TimeoutError:
+            elapsed = time.time() - start_time
+            self.logger.error(f"SMC MTF TIMEOUT for {symbol} after {elapsed:.1f}s")
+            return AnalysisCycleResult(
+                timestamp=datetime.now(),
+                symbol=symbol,
+                pipeline="smc_mtf",
+                signal="HOLD",
+                confidence=0.0,
+                rationale=f"Timeout after {elapsed:.0f}s",
+                duration_seconds=elapsed,
+            )
+        except Exception as e:
+            elapsed = time.time() - start_time
+            self.logger.error(f"SMC MTF analysis error for {symbol} after {elapsed:.1f}s: {e}")
+            import traceback
+            self.logger.error(traceback.format_exc())
+            return AnalysisCycleResult(
+                timestamp=datetime.now(),
+                symbol=symbol,
+                pipeline="smc_mtf",
+                signal="HOLD",
+                confidence=0.0,
+                rationale=f"Error: {str(e)}",
+                duration_seconds=elapsed,
+            )
+
     async def _run_multi_agent_analysis(self, symbol: str) -> AnalysisCycleResult:
         """Run multi-agent pipeline analysis for a symbol."""
         start_time = time.time()
@@ -1183,45 +1307,86 @@ class QuantAutomation:
             return result
 
         # Check position limits
-        # 1) Per-automation: only count positions THIS automation owns
-        # 2) Global: per-symbol and total limits from portfolio_config.yaml
+        # 1) Per-automation: count BOTH open positions AND recent active decisions
+        #    (prevents rapid re-entry after SL hit)
+        # 2) Global: per-symbol limit across ALL automations on the account
+        # 3) Cooldown: min time between trades on same symbol per automation
         positions = get_open_positions()
         pending = get_pending_orders()
 
-        # Build owned tickets for this automation
+        # Build owned state for this automation
         my_source = self._source
         owned_tickets = set()
+        my_recent_decision_count = 0  # Active decisions for this symbol (even if position closed)
+        COOLDOWN_SECONDS = 1800  # 30 min cooldown after placing a trade
+        latest_trade_time = None
+
         try:
             active_decisions = list_active_decisions()
+            now = datetime.now()
             for dec in active_decisions:
-                if (dec.get("source") == my_source and dec.get("mt5_ticket")):
+                if dec.get("source") != my_source:
+                    continue
+                if dec.get("mt5_ticket"):
                     owned_tickets.add(dec["mt5_ticket"])
+                # Count active decisions for this symbol (catches recently-closed positions)
+                if dec.get("symbol") == result.symbol:
+                    my_recent_decision_count += 1
+                    # Track when the most recent trade was placed
+                    created = dec.get("created_at", "")
+                    if created:
+                        try:
+                            t = datetime.fromisoformat(created)
+                            if latest_trade_time is None or t > latest_trade_time:
+                                latest_trade_time = t
+                        except (ValueError, TypeError):
+                            pass
         except Exception:
             pass
 
-        # Per-automation count (owned only)
-        my_symbol_count = sum(
+        # Per-automation count: open positions owned by this automation
+        my_open_count = sum(
             1 for p in positions
             if p.get("symbol") == result.symbol and p.get("ticket") in owned_tickets
         )
 
-        # Global counts (all positions on the account)
+        # Global counts (all positions + pending on the account for this symbol)
         global_symbol_count = sum(1 for p in positions if p.get("symbol") == result.symbol)
         global_symbol_count += sum(1 for o in pending if o.get("symbol") == result.symbol)
-        global_total = len(positions) + len(pending)
 
         # Load global per-symbol limits
         global_limits = _get_global_position_limits()
-        global_max_symbol = global_limits.get(result.symbol, 3)  # default 3 if symbol not in file
+        global_max_symbol = global_limits.get(result.symbol, 3)
 
         self.logger.info(
-            f"Position limits: {result.symbol} owned={my_symbol_count}/{self.config.max_positions_per_symbol}, "
+            f"Position limits: {result.symbol} open={my_open_count}, "
+            f"active_decisions={my_recent_decision_count}/{self.config.max_positions_per_symbol}, "
             f"global={global_symbol_count}/{global_max_symbol}"
         )
 
-        if my_symbol_count >= self.config.max_positions_per_symbol:
-            self.logger.info(f"Automation max positions reached for {result.symbol} ({my_symbol_count} owned), skipping")
+        # Block if we have an open position for this symbol
+        if my_open_count >= self.config.max_positions_per_symbol:
+            self.logger.info(f"Automation max open positions reached for {result.symbol} ({my_open_count}), skipping")
             return result
+
+        # Block if we have too many active decisions (prevents rapid re-entry after SL)
+        if my_recent_decision_count >= self.config.max_positions_per_symbol:
+            self.logger.info(
+                f"Automation has {my_recent_decision_count} active decision(s) for {result.symbol} "
+                f"(max {self.config.max_positions_per_symbol}), skipping — stale decisions may need cleanup"
+            )
+            return result
+
+        # Cooldown: don't re-enter too soon after a trade on same symbol
+        if latest_trade_time:
+            seconds_since = (datetime.now() - latest_trade_time).total_seconds()
+            if seconds_since < COOLDOWN_SECONDS:
+                remaining = int(COOLDOWN_SECONDS - seconds_since)
+                self.logger.info(
+                    f"Cooldown active for {result.symbol}: last trade {seconds_since:.0f}s ago, "
+                    f"need {COOLDOWN_SECONDS}s ({remaining}s remaining), skipping"
+                )
+                return result
 
         if global_symbol_count >= global_max_symbol:
             self.logger.info(f"Global max for {result.symbol} reached ({global_symbol_count}/{global_max_symbol}), skipping")
@@ -1638,9 +1803,20 @@ class QuantAutomation:
                     atr = get_atr_for_symbol(symbol, period=14)
                     self.logger.debug(f"  ATR={atr:.5f}, pnl_pct={pnl_pct:.2f}%")
 
-                    # Check breakeven condition
-                    if pnl_pct >= self.config.move_to_breakeven_pct and current_sl != 0:
-                        self.logger.info(f"  Breakeven check: pnl {pnl_pct:.2f}% >= threshold {self.config.move_to_breakeven_pct}%")
+                    # Check breakeven condition (ATR-based: profit must exceed N * ATR)
+                    breakeven_threshold_distance = self.config.move_to_breakeven_atr_mult * atr
+                    if direction == "BUY":
+                        profit_distance = current_price - entry_price
+                    else:
+                        profit_distance = entry_price - current_price
+
+                    breakeven_eligible = profit_distance >= breakeven_threshold_distance and current_sl != 0
+
+                    if breakeven_eligible:
+                        self.logger.info(
+                            f"  Breakeven check: profit_distance {profit_distance:.5f} >= "
+                            f"threshold {breakeven_threshold_distance:.5f} ({self.config.move_to_breakeven_atr_mult}x ATR)"
+                        )
                         breakeven_sl, is_eligible = self.stop_loss_manager.calculate_breakeven_stop(
                             entry_price=entry_price,
                             current_price=current_price,
@@ -1717,7 +1893,7 @@ class QuantAutomation:
                         self.logger.debug(f"  No SL adjustment needed: pnl_pct={pnl_pct:.2f}%, trailing={self.config.enable_trailing_stop}")
 
                     # Run quick analysis to check for close signal
-                    if self.config.pipeline in (PipelineType.SMC_QUANT_BASIC, PipelineType.SMC_QUANT, PipelineType.BREAKOUT_QUANT, PipelineType.RANGE_QUANT, PipelineType.RULE_BASED):
+                    if self.config.pipeline in (PipelineType.SMC_QUANT_BASIC, PipelineType.SMC_QUANT, PipelineType.BREAKOUT_QUANT, PipelineType.RANGE_QUANT, PipelineType.RULE_BASED, PipelineType.SMC_MTF):
                         self.logger.info(f"  Running reversal check analysis for #{ticket} {symbol}...")
                         if self.config.pipeline == PipelineType.SMC_QUANT:
                             analysis = await self._run_smc_quant_analysis(symbol)
@@ -1727,6 +1903,8 @@ class QuantAutomation:
                             analysis = await self._run_range_quant_analysis(symbol)
                         elif self.config.pipeline == PipelineType.RULE_BASED:
                             analysis = await self._run_rule_based_analysis(symbol)
+                        elif self.config.pipeline == PipelineType.SMC_MTF:
+                            analysis = await self._run_smc_mtf_analysis(symbol)
                         else:
                             analysis = await self._run_quant_analysis(symbol)
                         self.logger.info(f"  Reversal check result: signal={analysis.signal}, confidence={analysis.confidence:.2f}")
@@ -1866,6 +2044,8 @@ class QuantAutomation:
                         result = await self._run_quant_analysis(symbol)
                     elif self.config.pipeline == PipelineType.SMC_QUANT:
                         result = await self._run_smc_quant_analysis(symbol)
+                    elif self.config.pipeline == PipelineType.SMC_MTF:
+                        result = await self._run_smc_mtf_analysis(symbol)
                     elif self.config.pipeline == PipelineType.BREAKOUT_QUANT:
                         result = await self._run_breakout_quant_analysis(symbol)
                     elif self.config.pipeline == PipelineType.RANGE_QUANT:
@@ -2165,6 +2345,8 @@ class QuantAutomation:
             return await self._run_quant_analysis(symbol)
         elif self.config.pipeline == PipelineType.SMC_QUANT:
             return await self._run_smc_quant_analysis(symbol)
+        elif self.config.pipeline == PipelineType.SMC_MTF:
+            return await self._run_smc_mtf_analysis(symbol)
         elif self.config.pipeline == PipelineType.BREAKOUT_QUANT:
             return await self._run_breakout_quant_analysis(symbol)
         elif self.config.pipeline == PipelineType.RANGE_QUANT:

@@ -784,6 +784,7 @@ export default function AutomationPage() {
   const pipelineLabels: Record<string, string> = {
     smc_quant_basic: "SMC Quant Basic",
     smc_quant: "SMC Quant",
+    smc_mtf: "SMC MTF",
     breakout_quant: "Breakout Quant",
     range_quant: "Range Quant",
     volume_profile: "Volume Profile",
@@ -794,6 +795,7 @@ export default function AutomationPage() {
   const pipelineColors: Record<string, string> = {
     smc_quant_basic: "text-purple-500",
     smc_quant: "text-emerald-500",
+    smc_mtf: "text-indigo-500",
     breakout_quant: "text-orange-500",
     range_quant: "text-teal-500",
     volume_profile: "text-blue-500",
@@ -821,6 +823,12 @@ export default function AutomationPage() {
       details: "Extended analysis window with deeper structural assessment. Same base signals as rule-based (75% WR D1, Sharpe 1.49) but LLM evaluates more context. Higher API cost for more thorough analysis.",
       recommendedTimeframes: "D1 (best), H4",
       recommendedInterval: "60-120 min",
+    },
+    smc_mtf: {
+      summary: "Multi-timeframe OTE + Channel analysis. No LLM, instant & free.",
+      details: "Combines Higher TF (D1/H4) bias with Lower TF (H4/H1) entries using OTE (Fibonacci retracement), regression channels, weekend gaps, and protected level flips. Alignment score 0-100 determines signal strength. Requires entry confirmation (weekend gap or protected flip) for high-confidence trades.",
+      recommendedTimeframes: "D1 (HTF=D1, LTF=H4), H4 (HTF=H4, LTF=H1)",
+      recommendedInterval: "15-30 min (instant computation)",
     },
     breakout_quant: {
       summary: "Consolidation breakout detection with BB squeeze.",
@@ -855,6 +863,7 @@ export default function AutomationPage() {
     rule_based:     { timeframe: "D1", interval: 900,   confidence: 0.65, atrMultiplier: 1.5 },
     smc_quant_basic:{ timeframe: "D1", interval: 1800,  confidence: 0.65, atrMultiplier: 1.5 },
     smc_quant:      { timeframe: "D1", interval: 3600,  confidence: 0.70, atrMultiplier: 2.0 },
+    smc_mtf:        { timeframe: "D1", interval: 900,   confidence: 0.60, atrMultiplier: 1.5 },
     breakout_quant: { timeframe: "D1", interval: 1800,  confidence: 0.65, atrMultiplier: 1.5 },
     range_quant:    { timeframe: "D1", interval: 3600,  confidence: 0.70, atrMultiplier: 2.5 },
     volume_profile: { timeframe: "H4", interval: 1800,  confidence: 0.65, atrMultiplier: 2.0 },
@@ -2295,6 +2304,7 @@ export default function AutomationPage() {
                   <SelectItem value="rule_based">Rule-Based SMC (no LLM, instant)</SelectItem>
                   <SelectItem value="smc_quant_basic">SMC Quant Basic</SelectItem>
                   <SelectItem value="smc_quant">SMC Quant (deep)</SelectItem>
+                  <SelectItem value="smc_mtf">SMC MTF (multi-TF, no LLM)</SelectItem>
                   <SelectItem value="breakout_quant">Breakout Quant</SelectItem>
                   <SelectItem value="range_quant">Range Quant (SMC levels)</SelectItem>
                   <SelectItem value="volume_profile">Volume Profile</SelectItem>

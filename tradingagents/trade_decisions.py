@@ -499,7 +499,7 @@ def close_decision(
     decision = load_decision(decision_id)
 
     if decision["status"] != "active":
-        print(f"⚠️ Decision {decision_id} already {decision['status']}")
+        print(f"[WARN] Decision {decision_id} already {decision['status']}")
         return decision
 
     entry_price = decision.get("entry_price")
@@ -603,7 +603,7 @@ def close_decision(
             portfolio.save_state()
 
         except Exception as e:
-            print(f"⚠️ Could not calculate reward signal: {e}")
+            print(f"[WARN] Could not calculate reward signal: {e}")
 
     # Update decision with basic outcome
     decision["exit_price"] = exit_price
@@ -636,9 +636,9 @@ def close_decision(
     with open(decision_file, "w") as f:
         json.dump(decision, f, indent=2, default=str)
 
-    print(f"✅ Decision closed: {decision_id}")
-    print(f"   Entry: {entry_price} → Exit: {exit_price}")
-    print(f"   P&L: {pnl_percent:+.2f}% ({'✓ Correct' if was_correct else '✗ Incorrect'})")
+    print(f"[OK] Decision closed: {decision_id}")
+    print(f"   Entry: {entry_price} -> Exit: {exit_price}")
+    print(f"   P&L: {pnl_percent:+.2f}% ({'Correct' if was_correct else 'Incorrect'})")
     if rr_realized is not None:
         print(f"   Risk-Reward: {rr_realized:+.2f}R (planned: {rr_planned:.2f}R)" if rr_planned else f"   Risk-Reward: {rr_realized:+.2f}R")
 
@@ -692,6 +692,75 @@ def list_active_decisions(symbol: Optional[str] = None) -> List[Dict[str, Any]]:
                 continue
     
     return sorted(decisions, key=lambda d: d["created_at"], reverse=True)
+
+
+def cleanup_stale_decisions(dry_run: bool = True) -> List[Dict[str, Any]]:
+    """Find and close active decisions whose MT5 positions no longer exist.
+
+    When a position is closed externally (SL/TP hit, manual close) but the
+    automation doesn't detect it, the decision stays 'active' forever.
+    This function reconciles by checking MT5 for each active decision's ticket.
+
+    Args:
+        dry_run: If True, only report stale decisions without closing them.
+
+    Returns:
+        List of stale decisions that were found (and closed if dry_run=False).
+    """
+    try:
+        from tradingagents.dataflows.mt5_data import get_open_positions, get_closed_deal_by_ticket
+    except ImportError:
+        return []
+
+    active = list_active_decisions()
+    if not active:
+        return []
+
+    # Get currently open MT5 tickets
+    try:
+        positions = get_open_positions()
+    except Exception:
+        return []
+
+    open_tickets = {p.get("ticket") for p in positions}
+
+    stale = []
+    for dec in active:
+        ticket = dec.get("mt5_ticket")
+        if not ticket:
+            continue  # No ticket = never executed, not stale
+
+        if ticket in open_tickets:
+            continue  # Position still open, not stale
+
+        # Position is gone from MT5 — this decision is stale
+        stale.append(dec)
+
+        if not dry_run:
+            # Try to get exit info from MT5 history
+            exit_price = dec.get("entry_price", 0)
+            pnl = 0.0
+            exit_reason = "stale_cleanup"
+            try:
+                deal = get_closed_deal_by_ticket(ticket, days_back=14)
+                if deal:
+                    exit_price = deal.get("price", exit_price)
+                    pnl = deal.get("profit", 0)
+                    exit_reason = "sl_hit" if pnl < 0 else "tp_hit"
+            except Exception:
+                pass
+
+            try:
+                close_decision(
+                    dec["decision_id"],
+                    exit_price=exit_price,
+                    exit_reason=exit_reason,
+                    outcome_notes=f"Auto-cleaned: MT5 position #{ticket} no longer open (pnl={pnl:.2f})",
+                )
+            except Exception as e:
+                print(f"Failed to close stale decision {dec['decision_id']}: {e}")
+
+    return stale
 
 
 def list_failed_decisions(symbol: Optional[str] = None, limit: int = 50) -> List[Dict[str, Any]]:
@@ -857,36 +926,13 @@ def set_decision_regime(decision_id: str, regime: Dict[str, str]):
         json.dump(decision, f, indent=2, default=str)
 
 
-def populate_regime_from_prices(
-    decision_id: str,
-    high: np.ndarray,
-    low: np.ndarray,
-    close: np.ndarray
-):
-    """
-    Detect and populate regime context from price data.
-    
-    Args:
-        decision_id: The decision to update
-        high: High prices
-        low: Low prices
-        close: Close prices
-    """
-    from tradingagents.indicators.regime import RegimeDetector
-    
-    detector = RegimeDetector()
-    regime = detector.get_full_regime(high, low, close)
-    set_decision_regime(decision_id, regime)
-    
-    print(f"📊 Regime detected: {regime['market_regime']} / {regime['volatility_regime']}")
-
 
 def cancel_decision(decision_id: str, reason: str = ""):
     """Cancel an active decision (e.g., order not filled)."""
     decision = load_decision(decision_id)
 
     if decision["status"] != "active":
-        print(f"⚠️ Decision {decision_id} already {decision['status']}")
+        print(f"[WARN] Decision {decision_id} already {decision['status']}")
         return
 
     decision["status"] = "cancelled"
@@ -1389,10 +1435,10 @@ def get_trade_memories(symbol: str, limit: int = 10) -> str:
             sl_dist_pct = abs(entry - sl) / entry * 100
             sl_dist_label = ""
             if sl_dist_pct < 0.3:
-                sl_dist_label = " ⚠️ EXTREMELY TIGHT"
+                sl_dist_label = " [WARN] EXTREMELY TIGHT"
                 tight_sl_count += 1
             elif sl_dist_pct < 0.5:
-                sl_dist_label = " ⚠️ VERY TIGHT"
+                sl_dist_label = " [WARN] VERY TIGHT"
                 tight_sl_count += 1
             elif sl_dist_pct < 1.0:
                 sl_dist_label = " (tight)"
@@ -1402,7 +1448,7 @@ def get_trade_memories(symbol: str, limit: int = 10) -> str:
         if entry and tp:
             tp_dist_pct = abs(tp - entry) / entry * 100
             if tp_dist_pct < 0.3:
-                line += f" | TP {tp_dist_pct:.1f}% from entry ⚠️ TOO CLOSE"
+                line += f" | TP {tp_dist_pct:.1f}% from entry [WARN] TOO CLOSE"
                 tight_tp_count += 1
 
         lines.append(line)
@@ -1410,11 +1456,11 @@ def get_trade_memories(symbol: str, limit: int = 10) -> str:
     # Add explicit warning if SL/TP placement is a pattern
     if tight_sl_count >= 2:
         lines.append("")
-        lines.append(f"⚠️ **CRITICAL PATTERN**: {tight_sl_count}/5 recent trades had SL too tight (<1% from entry).")
+        lines.append(f"[WARN] **CRITICAL PATTERN**: {tight_sl_count}/5 recent trades had SL too tight (<1% from entry).")
         lines.append("Your stops are getting hit or positions closed at a loss because SL is too close to entry.")
         lines.append("**ACTION REQUIRED**: Place SL at least 1-1.5x ATR from entry, or beyond the nearest OB/FVG zone. Do NOT use SL within 0.5% of entry.")
     if tight_tp_count >= 2:
-        lines.append(f"⚠️ **PATTERN**: {tight_tp_count}/5 recent trades had TP too close (<0.3% from entry). Use wider targets.")
+        lines.append(f"[WARN] **PATTERN**: {tight_tp_count}/5 recent trades had TP too close (<0.3% from entry). Use wider targets.")
 
     # Top lessons from structured outcomes
     all_lessons = []

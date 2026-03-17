@@ -116,6 +116,7 @@ def get_parameter_grid(pipeline: str) -> Dict[str, List[Any]]:
             "lookback": [15, 20, 25, 30],
             "squeeze_threshold": [60, 70, 80],
             "hold": [3, 5, 7, 10],
+            "volume_confirm": [True, False],
             **exit_params,
         }
     elif pipeline in ("rule_based", "smc_quant_basic", "smc_quant"):
@@ -130,13 +131,26 @@ def get_parameter_grid(pipeline: str) -> Dict[str, List[Any]]:
             "hold": [3, 5, 7, 10],
             **exit_params,
         }
+    elif pipeline == "smc_mtf":
+        return {
+            "hold": [3, 5, 7, 10],
+            "min_alignment": [40, 50, 60],
+            "require_confirmation": [True, False],
+            "require_channel": [True, False],
+            **exit_params,
+        }
     else:
         return {}
 
 
 def get_tunable_timeframes(pipeline: str) -> List[str]:
-    """Return timeframes to test for a pipeline."""
-    if pipeline in ("rule_based", "smc_quant_basic", "smc_quant"):
+    """Return timeframes to test for a pipeline.
+
+    For smc_mtf, returns TF pairs as 'HTF+LTF' strings (e.g., 'D1+H4').
+    """
+    if pipeline == "smc_mtf":
+        return ["D1+H4", "D1+H1", "H4+H1"]
+    elif pipeline in ("rule_based", "smc_quant_basic", "smc_quant"):
         return ["D1", "H4", "H1"]
     elif pipeline in ("range_quant", "breakout_quant", "volume_profile"):
         return ["D1", "H4", "H1"]
@@ -326,8 +340,11 @@ def _precompute_bb_widths(close, lookback):
 
 
 def _precompute_breakout_signals(df, lookback=20):
-    """Pre-compute breakout/squeeze signals once per lookback."""
+    """Pre-compute breakout/squeeze signals once per lookback, including volume analysis."""
     high, low, close = df["high"].values, df["low"].values, df["close"].values
+    volume = df["tick_volume"].values if "tick_volume" in df.columns else (
+        df["volume"].values if "volume" in df.columns else None
+    )
     atr = _compute_atr(high, low, close)
     bb_widths = _precompute_bb_widths(close, lookback)
     signals = []
@@ -338,8 +355,9 @@ def _precompute_breakout_signals(df, lookback=20):
             signals.append(None)
             continue
 
-        rh = high[i - lookback + 1:i + 1]
-        rl = low[i - lookback + 1:i + 1]
+        # Range boundaries (exclude current candle for breakout detection)
+        rh = high[i - lookback + 1:i]
+        rl = low[i - lookback + 1:i]
         range_high, range_low = float(np.max(rh)), float(np.min(rl))
         mid = (range_high + range_low) / 2
         range_pct = ((range_high - range_low) / mid) * 100 if mid > 0 else 0
@@ -353,8 +371,10 @@ def _precompute_breakout_signals(df, lookback=20):
         squeeze_str = float((np.sum(hist > cw) / len(hist)) * 100) if len(hist) > 0 else 50.0
 
         half = lookback // 2
-        hl = float(np.min(rl[:half])) < float(np.min(rl[half:]))
-        lh = float(np.max(rh[:half])) > float(np.max(rh[half:]))
+        rh_full = high[i - lookback + 1:i + 1]
+        rl_full = low[i - lookback + 1:i + 1]
+        hl = float(np.min(rl_full[:half])) < float(np.min(rl_full[half:]))
+        lh = float(np.max(rh_full[:half])) > float(np.max(rh_full[half:]))
         if hl and not lh:
             bias = "bullish"
         elif lh and not hl:
@@ -362,39 +382,91 @@ def _precompute_breakout_signals(df, lookback=20):
         else:
             bias = "neutral"
 
+        # Volume analysis
+        vol_contracting = False
+        breakout_detected = False
+        breakout_dir = None
+        vol_surge = False
+        breakout_confirmed = False
+
+        if volume is not None:
+            recent_vol = volume[i - lookback + 1:i]  # exclude current candle
+            avg_vol_in_range = float(np.mean(recent_vol)) if len(recent_vol) > 0 else 0
+            current_vol = float(volume[i])
+
+            # Volume contraction vs prior period
+            if i >= lookback * 2:
+                prior_vol = volume[i - lookback * 2:i - lookback]
+                avg_vol_before = float(np.mean(prior_vol))
+                vol_contracting = avg_vol_in_range < avg_vol_before * 0.8 if avg_vol_before > 0 else False
+
+            # Breakout detection (close-based)
+            if close[i] > range_high:
+                breakout_detected = True
+                breakout_dir = "up"
+            elif close[i] < range_low:
+                breakout_detected = True
+                breakout_dir = "down"
+
+            # Volume surge on breakout (1.5x average)
+            if avg_vol_in_range > 0:
+                vol_surge = current_vol >= avg_vol_in_range * 1.5
+
+            breakout_confirmed = breakout_detected and vol_surge
+
         signals.append({
             "bar": i, "price": close[i], "atr": atr[i],
+            "range_high": range_high, "range_low": range_low,
             "range_pct": range_pct, "squeeze_str": squeeze_str, "bias": bias,
+            "vol_contracting": vol_contracting,
+            "breakout_detected": breakout_detected, "breakout_dir": breakout_dir,
+            "vol_surge": vol_surge, "breakout_confirmed": breakout_confirmed,
         })
     return signals
 
 
 def _backtest_breakout_from_cache(signals, df, hold_days=5, squeeze_threshold=70,
-                                   atr_sl_mult=1.5, rr_ratio=2.0):
-    """Backtest breakout_quant using pre-computed signals (fast sweep)."""
+                                   atr_sl_mult=1.5, rr_ratio=2.0, volume_confirm=True):
+    """Backtest breakout_quant using pre-computed signals (fast sweep).
+
+    Two entry modes:
+    - volume_confirm=True: Only enter on confirmed breakouts (close outside range + 1.5x volume surge)
+    - volume_confirm=False: Enter on squeeze + bias alone (original behavior, no volume needed)
+    """
     high, low, close = df["high"].values, df["low"].values, df["close"].values
     trades = []
     for sig in signals:
         if sig is None:
             continue
+        # Base filter: consolidation + squeeze + directional bias
         if not (sig["range_pct"] < 3.0 and sig["squeeze_str"] > 60 and sig["bias"] != "neutral"):
             continue
         if sig["squeeze_str"] < squeeze_threshold:
             continue
+
         i = sig["bar"]
         if i >= len(close) - 1:
             continue
+
+        if volume_confirm:
+            # Volume-confirmed breakout: must have breakout_confirmed=True
+            if not sig.get("breakout_confirmed"):
+                continue
+            # Direction from actual breakout, not just structure bias
+            direction = "BUY" if sig["breakout_dir"] == "up" else "SELL"
+        else:
+            # Original mode: enter on squeeze + bias, no volume needed
+            direction = "BUY" if sig["bias"] == "bullish" else "SELL"
+
         entry = sig["price"]
         sl_dist = sig["atr"] * atr_sl_mult
         tp_dist = sl_dist * rr_ratio
-        if sig["bias"] == "bullish":
+        if direction == "BUY":
             sl, tp = entry - sl_dist, entry + tp_dist
-            exit_info = _simulate_exit("BUY", entry, sl, tp, high, low, close, i, hold_days)
-            trades.append({"bar": i, "direction": "BUY", "entry": entry, **exit_info})
-        elif sig["bias"] == "bearish":
+        else:
             sl, tp = entry + sl_dist, entry - tp_dist
-            exit_info = _simulate_exit("SELL", entry, sl, tp, high, low, close, i, hold_days)
-            trades.append({"bar": i, "direction": "SELL", "entry": entry, **exit_info})
+        exit_info = _simulate_exit(direction, entry, sl, tp, high, low, close, i, hold_days)
+        trades.append({"bar": i, "direction": direction, "entry": entry, **exit_info})
     return trades
 
 
@@ -580,6 +652,112 @@ def _backtest_vp_from_cache(signals, df, hold_days=5, atr_sl_mult=1.5, rr_ratio=
 
 
 # ------------------------------------------------------------------
+# SMC MTF (Multi-Timeframe) backtest
+# ------------------------------------------------------------------
+
+def _precompute_mtf_signals(htf_df, ltf_df, swing_lookback=5, channel_lookback=50,
+                            progress_callback=None):
+    """Pre-compute MTF alignment signals using higher + lower TF data.
+
+    Returns list of signal dicts (one per lower TF bar) with alignment score,
+    trade bias, and entry confirmation status.
+    """
+    from tradingagents.agents.analysts.smc_mtf_quant import analyze_timeframe, run_mtf_analysis
+
+    ltf_high = ltf_df["high"].values
+    ltf_low = ltf_df["low"].values
+    ltf_close = ltf_df["close"].values
+    atr = _compute_atr(ltf_high, ltf_low, ltf_close)
+
+    signals = []
+    min_bars = max(channel_lookback + 20, 100)
+    total = len(ltf_df) - min_bars
+
+    for i in range(min_bars, len(ltf_df)):
+        if np.isnan(atr[i]):
+            signals.append(None)
+            continue
+
+        # Use a rolling window of lower TF data up to bar i
+        ltf_window = ltf_df.iloc[:i + 1].copy()
+        current_price = ltf_close[i]
+
+        try:
+            result = run_mtf_analysis(
+                higher_tf_df=htf_df,
+                lower_tf_df=ltf_window,
+                current_price=current_price,
+                swing_lookback=swing_lookback,
+                channel_lookback=channel_lookback,
+            )
+
+            bias = result.trade_bias
+            # Normalize weak biases
+            if bias.startswith("weak_"):
+                bias = bias[5:]  # "weak_bullish" -> "bullish"
+
+            signals.append({
+                "bar": i,
+                "price": current_price,
+                "atr": atr[i],
+                "htf_bias": result.higher_tf_bias,
+                "ltf_bias": result.lower_tf_bias,
+                "alignment_score": result.alignment_score,
+                "trade_bias": result.trade_bias,
+                "has_confirmation": result.has_entry_confirmation,
+                "confirmation_type": result.confirmation_type,
+                "price_in_ote": result.price_in_ote,
+                "price_in_channel": result.price_in_or_touches_channel,
+                "bias": bias,
+            })
+        except Exception:
+            signals.append(None)
+
+        if progress_callback and i % 20 == 0:
+            progress_callback("precompute", i - min_bars, total,
+                              f"MTF analysis: bar {i - min_bars}/{total}")
+
+    return signals
+
+
+def _backtest_mtf_from_cache(signals, df, hold_days=5, min_alignment=60,
+                              require_confirmation=True, require_channel=True,
+                              atr_sl_mult=1.5, rr_ratio=2.0):
+    """Backtest smc_mtf using pre-computed alignment signals."""
+    high, low, close = df["high"].values, df["low"].values, df["close"].values
+    trades = []
+    for sig in signals:
+        if sig is None:
+            continue
+        if sig["bias"] == "neutral":
+            continue
+        if sig["alignment_score"] < min_alignment:
+            continue
+        if require_confirmation and not sig["has_confirmation"]:
+            continue
+        if require_channel and not sig["price_in_channel"]:
+            continue
+
+        i = sig["bar"]
+        if i >= len(close) - 1:
+            continue
+
+        entry = sig["price"]
+        sl_dist = sig["atr"] * atr_sl_mult
+        tp_dist = sl_dist * rr_ratio
+
+        if sig["bias"] == "bullish":
+            sl, tp = entry - sl_dist, entry + tp_dist
+            exit_info = _simulate_exit("BUY", entry, sl, tp, high, low, close, i, hold_days)
+            trades.append({"bar": i, "direction": "BUY", "entry": entry, **exit_info})
+        elif sig["bias"] == "bearish":
+            sl, tp = entry + sl_dist, entry - tp_dist
+            exit_info = _simulate_exit("SELL", entry, sl, tp, high, low, close, i, hold_days)
+            trades.append({"bar": i, "direction": "SELL", "entry": entry, **exit_info})
+    return trades
+
+
+# ------------------------------------------------------------------
 # Pipeline-to-backtest dispatch
 # ------------------------------------------------------------------
 
@@ -629,6 +807,7 @@ def _run_pipeline_sweep(pipeline, df, timeframe, grid, precomputed_cache=None,
                 signals, df, hold_days=params["hold"],
                 squeeze_threshold=params["squeeze_threshold"],
                 atr_sl_mult=atr_sl, rr_ratio=rr,
+                volume_confirm=params.get("volume_confirm", True),
             )
         elif pipeline in ("rule_based", "smc_quant_basic", "smc_quant"):
             if precomputed_cache is None:
@@ -645,6 +824,16 @@ def _run_pipeline_sweep(pipeline, df, timeframe, grid, precomputed_cache=None,
                 continue
             trades = _backtest_vp_from_cache(
                 signals, df, hold_days=params["hold"],
+                atr_sl_mult=atr_sl, rr_ratio=rr,
+            )
+        elif pipeline == "smc_mtf":
+            if precomputed_cache is None:
+                continue
+            trades = _backtest_mtf_from_cache(
+                precomputed_cache, df, hold_days=params["hold"],
+                min_alignment=params.get("min_alignment", 60),
+                require_confirmation=params.get("require_confirmation", True),
+                require_channel=params.get("require_channel", True),
                 atr_sl_mult=atr_sl, rr_ratio=rr,
             )
         else:
@@ -683,7 +872,9 @@ def best_params_to_config_updates(pipeline: str, best: TuneResult) -> Dict[str, 
 
     # Analysis interval based on timeframe — match candle period for sub-H4,
     # check key levels periodically for H4/D1
-    updates["analysis_interval_minutes"] = _TIMEFRAME_INTERVAL_MINUTES.get(best.timeframe, 60)
+    # For MTF pairs like "D1+H4", use the lower TF for interval
+    interval_tf = best.timeframe.split("+")[-1] if "+" in best.timeframe else best.timeframe
+    updates["analysis_interval_minutes"] = _TIMEFRAME_INTERVAL_MINUTES.get(interval_tf, 60)
 
     # ATR SL multiplier — directly maps to trailing_stop_atr_multiplier
     if "atr_sl_mult" in best.params:
@@ -748,6 +939,7 @@ async def run_tune(
         else "Pre-compute range signals" if pipeline == "range_quant"
         else "Pre-compute breakout signals" if pipeline == "breakout_quant"
         else "Pre-compute VP signals" if pipeline == "volume_profile"
+        else "Pre-compute MTF alignment" if pipeline == "smc_mtf"
         else "Pre-compute signals"
     )
     steps = [
@@ -766,21 +958,42 @@ async def run_tune(
     steps[0]["status"] = "running"
     _progress("loading_data", 0, total_combos, f"Connecting to MT5...")
 
-    data = {}
+    is_mtf = pipeline == "smc_mtf"
+    data = {}       # {tf_key: df} for single-TF, {tf_pair: (htf_df, ltf_df)} for MTF
+    raw_data = {}   # cache individual TF loads to avoid duplicates
+
     for idx_tf, tf in enumerate(timeframes):
         steps[0]["status"] = "done"
         steps[1]["status"] = "running"
-        _progress("loading_data", 0, total_combos,
-                  f"Loading {symbol} {tf} ({bars} bars)...")
-        try:
-            data[tf] = await asyncio.to_thread(load_mt5_data, symbol, tf, bars)
-            logger.info(f"Loaded {len(data[tf])} {tf} bars for {symbol}")
+
+        if is_mtf and "+" in tf:
+            # MTF pair: load both timeframes
+            htf, ltf = tf.split("+")
+            for sub_tf in (htf, ltf):
+                if sub_tf not in raw_data:
+                    _progress("loading_data", 0, total_combos,
+                              f"Loading {symbol} {sub_tf} ({bars} bars)...")
+                    try:
+                        raw_data[sub_tf] = await asyncio.to_thread(load_mt5_data, symbol, sub_tf, bars)
+                        logger.info(f"Loaded {len(raw_data[sub_tf])} {sub_tf} bars for {symbol}")
+                    except Exception as e:
+                        logger.warning(f"Failed to load {sub_tf} data for {symbol}: {e}")
+            if htf in raw_data and ltf in raw_data:
+                data[tf] = (raw_data[htf], raw_data[ltf])
+                _progress("loading_data", 0, total_combos,
+                          f"Loaded {tf}: {len(raw_data[htf])} {htf} + {len(raw_data[ltf])} {ltf} bars")
+        else:
             _progress("loading_data", 0, total_combos,
-                      f"Loaded {len(data[tf])} {tf} bars")
-        except Exception as e:
-            logger.warning(f"Failed to load {tf} data for {symbol}: {e}")
-            _progress("loading_data", 0, total_combos,
-                      f"Failed to load {tf}: {e}")
+                      f"Loading {symbol} {tf} ({bars} bars)...")
+            try:
+                data[tf] = await asyncio.to_thread(load_mt5_data, symbol, tf, bars)
+                logger.info(f"Loaded {len(data[tf])} {tf} bars for {symbol}")
+                _progress("loading_data", 0, total_combos,
+                          f"Loaded {len(data[tf])} {tf} bars")
+            except Exception as e:
+                logger.warning(f"Failed to load {tf} data for {symbol}: {e}")
+                _progress("loading_data", 0, total_combos,
+                          f"Failed to load {tf}: {e}")
 
     steps[1]["status"] = "done"
 
@@ -832,6 +1045,15 @@ async def run_tune(
                           f"Pre-computing VP signals for {tf} (lookback={lb})...")
                 cache[lb] = await asyncio.to_thread(_precompute_vp_signals, df, lb)
             tf_caches[tf] = cache
+    elif pipeline == "smc_mtf":
+        for tf_pair, (htf_df, ltf_df) in data.items():
+            total_bars = len(ltf_df) - 100
+            _progress("precompute", 0, total_bars,
+                      f"Pre-computing MTF signals for {tf_pair} ({total_bars} bars)...")
+            tf_caches[tf_pair] = await asyncio.to_thread(
+                _precompute_mtf_signals, htf_df, ltf_df, 5, 50,
+                lambda ph, cur, tot, msg: _progress("precompute", cur, tot, msg),
+            )
     else:
         for tf in data:
             tf_caches[tf] = None
@@ -845,15 +1067,28 @@ async def run_tune(
     offset = 0
     combos_per_tf = total_combos // len(timeframes) if timeframes else 1
 
-    for tf, df in data.items():
-        df = df.reset_index(drop=True)
+    for tf in data:
         cache = tf_caches.get(tf)
 
+        if is_mtf:
+            # MTF: sweep on lower TF data, precomputed cache has alignment signals
+            _, ltf_df = data[tf]
+            sweep_df = ltf_df.reset_index(drop=True)
+            # Use the LTF name for hold scaling (e.g., "H4" from "D1+H4")
+            sweep_tf = tf.split("+")[1] if "+" in tf else tf
+        else:
+            sweep_df = data[tf].reset_index(drop=True)
+            sweep_tf = tf
+
         tf_results = await asyncio.to_thread(
-            _run_pipeline_sweep, pipeline, df, tf, grid, cache,
+            _run_pipeline_sweep, pipeline, sweep_df, sweep_tf, grid, cache,
             lambda ph, cur, tot, msg: _progress("sweeping", cur, tot, msg),
             offset, total_combos, min_trades,
         )
+        # For MTF results, store the full pair name as timeframe
+        if is_mtf:
+            for r in tf_results:
+                r.timeframe = tf
         all_results.extend(tf_results)
         offset += combos_per_tf
 
@@ -878,7 +1113,7 @@ async def run_tune(
             "symbol": symbol,
             "pipeline": pipeline,
             "timeframes_tested": list(data.keys()),
-            "bars_per_tf": {tf: len(df) for tf, df in data.items()},
+            "bars_per_tf": {tf: (len(v[1]) if isinstance(v, tuple) else len(v)) for tf, v in data.items()},
             "duration_seconds": round(duration, 1),
             "config_updates": {},
             "error": "No parameter combinations produced enough trades",
@@ -897,7 +1132,7 @@ async def run_tune(
         "symbol": symbol,
         "pipeline": pipeline,
         "timeframes_tested": list(data.keys()),
-        "bars_per_tf": {tf: len(df) for tf, df in data.items()},
+        "bars_per_tf": {tf: (len(v[1]) if isinstance(v, tuple) else len(v)) for tf, v in data.items()},
         "duration_seconds": round(duration, 1),
         "config_updates": config_updates,
     }

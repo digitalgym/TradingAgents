@@ -17,6 +17,10 @@ memory_db/
 chroma/
 .chroma/
 
+# Runtime state files (written by automation, not source code)
+quant_automation_state*.json
+web/backend/quant_automation_state*.json
+
 # Web folder
 web/frontend/node_modules/
 web/frontend/.next/
