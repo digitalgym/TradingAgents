@@ -1,5 +1,8 @@
 {
   "XAUUSD": {
-    "max_positions": 3
+    "max_positions": 6
+  },
+  "BTCUSD": {
+    "max_positions": 6
   }
 }

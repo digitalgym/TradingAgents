@@ -47,6 +47,7 @@ from tradingagents.trade_decisions import (
     list_active_decisions,
     close_decision,
     find_decision_by_ticket,
+    add_trade_event,
     DECISIONS_DIR,
 )
 
@@ -1335,6 +1336,16 @@ class QuantAutomation:
                     f"{lot_size} lots @ {result.entry_price}, "
                     f"ticket={result.execution_ticket}, sl={stop_loss}, tp={take_profit}"
                 )
+
+                # Log execution event
+                if decision_id:
+                    add_trade_event(decision_id, "executed", {
+                        "ticket": result.execution_ticket,
+                        "price": result.entry_price,
+                        "sl": stop_loss,
+                        "tp": take_profit,
+                        "volume": lot_size,
+                    }, source=self._source)
             else:
                 result.execution_error = trade_result.get("error", "Unknown error")
                 self.logger.error(
@@ -1369,8 +1380,19 @@ class QuantAutomation:
 
         return result
 
-    def _infer_exit_reason(self, exit_price: float, entry: float, sl: float, tp: float, direction: str) -> str:
-        """Infer how a trade exited based on exit price vs SL/TP levels."""
+    def _infer_exit_reason(self, exit_price: float, entry: float, sl: float, tp: float,
+                           direction: str, deal_comment: str = "") -> str:
+        """Infer how a trade exited based on MT5 deal comment and exit price vs SL/TP levels."""
+        # MT5 deal comment is most reliable — broker tags "sl", "tp", etc.
+        if deal_comment:
+            comment_lower = deal_comment.lower().strip()
+            if comment_lower in ("sl", "stop loss"):
+                return "sl_hit"
+            if comment_lower in ("tp", "take profit"):
+                return "tp_hit"
+            if "trailing" in comment_lower:
+                return "trailing_stop"
+
         if not exit_price:
             return "unknown"
         tolerance = abs(entry * 0.0005) if entry else 0.5  # 0.05% tolerance
@@ -1378,6 +1400,11 @@ class QuantAutomation:
             return "tp_hit"
         if sl and abs(exit_price - sl) <= tolerance:
             return "sl_hit"
+
+        # Check if exit is near entry (breakeven stop was hit)
+        if entry and abs(exit_price - entry) <= tolerance:
+            return "breakeven_stop"
+
         return "manual_close"
 
     def _close_decision_for_ticket(self, ticket: int, exit_price: float, profit: float,
@@ -1418,6 +1445,16 @@ class QuantAutomation:
                 exit_reason=exit_reason,
             )
             self.logger.info(f"  Decision {decision_id} closed: {exit_reason}, pnl={profit:.2f}")
+
+            # Log close event with outcome summary
+            add_trade_event(decision_id, "closed", {
+                "exit_price": exit_price,
+                "exit_reason": exit_reason,
+                "mt5_profit": profit,
+                "pnl_percent": closed.get("pnl_percent") if closed else None,
+                "was_correct": closed.get("was_correct") if closed else None,
+                "result": closed.get("structured_outcome", {}).get("result") if closed else None,
+            }, source=self._source)
 
             # Record in guardrails for circuit breaker
             pnl_pct = closed.get("pnl_percent", 0) if closed else 0
@@ -1628,6 +1665,12 @@ class QuantAutomation:
                                     self.logger.info(
                                         f"  BREAKEVEN SET for {symbol} #{ticket}: {current_sl:.5f} -> {breakeven_sl:.5f}"
                                     )
+                                    dec = find_decision_by_ticket(ticket)
+                                    if dec:
+                                        add_trade_event(dec["decision_id"], "breakeven_set", {
+                                            "old_sl": current_sl, "new_sl": breakeven_sl,
+                                            "price": current_price, "pnl_pct": round(pnl_pct, 3),
+                                        }, source=self._source)
                                 else:
                                     self.logger.error(f"  Failed to set breakeven for #{ticket}: {modify_result}")
                             elif not self.config.auto_execute:
@@ -1659,6 +1702,13 @@ class QuantAutomation:
                                 self.logger.info(
                                     f"  TRAILING STOP for {symbol} #{ticket}: {current_sl:.5f} -> {new_sl:.5f} ({trail_mult}x ATR)"
                                 )
+                                dec = find_decision_by_ticket(ticket)
+                                if dec:
+                                    add_trade_event(dec["decision_id"], "trailing_stop", {
+                                        "old_sl": current_sl, "new_sl": new_sl,
+                                        "price": current_price, "pnl_pct": round(pnl_pct, 3),
+                                        "atr_mult": trail_mult,
+                                    }, source=self._source)
                             else:
                                 self.logger.error(f"  Failed to trail stop for #{ticket}: {modify_result}")
                         elif should_trail and not self.config.auto_execute:
@@ -1701,7 +1751,14 @@ class QuantAutomation:
                                     self.logger.info(
                                         f"  POSITION CLOSED #{ticket} {symbol}: {result.close_reason}, pnl={profit:.2f}"
                                     )
-                                    # Close the linked trade decision
+                                    # Log reversal event and close the linked trade decision
+                                    dec = find_decision_by_ticket(ticket)
+                                    if dec:
+                                        add_trade_event(dec["decision_id"], "reversal_signal", {
+                                            "new_signal": analysis.signal, "position_direction": direction,
+                                            "confidence": round(analysis.confidence, 2),
+                                            "price": current_price, "profit": profit,
+                                        }, source=self._source)
                                     deal_info = get_closed_deal_by_ticket(ticket, days_back=7)
                                     exit_px = deal_info["price"] if deal_info else current_price
                                     self._close_decision_for_ticket(
@@ -1740,8 +1797,20 @@ class QuantAutomation:
                         exit_reason = self._infer_exit_reason(
                             exit_price, dec.get("entry_price", 0),
                             dec.get("stop_loss"), dec.get("take_profit"),
-                            dec.get("action", "BUY")
+                            dec.get("action", "BUY"),
+                            deal_comment=deal_info.get("comment", ""),
                         )
+                        # Log the external close with MT5 deal details
+                        add_trade_event(dec["decision_id"], "external_close", {
+                            "exit_price": exit_price,
+                            "mt5_profit": mt5_profit,
+                            "inferred_reason": exit_reason,
+                            "deal_type": deal_info.get("type"),
+                            "deal_comment": deal_info.get("comment", ""),
+                            "entry_price": dec.get("entry_price"),
+                            "sl": dec.get("stop_loss"),
+                            "tp": dec.get("take_profit"),
+                        }, source=self._source)
                         self._close_decision_for_ticket(
                             dec_ticket, exit_price, mt5_profit, exit_reason,
                             f"Position closed externally ({exit_reason})"

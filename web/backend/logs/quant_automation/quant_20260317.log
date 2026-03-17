@@ -1,0 +1,78 @@
+2026-03-17 17:54:36,943 - INFO - ==================================================
+2026-03-17 17:54:36,944 - INFO - QUANT AUTOMATION STARTED
+2026-03-17 17:54:36,945 - INFO - ==================================================
+2026-03-17 17:54:36,945 - INFO - Pipeline: breakout_quant
+2026-03-17 17:54:36,946 - INFO - Symbols: XAUUSD
+2026-03-17 17:54:36,946 - INFO - Analysis interval: 3s
+2026-03-17 17:54:36,947 - INFO - Assumption review interval: 3600s
+2026-03-17 17:54:36,948 - INFO - Auto-execute: True
+2026-03-17 17:54:36,948 - INFO - ==================================================
+2026-03-17 17:54:36,949 - INFO - Assumption review loop started (interval: 3600s, auto_apply: False)
+2026-03-17 17:54:36,949 - INFO - Assumption review check: should_run=False, last_review=2026-03-17 17:35:37.040373
+2026-03-17 17:54:36,951 - INFO - Running breakout_quant analysis for XAUUSD...
+2026-03-17 17:54:36,951 - INFO - Breakout Quant: calling API for XAUUSD (timeout=120s)...
+2026-03-17 17:54:36,952 - INFO - Position management loop started
+2026-03-17 17:54:36,975 - INFO - Ownership check: my_source='xauusd_breakout', active_decisions=56, sources=['btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'smc_with_llm_btcusd', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'xauusd_breakout', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'range_quant_btcusd', 'btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1633472, 1633344, 1632870, 1632505, 1632271, 1631920, 1631738, 1631206, 1630813, 1630685, 1630157, 1630126, 1629867, 1629781, 1629733, 1629560, 1629339, 1629298, 1629294, 1629115, 1629054, 1628818, 1628711, 1628603, 1628442, 1628332, 1628178, 1627898, 1627755, 1627608, 1627476, 1627332, 1627187, 1627016, 1626710, 1626617, 1626418, 1626267, 1625894, 1625680, 1625477, 1625207, 1624937, 1624369, 1623608, 1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-17 17:54:36,977 - INFO - Position check: 2 total open, 1 owned by 'xauusd_breakout' (XAUUSD)
+2026-03-17 17:54:36,977 - INFO - Managing position #1627016 XAUUSD BUY: entry=4988.7, current=5018.36, sl=4988.7, tp=5130.89, profit=41.96
+2026-03-17 17:54:36,980 - INFO -   Running reversal check analysis for #1627016 XAUUSD...
+2026-03-17 17:54:36,980 - INFO - Breakout Quant: calling API for XAUUSD (timeout=120s)...
+2026-03-17 17:54:50,480 - INFO - Breakout Quant API response: status=success [total=13.5s, llm=6.8s, overhead=6.7s]
+2026-03-17 17:54:50,480 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=False, squeeze_strength=67.2%, structure_bias=neutral, breakout_ready=False
+2026-03-17 17:54:50,532 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.95, entry=None, sl=None, tp=None
+2026-03-17 17:54:50,533 - INFO -   Reversal check result: signal=HOLD, confidence=0.95
+2026-03-17 17:54:50,555 - INFO - Breakout Quant API response: status=success [total=13.6s, llm=5.7s, overhead=7.9s]
+2026-03-17 17:54:50,556 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=False, squeeze_strength=67.2%, structure_bias=neutral, breakout_ready=False
+2026-03-17 17:54:50,605 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.95, entry=None, sl=None, tp=None
+2026-03-17 17:54:50,606 - INFO - XAUUSD: HOLD (confidence: 0.95)
+2026-03-17 17:54:53,646 - INFO - Running breakout_quant analysis for XAUUSD...
+2026-03-17 17:54:53,646 - INFO - Breakout Quant: calling API for XAUUSD (timeout=120s)...
+2026-03-17 17:55:00,169 - INFO - Breakout Quant API response: status=success [total=6.5s, llm=5.8s, overhead=0.7s]
+2026-03-17 17:55:00,170 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=False, squeeze_strength=67.2%, structure_bias=neutral, breakout_ready=False
+2026-03-17 17:55:00,226 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.85, entry=None, sl=None, tp=None
+2026-03-17 17:55:00,228 - INFO - XAUUSD: HOLD (confidence: 0.85)
+2026-03-17 17:55:25,624 - INFO - Running breakout_quant analysis for XAUUSD...
+2026-03-17 17:55:25,625 - INFO - Breakout Quant: calling API for XAUUSD (timeout=120s)...
+2026-03-17 17:55:35,945 - INFO - Breakout Quant API response: status=success [total=10.3s, llm=8.5s, overhead=1.9s]
+2026-03-17 17:55:35,945 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=False, squeeze_strength=67.2%, structure_bias=neutral, breakout_ready=False
+2026-03-17 17:55:35,996 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.95, entry=None, sl=None, tp=None
+2026-03-17 17:55:35,997 - INFO - XAUUSD: HOLD (confidence: 0.95)
+2026-03-17 17:55:39,039 - INFO - Running breakout_quant analysis for XAUUSD...
+2026-03-17 17:55:39,039 - INFO - Breakout Quant: calling API for XAUUSD (timeout=120s)...
+2026-03-17 17:55:45,876 - INFO - Breakout Quant API response: status=success [total=6.8s, llm=6.3s, overhead=0.6s]
+2026-03-17 17:55:45,877 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=False, squeeze_strength=67.2%, structure_bias=neutral, breakout_ready=False
+2026-03-17 17:55:45,924 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.95, entry=None, sl=None, tp=None
+2026-03-17 17:55:45,925 - INFO - XAUUSD: HOLD (confidence: 0.95)
+2026-03-17 17:55:49,007 - INFO - Running breakout_quant analysis for XAUUSD...
+2026-03-17 17:55:49,007 - INFO - Breakout Quant: calling API for XAUUSD (timeout=120s)...
+2026-03-17 17:55:56,920 - INFO - Ownership check: my_source='xauusd_breakout', active_decisions=56, sources=['btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'smc_with_llm_btcusd', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'xauusd_breakout', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'range_quant_btcusd', 'btc_smc_basic', 'btc_smc_lmm', 'btcusd_smc_quant_deep', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_lmm', 'btc_smc_basic', 'btc_smc_basic', 'web_ui'], tickets=[1633472, 1633344, 1632870, 1632505, 1632271, 1631920, 1631738, 1631206, 1630813, 1630685, 1630157, 1630126, 1629867, 1629781, 1629733, 1629560, 1629339, 1629298, 1629294, 1629115, 1629054, 1628818, 1628711, 1628603, 1628442, 1628332, 1628178, 1627898, 1627755, 1627608, 1627476, 1627332, 1627187, 1627016, 1626710, 1626617, 1626418, 1626267, 1625894, 1625680, 1625477, 1625207, 1624937, 1624369, 1623608, 1614329, 1614128, 1614110, 1614108, 1614073, 1614026, 1614018, 1613952, 1613890, 1613889, 8327641]
+2026-03-17 17:55:56,922 - INFO - Position check: 2 total open, 1 owned by 'xauusd_breakout' (XAUUSD)
+2026-03-17 17:55:56,923 - INFO - Managing position #1627016 XAUUSD BUY: entry=4988.7, current=5020.68, sl=4988.7, tp=5130.89, profit=45.25
+2026-03-17 17:55:56,925 - INFO -   Running reversal check analysis for #1627016 XAUUSD...
+2026-03-17 17:55:56,926 - INFO - Breakout Quant: calling API for XAUUSD (timeout=120s)...
+2026-03-17 17:55:56,927 - INFO - Breakout Quant API response: status=success [total=7.9s, llm=7.2s, overhead=0.7s]
+2026-03-17 17:55:56,927 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=False, squeeze_strength=67.2%, structure_bias=neutral, breakout_ready=False
+2026-03-17 17:55:56,970 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.95, entry=None, sl=None, tp=None
+2026-03-17 17:55:56,971 - INFO - XAUUSD: HOLD (confidence: 0.95)
+2026-03-17 17:56:02,175 - INFO - Running breakout_quant analysis for XAUUSD...
+2026-03-17 17:56:02,176 - INFO - Breakout Quant: calling API for XAUUSD (timeout=120s)...
+2026-03-17 17:56:02,303 - INFO - Breakout Quant API response: status=success [total=5.4s, llm=4.6s, overhead=0.8s]
+2026-03-17 17:56:02,304 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=False, squeeze_strength=67.2%, structure_bias=neutral, breakout_ready=False
+2026-03-17 17:56:02,350 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.95, entry=None, sl=None, tp=None
+2026-03-17 17:56:02,350 - INFO -   Reversal check result: signal=HOLD, confidence=0.95
+2026-03-17 17:56:09,951 - INFO - Breakout Quant API response: status=success [total=7.8s, llm=6.9s, overhead=0.9s]
+2026-03-17 17:56:09,952 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=False, squeeze_strength=67.2%, structure_bias=neutral, breakout_ready=False
+2026-03-17 17:56:10,001 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.95, entry=None, sl=None, tp=None
+2026-03-17 17:56:10,002 - INFO - XAUUSD: HOLD (confidence: 0.95)
+2026-03-17 17:56:13,063 - INFO - Running breakout_quant analysis for XAUUSD...
+2026-03-17 17:56:13,063 - INFO - Breakout Quant: calling API for XAUUSD (timeout=120s)...
+2026-03-17 17:56:19,491 - INFO - Breakout Quant API response: status=success [total=6.4s, llm=5.7s, overhead=0.7s]
+2026-03-17 17:56:19,491 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=False, squeeze_strength=67.2%, structure_bias=neutral, breakout_ready=False
+2026-03-17 17:56:19,541 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.95, entry=None, sl=None, tp=None
+2026-03-17 17:56:19,542 - INFO - XAUUSD: HOLD (confidence: 0.95)
+2026-03-17 17:56:22,608 - INFO - Running breakout_quant analysis for XAUUSD...
+2026-03-17 17:56:22,609 - INFO - Breakout Quant: calling API for XAUUSD (timeout=120s)...
+2026-03-17 17:56:27,839 - INFO - Breakout Quant API response: status=success [total=5.2s, llm=4.2s, overhead=1.0s]
+2026-03-17 17:56:27,839 - INFO - Breakout Quant consolidation for XAUUSD: is_consolidating=False, squeeze_strength=67.2%, structure_bias=neutral, breakout_ready=False
+2026-03-17 17:56:27,886 - INFO - Breakout Quant decision for XAUUSD: signal=HOLD, confidence=0.95, entry=None, sl=None, tp=None
+2026-03-17 17:56:27,887 - INFO - XAUUSD: HOLD (confidence: 0.95)

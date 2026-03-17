@@ -1208,6 +1208,8 @@ def get_closed_deal_by_ticket(ticket: int, days_back: int = 30) -> dict:
                 "commission": deal.commission,
                 "swap": deal.swap,
                 "time": datetime.fromtimestamp(deal.time).strftime('%Y-%m-%d %H:%M:%S'),
+                "comment": getattr(deal, "comment", ""),  # e.g. "sl", "tp", EA name
+                "reason": getattr(deal, "reason", None),  # MT5 deal reason code
             }
     
     return None

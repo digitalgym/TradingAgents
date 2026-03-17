@@ -369,6 +369,9 @@ def store_decision(
         "sharpe_contribution": None,  # Impact on portfolio Sharpe
         "drawdown_impact": None,  # Contribution to drawdown
         "pattern_tags": [],  # Auto-generated tags for pattern clustering
+
+        # Trade event log — timestamped audit trail of every action on this trade
+        "events": [],
     }
     
     # Store analysis context separately (can be large)
@@ -415,6 +418,54 @@ def load_decision_context(decision_id: str) -> Optional[Dict[str, Any]]:
     
     with open(context_file, "rb") as f:
         return pickle.load(f)
+
+
+def add_trade_event(
+    decision_id: str,
+    event_type: str,
+    details: Optional[Dict[str, Any]] = None,
+    source: str = "",
+) -> None:
+    """Append a timestamped event to a trade decision's event log.
+
+    Event types:
+        executed        - Trade placed in MT5
+        breakeven_set   - SL moved to breakeven
+        trailing_stop   - SL trailed to new level
+        reversal_signal - Reversal detected (may or may not close)
+        closed          - Position closed (by automation, MT5, or externally)
+        sl_hit          - Stop loss hit
+        tp_hit          - Take profit hit
+        external_close  - Position disappeared from MT5
+        modify_sl       - SL modified
+        modify_tp       - TP modified
+        error           - Something went wrong
+    """
+    decision_file = os.path.join(DECISIONS_DIR, f"{decision_id}.json")
+    if not os.path.exists(decision_file):
+        return
+
+    try:
+        with open(decision_file, "r") as f:
+            decision = json.load(f)
+
+        if "events" not in decision:
+            decision["events"] = []
+
+        event = {
+            "timestamp": datetime.now().isoformat(),
+            "type": event_type,
+            "source": source,
+        }
+        if details:
+            event.update(details)
+
+        decision["events"].append(event)
+
+        with open(decision_file, "w") as f:
+            json.dump(decision, f, indent=2, default=str)
+    except Exception:
+        pass  # Don't let event logging break trade flow
 
 
 def close_decision(

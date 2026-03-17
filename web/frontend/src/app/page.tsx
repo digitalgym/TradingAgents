@@ -438,6 +438,12 @@ export default function Dashboard() {
                             <span className="text-xs text-muted-foreground">
                               {(result.confidence * 100).toFixed(0)}%
                             </span>
+                            {result.executed && (
+                              <Badge variant="success" className="text-[10px] h-4 px-1">Executed</Badge>
+                            )}
+                            {!result.executed && result.execution_error && (
+                              <Badge variant="destructive" className="text-[10px] h-4 px-1">Failed</Badge>
+                            )}
                           </div>
                           <p className={`text-xs ${pipelineColors[result.pipeline] || "text-muted-foreground"}`}>
                             {pipelineLabels[result.pipeline] || result.pipeline}
