@@ -117,7 +117,7 @@ class QuantAutomationConfig:
     max_positions_per_symbol: int = 1  # Max positions THIS automation can open per symbol
     enable_trailing_stop: bool = True
     trailing_stop_atr_multiplier: float = 1.5
-    move_to_breakeven_pct: float = 1.0  # Move SL to breakeven at 1% profit
+    move_to_breakeven_atr_mult: float = 1.5  # Move SL to breakeven after profit >= 1.5x ATR
 
     # Risk settings
     max_risk_per_trade_pct: float = 1.0  # 1% of account per trade
@@ -144,6 +144,10 @@ class QuantAutomationConfig:
         """Create from dictionary."""
         if "pipeline" in data and isinstance(data["pipeline"], str):
             data["pipeline"] = PipelineType(data["pipeline"])
+        # Backward compat: migrate old move_to_breakeven_pct to move_to_breakeven_atr_mult
+        if "move_to_breakeven_pct" in data and "move_to_breakeven_atr_mult" not in data:
+            # Old configs used %, new uses ATR multiplier. Default to 1.5x ATR.
+            data["move_to_breakeven_atr_mult"] = 1.5
         # Strip unknown keys (e.g. removed fields from older configs)
         valid_fields = {f.name for f in fields(cls)}
         filtered = {k: v for k, v in data.items() if k in valid_fields}
@@ -1601,9 +1605,20 @@ class QuantAutomation:
                     atr = get_atr_for_symbol(symbol, period=14)
                     self.logger.debug(f"  ATR={atr:.5f}, pnl_pct={pnl_pct:.2f}%")
 
-                    # Check breakeven condition
-                    if pnl_pct >= self.config.move_to_breakeven_pct and current_sl != 0:
-                        self.logger.info(f"  Breakeven check: pnl {pnl_pct:.2f}% >= threshold {self.config.move_to_breakeven_pct}%")
+                    # Check breakeven condition (ATR-based: profit must exceed N * ATR)
+                    breakeven_threshold_distance = self.config.move_to_breakeven_atr_mult * atr
+                    if direction == "BUY":
+                        profit_distance = current_price - entry_price
+                    else:
+                        profit_distance = entry_price - current_price
+
+                    breakeven_eligible = profit_distance >= breakeven_threshold_distance and current_sl != 0
+
+                    if breakeven_eligible:
+                        self.logger.info(
+                            f"  Breakeven check: profit_distance {profit_distance:.5f} >= "
+                            f"threshold {breakeven_threshold_distance:.5f} ({self.config.move_to_breakeven_atr_mult}x ATR)"
+                        )
                         breakeven_sl, is_eligible = self.stop_loss_manager.calculate_breakeven_stop(
                             entry_price=entry_price,
                             current_price=current_price,

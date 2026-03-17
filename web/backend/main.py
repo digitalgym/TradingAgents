@@ -8326,7 +8326,7 @@ class QuantAutomationConfigRequest(BaseModel):
     max_positions_per_symbol: int = 1  # Per-automation limit per symbol
     enable_trailing_stop: bool = True
     trailing_stop_atr_multiplier: float = 1.5
-    move_to_breakeven_pct: float = 1.0
+    move_to_breakeven_atr_mult: float = 1.5  # Move SL to breakeven after profit >= 1.5x ATR
     max_risk_per_trade_pct: float = 1.0
     default_lot_size: float = 0.01
     daily_loss_limit_pct: float = 3.0
@@ -8554,7 +8554,7 @@ async def start_quant_automation(config: QuantAutomationConfigRequest):
             max_positions_per_symbol=config.max_positions_per_symbol,
             enable_trailing_stop=config.enable_trailing_stop,
             trailing_stop_atr_multiplier=config.trailing_stop_atr_multiplier,
-            move_to_breakeven_pct=config.move_to_breakeven_pct,
+            move_to_breakeven_atr_mult=config.move_to_breakeven_atr_mult,
             max_risk_per_trade_pct=config.max_risk_per_trade_pct,
             default_lot_size=config.default_lot_size,
             daily_loss_limit_pct=config.daily_loss_limit_pct,

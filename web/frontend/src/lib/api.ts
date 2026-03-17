@@ -706,7 +706,7 @@ export interface QuantAutomationConfig {
   max_positions_per_symbol: number
   enable_trailing_stop: boolean
   trailing_stop_atr_multiplier: number
-  move_to_breakeven_pct: number
+  move_to_breakeven_atr_mult: number
   max_risk_per_trade_pct: number
   default_lot_size: number
   daily_loss_limit_pct: number
