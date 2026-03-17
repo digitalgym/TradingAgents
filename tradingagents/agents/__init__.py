@@ -10,6 +10,7 @@ from .analysts.quant_analyst import create_quant_analyst, get_quant_decision_for
 from .analysts.smc_quant import create_smc_quant, get_smc_quant_decision_for_modal, analyze_smc_for_quant
 from .analysts.breakout_quant import create_breakout_quant, get_breakout_decision_for_modal, analyze_consolidation
 from .analysts.range_quant import create_range_quant, get_range_quant_decision_for_modal, analyze_range, analyze_smc_for_range
+from .analysts.smc_mtf_quant import create_smc_mtf_quant, get_mtf_quant_decision_for_modal, analyze_mtf_for_quant
 
 from .researchers.bear_researcher import create_bear_researcher
 from .researchers.bull_researcher import create_bull_researcher
@@ -54,6 +55,9 @@ __all__ = [
     "get_range_quant_decision_for_modal",
     "analyze_range",
     "analyze_smc_for_range",
+    "create_smc_mtf_quant",
+    "get_mtf_quant_decision_for_modal",
+    "analyze_mtf_for_quant",
     "create_trader",
     "create_position_manager_agent",
     "PositionManagerDecision",

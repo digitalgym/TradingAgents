@@ -69,6 +69,7 @@ def analyze_consolidation(
     high: np.ndarray,
     low: np.ndarray,
     close: np.ndarray,
+    volume: np.ndarray = None,
     lookback: int = 20
 ) -> Dict[str, Any]:
     """
@@ -78,6 +79,7 @@ def analyze_consolidation(
         high: High prices
         low: Low prices
         close: Close prices
+        volume: Volume data (optional but recommended for breakout confirmation)
         lookback: Number of candles to analyze for consolidation
 
     Returns:
@@ -91,6 +93,12 @@ def analyze_consolidation(
         - structure_bias: "bullish" (higher lows), "bearish" (lower highs), or "neutral"
         - squeeze_strength: 0-100 (higher = tighter squeeze)
         - breakout_ready: bool - True if consolidating with clear bias
+        - volume_contracting: bool - Volume drying up inside consolidation
+        - volume_contraction_pct: How much volume contracted vs prior period
+        - breakout_detected: bool - Price closed outside range
+        - breakout_direction: "up", "down", or None
+        - breakout_volume_surge: bool - Breakout candle has volume surge
+        - breakout_confirmed: bool - Close outside range WITH volume surge
     """
     if len(close) < lookback:
         return {
@@ -102,7 +110,13 @@ def analyze_consolidation(
             "bb_squeeze": False,
             "structure_bias": "neutral",
             "squeeze_strength": 0,
-            "breakout_ready": False
+            "breakout_ready": False,
+            "volume_contracting": False,
+            "volume_contraction_pct": 0.0,
+            "breakout_detected": False,
+            "breakout_direction": None,
+            "breakout_volume_surge": False,
+            "breakout_confirmed": False,
         }
 
     # Get recent data
@@ -110,9 +124,14 @@ def analyze_consolidation(
     recent_low = low[-lookback:]
     recent_close = close[-lookback:]
 
-    # Calculate range boundaries
-    range_high = float(np.max(recent_high))
-    range_low = float(np.min(recent_low))
+    # Calculate range boundaries EXCLUDING the current candle (for breakout detection)
+    # The range is defined by all candles except the last one
+    if len(recent_high) > 1:
+        range_high = float(np.max(recent_high[:-1]))
+        range_low = float(np.min(recent_low[:-1]))
+    else:
+        range_high = float(np.max(recent_high))
+        range_low = float(np.min(recent_low))
     range_midpoint = (range_high + range_low) / 2
     range_percent = ((range_high - range_low) / range_midpoint) * 100
 
@@ -164,6 +183,56 @@ def analyze_consolidation(
     # Breakout ready: consolidating with clear directional bias
     breakout_ready = is_consolidating and structure_bias != "neutral"
 
+    # === VOLUME ANALYSIS (key for breakout confirmation) ===
+    volume_contracting = False
+    volume_contraction_pct = 0.0
+    breakout_detected = False
+    breakout_direction = None
+    breakout_volume_surge = False
+    breakout_confirmed = False
+
+    if volume is not None and len(volume) >= lookback:
+        recent_volume = volume[-lookback:]
+        current_candle_volume = volume[-1]
+
+        # Average volume inside consolidation (excluding last candle)
+        avg_volume_in_range = float(np.mean(recent_volume[:-1])) if len(recent_volume) > 1 else float(np.mean(recent_volume))
+
+        # Compare to volume before consolidation (prior period)
+        if len(volume) >= lookback * 2:
+            prior_volume = volume[-lookback * 2:-lookback]
+            avg_volume_before = float(np.mean(prior_volume))
+
+            # Volume contracting = current period avg < 80% of prior period
+            if avg_volume_before > 0:
+                volume_contraction_pct = ((avg_volume_before - avg_volume_in_range) / avg_volume_before) * 100
+                volume_contracting = avg_volume_in_range < avg_volume_before * 0.8
+        else:
+            # Not enough history, just check if recent volume is low relative to range
+            volume_contraction_pct = 0.0
+
+        # === BREAKOUT DETECTION (close-based, not wick) ===
+        current_close = close[-1]
+
+        # Breakout UP: close above range high
+        if current_close > range_high:
+            breakout_detected = True
+            breakout_direction = "up"
+
+        # Breakout DOWN: close below range low
+        elif current_close < range_low:
+            breakout_detected = True
+            breakout_direction = "down"
+
+        # === VOLUME SURGE ON BREAKOUT ===
+        # Surge = current candle volume > 1.5x average volume in range
+        if avg_volume_in_range > 0:
+            volume_surge_ratio = current_candle_volume / avg_volume_in_range
+            breakout_volume_surge = volume_surge_ratio >= 1.5
+
+        # === CONFIRMED BREAKOUT = Close outside range + Volume surge ===
+        breakout_confirmed = breakout_detected and breakout_volume_surge
+
     return {
         "is_consolidating": is_consolidating,
         "range_high": range_high,
@@ -174,7 +243,15 @@ def analyze_consolidation(
         "bb_squeeze": bb_squeeze,
         "breakout_ready": breakout_ready,
         "structure_bias": structure_bias,
-        "squeeze_strength": squeeze_strength
+        "squeeze_strength": squeeze_strength,
+        # Volume analysis
+        "volume_contracting": volume_contracting,
+        "volume_contraction_pct": volume_contraction_pct,
+        # Breakout detection
+        "breakout_detected": breakout_detected,
+        "breakout_direction": breakout_direction,
+        "breakout_volume_surge": breakout_volume_surge,
+        "breakout_confirmed": breakout_confirmed,
     }
 
 
@@ -226,6 +303,7 @@ def create_breakout_quant(llm, use_structured_output: bool = True):
         high = price_data.get("high")
         low = price_data.get("low")
         close = price_data.get("close")
+        volume = price_data.get("volume")  # Volume data for breakout confirmation
 
         # Perform consolidation analysis if price data available
         consolidation = None
@@ -234,7 +312,8 @@ def create_breakout_quant(llm, use_structured_output: bool = True):
                 high_arr = np.array(high) if not isinstance(high, np.ndarray) else high
                 low_arr = np.array(low) if not isinstance(low, np.ndarray) else low
                 close_arr = np.array(close) if not isinstance(close, np.ndarray) else close
-                consolidation = analyze_consolidation(high_arr, low_arr, close_arr)
+                volume_arr = np.array(volume) if volume is not None and not isinstance(volume, np.ndarray) else volume
+                consolidation = analyze_consolidation(high_arr, low_arr, close_arr, volume_arr)
             except Exception as e:
                 print(f"Consolidation analysis error: {e}")
                 consolidation = None
@@ -383,6 +462,17 @@ def _build_breakout_data_context(
         range_low_str = f"{range_low:.5f}" if range_low is not None else "N/A"
         range_mid_str = f"{range_mid:.5f}" if range_mid is not None else "N/A"
 
+        # Volume analysis
+        vol_contracting = consolidation.get('volume_contracting', False)
+        vol_contraction_pct = consolidation.get('volume_contraction_pct', 0)
+        vol_status = f"YES - Volume dried up ({vol_contraction_pct:.0f}% lower than prior period)" if vol_contracting else "No significant contraction"
+
+        # Breakout detection
+        breakout_detected = consolidation.get('breakout_detected', False)
+        breakout_dir = consolidation.get('breakout_direction')
+        breakout_vol_surge = consolidation.get('breakout_volume_surge', False)
+        breakout_confirmed = consolidation.get('breakout_confirmed', False)
+
         sections.append(f"""## CONSOLIDATION ANALYSIS
 - **Is Consolidating**: {consol_status}
 - **BB Squeeze**: {squeeze_status}
@@ -392,6 +482,18 @@ def _build_breakout_data_context(
 - **Range Midpoint**: {range_mid_str}
 - **Range Width**: {consolidation.get('range_percent', 0):.2f}% of price
 - **Structure Bias**: {consolidation.get('structure_bias', 'neutral').upper()}
+
+### Volume Analysis (Critical for Breakout Confirmation):
+- **Volume Contracting Inside Range**: {vol_status}
+- **Breakout Detected**: {"YES - " + breakout_dir.upper() if breakout_detected else "No breakout yet"}
+- **Volume Surge on Breakout**: {"YES - 1.5x+ average volume" if breakout_vol_surge else "No surge"}
+- **BREAKOUT CONFIRMED**: {"YES - Close outside range WITH volume surge" if breakout_confirmed else "NOT CONFIRMED"}
+
+### Breakout Confirmation Rules:
+1. Price must CLOSE outside range (not just wick)
+2. Breakout candle must have volume surge (>1.5x average)
+3. Volume should be contracting BEFORE breakout (coiled spring)
+4. If breakout_confirmed = YES, this is a valid entry trigger
 
 ### Structure Interpretation:
 - BULLISH structure (higher lows): Buyers accumulating, expect upside breakout
@@ -435,8 +537,12 @@ and apply corrections. Pay special attention to false breakout lessons.
 
 Markets alternate between consolidation (range) and expansion (trend). Your edge is:
 1. Identify when price is consolidating (tight range, low volatility, BB squeeze)
-2. Determine likely breakout direction from structure (higher lows = up, lower highs = down)
-3. Enter on breakout with clear invalidation inside the range
+2. Look for VOLUME CONTRACTION inside the range (drying up = coiled spring)
+3. Determine likely breakout direction from structure (higher lows = up, lower highs = down)
+4. Enter on CONFIRMED breakout: close outside range + volume surge (1.5x+ average)
+
+**THE KEY FILTER**: Volume dry-up inside range + volume surge on breakout = real breakout
+Without volume confirmation, most breakouts fail and trap traders.
 
 ## BREAKOUT TRADING RULES
 
@@ -452,15 +558,18 @@ Markets alternate between consolidation (range) and expansion (trend). Your edge
 - **Neutral structure** = Wait for breakout confirmation before entering
 
 ### 3. ENTRY STRATEGIES
-- **Anticipation Entry**: Enter before breakout when structure is clear
-  - BUY near range low when structure is bullish
-  - SELL near range high when structure is bearish
+- **Anticipation Entry**: Enter before breakout when structure is clear + volume contracting
+  - BUY near range low when structure is bullish AND volume is drying up
+  - SELL near range high when structure is bearish AND volume is drying up
   - SL: Opposite side of range
+  - Requires: volume_contracting = True
 
-- **Breakout Entry**: Enter on breakout with confirmation
-  - BUY when price breaks ABOVE range high with momentum
-  - SELL when price breaks BELOW range low with momentum
+- **Breakout Entry**: Enter on CONFIRMED breakout only
+  - BUY when price CLOSES above range high WITH volume surge (1.5x+)
+  - SELL when price CLOSES below range low WITH volume surge (1.5x+)
   - SL: Beyond the opposite side of the breakout level (at least 1x ATR buffer)
+  - **CRITICAL**: breakout_confirmed must be TRUE (close + volume surge)
+  - Do NOT enter on wick-only breaks or low-volume breakouts
 
 ### 4. STOP LOSS PLACEMENT (CRITICAL)
 - For BUY: Stop loss MUST be BELOW entry price
@@ -502,26 +611,29 @@ Analyze the consolidation and regime data to make a breakout trading decision.
 
 Think step-by-step:
 1. Is the market in consolidation? (Check expansion_regime, BB squeeze, range %)
-2. What is the structure bias? (Higher lows = bullish, lower highs = bearish)
-3. Where are the range boundaries? (Resistance high, Support low)
-4. Is price at a good entry zone? (Near range extreme or breaking out)
-5. Where is the stop loss and is the R:R acceptable (>1.5:1)?
-6. What would invalidate this setup?
+2. Is volume contracting inside the range? (volume_contracting = coiled spring)
+3. What is the structure bias? (Higher lows = bullish, lower highs = bearish)
+4. Where are the range boundaries? (Resistance high, Support low)
+5. Has a breakout occurred? Check breakout_confirmed (close outside + volume surge)
+6. Is price at a good entry zone? (Near range extreme or confirmed breakout)
+7. Where is the stop loss and is the R:R acceptable (>1.5:1)?
+8. What would invalidate this setup?
 
 ## SIGNAL OPTIONS (you MUST pick one)
 - **buy_to_enter** - Long position. Use when:
-  - Consolidation with BULLISH structure (higher lows) near range low, OR
-  - Breakout above range high with momentum
+  - Consolidation with BULLISH structure + volume contracting, price near range low (anticipation), OR
+  - breakout_confirmed = TRUE with direction = "up" (confirmed breakout)
   - MUST provide entry_price (at range low or above breakout level), stop_loss (BELOW entry), profit_target
 
 - **sell_to_enter** - Short position. Use when:
-  - Consolidation with BEARISH structure (lower highs) near range high, OR
-  - Breakdown below range low with momentum
+  - Consolidation with BEARISH structure + volume contracting, price near range high (anticipation), OR
+  - breakout_confirmed = TRUE with direction = "down" (confirmed breakdown)
   - MUST provide entry_price (at range high or below breakdown level), stop_loss (ABOVE entry), profit_target
 
 - **hold** - No action. Use when:
   - No consolidation (trending market, wait for range to form)
   - Neutral structure (no higher lows or lower highs)
+  - Breakout detected but NOT confirmed (no volume surge) - HIGH FALSE BREAKOUT RISK
   - Price is mid-range (not at good entry zone)
   - Unclear setup or poor R:R
 
@@ -559,11 +671,17 @@ def _format_breakout_report(decision: QuantAnalystDecision, consolidation: Optio
     # Add consolidation context
     if consolidation:
         squeeze_status = "ACTIVE" if consolidation.get("bb_squeeze") else "Inactive"
+        vol_status = "CONTRACTING" if consolidation.get("volume_contracting") else "Normal"
+        breakout_status = "CONFIRMED" if consolidation.get("breakout_confirmed") else (
+            "Detected (no vol surge)" if consolidation.get("breakout_detected") else "None"
+        )
         lines.extend([
             "### Consolidation Status",
             f"- **Squeeze**: {squeeze_status} ({consolidation.get('squeeze_strength', 0):.0f}%)",
             f"- **Range**: {consolidation.get('range_low', 0):.5f} - {consolidation.get('range_high', 0):.5f}",
             f"- **Structure Bias**: {consolidation.get('structure_bias', 'neutral').upper()}",
+            f"- **Volume**: {vol_status}",
+            f"- **Breakout**: {breakout_status}",
             "",
         ])
 
