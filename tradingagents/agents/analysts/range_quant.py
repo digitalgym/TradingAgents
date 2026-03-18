@@ -19,9 +19,6 @@ Trading approach:
 - Use liquidity sweeps as entry confirmation (sweep then reverse)
 """
 
-import logging
-import os
-from datetime import datetime
 from typing import Optional, Dict, Any
 import numpy as np
 from tradingagents.schemas import QuantAnalystDecision, RiskLevel
@@ -29,35 +26,12 @@ from tradingagents.indicators.smart_money import SmartMoneyAnalyzer
 from tradingagents.dataflows.smc_trade_plan import safe_get
 
 
-# Set up range quant logger
-_range_logger = None
+from tradingagents.agents.analysts.quant_utils import create_quant_logger
 
 
 def _get_range_logger():
     """Get or create the range quant prompt logger."""
-    global _range_logger
-    if _range_logger is None:
-        _range_logger = logging.getLogger("range_quant_prompts")
-        _range_logger.setLevel(logging.DEBUG)
-
-        log_dir = os.path.join(
-            os.path.dirname(__file__), "..", "..", "..", "logs", "range_quant_prompts"
-        )
-        os.makedirs(log_dir, exist_ok=True)
-
-        log_file = os.path.join(
-            log_dir, f"range_quant_{datetime.now().strftime('%Y%m%d')}.log"
-        )
-        file_handler = logging.FileHandler(log_file, encoding="utf-8")
-        file_handler.setLevel(logging.DEBUG)
-
-        formatter = logging.Formatter("%(asctime)s | %(message)s")
-        file_handler.setFormatter(formatter)
-
-        if not _range_logger.handlers:
-            _range_logger.addHandler(file_handler)
-
-    return _range_logger
+    return create_quant_logger("range_quant_prompts", "range_quant_prompts")
 
 
 def analyze_range(
@@ -718,44 +692,8 @@ def _format_range_report(
     return "\n".join(lines)
 
 
-def get_range_quant_decision_for_modal(range_decision: dict) -> dict:
-    """
-    Convert a range quant decision dict to trade modal format.
-
-    Args:
-        range_decision: The range_quant_decision dict from agent state
-
-    Returns:
-        Dict formatted for TradeExecutionWizard props
-    """
-    if not range_decision:
-        return {}
-
-    signal_map = {
-        "buy_to_enter": "BUY",
-        "sell_to_enter": "SELL",
-        "hold": "HOLD",
-        "close": "HOLD",
-    }
-
-    signal = range_decision.get("signal", "hold")
-    if isinstance(signal, dict):
-        signal = signal.get("value", "hold")
-
-    order_type = range_decision.get("order_type", "limit")
-    if isinstance(order_type, dict):
-        order_type = order_type.get("value", "limit")
-
-    return {
-        "symbol": range_decision.get("symbol", ""),
-        "signal": signal_map.get(signal, "HOLD"),
-        "orderType": order_type,
-        "suggestedEntry": range_decision.get("entry_price"),
-        "suggestedStopLoss": range_decision.get("stop_loss"),
-        "suggestedTakeProfit": range_decision.get("profit_target"),
-        "rationale": f"RANGE: {range_decision.get('justification', '')}. Invalidation: {range_decision.get('invalidation_condition', '')}",
-        "confidence": range_decision.get("confidence", 0.5),
-    }
+# Re-export from shared utils for backward compatibility
+from tradingagents.agents.analysts.quant_utils import get_range_quant_decision_for_modal
 
 
 def analyze_smc_for_range(

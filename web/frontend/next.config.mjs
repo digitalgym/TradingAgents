@@ -1,14 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async rewrites() {
+    // In production (Vercel), API_URL env var points to your home machine
+    // In development, falls back to localhost
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
+
     return [
       {
         source: '/api/:path*',
-        destination: 'http://127.0.0.1:8000/api/:path*',
+        destination: `${apiUrl}/api/:path*`,
       },
       {
+        // WebSocket rewrite - must use http:// in config, browser handles upgrade
         source: '/ws',
-        destination: 'http://127.0.0.1:8000/ws',
+        destination: `${apiUrl}/ws`,
       },
     ]
   },

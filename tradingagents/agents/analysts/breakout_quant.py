@@ -23,46 +23,15 @@ from datetime import datetime
 from typing import Optional, Dict, Any
 import numpy as np
 from tradingagents.schemas import QuantAnalystDecision, RiskLevel
+from tradingagents.dataflows.smc_trade_plan import safe_get
 
 
-def _safe_get(obj, attr, default=None):
-    """Safely get attribute from dict or dataclass object."""
-    if obj is None:
-        return default
-    if isinstance(obj, dict):
-        return obj.get(attr, default)
-    return getattr(obj, attr, default)
-
-
-# Set up breakout quant logger
-_breakout_logger = None
-
+# Logger setup using shared utility
+from tradingagents.agents.analysts.quant_utils import create_quant_logger
 
 def _get_breakout_logger():
     """Get or create the breakout quant prompt logger."""
-    global _breakout_logger
-    if _breakout_logger is None:
-        _breakout_logger = logging.getLogger("breakout_quant_prompts")
-        _breakout_logger.setLevel(logging.DEBUG)
-
-        # Create logs directory if it doesn't exist
-        log_dir = os.path.join(os.path.dirname(__file__), "..", "..", "..", "logs", "quant_prompts")
-        os.makedirs(log_dir, exist_ok=True)
-
-        # Create file handler with date-based filename
-        log_file = os.path.join(log_dir, f"breakout_quant_{datetime.now().strftime('%Y%m%d')}.log")
-        file_handler = logging.FileHandler(log_file, encoding='utf-8')
-        file_handler.setLevel(logging.DEBUG)
-
-        # Create formatter
-        formatter = logging.Formatter('%(asctime)s | %(message)s')
-        file_handler.setFormatter(formatter)
-
-        # Add handler (avoid duplicates)
-        if not _breakout_logger.handlers:
-            _breakout_logger.addHandler(file_handler)
-
-    return _breakout_logger
+    return create_quant_logger("breakout_quant_prompts", "quant_prompts")
 
 
 def analyze_consolidation(
@@ -719,41 +688,5 @@ def _format_breakout_report(decision: QuantAnalystDecision, consolidation: Optio
     return "\n".join(lines)
 
 
-def get_breakout_decision_for_modal(breakout_decision: dict) -> dict:
-    """
-    Convert a breakout quant decision dict to trade modal format.
-
-    Args:
-        breakout_decision: The breakout_quant_decision dict from agent state
-
-    Returns:
-        Dict formatted for TradeExecutionWizard props
-    """
-    if not breakout_decision:
-        return {}
-
-    signal_map = {
-        "buy_to_enter": "BUY",
-        "sell_to_enter": "SELL",
-        "hold": "HOLD",
-        "close": "HOLD",
-    }
-
-    signal = breakout_decision.get("signal", "hold")
-    if isinstance(signal, dict):
-        signal = signal.get("value", "hold")
-
-    order_type = breakout_decision.get("order_type", "limit")
-    if isinstance(order_type, dict):
-        order_type = order_type.get("value", "limit")
-
-    return {
-        "symbol": breakout_decision.get("symbol", ""),
-        "signal": signal_map.get(signal, "HOLD"),
-        "orderType": order_type,
-        "suggestedEntry": breakout_decision.get("entry_price"),
-        "suggestedStopLoss": breakout_decision.get("stop_loss"),
-        "suggestedTakeProfit": breakout_decision.get("profit_target"),
-        "rationale": f"BREAKOUT: {breakout_decision.get('justification', '')}. Invalidation: {breakout_decision.get('invalidation_condition', '')}",
-        "confidence": breakout_decision.get("confidence", 0.5),
-    }
+# Re-export from shared utils for backward compatibility
+from tradingagents.agents.analysts.quant_utils import get_breakout_decision_for_modal

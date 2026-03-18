@@ -248,7 +248,7 @@ export default function DecisionsPage() {
                     {Object.entries(stats.by_symbol).sort((a: any, b: any) => b[1].total - a[1].total)[0]?.[0] || "—"}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {Object.entries(stats.by_symbol).sort((a: any, b: any) => b[1].total - a[1].total)[0]?.[1]?.total || 0} decisions
+                    {(Object.entries(stats.by_symbol).sort((a: any, b: any) => b[1].total - a[1].total)[0]?.[1] as any)?.total || 0} decisions
                   </p>
                 </>
               ) : (

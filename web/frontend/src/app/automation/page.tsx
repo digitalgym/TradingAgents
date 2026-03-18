@@ -370,7 +370,7 @@ export default function AutomationPage() {
         setMarketWatchSymbols(marketWatchRes.data.symbols)
         if (!hasInitialized.current) {
           hasInitialized.current = true
-          const marketWatchSymbolNames = new Set(marketWatchRes.data.symbols.map((s: MarketWatchSymbol) => s.symbol))
+          const marketWatchSymbolNames = new Set<string>(marketWatchRes.data.symbols.map((s: MarketWatchSymbol) => s.symbol))
           const persistedSymbols = dailyCycleRes.data?.symbols || []
           if (persistedSymbols.length > 0) {
             const validPersistedSymbols = persistedSymbols.filter((s: string) => marketWatchSymbolNames.has(s))

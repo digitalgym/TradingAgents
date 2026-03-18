@@ -12,50 +12,17 @@ This agent:
 - Always pre-defines profit target, stop loss, and invalidation condition
 """
 
-import logging
-import os
-from datetime import datetime
 from typing import Optional
 from tradingagents.schemas import QuantAnalystDecision, RiskLevel
+from tradingagents.dataflows.smc_trade_plan import safe_get
 
 
-def _safe_get(obj, attr, default=None):
-    """Safely get attribute from dict or dataclass object."""
-    if obj is None:
-        return default
-    if isinstance(obj, dict):
-        return obj.get(attr, default)
-    return getattr(obj, attr, default)
+from tradingagents.agents.analysts.quant_utils import create_quant_logger
 
-
-# Set up quant prompt logger
-_quant_logger = None
 
 def _get_quant_logger():
     """Get or create the quant prompt logger."""
-    global _quant_logger
-    if _quant_logger is None:
-        _quant_logger = logging.getLogger("quant_prompts")
-        _quant_logger.setLevel(logging.DEBUG)
-
-        # Create logs directory if it doesn't exist
-        log_dir = os.path.join(os.path.dirname(__file__), "..", "..", "..", "logs", "quant_prompts")
-        os.makedirs(log_dir, exist_ok=True)
-
-        # Create file handler with date-based filename
-        log_file = os.path.join(log_dir, f"quant_prompts_{datetime.now().strftime('%Y%m%d')}.log")
-        file_handler = logging.FileHandler(log_file, encoding='utf-8')
-        file_handler.setLevel(logging.DEBUG)
-
-        # Create formatter
-        formatter = logging.Formatter('%(asctime)s | %(message)s')
-        file_handler.setFormatter(formatter)
-
-        # Add handler (avoid duplicates)
-        if not _quant_logger.handlers:
-            _quant_logger.addHandler(file_handler)
-
-    return _quant_logger
+    return create_quant_logger("quant_prompts", "quant_prompts")
 
 
 def create_quant_analyst(llm, use_structured_output: bool = True):
@@ -229,19 +196,19 @@ def _extract_smc_levels(smc_analysis: dict, current_price: Optional[float]) -> s
     if isinstance(obs, dict):
         for ob_type in ["bullish", "bearish"]:
             for ob in obs.get(ob_type, [])[:3]:  # Top 3 of each type
-                top = _safe_get(ob, "top", 0)
-                bottom = _safe_get(ob, "bottom", 0)
-                strength = _safe_get(ob, "strength", 0.5)
-                mitigated = _safe_get(ob, "mitigated", False)
+                top = safe_get(ob, "top", 0)
+                bottom = safe_get(ob, "bottom", 0)
+                strength = safe_get(ob, "strength", 0.5)
+                mitigated = safe_get(ob, "mitigated", False)
                 if not mitigated and top and bottom:
                     lines.append(f"- {ob_type.upper()} OB: {bottom:.5f} - {top:.5f} (strength: {strength:.0%})")
     elif isinstance(obs, list):
         for ob in obs[:6]:  # Top 6 total
-            ob_type = _safe_get(ob, "type", "unknown")
-            top = _safe_get(ob, "top", 0)
-            bottom = _safe_get(ob, "bottom", 0)
-            strength = _safe_get(ob, "strength", 0.5)
-            mitigated = _safe_get(ob, "mitigated", False)
+            ob_type = safe_get(ob, "type", "unknown")
+            top = safe_get(ob, "top", 0)
+            bottom = safe_get(ob, "bottom", 0)
+            strength = safe_get(ob, "strength", 0.5)
+            mitigated = safe_get(ob, "mitigated", False)
             if not mitigated and top and bottom:
                 lines.append(f"- {ob_type.upper()} OB: {bottom:.5f} - {top:.5f} (strength: {strength:.0%})")
 
@@ -250,24 +217,24 @@ def _extract_smc_levels(smc_analysis: dict, current_price: Optional[float]) -> s
     if isinstance(fvgs, dict):
         for fvg_type in ["bullish", "bearish"]:
             for fvg in fvgs.get(fvg_type, [])[:2]:  # Top 2 of each type
-                top = _safe_get(fvg, "top", 0)
-                bottom = _safe_get(fvg, "bottom", 0)
+                top = safe_get(fvg, "top", 0)
+                bottom = safe_get(fvg, "bottom", 0)
                 if top and bottom:
                     lines.append(f"- {fvg_type.upper()} FVG: {bottom:.5f} - {top:.5f}")
     elif isinstance(fvgs, list):
         for fvg in fvgs[:4]:  # Top 4 total
-            fvg_type = _safe_get(fvg, "type", "unknown")
-            top = _safe_get(fvg, "top", 0)
-            bottom = _safe_get(fvg, "bottom", 0)
+            fvg_type = safe_get(fvg, "type", "unknown")
+            top = safe_get(fvg, "top", 0)
+            bottom = safe_get(fvg, "bottom", 0)
             if top and bottom:
                 lines.append(f"- {fvg_type.upper()} FVG: {bottom:.5f} - {top:.5f}")
 
     # Liquidity zones
     liquidity = smc_analysis.get("liquidity_zones", [])
     for lz in liquidity[:4]:
-        lz_price = _safe_get(lz, "price", 0)
-        lz_type = _safe_get(lz, "type", "unknown")
-        lz_strength = _safe_get(lz, "strength", 50)
+        lz_price = safe_get(lz, "price", 0)
+        lz_type = safe_get(lz, "type", "unknown")
+        lz_strength = safe_get(lz, "strength", 50)
         if lz_price:
             lines.append(f"- {lz_type.upper()} liquidity: {lz_price:.5f} (strength: {lz_strength})")
 
@@ -399,42 +366,5 @@ def _format_quant_report(decision: QuantAnalystDecision) -> str:
     return "\n".join(lines)
 
 
-def get_quant_decision_for_modal(quant_decision: dict) -> dict:
-    """
-    Convert a quant decision dict to trade modal format.
-
-    Args:
-        quant_decision: The quant_decision dict from agent state
-
-    Returns:
-        Dict formatted for TradeExecutionWizard props
-    """
-    if not quant_decision:
-        return {}
-
-    signal_map = {
-        "buy_to_enter": "BUY",
-        "sell_to_enter": "SELL",
-        "hold": "HOLD",
-        "close": "HOLD",
-    }
-
-    signal = quant_decision.get("signal", "hold")
-    if isinstance(signal, dict):
-        signal = signal.get("value", "hold")
-
-    # Extract order_type
-    order_type = quant_decision.get("order_type", "market")
-    if isinstance(order_type, dict):
-        order_type = order_type.get("value", "market")
-
-    return {
-        "symbol": quant_decision.get("symbol", ""),
-        "signal": signal_map.get(signal, "HOLD"),
-        "orderType": order_type,  # "market" or "limit"
-        "suggestedEntry": quant_decision.get("entry_price"),
-        "suggestedStopLoss": quant_decision.get("stop_loss"),
-        "suggestedTakeProfit": quant_decision.get("profit_target"),
-        "rationale": f"{quant_decision.get('justification', '')}. Invalidation: {quant_decision.get('invalidation_condition', '')}",
-        "confidence": quant_decision.get("confidence", 0.5),
-    }
+# Re-export from shared utils for backward compatibility
+from tradingagents.agents.analysts.quant_utils import get_quant_decision_for_modal
