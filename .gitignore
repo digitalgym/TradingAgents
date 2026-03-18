@@ -21,6 +21,21 @@ chroma/
 quant_automation_state*.json
 web/backend/quant_automation_state*.json
 
+# Trade decisions and predictions (runtime data, not source)
+examples/trade_decisions/*.json
+examples/trade_decisions/*_context.pkl
+examples/pending_predictions/*.pkl
+examples/*_context.pkl
+
+# SQLite state database
+data/state.db
+
+# Logs (all subdirectories)
+logs/
+
+# Archives
+archive/
+
 # Web folder
 web/frontend/node_modules/
 web/frontend/.next/
