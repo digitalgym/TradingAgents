@@ -372,6 +372,9 @@ def store_decision(
     position_sizing: Optional[Dict[str, Any]] = None,
     status: str = "active",  # active, failed, closed, cancelled
     execution_error: Optional[str] = None,  # Error message if trade failed
+    confidence: Optional[float] = None,  # Signal confidence 0.0-1.0
+    pipeline: Optional[str] = None,  # Pipeline that generated the signal
+    trailing_stop_atr_multiplier: Optional[float] = None,  # LLM-suggested trailing
 ) -> str:
     """
     Store a trade decision for later outcome tracking.
@@ -445,7 +448,9 @@ def store_decision(
         "was_correct": None,  # True if decision led to profit or avoided loss
         
         # Exit analysis (filled when closed)
-        "trailing_stop_atr_multiplier": None,  # LLM-suggested trailing stop distance as ATR multiple
+        "confidence": confidence,  # Signal confidence 0.0-1.0
+        "pipeline": pipeline,  # Pipeline that generated the signal
+        "trailing_stop_atr_multiplier": trailing_stop_atr_multiplier,  # LLM-suggested trailing stop distance as ATR multiple
         "exit_reason": None,  # "tp-hit", "sl-hit", "manual", "trailing-stop", "time-exit"
         "rr_planned": None,  # Planned risk-reward ratio
         "rr_realized": None,  # Actual risk-reward achieved

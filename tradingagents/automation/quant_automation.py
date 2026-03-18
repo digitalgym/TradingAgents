@@ -1405,10 +1405,55 @@ class QuantAutomation:
                     stop_loss = stop_loss or (entry_price + 2 * atr)
                     take_profit = take_profit or (entry_price - 3 * atr)
 
+            # Validate SL/TP are on correct side of entry
+            if result.signal == "BUY":
+                if stop_loss >= entry_price:
+                    self.logger.warning(f"REJECTED: BUY SL ({stop_loss}) must be below entry ({entry_price})")
+                    result.executed = False
+                    result.rationale += f" | REJECTED: BUY SL {stop_loss} >= entry {entry_price}"
+                    return result
+                if take_profit <= entry_price:
+                    self.logger.warning(f"REJECTED: BUY TP ({take_profit}) must be above entry ({entry_price})")
+                    result.executed = False
+                    result.rationale += f" | REJECTED: BUY TP {take_profit} <= entry {entry_price}"
+                    return result
+            else:
+                if stop_loss <= entry_price:
+                    self.logger.warning(f"REJECTED: SELL SL ({stop_loss}) must be above entry ({entry_price})")
+                    result.executed = False
+                    result.rationale += f" | REJECTED: SELL SL {stop_loss} <= entry {entry_price}"
+                    return result
+                if take_profit >= entry_price:
+                    self.logger.warning(f"REJECTED: SELL TP ({take_profit}) must be below entry ({entry_price})")
+                    result.executed = False
+                    result.rationale += f" | REJECTED: SELL TP {take_profit} >= entry {entry_price}"
+                    return result
+
             self.logger.info(
                 f"Trade params: {result.symbol} {result.signal} "
                 f"entry={entry_price}, sl={stop_loss}, tp={take_profit}"
             )
+
+            # Validate minimum risk:reward ratio
+            sl_distance = abs(entry_price - stop_loss)
+            tp_distance = abs(take_profit - entry_price)
+            min_rr = 0.5  # Minimum acceptable RR ratio
+            if sl_distance > 0:
+                rr_ratio = tp_distance / sl_distance
+                self.logger.info(f"Risk:Reward ratio: {rr_ratio:.2f}:1")
+                if rr_ratio < min_rr:
+                    self.logger.warning(
+                        f"REJECTED: R:R ratio {rr_ratio:.2f}:1 is below minimum {min_rr}:1 "
+                        f"(SL dist={sl_distance:.5f}, TP dist={tp_distance:.5f})"
+                    )
+                    result.executed = False
+                    result.rationale += f" | REJECTED: R:R {rr_ratio:.2f}:1 below minimum {min_rr}:1"
+                    return result
+            else:
+                self.logger.warning(f"REJECTED: SL distance is zero (SL={stop_loss}, entry={entry_price})")
+                result.executed = False
+                result.rationale += " | REJECTED: SL distance is zero"
+                return result
 
             # Calculate position size
             symbol_info = get_mt5_symbol_info(result.symbol)
@@ -1447,23 +1492,10 @@ class QuantAutomation:
                     take_profit=take_profit,
                     volume=lot_size,
                     mt5_ticket=result.execution_ticket,
+                    confidence=result.confidence,
+                    pipeline=result.pipeline,
+                    trailing_stop_atr_multiplier=result.trailing_stop_atr_multiplier,
                 )
-
-                # Store LLM-suggested trailing stop multiplier on the decision
-                if result.trailing_stop_atr_multiplier and decision_id:
-                    try:
-                        from tradingagents.trade_decisions import load_decision, DECISIONS_DIR as _DEC_DIR
-                        import json as _json
-                        dec = load_decision(decision_id)
-                        dec["trailing_stop_atr_multiplier"] = result.trailing_stop_atr_multiplier
-                        dec_file = os.path.join(_DEC_DIR, f"{decision_id}.json")
-                        with open(dec_file, "w") as _f:
-                            _json.dump(dec, _f, indent=2, default=str)
-                        self.logger.info(
-                            f"  LLM trailing stop multiplier: {result.trailing_stop_atr_multiplier}x ATR"
-                        )
-                    except Exception as e:
-                        self.logger.debug(f"  Could not save trailing multiplier: {e}")
 
                 # Post signal to X/Twitter (non-blocking, failures are swallowed)
                 try:
@@ -1516,6 +1548,8 @@ class QuantAutomation:
                         volume=lot_size,
                         status="failed",
                         execution_error=error_detail,
+                        confidence=result.confidence,
+                        pipeline=result.pipeline,
                     )
                     self.logger.info(f"Failed trade saved as decision for manual retry")
                 except Exception as store_err:

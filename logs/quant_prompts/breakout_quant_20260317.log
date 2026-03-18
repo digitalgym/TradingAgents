@@ -70166,3 +70166,1179 @@ Remember: The best breakout trades come from CLEAR consolidation with CLEAR stru
 ================================================================================
 
 2026-03-18 06:05:10,297 | Structured output SUCCESS - returning breakout_quant_decision with signal=hold
+2026-03-18 10:05:15,890 | 
+================================================================================
+BREAKOUT QUANT ANALYSIS - XAUUSD
+================================================================================
+2026-03-18 10:05:15,890 | Symbol: XAUUSD | Date: 2026-03-18 | Price: 5008.34
+2026-03-18 10:05:15,891 | Expansion Regime: neutral | Volatility: extreme
+2026-03-18 10:05:15,891 | Consolidation: {'is_consolidating': False, 'range_high': 5419.24, 'range_low': 4960.65, 'range_midpoint': 5189.945, 'range_percent': 8.836124467600333, 'bb_width': np.float64(7.275962289899172), 'bb_squeeze': np.False_, 'breakout_ready': False, 'structure_bias': 'neutral', 'squeeze_strength': np.float64(68.88888888888889), 'volume_contracting': False, 'volume_contraction_pct': 0.0, 'breakout_detected': False, 'breakout_direction': None, 'breakout_volume_surge': False, 'breakout_confirmed': False}
+2026-03-18 10:05:15,892 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 5008.34000
+- **Date**: 2026-03-18
+- **Trading Session**: asian
+
+## MARKET REGIME (Critical for Breakout Strategy)
+- **Trend Regime**: ranging
+- **Volatility Regime**: extreme
+- **Expansion Regime**: neutral
+
+### Regime Interpretation for Breakouts:
+- If expansion_regime = "contraction": Market is in SQUEEZE - prime breakout setup
+- If expansion_regime = "expansion": Breakout may already be in progress
+- If volatility_regime = "low": Ideal for breakout anticipation
+- If volatility_regime = "high/extreme": Breakout likely already happened, wait for consolidation
+
+## CONSOLIDATION ANALYSIS
+- **Is Consolidating**: Not consolidating
+- **BB Squeeze**: No squeeze
+- **Squeeze Strength**: 69% (higher = tighter squeeze)
+- **Range High (Resistance)**: 5419.24000
+- **Range Low (Support)**: 4960.65000
+- **Range Midpoint**: 5189.94500
+- **Range Width**: 8.84% of price
+- **Structure Bias**: NEUTRAL
+
+### Volume Analysis (Critical for Breakout Confirmation):
+- **Volume Contracting Inside Range**: No significant contraction
+- **Breakout Detected**: No breakout yet
+- **Volume Surge on Breakout**: No surge
+- **BREAKOUT CONFIRMED**: NOT CONFIRMED
+
+### Breakout Confirmation Rules:
+1. Price must CLOSE outside range (not just wick)
+2. Breakout candle must have volume surge (>1.5x average)
+3. Volume should be contracting BEFORE breakout (coiled spring)
+4. If breakout_confirmed = YES, this is a valid entry trigger
+
+### Structure Interpretation:
+- BULLISH structure (higher lows): Buyers accumulating, expect upside breakout
+- BEARISH structure (lower highs): Sellers distributing, expect downside breakout
+- NEUTRAL: No clear bias, wait for breakout direction confirmation
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: PREMIUM zone (66%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 4264.53
+  - BOS HIGH at 4549.98 [RECENT]
+  - BOS HIGH at 5119.13 [RECENT]
+  - CHoCH HIGH at 4244.99 (potential reversal)
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 3998.00000-4082.25000 | Strength: 80% | UNMITIGATED | 20.17% from price
+  - BULLISH OB: 4274.66000-4373.12000 | Strength: 80% | UNMITIGATED | 14.65% from price
+  - BULLISH OB: 4402.83000-4884.48000 | Strength: 80% | MITIGATED | 12.09% from price
+  - BEARISH OB: 5305.50679-5598.24000 | Strength: 80% | MITIGATED | 11.78% from price
+  - BEARISH OB: 4854.61000-5091.86000 | Strength: 47% | MITIGATED | 1.67% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 4479.53000-4512.70000 | FILLED | 10.56% below price (expect bounce UP)
+  - BULLISH FVG: 4517.17000-4569.52000 | FILLED | 9.81% below price (expect bounce UP)
+  - BULLISH FVG: 4620.70000-4659.50000 | FILLED | 7.74% below price (expect bounce UP)
+  - BEARISH FVG: 4884.48000-5102.83000 | FILLED | 1.89% above price (expect rejection DOWN)
+  - BEARISH FVG: 5206.06000-5260.85000 | UNFILLED | 5.04% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - SELL-SIDE at 4996.28000 | Strength: 68% | UNSWEPT | 0.24% below
+  - BUY-SIDE at 5119.13000 | Strength: 65% | UNSWEPT | 2.21% above
+  - SELL-SIDE at 4842.68000 | Strength: 54% | UNSWEPT | 3.31% below
+  - BUY-SIDE at 5419.24000 | Strength: 67% | UNSWEPT | 8.20% above
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 4254.76000 | Touches: 4 | PROVEN | SWEPT | 15.05% above
+  - EQUAL HIGHS (Resistance) at 5104.29000 | Touches: 6 | PROVEN | UNSWEPT | 1.92% above
+    >>6 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 5200.80400 | Touches: 5 | PROVEN | UNSWEPT | 3.84% above
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 5029.66750 | Touches: 4 | PROVEN | UNSWEPT | 0.43% above
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL LOWS (Support) at 3310.95417 | Touches: 12 | PROVEN | UNSWEPT | 33.89% below
+    >>12 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 3371.08143 | Touches: 7 | PROVEN | UNSWEPT | 32.69% below
+    >>7 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 39.7 (neutral)
+- MACD: 16.52688
+- MACD Signal: 50.04037
+- MACD Histogram: -33.51349 (bearish)
+
+### Trend
+- EMA20: 5076.07344 (Price below)
+- EMA50: 4934.57596 (Price above)
+- ADX: 54.5 (Strong trend)
+
+### Volatility
+- ATR(14): 130.16286
+- BB Upper: 5313.68356
+- BB Middle: 5127.15850
+- BB Lower: 4940.63344
+- BB Width: 7.28%
+
+2026-03-18 10:05:15,899 | 
+--- FULL PROMPT ---
+You are a breakout trading specialist with strict risk discipline. You specialize in identifying consolidation patterns and trading breakouts.
+
+## YOUR TRADING EDGE: CONSOLIDATION TO BREAKOUT
+
+Markets alternate between consolidation (range) and expansion (trend). Your edge is:
+1. Identify when price is consolidating (tight range, low volatility, BB squeeze)
+2. Look for VOLUME CONTRACTION inside the range (drying up = coiled spring)
+3. Determine likely breakout direction from structure (higher lows = up, lower highs = down)
+4. Enter on CONFIRMED breakout: close outside range + volume surge (1.5x+ average)
+
+**THE KEY FILTER**: Volume dry-up inside range + volume surge on breakout = real breakout
+Without volume confirmation, most breakouts fail and trap traders.
+
+## BREAKOUT TRADING RULES
+
+### 1. IDENTIFYING CONSOLIDATION
+- **BB Squeeze**: When Bollinger Band width is in lowest 30% of recent history
+- **Low Volatility**: ATR is low relative to recent history
+- **Tight Range**: Price contained within narrow high/low boundaries
+- **Time**: Good consolidations last 10-30 candles
+
+### 2. DETERMINING BREAKOUT DIRECTION
+- **Higher Lows** within range = Bullish accumulation = Expect UPSIDE breakout
+- **Lower Highs** within range = Bearish distribution = Expect DOWNSIDE breakout
+- **Neutral structure** = Wait for breakout confirmation before entering
+
+### 3. ENTRY STRATEGIES
+- **Anticipation Entry**: Enter before breakout when structure is clear + volume contracting
+  - BUY near range low when structure is bullish AND volume is drying up
+  - SELL near range high when structure is bearish AND volume is drying up
+  - SL: Opposite side of range
+  - Requires: volume_contracting = True
+
+- **Breakout Entry**: Enter on CONFIRMED breakout only
+  - BUY when price CLOSES above range high WITH volume surge (1.5x+)
+  - SELL when price CLOSES below range low WITH volume surge (1.5x+)
+  - SL: Beyond the opposite side of the breakout level (at least 1x ATR buffer)
+  - **CRITICAL**: breakout_confirmed must be TRUE (close + volume surge)
+  - Do NOT enter on wick-only breaks or low-volume breakouts
+
+### 4. STOP LOSS PLACEMENT (CRITICAL)
+- For BUY: Stop loss MUST be BELOW entry price
+  - Anticipation buy: SL below range low minus 1x ATR buffer
+  - Breakout buy: SL below the breakout level minus 1x ATR buffer (allow for retest)
+
+- For SELL: Stop loss MUST be ABOVE entry price
+  - Anticipation sell: SL above range high plus 1x ATR buffer
+  - Breakdown sell: SL above the breakdown level plus 1x ATR buffer (allow for retest)
+
+- **MINIMUM SL DISTANCE**: Stop loss must be at least 1x ATR from entry. SL within 0.5% of entry is TOO TIGHT and will get stopped out by normal price noise. For gold (XAUUSD), minimum SL should be $15-30+ from entry.
+- If you cannot place SL with adequate distance while maintaining R:R >= 1.5:1, output "hold"
+
+### 5. TAKE PROFIT TARGETS
+- Minimum target: 1.5x the range width
+- Preferred target: 2x the range width
+- Extended target: Previous swing high/low, major SMC level, or proven equal level (3+ retests = strong liquidity magnet)
+
+### 6. WHEN NOT TO TRADE
+- **No consolidation**: Price is already trending (expansion regime)
+- **Extreme volatility**: Too choppy, wait for consolidation to form
+- **Unclear structure**: No higher lows or lower highs, wait for clarity
+- **News imminent**: Major catalyst could invalidate technical setup
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation**
+5. **If no clear consolidation or direction, output HOLD**
+6. **Stop loss MUST be on correct side of entry**
+
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 5008.34000
+- **Date**: 2026-03-18
+- **Trading Session**: asian
+
+## MARKET REGIME (Critical for Breakout Strategy)
+- **Trend Regime**: ranging
+- **Volatility Regime**: extreme
+- **Expansion Regime**: neutral
+
+### Regime Interpretation for Breakouts:
+- If expansion_regime = "contraction": Market is in SQUEEZE - prime breakout setup
+- If expansion_regime = "expansion": Breakout may already be in progress
+- If volatility_regime = "low": Ideal for breakout anticipation
+- If volatility_regime = "high/extreme": Breakout likely already happened, wait for consolidation
+
+## CONSOLIDATION ANALYSIS
+- **Is Consolidating**: Not consolidating
+- **BB Squeeze**: No squeeze
+- **Squeeze Strength**: 69% (higher = tighter squeeze)
+- **Range High (Resistance)**: 5419.24000
+- **Range Low (Support)**: 4960.65000
+- **Range Midpoint**: 5189.94500
+- **Range Width**: 8.84% of price
+- **Structure Bias**: NEUTRAL
+
+### Volume Analysis (Critical for Breakout Confirmation):
+- **Volume Contracting Inside Range**: No significant contraction
+- **Breakout Detected**: No breakout yet
+- **Volume Surge on Breakout**: No surge
+- **BREAKOUT CONFIRMED**: NOT CONFIRMED
+
+### Breakout Confirmation Rules:
+1. Price must CLOSE outside range (not just wick)
+2. Breakout candle must have volume surge (>1.5x average)
+3. Volume should be contracting BEFORE breakout (coiled spring)
+4. If breakout_confirmed = YES, this is a valid entry trigger
+
+### Structure Interpretation:
+- BULLISH structure (higher lows): Buyers accumulating, expect upside breakout
+- BEARISH structure (lower highs): Sellers distributing, expect downside breakout
+- NEUTRAL: No clear bias, wait for breakout direction confirmation
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: PREMIUM zone (66%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 4264.53
+  - BOS HIGH at 4549.98 [RECENT]
+  - BOS HIGH at 5119.13 [RECENT]
+  - CHoCH HIGH at 4244.99 (potential reversal)
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 3998.00000-4082.25000 | Strength: 80% | UNMITIGATED | 20.17% from price
+  - BULLISH OB: 4274.66000-4373.12000 | Strength: 80% | UNMITIGATED | 14.65% from price
+  - BULLISH OB: 4402.83000-4884.48000 | Strength: 80% | MITIGATED | 12.09% from price
+  - BEARISH OB: 5305.50679-5598.24000 | Strength: 80% | MITIGATED | 11.78% from price
+  - BEARISH OB: 4854.61000-5091.86000 | Strength: 47% | MITIGATED | 1.67% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 4479.53000-4512.70000 | FILLED | 10.56% below price (expect bounce UP)
+  - BULLISH FVG: 4517.17000-4569.52000 | FILLED | 9.81% below price (expect bounce UP)
+  - BULLISH FVG: 4620.70000-4659.50000 | FILLED | 7.74% below price (expect bounce UP)
+  - BEARISH FVG: 4884.48000-5102.83000 | FILLED | 1.89% above price (expect rejection DOWN)
+  - BEARISH FVG: 5206.06000-5260.85000 | UNFILLED | 5.04% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - SELL-SIDE at 4996.28000 | Strength: 68% | UNSWEPT | 0.24% below
+  - BUY-SIDE at 5119.13000 | Strength: 65% | UNSWEPT | 2.21% above
+  - SELL-SIDE at 4842.68000 | Strength: 54% | UNSWEPT | 3.31% below
+  - BUY-SIDE at 5419.24000 | Strength: 67% | UNSWEPT | 8.20% above
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 4254.76000 | Touches: 4 | PROVEN | SWEPT | 15.05% above
+  - EQUAL HIGHS (Resistance) at 5104.29000 | Touches: 6 | PROVEN | UNSWEPT | 1.92% above
+    >>6 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 5200.80400 | Touches: 5 | PROVEN | UNSWEPT | 3.84% above
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 5029.66750 | Touches: 4 | PROVEN | UNSWEPT | 0.43% above
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL LOWS (Support) at 3310.95417 | Touches: 12 | PROVEN | UNSWEPT | 33.89% below
+    >>12 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 3371.08143 | Touches: 7 | PROVEN | UNSWEPT | 32.69% below
+    >>7 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 39.7 (neutral)
+- MACD: 16.52688
+- MACD Signal: 50.04037
+- MACD Histogram: -33.51349 (bearish)
+
+### Trend
+- EMA20: 5076.07344 (Price below)
+- EMA50: 4934.57596 (Price above)
+- ADX: 54.5 (Strong trend)
+
+### Volatility
+- ATR(14): 130.16286
+- BB Upper: 5313.68356
+- BB Middle: 5127.15850
+- BB Lower: 4940.63344
+- BB Width: 7.28%
+
+
+
+## LESSONS FROM YOUR PAST TRADES (XAUUSD)
+
+### Performance (last 10 trades)
+- Win rate: 20% (2/10) | Total P/L: $-40.53 | Avg: $-4.05
+- Direction accuracy: 30% (3/10)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. BUY @ 4989.06 -> breakeven_stop @ 4988.70 | -0.36 | SL 0.9% from entry (tight)
+2. BUY @ 5002.54 -> stale_cleanup @ 5002.54 | +0.00 | SL 1.9% from entry
+3. SELL @ 5023.64 -> Manual close @ 5024.00 | -0.36 | SL 0.6% from entry (tight)
+4. BUY @ 5071.93 -> SL hit @ 5059.20 | -12.73 | SL 0.3% from entry ⚠️ EXTREMELY TIGHT
+5. SELL @ 5105.47 -> unknown @ 5097.43 | +8.04 | SL 0.5% from entry (tight)
+
+⚠️ **CRITICAL PATTERN**: 4/5 recent trades had SL too tight (<1% from entry).
+Your stops are getting hit or positions closed at a loss because SL is too close to entry.
+**ACTION REQUIRED**: Place SL at least 1-1.5x ATR from entry, or beyond the nearest OB/FVG zone. Do NOT use SL within 0.5% of entry.
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 7x)
+- Good entry timing contributed to the win. (occurred 2x)
+- Manual exit resulted in loss. Consider letting SL/TP play out.
+
+IMPORTANT: The above lessons are from YOUR past breakout trades. Study what went wrong
+and apply corrections. Pay special attention to false breakout lessons.
+
+
+## YOUR TASK
+
+Analyze the consolidation and regime data to make a breakout trading decision.
+
+Think step-by-step:
+1. Is the market in consolidation? (Check expansion_regime, BB squeeze, range %)
+2. Is volume contracting inside the range? (volume_contracting = coiled spring)
+3. What is the structure bias? (Higher lows = bullish, lower highs = bearish)
+4. Where are the range boundaries? (Resistance high, Support low)
+5. Has a breakout occurred? Check breakout_confirmed (close outside + volume surge)
+6. Is price at a good entry zone? (Near range extreme or confirmed breakout)
+7. Where is the stop loss and is the R:R acceptable (>1.5:1)?
+8. What would invalidate this setup?
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Long position. Use when:
+  - Consolidation with BULLISH structure + volume contracting, price near range low (anticipation), OR
+  - breakout_confirmed = TRUE with direction = "up" (confirmed breakout)
+  - MUST provide entry_price (at range low or above breakout level), stop_loss (BELOW entry), profit_target
+
+- **sell_to_enter** - Short position. Use when:
+  - Consolidation with BEARISH structure + volume contracting, price near range high (anticipation), OR
+  - breakout_confirmed = TRUE with direction = "down" (confirmed breakdown)
+  - MUST provide entry_price (at range high or below breakdown level), stop_loss (ABOVE entry), profit_target
+
+- **hold** - No action. Use when:
+  - No consolidation (trending market, wait for range to form)
+  - Neutral structure (no higher lows or lower highs)
+  - Breakout detected but NOT confirmed (no volume surge) - HIGH FALSE BREAKOUT RISK
+  - Price is mid-range (not at good entry zone)
+  - Unclear setup or poor R:R
+
+- **close** - Exit existing position. Use when:
+  - Breakout failed (price returned inside range)
+  - Invalidation condition met
+
+## ORDER TYPE
+- **limit** - Preferred for anticipation entries at range extremes
+- **market** - Use for confirmed breakouts when price has already broken out
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+For buy/sell signals, suggest a trailing stop distance as an ATR multiplier based on current volatility:
+- **Low volatility** (tight squeeze, small ATR): 1.5-2.0x ATR
+- **Normal volatility**: 2.0-3.0x ATR
+- **High volatility** (post-breakout expansion, large ATR): 3.0-5.0x ATR
+- **XAUUSD/Gold**: Typically 2.5-4.0x ATR
+- **Forex majors**: Typically 1.5-2.5x ATR
+- If unsure, default to 2.5x ATR
+
+Remember: The best breakout trades come from CLEAR consolidation with CLEAR structure bias. When in doubt, HOLD.
+2026-03-18 10:05:15,919 | 
+================================================================================
+
+2026-03-18 10:05:21,401 | --- LLM RESPONSE (Structured) [took 5.5s] ---
+2026-03-18 10:05:21,402 | Signal: hold
+2026-03-18 10:05:21,402 | Confidence: 0.95
+2026-03-18 10:05:21,402 | Entry: None | SL: None | TP: None
+2026-03-18 10:05:21,403 | Justification: Market is not consolidating with no BB squeeze, no volume contraction, neutral structure bias, and no confirmed breakout, making it unsuitable for breakout entry per strict rules.
+2026-03-18 10:05:21,403 | Invalidation: No clear consolidation forming or price breaks into a defined range with volume contraction and structure bias
+2026-03-18 10:05:21,403 | Raw decision dict: {'symbol': 'XAUUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'No clear consolidation forming or price breaks into a defined range with volume contraction and structure bias', 'justification': 'Market is not consolidating with no BB squeeze, no volume contraction, neutral structure bias, and no confirmed breakout, making it unsuitable for breakout entry per strict rules.', 'confidence': 0.95, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-18 10:05:21,404 | 
+================================================================================
+
+2026-03-18 10:05:21,405 | Structured output SUCCESS - returning breakout_quant_decision with signal=hold
+2026-03-18 14:05:50,257 | 
+================================================================================
+BREAKOUT QUANT ANALYSIS - XAUUSD
+================================================================================
+2026-03-18 14:05:50,258 | Symbol: XAUUSD | Date: 2026-03-18 | Price: 4991.1900000000005
+2026-03-18 14:05:50,258 | Expansion Regime: neutral | Volatility: extreme
+2026-03-18 14:05:50,259 | Consolidation: {'is_consolidating': False, 'range_high': 5419.24, 'range_low': 4960.65, 'range_midpoint': 5189.945, 'range_percent': 8.836124467600333, 'bb_width': np.float64(7.372506148460534), 'bb_squeeze': np.False_, 'breakout_ready': False, 'structure_bias': 'neutral', 'squeeze_strength': np.float64(67.77777777777779), 'volume_contracting': False, 'volume_contraction_pct': 0.0, 'breakout_detected': False, 'breakout_direction': None, 'breakout_volume_surge': False, 'breakout_confirmed': False}
+2026-03-18 14:05:50,259 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 4991.19000
+- **Date**: 2026-03-18
+- **Trading Session**: asian
+
+## MARKET REGIME (Critical for Breakout Strategy)
+- **Trend Regime**: ranging
+- **Volatility Regime**: extreme
+- **Expansion Regime**: neutral
+
+### Regime Interpretation for Breakouts:
+- If expansion_regime = "contraction": Market is in SQUEEZE - prime breakout setup
+- If expansion_regime = "expansion": Breakout may already be in progress
+- If volatility_regime = "low": Ideal for breakout anticipation
+- If volatility_regime = "high/extreme": Breakout likely already happened, wait for consolidation
+
+## CONSOLIDATION ANALYSIS
+- **Is Consolidating**: Not consolidating
+- **BB Squeeze**: No squeeze
+- **Squeeze Strength**: 68% (higher = tighter squeeze)
+- **Range High (Resistance)**: 5419.24000
+- **Range Low (Support)**: 4960.65000
+- **Range Midpoint**: 5189.94500
+- **Range Width**: 8.84% of price
+- **Structure Bias**: NEUTRAL
+
+### Volume Analysis (Critical for Breakout Confirmation):
+- **Volume Contracting Inside Range**: No significant contraction
+- **Breakout Detected**: No breakout yet
+- **Volume Surge on Breakout**: No surge
+- **BREAKOUT CONFIRMED**: NOT CONFIRMED
+
+### Breakout Confirmation Rules:
+1. Price must CLOSE outside range (not just wick)
+2. Breakout candle must have volume surge (>1.5x average)
+3. Volume should be contracting BEFORE breakout (coiled spring)
+4. If breakout_confirmed = YES, this is a valid entry trigger
+
+### Structure Interpretation:
+- BULLISH structure (higher lows): Buyers accumulating, expect upside breakout
+- BEARISH structure (lower highs): Sellers distributing, expect downside breakout
+- NEUTRAL: No clear bias, wait for breakout direction confirmation
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: PREMIUM zone (65%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 4264.53
+  - BOS HIGH at 4549.98 [RECENT]
+  - BOS HIGH at 5119.13 [RECENT]
+  - CHoCH HIGH at 4244.99 (potential reversal)
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 3998.00000-4082.25000 | Strength: 80% | UNMITIGATED | 19.90% from price
+  - BULLISH OB: 4274.66000-4373.12000 | Strength: 80% | UNMITIGATED | 14.36% from price
+  - BULLISH OB: 4402.83000-4884.48000 | Strength: 80% | MITIGATED | 11.79% from price
+  - BEARISH OB: 5305.50679-5598.24000 | Strength: 80% | MITIGATED | 12.16% from price
+  - BEARISH OB: 4854.61000-5091.86000 | Strength: 47% | MITIGATED | 2.02% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 4479.53000-4512.70000 | FILLED | 10.25% below price (expect bounce UP)
+  - BULLISH FVG: 4517.17000-4569.52000 | FILLED | 9.50% below price (expect bounce UP)
+  - BULLISH FVG: 4620.70000-4659.50000 | FILLED | 7.42% below price (expect bounce UP)
+  - BEARISH FVG: 4884.48000-5102.83000 | FILLED | 2.24% above price (expect rejection DOWN)
+  - BEARISH FVG: 5206.06000-5260.85000 | UNFILLED | 5.40% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - SELL-SIDE at 4996.28000 | Strength: 68% | UNSWEPT | 0.10% above
+  - BUY-SIDE at 5119.13000 | Strength: 65% | UNSWEPT | 2.56% above
+  - SELL-SIDE at 4842.68000 | Strength: 54% | UNSWEPT | 2.98% below
+  - BUY-SIDE at 5419.24000 | Strength: 67% | UNSWEPT | 8.58% above
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 4254.76000 | Touches: 4 | PROVEN | SWEPT | 14.75% above
+  - EQUAL HIGHS (Resistance) at 5104.29000 | Touches: 6 | PROVEN | UNSWEPT | 2.27% above
+    >>6 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 5200.80400 | Touches: 5 | PROVEN | UNSWEPT | 4.20% above
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 5029.66750 | Touches: 4 | PROVEN | UNSWEPT | 0.77% above
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL LOWS (Support) at 3310.95417 | Touches: 12 | PROVEN | UNSWEPT | 33.66% below
+    >>12 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 3368.07500 | Touches: 8 | PROVEN | UNSWEPT | 32.52% below
+    >>8 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 38.7 (neutral)
+- MACD: 15.15879
+- MACD Signal: 49.76675
+- MACD Histogram: -34.60796 (bearish)
+
+### Trend
+- EMA20: 5074.44011 (Price below)
+- EMA50: 4933.90342 (Price above)
+- ADX: 54.4 (Strong trend)
+
+### Volatility
+- ATR(14): 131.20000
+- BB Upper: 5315.26943
+- BB Middle: 5126.30100
+- BB Lower: 4937.33257
+- BB Width: 7.37%
+
+2026-03-18 14:05:50,267 | 
+--- FULL PROMPT ---
+You are a breakout trading specialist with strict risk discipline. You specialize in identifying consolidation patterns and trading breakouts.
+
+## YOUR TRADING EDGE: CONSOLIDATION TO BREAKOUT
+
+Markets alternate between consolidation (range) and expansion (trend). Your edge is:
+1. Identify when price is consolidating (tight range, low volatility, BB squeeze)
+2. Look for VOLUME CONTRACTION inside the range (drying up = coiled spring)
+3. Determine likely breakout direction from structure (higher lows = up, lower highs = down)
+4. Enter on CONFIRMED breakout: close outside range + volume surge (1.5x+ average)
+
+**THE KEY FILTER**: Volume dry-up inside range + volume surge on breakout = real breakout
+Without volume confirmation, most breakouts fail and trap traders.
+
+## BREAKOUT TRADING RULES
+
+### 1. IDENTIFYING CONSOLIDATION
+- **BB Squeeze**: When Bollinger Band width is in lowest 30% of recent history
+- **Low Volatility**: ATR is low relative to recent history
+- **Tight Range**: Price contained within narrow high/low boundaries
+- **Time**: Good consolidations last 10-30 candles
+
+### 2. DETERMINING BREAKOUT DIRECTION
+- **Higher Lows** within range = Bullish accumulation = Expect UPSIDE breakout
+- **Lower Highs** within range = Bearish distribution = Expect DOWNSIDE breakout
+- **Neutral structure** = Wait for breakout confirmation before entering
+
+### 3. ENTRY STRATEGIES
+- **Anticipation Entry**: Enter before breakout when structure is clear + volume contracting
+  - BUY near range low when structure is bullish AND volume is drying up
+  - SELL near range high when structure is bearish AND volume is drying up
+  - SL: Opposite side of range
+  - Requires: volume_contracting = True
+
+- **Breakout Entry**: Enter on CONFIRMED breakout only
+  - BUY when price CLOSES above range high WITH volume surge (1.5x+)
+  - SELL when price CLOSES below range low WITH volume surge (1.5x+)
+  - SL: Beyond the opposite side of the breakout level (at least 1x ATR buffer)
+  - **CRITICAL**: breakout_confirmed must be TRUE (close + volume surge)
+  - Do NOT enter on wick-only breaks or low-volume breakouts
+
+### 4. STOP LOSS PLACEMENT (CRITICAL)
+- For BUY: Stop loss MUST be BELOW entry price
+  - Anticipation buy: SL below range low minus 1x ATR buffer
+  - Breakout buy: SL below the breakout level minus 1x ATR buffer (allow for retest)
+
+- For SELL: Stop loss MUST be ABOVE entry price
+  - Anticipation sell: SL above range high plus 1x ATR buffer
+  - Breakdown sell: SL above the breakdown level plus 1x ATR buffer (allow for retest)
+
+- **MINIMUM SL DISTANCE**: Stop loss must be at least 1x ATR from entry. SL within 0.5% of entry is TOO TIGHT and will get stopped out by normal price noise. For gold (XAUUSD), minimum SL should be $15-30+ from entry.
+- If you cannot place SL with adequate distance while maintaining R:R >= 1.5:1, output "hold"
+
+### 5. TAKE PROFIT TARGETS
+- Minimum target: 1.5x the range width
+- Preferred target: 2x the range width
+- Extended target: Previous swing high/low, major SMC level, or proven equal level (3+ retests = strong liquidity magnet)
+
+### 6. WHEN NOT TO TRADE
+- **No consolidation**: Price is already trending (expansion regime)
+- **Extreme volatility**: Too choppy, wait for consolidation to form
+- **Unclear structure**: No higher lows or lower highs, wait for clarity
+- **News imminent**: Major catalyst could invalidate technical setup
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation**
+5. **If no clear consolidation or direction, output HOLD**
+6. **Stop loss MUST be on correct side of entry**
+
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 4991.19000
+- **Date**: 2026-03-18
+- **Trading Session**: asian
+
+## MARKET REGIME (Critical for Breakout Strategy)
+- **Trend Regime**: ranging
+- **Volatility Regime**: extreme
+- **Expansion Regime**: neutral
+
+### Regime Interpretation for Breakouts:
+- If expansion_regime = "contraction": Market is in SQUEEZE - prime breakout setup
+- If expansion_regime = "expansion": Breakout may already be in progress
+- If volatility_regime = "low": Ideal for breakout anticipation
+- If volatility_regime = "high/extreme": Breakout likely already happened, wait for consolidation
+
+## CONSOLIDATION ANALYSIS
+- **Is Consolidating**: Not consolidating
+- **BB Squeeze**: No squeeze
+- **Squeeze Strength**: 68% (higher = tighter squeeze)
+- **Range High (Resistance)**: 5419.24000
+- **Range Low (Support)**: 4960.65000
+- **Range Midpoint**: 5189.94500
+- **Range Width**: 8.84% of price
+- **Structure Bias**: NEUTRAL
+
+### Volume Analysis (Critical for Breakout Confirmation):
+- **Volume Contracting Inside Range**: No significant contraction
+- **Breakout Detected**: No breakout yet
+- **Volume Surge on Breakout**: No surge
+- **BREAKOUT CONFIRMED**: NOT CONFIRMED
+
+### Breakout Confirmation Rules:
+1. Price must CLOSE outside range (not just wick)
+2. Breakout candle must have volume surge (>1.5x average)
+3. Volume should be contracting BEFORE breakout (coiled spring)
+4. If breakout_confirmed = YES, this is a valid entry trigger
+
+### Structure Interpretation:
+- BULLISH structure (higher lows): Buyers accumulating, expect upside breakout
+- BEARISH structure (lower highs): Sellers distributing, expect downside breakout
+- NEUTRAL: No clear bias, wait for breakout direction confirmation
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: PREMIUM zone (65%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 4264.53
+  - BOS HIGH at 4549.98 [RECENT]
+  - BOS HIGH at 5119.13 [RECENT]
+  - CHoCH HIGH at 4244.99 (potential reversal)
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 3998.00000-4082.25000 | Strength: 80% | UNMITIGATED | 19.90% from price
+  - BULLISH OB: 4274.66000-4373.12000 | Strength: 80% | UNMITIGATED | 14.36% from price
+  - BULLISH OB: 4402.83000-4884.48000 | Strength: 80% | MITIGATED | 11.79% from price
+  - BEARISH OB: 5305.50679-5598.24000 | Strength: 80% | MITIGATED | 12.16% from price
+  - BEARISH OB: 4854.61000-5091.86000 | Strength: 47% | MITIGATED | 2.02% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 4479.53000-4512.70000 | FILLED | 10.25% below price (expect bounce UP)
+  - BULLISH FVG: 4517.17000-4569.52000 | FILLED | 9.50% below price (expect bounce UP)
+  - BULLISH FVG: 4620.70000-4659.50000 | FILLED | 7.42% below price (expect bounce UP)
+  - BEARISH FVG: 4884.48000-5102.83000 | FILLED | 2.24% above price (expect rejection DOWN)
+  - BEARISH FVG: 5206.06000-5260.85000 | UNFILLED | 5.40% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - SELL-SIDE at 4996.28000 | Strength: 68% | UNSWEPT | 0.10% above
+  - BUY-SIDE at 5119.13000 | Strength: 65% | UNSWEPT | 2.56% above
+  - SELL-SIDE at 4842.68000 | Strength: 54% | UNSWEPT | 2.98% below
+  - BUY-SIDE at 5419.24000 | Strength: 67% | UNSWEPT | 8.58% above
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 4254.76000 | Touches: 4 | PROVEN | SWEPT | 14.75% above
+  - EQUAL HIGHS (Resistance) at 5104.29000 | Touches: 6 | PROVEN | UNSWEPT | 2.27% above
+    >>6 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 5200.80400 | Touches: 5 | PROVEN | UNSWEPT | 4.20% above
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 5029.66750 | Touches: 4 | PROVEN | UNSWEPT | 0.77% above
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL LOWS (Support) at 3310.95417 | Touches: 12 | PROVEN | UNSWEPT | 33.66% below
+    >>12 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 3368.07500 | Touches: 8 | PROVEN | UNSWEPT | 32.52% below
+    >>8 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 38.7 (neutral)
+- MACD: 15.15879
+- MACD Signal: 49.76675
+- MACD Histogram: -34.60796 (bearish)
+
+### Trend
+- EMA20: 5074.44011 (Price below)
+- EMA50: 4933.90342 (Price above)
+- ADX: 54.4 (Strong trend)
+
+### Volatility
+- ATR(14): 131.20000
+- BB Upper: 5315.26943
+- BB Middle: 5126.30100
+- BB Lower: 4937.33257
+- BB Width: 7.37%
+
+
+
+## LESSONS FROM YOUR PAST TRADES (XAUUSD)
+
+### Performance (last 10 trades)
+- Win rate: 20% (2/10) | Total P/L: $-40.53 | Avg: $-4.05
+- Direction accuracy: 30% (3/10)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. BUY @ 4989.06 -> breakeven_stop @ 4988.70 | -0.36 | SL 0.9% from entry (tight)
+2. BUY @ 5002.54 -> stale_cleanup @ 5002.54 | +0.00 | SL 1.9% from entry
+3. SELL @ 5023.64 -> Manual close @ 5024.00 | -0.36 | SL 0.6% from entry (tight)
+4. BUY @ 5071.93 -> SL hit @ 5059.20 | -12.73 | SL 0.3% from entry ⚠️ EXTREMELY TIGHT
+5. SELL @ 5105.47 -> unknown @ 5097.43 | +8.04 | SL 0.5% from entry (tight)
+
+⚠️ **CRITICAL PATTERN**: 4/5 recent trades had SL too tight (<1% from entry).
+Your stops are getting hit or positions closed at a loss because SL is too close to entry.
+**ACTION REQUIRED**: Place SL at least 1-1.5x ATR from entry, or beyond the nearest OB/FVG zone. Do NOT use SL within 0.5% of entry.
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 7x)
+- Good entry timing contributed to the win. (occurred 2x)
+- Manual exit resulted in loss. Consider letting SL/TP play out.
+
+IMPORTANT: The above lessons are from YOUR past breakout trades. Study what went wrong
+and apply corrections. Pay special attention to false breakout lessons.
+
+
+## YOUR TASK
+
+Analyze the consolidation and regime data to make a breakout trading decision.
+
+Think step-by-step:
+1. Is the market in consolidation? (Check expansion_regime, BB squeeze, range %)
+2. Is volume contracting inside the range? (volume_contracting = coiled spring)
+3. What is the structure bias? (Higher lows = bullish, lower highs = bearish)
+4. Where are the range boundaries? (Resistance high, Support low)
+5. Has a breakout occurred? Check breakout_confirmed (close outside + volume surge)
+6. Is price at a good entry zone? (Near range extreme or confirmed breakout)
+7. Where is the stop loss and is the R:R acceptable (>1.5:1)?
+8. What would invalidate this setup?
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Long position. Use when:
+  - Consolidation with BULLISH structure + volume contracting, price near range low (anticipation), OR
+  - breakout_confirmed = TRUE with direction = "up" (confirmed breakout)
+  - MUST provide entry_price (at range low or above breakout level), stop_loss (BELOW entry), profit_target
+
+- **sell_to_enter** - Short position. Use when:
+  - Consolidation with BEARISH structure + volume contracting, price near range high (anticipation), OR
+  - breakout_confirmed = TRUE with direction = "down" (confirmed breakdown)
+  - MUST provide entry_price (at range high or below breakdown level), stop_loss (ABOVE entry), profit_target
+
+- **hold** - No action. Use when:
+  - No consolidation (trending market, wait for range to form)
+  - Neutral structure (no higher lows or lower highs)
+  - Breakout detected but NOT confirmed (no volume surge) - HIGH FALSE BREAKOUT RISK
+  - Price is mid-range (not at good entry zone)
+  - Unclear setup or poor R:R
+
+- **close** - Exit existing position. Use when:
+  - Breakout failed (price returned inside range)
+  - Invalidation condition met
+
+## ORDER TYPE
+- **limit** - Preferred for anticipation entries at range extremes
+- **market** - Use for confirmed breakouts when price has already broken out
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+For buy/sell signals, suggest a trailing stop distance as an ATR multiplier based on current volatility:
+- **Low volatility** (tight squeeze, small ATR): 1.5-2.0x ATR
+- **Normal volatility**: 2.0-3.0x ATR
+- **High volatility** (post-breakout expansion, large ATR): 3.0-5.0x ATR
+- **XAUUSD/Gold**: Typically 2.5-4.0x ATR
+- **Forex majors**: Typically 1.5-2.5x ATR
+- If unsure, default to 2.5x ATR
+
+Remember: The best breakout trades come from CLEAR consolidation with CLEAR structure bias. When in doubt, HOLD.
+2026-03-18 14:05:50,284 | 
+================================================================================
+
+2026-03-18 14:05:56,270 | --- LLM RESPONSE (Structured) [took 6.0s] ---
+2026-03-18 14:05:56,270 | Signal: hold
+2026-03-18 14:05:56,271 | Confidence: 0.95
+2026-03-18 14:05:56,271 | Entry: None | SL: None | TP: None
+2026-03-18 14:05:56,271 | Justification: Market is not consolidating (explicitly stated), no BB squeeze, neutral structure bias, extreme volatility regime, no volume contraction or breakout confirmation, wide range (8.84%), making any breakout trade invalid per rules.
+2026-03-18 14:05:56,272 | Invalidation: Formation of clear consolidation range with BB squeeze and volume contraction
+2026-03-18 14:05:56,272 | Raw decision dict: {'symbol': 'XAUUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Formation of clear consolidation range with BB squeeze and volume contraction', 'justification': 'Market is not consolidating (explicitly stated), no BB squeeze, neutral structure bias, extreme volatility regime, no volume contraction or breakout confirmation, wide range (8.84%), making any breakout trade invalid per rules.', 'confidence': 0.95, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-18 14:05:56,273 | 
+================================================================================
+
+2026-03-18 14:05:56,273 | Structured output SUCCESS - returning breakout_quant_decision with signal=hold
+2026-03-18 18:06:12,593 | 
+================================================================================
+BREAKOUT QUANT ANALYSIS - XAUUSD
+================================================================================
+2026-03-18 18:06:12,594 | Symbol: XAUUSD | Date: 2026-03-18 | Price: 4993.96
+2026-03-18 18:06:12,594 | Expansion Regime: neutral | Volatility: extreme
+2026-03-18 18:06:12,594 | Consolidation: {'is_consolidating': False, 'range_high': 5419.24, 'range_low': 4960.65, 'range_midpoint': 5189.945, 'range_percent': 8.836124467600333, 'bb_width': np.float64(7.35617009452542), 'bb_squeeze': np.False_, 'breakout_ready': False, 'structure_bias': 'neutral', 'squeeze_strength': np.float64(67.77777777777779), 'volume_contracting': False, 'volume_contraction_pct': 0.0, 'breakout_detected': False, 'breakout_direction': None, 'breakout_volume_surge': False, 'breakout_confirmed': False}
+2026-03-18 18:06:12,595 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 4993.96000
+- **Date**: 2026-03-18
+- **Trading Session**: london
+
+## MARKET REGIME (Critical for Breakout Strategy)
+- **Trend Regime**: ranging
+- **Volatility Regime**: extreme
+- **Expansion Regime**: neutral
+
+### Regime Interpretation for Breakouts:
+- If expansion_regime = "contraction": Market is in SQUEEZE - prime breakout setup
+- If expansion_regime = "expansion": Breakout may already be in progress
+- If volatility_regime = "low": Ideal for breakout anticipation
+- If volatility_regime = "high/extreme": Breakout likely already happened, wait for consolidation
+
+## CONSOLIDATION ANALYSIS
+- **Is Consolidating**: Not consolidating
+- **BB Squeeze**: No squeeze
+- **Squeeze Strength**: 68% (higher = tighter squeeze)
+- **Range High (Resistance)**: 5419.24000
+- **Range Low (Support)**: 4960.65000
+- **Range Midpoint**: 5189.94500
+- **Range Width**: 8.84% of price
+- **Structure Bias**: NEUTRAL
+
+### Volume Analysis (Critical for Breakout Confirmation):
+- **Volume Contracting Inside Range**: No significant contraction
+- **Breakout Detected**: No breakout yet
+- **Volume Surge on Breakout**: No surge
+- **BREAKOUT CONFIRMED**: NOT CONFIRMED
+
+### Breakout Confirmation Rules:
+1. Price must CLOSE outside range (not just wick)
+2. Breakout candle must have volume surge (>1.5x average)
+3. Volume should be contracting BEFORE breakout (coiled spring)
+4. If breakout_confirmed = YES, this is a valid entry trigger
+
+### Structure Interpretation:
+- BULLISH structure (higher lows): Buyers accumulating, expect upside breakout
+- BEARISH structure (lower highs): Sellers distributing, expect downside breakout
+- NEUTRAL: No clear bias, wait for breakout direction confirmation
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: PREMIUM zone (65%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 4264.53
+  - BOS HIGH at 4549.98 [RECENT]
+  - BOS HIGH at 5119.13 [RECENT]
+  - CHoCH HIGH at 4244.99 (potential reversal)
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 3998.00000-4082.25000 | Strength: 80% | UNMITIGATED | 19.94% from price
+  - BULLISH OB: 4274.66000-4373.12000 | Strength: 80% | UNMITIGATED | 14.40% from price
+  - BULLISH OB: 4402.83000-4884.48000 | Strength: 80% | MITIGATED | 11.84% from price
+  - BEARISH OB: 5305.50679-5598.24000 | Strength: 80% | MITIGATED | 12.10% from price
+  - BEARISH OB: 4854.61000-5091.86000 | Strength: 47% | MITIGATED | 1.96% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 4479.53000-4512.70000 | FILLED | 10.30% below price (expect bounce UP)
+  - BULLISH FVG: 4517.17000-4569.52000 | FILLED | 9.55% below price (expect bounce UP)
+  - BULLISH FVG: 4620.70000-4659.50000 | FILLED | 7.47% below price (expect bounce UP)
+  - BEARISH FVG: 4884.48000-5102.83000 | FILLED | 2.18% above price (expect rejection DOWN)
+  - BEARISH FVG: 5206.06000-5260.85000 | UNFILLED | 5.34% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - SELL-SIDE at 4996.28000 | Strength: 68% | UNSWEPT | 0.05% above
+  - BUY-SIDE at 5119.13000 | Strength: 65% | UNSWEPT | 2.51% above
+  - SELL-SIDE at 4842.68000 | Strength: 54% | UNSWEPT | 3.03% below
+  - BUY-SIDE at 5419.24000 | Strength: 67% | UNSWEPT | 8.52% above
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 4254.76000 | Touches: 4 | PROVEN | SWEPT | 14.80% above
+  - EQUAL HIGHS (Resistance) at 5104.29000 | Touches: 6 | PROVEN | UNSWEPT | 2.21% above
+    >>6 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 5200.80400 | Touches: 5 | PROVEN | UNSWEPT | 4.14% above
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 5029.66750 | Touches: 4 | PROVEN | UNSWEPT | 0.72% above
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL LOWS (Support) at 3310.95417 | Touches: 12 | PROVEN | UNSWEPT | 33.70% below
+    >>12 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 3368.07500 | Touches: 8 | PROVEN | UNSWEPT | 32.56% below
+    >>8 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 38.9 (neutral)
+- MACD: 15.37976
+- MACD Signal: 49.81095
+- MACD Histogram: -34.43119 (bearish)
+
+### Trend
+- EMA20: 5074.70392 (Price below)
+- EMA50: 4934.01204 (Price above)
+- ADX: 54.3 (Strong trend)
+
+### Volatility
+- ATR(14): 131.53429
+- BB Upper: 5314.99430
+- BB Middle: 5126.43950
+- BB Lower: 4937.88470
+- BB Width: 7.36%
+
+2026-03-18 18:06:12,602 | 
+--- FULL PROMPT ---
+You are a breakout trading specialist with strict risk discipline. You specialize in identifying consolidation patterns and trading breakouts.
+
+## YOUR TRADING EDGE: CONSOLIDATION TO BREAKOUT
+
+Markets alternate between consolidation (range) and expansion (trend). Your edge is:
+1. Identify when price is consolidating (tight range, low volatility, BB squeeze)
+2. Look for VOLUME CONTRACTION inside the range (drying up = coiled spring)
+3. Determine likely breakout direction from structure (higher lows = up, lower highs = down)
+4. Enter on CONFIRMED breakout: close outside range + volume surge (1.5x+ average)
+
+**THE KEY FILTER**: Volume dry-up inside range + volume surge on breakout = real breakout
+Without volume confirmation, most breakouts fail and trap traders.
+
+## BREAKOUT TRADING RULES
+
+### 1. IDENTIFYING CONSOLIDATION
+- **BB Squeeze**: When Bollinger Band width is in lowest 30% of recent history
+- **Low Volatility**: ATR is low relative to recent history
+- **Tight Range**: Price contained within narrow high/low boundaries
+- **Time**: Good consolidations last 10-30 candles
+
+### 2. DETERMINING BREAKOUT DIRECTION
+- **Higher Lows** within range = Bullish accumulation = Expect UPSIDE breakout
+- **Lower Highs** within range = Bearish distribution = Expect DOWNSIDE breakout
+- **Neutral structure** = Wait for breakout confirmation before entering
+
+### 3. ENTRY STRATEGIES
+- **Anticipation Entry**: Enter before breakout when structure is clear + volume contracting
+  - BUY near range low when structure is bullish AND volume is drying up
+  - SELL near range high when structure is bearish AND volume is drying up
+  - SL: Opposite side of range
+  - Requires: volume_contracting = True
+
+- **Breakout Entry**: Enter on CONFIRMED breakout only
+  - BUY when price CLOSES above range high WITH volume surge (1.5x+)
+  - SELL when price CLOSES below range low WITH volume surge (1.5x+)
+  - SL: Beyond the opposite side of the breakout level (at least 1x ATR buffer)
+  - **CRITICAL**: breakout_confirmed must be TRUE (close + volume surge)
+  - Do NOT enter on wick-only breaks or low-volume breakouts
+
+### 4. STOP LOSS PLACEMENT (CRITICAL)
+- For BUY: Stop loss MUST be BELOW entry price
+  - Anticipation buy: SL below range low minus 1x ATR buffer
+  - Breakout buy: SL below the breakout level minus 1x ATR buffer (allow for retest)
+
+- For SELL: Stop loss MUST be ABOVE entry price
+  - Anticipation sell: SL above range high plus 1x ATR buffer
+  - Breakdown sell: SL above the breakdown level plus 1x ATR buffer (allow for retest)
+
+- **MINIMUM SL DISTANCE**: Stop loss must be at least 1x ATR from entry. SL within 0.5% of entry is TOO TIGHT and will get stopped out by normal price noise. For gold (XAUUSD), minimum SL should be $15-30+ from entry.
+- If you cannot place SL with adequate distance while maintaining R:R >= 1.5:1, output "hold"
+
+### 5. TAKE PROFIT TARGETS
+- Minimum target: 1.5x the range width
+- Preferred target: 2x the range width
+- Extended target: Previous swing high/low, major SMC level, or proven equal level (3+ retests = strong liquidity magnet)
+
+### 6. WHEN NOT TO TRADE
+- **No consolidation**: Price is already trending (expansion regime)
+- **Extreme volatility**: Too choppy, wait for consolidation to form
+- **Unclear structure**: No higher lows or lower highs, wait for clarity
+- **News imminent**: Major catalyst could invalidate technical setup
+
+## RULES YOU MUST NEVER BREAK
+
+1. **Risk no more than 1-2% of account per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation**
+5. **If no clear consolidation or direction, output HOLD**
+6. **Stop loss MUST be on correct side of entry**
+
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 4993.96000
+- **Date**: 2026-03-18
+- **Trading Session**: london
+
+## MARKET REGIME (Critical for Breakout Strategy)
+- **Trend Regime**: ranging
+- **Volatility Regime**: extreme
+- **Expansion Regime**: neutral
+
+### Regime Interpretation for Breakouts:
+- If expansion_regime = "contraction": Market is in SQUEEZE - prime breakout setup
+- If expansion_regime = "expansion": Breakout may already be in progress
+- If volatility_regime = "low": Ideal for breakout anticipation
+- If volatility_regime = "high/extreme": Breakout likely already happened, wait for consolidation
+
+## CONSOLIDATION ANALYSIS
+- **Is Consolidating**: Not consolidating
+- **BB Squeeze**: No squeeze
+- **Squeeze Strength**: 68% (higher = tighter squeeze)
+- **Range High (Resistance)**: 5419.24000
+- **Range Low (Support)**: 4960.65000
+- **Range Midpoint**: 5189.94500
+- **Range Width**: 8.84% of price
+- **Structure Bias**: NEUTRAL
+
+### Volume Analysis (Critical for Breakout Confirmation):
+- **Volume Contracting Inside Range**: No significant contraction
+- **Breakout Detected**: No breakout yet
+- **Volume Surge on Breakout**: No surge
+- **BREAKOUT CONFIRMED**: NOT CONFIRMED
+
+### Breakout Confirmation Rules:
+1. Price must CLOSE outside range (not just wick)
+2. Breakout candle must have volume surge (>1.5x average)
+3. Volume should be contracting BEFORE breakout (coiled spring)
+4. If breakout_confirmed = YES, this is a valid entry trigger
+
+### Structure Interpretation:
+- BULLISH structure (higher lows): Buyers accumulating, expect upside breakout
+- BEARISH structure (lower highs): Sellers distributing, expect downside breakout
+- NEUTRAL: No clear bias, wait for breakout direction confirmation
+
+## SMART MONEY CONCEPTS ANALYSIS
+**Market Bias**: BULLISH
+**Premium/Discount**: PREMIUM zone (65%) - favorable for SHORTS
+
+**Market Structure** (BOS = trend continuation, CHoCH = reversal signal):
+  - BOS HIGH at 4264.53
+  - BOS HIGH at 4549.98 [RECENT]
+  - BOS HIGH at 5119.13 [RECENT]
+  - CHoCH HIGH at 4244.99 (potential reversal)
+
+**Order Blocks** (institutional entry zones):
+  - BULLISH OB: 3998.00000-4082.25000 | Strength: 80% | UNMITIGATED | 19.94% from price
+  - BULLISH OB: 4274.66000-4373.12000 | Strength: 80% | UNMITIGATED | 14.40% from price
+  - BULLISH OB: 4402.83000-4884.48000 | Strength: 80% | MITIGATED | 11.84% from price
+  - BEARISH OB: 5305.50679-5598.24000 | Strength: 80% | MITIGATED | 12.10% from price
+  - BEARISH OB: 4854.61000-5091.86000 | Strength: 47% | MITIGATED | 1.96% from price
+
+**Fair Value Gaps** (price imbalance zones):
+  - BULLISH FVG: 4479.53000-4512.70000 | FILLED | 10.30% below price (expect bounce UP)
+  - BULLISH FVG: 4517.17000-4569.52000 | FILLED | 9.55% below price (expect bounce UP)
+  - BULLISH FVG: 4620.70000-4659.50000 | FILLED | 7.47% below price (expect bounce UP)
+  - BEARISH FVG: 4884.48000-5102.83000 | FILLED | 2.18% above price (expect rejection DOWN)
+  - BEARISH FVG: 5206.06000-5260.85000 | UNFILLED | 5.34% above price (expect rejection DOWN)
+
+**Liquidity Zones** (stop loss clusters - smart money targets):
+  - SELL-SIDE at 4996.28000 | Strength: 68% | UNSWEPT | 0.05% above
+  - BUY-SIDE at 5119.13000 | Strength: 65% | UNSWEPT | 2.51% above
+  - SELL-SIDE at 4842.68000 | Strength: 54% | UNSWEPT | 3.03% below
+  - BUY-SIDE at 5419.24000 | Strength: 67% | UNSWEPT | 8.52% above
+
+**Equal Levels** (proven support/resistance - liquidity magnets):
+  - EQUAL HIGHS (Resistance) at 4254.76000 | Touches: 4 | PROVEN | SWEPT | 14.80% above
+  - EQUAL HIGHS (Resistance) at 5104.29000 | Touches: 6 | PROVEN | UNSWEPT | 2.21% above
+    >>6 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 5200.80400 | Touches: 5 | PROVEN | UNSWEPT | 4.14% above
+    >>5 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL HIGHS (Resistance) at 5029.66750 | Touches: 4 | PROVEN | UNSWEPT | 0.72% above
+    >>4 retests = strong liquidity magnet. Price is likely drawn to this level. Good SELL TP target.
+  - EQUAL LOWS (Support) at 3310.95417 | Touches: 12 | PROVEN | UNSWEPT | 33.70% below
+    >>12 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+  - EQUAL LOWS (Support) at 3368.07500 | Touches: 8 | PROVEN | UNSWEPT | 32.56% below
+    >>8 retests = strong liquidity magnet. Price is likely drawn to this level. Good BUY TP target.
+
+## Technical Indicators
+
+### Momentum
+- RSI(14): 38.9 (neutral)
+- MACD: 15.37976
+- MACD Signal: 49.81095
+- MACD Histogram: -34.43119 (bearish)
+
+### Trend
+- EMA20: 5074.70392 (Price below)
+- EMA50: 4934.01204 (Price above)
+- ADX: 54.3 (Strong trend)
+
+### Volatility
+- ATR(14): 131.53429
+- BB Upper: 5314.99430
+- BB Middle: 5126.43950
+- BB Lower: 4937.88470
+- BB Width: 7.36%
+
+
+
+## LESSONS FROM YOUR PAST TRADES (XAUUSD)
+
+### Performance (last 10 trades)
+- Win rate: 20% (2/10) | Total P/L: $-40.53 | Avg: $-4.05
+- Direction accuracy: 30% (3/10)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. BUY @ 4989.06 -> breakeven_stop @ 4988.70 | -0.36 | SL 0.9% from entry (tight)
+2. BUY @ 5002.54 -> stale_cleanup @ 5002.54 | +0.00 | SL 1.9% from entry
+3. SELL @ 5023.64 -> Manual close @ 5024.00 | -0.36 | SL 0.6% from entry (tight)
+4. BUY @ 5071.93 -> SL hit @ 5059.20 | -12.73 | SL 0.3% from entry ⚠️ EXTREMELY TIGHT
+5. SELL @ 5105.47 -> unknown @ 5097.43 | +8.04 | SL 0.5% from entry (tight)
+
+⚠️ **CRITICAL PATTERN**: 4/5 recent trades had SL too tight (<1% from entry).
+Your stops are getting hit or positions closed at a loss because SL is too close to entry.
+**ACTION REQUIRED**: Place SL at least 1-1.5x ATR from entry, or beyond the nearest OB/FVG zone. Do NOT use SL within 0.5% of entry.
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 7x)
+- Good entry timing contributed to the win. (occurred 2x)
+- Manual exit resulted in loss. Consider letting SL/TP play out.
+
+IMPORTANT: The above lessons are from YOUR past breakout trades. Study what went wrong
+and apply corrections. Pay special attention to false breakout lessons.
+
+
+## YOUR TASK
+
+Analyze the consolidation and regime data to make a breakout trading decision.
+
+Think step-by-step:
+1. Is the market in consolidation? (Check expansion_regime, BB squeeze, range %)
+2. Is volume contracting inside the range? (volume_contracting = coiled spring)
+3. What is the structure bias? (Higher lows = bullish, lower highs = bearish)
+4. Where are the range boundaries? (Resistance high, Support low)
+5. Has a breakout occurred? Check breakout_confirmed (close outside + volume surge)
+6. Is price at a good entry zone? (Near range extreme or confirmed breakout)
+7. Where is the stop loss and is the R:R acceptable (>1.5:1)?
+8. What would invalidate this setup?
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Long position. Use when:
+  - Consolidation with BULLISH structure + volume contracting, price near range low (anticipation), OR
+  - breakout_confirmed = TRUE with direction = "up" (confirmed breakout)
+  - MUST provide entry_price (at range low or above breakout level), stop_loss (BELOW entry), profit_target
+
+- **sell_to_enter** - Short position. Use when:
+  - Consolidation with BEARISH structure + volume contracting, price near range high (anticipation), OR
+  - breakout_confirmed = TRUE with direction = "down" (confirmed breakdown)
+  - MUST provide entry_price (at range high or below breakdown level), stop_loss (ABOVE entry), profit_target
+
+- **hold** - No action. Use when:
+  - No consolidation (trending market, wait for range to form)
+  - Neutral structure (no higher lows or lower highs)
+  - Breakout detected but NOT confirmed (no volume surge) - HIGH FALSE BREAKOUT RISK
+  - Price is mid-range (not at good entry zone)
+  - Unclear setup or poor R:R
+
+- **close** - Exit existing position. Use when:
+  - Breakout failed (price returned inside range)
+  - Invalidation condition met
+
+## ORDER TYPE
+- **limit** - Preferred for anticipation entries at range extremes
+- **market** - Use for confirmed breakouts when price has already broken out
+
+## TRAILING STOP DISTANCE (trailing_stop_atr_multiplier)
+For buy/sell signals, suggest a trailing stop distance as an ATR multiplier based on current volatility:
+- **Low volatility** (tight squeeze, small ATR): 1.5-2.0x ATR
+- **Normal volatility**: 2.0-3.0x ATR
+- **High volatility** (post-breakout expansion, large ATR): 3.0-5.0x ATR
+- **XAUUSD/Gold**: Typically 2.5-4.0x ATR
+- **Forex majors**: Typically 1.5-2.5x ATR
+- If unsure, default to 2.5x ATR
+
+Remember: The best breakout trades come from CLEAR consolidation with CLEAR structure bias. When in doubt, HOLD.
+2026-03-18 18:06:12,620 | 
+================================================================================
+
+2026-03-18 18:06:18,895 | --- LLM RESPONSE (Structured) [took 6.3s] ---
+2026-03-18 18:06:18,895 | Signal: hold
+2026-03-18 18:06:18,895 | Confidence: 0.85
+2026-03-18 18:06:18,895 | Entry: None | SL: None | TP: None
+2026-03-18 18:06:18,896 | Justification: No consolidation present, neutral structure bias, no volume contraction, and no confirmed breakout in extreme volatility regime; wait for clear setup.
+2026-03-18 18:06:18,896 | Invalidation: Price closes outside the range (above 5419 or below 4960) with volume surge >1.5x average
+2026-03-18 18:06:18,897 | Raw decision dict: {'symbol': 'XAUUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price closes outside the range (above 5419 or below 4960) with volume surge >1.5x average', 'justification': 'No consolidation present, neutral structure bias, no volume contraction, and no confirmed breakout in extreme volatility regime; wait for clear setup.', 'confidence': 0.85, 'trailing_stop_atr_multiplier': None, 'risk_level': 'Low', 'risk_reward_ratio': None}
+2026-03-18 18:06:18,898 | 
+================================================================================
+
+2026-03-18 18:06:18,898 | Structured output SUCCESS - returning breakout_quant_decision with signal=hold
