@@ -5626,10 +5626,13 @@ async def run_rule_based_analysis(request: RuleBasedAnalysisRequest):
 *This analysis was generated using systematic SMC rules without AI interpretation. For more nuanced analysis with market context, run the full multi-agent analysis.*
 """
 
+            # Respect the trade plan's recommendation — SKIP means don't trade
+            effective_signal = base_plan.signal if base_plan.recommendation == "TAKE" else "HOLD"
+
             decision = {
-                "signal": base_plan.signal,
+                "signal": effective_signal,
                 # Map quality 50-100 → confidence 0.65-1.0 (50 is the min threshold, so any signal should be executable)
-                "confidence": 0.65 + (base_plan.zone_quality_score - 50) * 0.35 / 50,
+                "confidence": (0.65 + (base_plan.zone_quality_score - 50) * 0.35 / 50) if effective_signal != "HOLD" else 0.0,
                 "entry_price": round(entry, 5),
                 "stop_loss": round(sl, 5),
                 "take_profit": round(tp, 5),

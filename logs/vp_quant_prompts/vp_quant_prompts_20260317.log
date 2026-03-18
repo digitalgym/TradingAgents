@@ -2448,3 +2448,2698 @@ Remember:
 ================================================================================
 
 2026-03-18 07:07:43,468 | Structured output SUCCESS - returning vp_quant_decision with signal=hold
+2026-03-18 08:08:01,454 | 
+================================================================================
+VOLUME PROFILE QUANT ANALYSIS - XAUUSD
+================================================================================
+2026-03-18 08:08:01,455 | Symbol: XAUUSD | Date: 2026-03-18 | Price: 4999.9
+2026-03-18 08:08:01,455 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 4999.90000
+- **Date**: 2026-03-18
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## VOLUME PROFILE ANALYSIS
+### Volume Profile
+**POC (Point of Control)**: 5002.87660 (5.3% of volume)
+  - Price is -0.06% below POC - POC acts as magnet
+**Value Area**: 4973.08640 - 5162.66040 (70% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 5002.87660 (5.3% vol) | AT PRICE
+  - HVN at 5013.70940 (5.0% vol) | +0.28% above
+  - HVN at 5008.29300 (4.9% vol) | +0.17% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 4970.37820 | -0.59% - price may move fast through this level
+  - LVN at 4975.79460 | -0.48% - price may move fast through this level
+  - LVN at 4981.21100 | -0.37% - price may move fast through this level
+
+## TECHNICAL INDICATORS
+### Momentum
+- **RSI(14)**: 36.5 (Neutral)
+- **MACD**: -4.56060 | Signal: -4.05052
+  - Bearish (MACD < Signal)
+
+### Trend
+- **EMA20**: 5007.34358 (Price below)
+- **EMA50**: 5023.27794 (Price below)
+- **ADX**: 24.1 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 16.94357
+- **Volatility**: normal
+
+### Volume
+- **Current Volume**: 969
+- **Avg Volume (20)**: 14,825
+- **Volume Ratio**: 0.07x average
+
+2026-03-18 08:08:01,459 | 
+--- FULL PROMPT ---
+You are a systematic Volume Profile trader with strict risk discipline. You trade based on volume-at-price analysis to identify high-probability entries.
+
+## VOLUME PROFILE TRADING RULES
+
+### Core Concepts
+1. **POC (Point of Control)**: The price level where most volume traded. Acts as a MAGNET - price tends to return here. Use as profit target in ranging markets.
+
+2. **Value Area (VA)**: The price range containing 70% of volume. This is "fair value."
+   - Price ABOVE VA = Premium, look for SHORTS (mean reversion down)
+   - Price BELOW VA = Discount, look for LONGS (mean reversion up)
+   - Price INSIDE VA = Fair value, wait for extremes or breakouts
+
+3. **Value Area High (VAH)**: Upper boundary of value area. Acts as RESISTANCE.
+4. **Value Area Low (VAL)**: Lower boundary of value area. Acts as SUPPORT.
+
+5. **High Volume Nodes (HVN)**: Price levels with high volume.
+   - Act as strong support/resistance
+   - Good for stop loss placement (behind HVN)
+   - Price tends to consolidate at HVN
+
+6. **Low Volume Nodes (LVN)**: Price levels with low volume.
+   - Price moves FAST through these zones
+   - Avoid placing entries in LVN (will get run through)
+   - Can be used to identify breakout acceleration zones
+
+### Trading Setups
+
+**Setup 1: Mean Reversion to POC**
+- Price is significantly above/below POC
+- Enter in direction of POC
+- Target: POC level
+- Stop: Beyond the extreme
+
+**Setup 2: Value Area Edge Trade**
+- Price touches VAH/VAL from inside
+- Fade the move (short at VAH, long at VAL)
+- Target: POC
+- Stop: Beyond VAH/VAL by 1 ATR
+
+**Setup 3: Value Area Breakout**
+- Price closes outside VA with increasing volume
+- Trade the breakout direction
+- Target: Next HVN or previous day's POC
+- Stop: Back inside VA
+
+**Setup 4: HVN Bounce**
+- Price approaches significant HVN
+- Enter on rejection at HVN
+- Target: Next HVN or POC
+- Stop: Beyond the HVN
+
+## RISK MANAGEMENT RULES (NEVER BREAK)
+
+1. **Risk no more than 1-2% of account value per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation before entry**
+5. **Place stops behind HVN levels when possible** (avoid LVN for stops)
+6. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+7. **Leverage is a tool, not a goal - default 5-20x**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- Prefer placing stops behind HVN (high volume = strong support/resistance)
+- If you cannot identify a valid stop loss placement, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 4999.90000
+- **Date**: 2026-03-18
+- **Trading Session**: asian
+- **Market Regime**: ranging
+- **Volatility Regime**: normal
+
+## VOLUME PROFILE ANALYSIS
+### Volume Profile
+**POC (Point of Control)**: 5002.87660 (5.3% of volume)
+  - Price is -0.06% below POC - POC acts as magnet
+**Value Area**: 4973.08640 - 5162.66040 (70% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 5002.87660 (5.3% vol) | AT PRICE
+  - HVN at 5013.70940 (5.0% vol) | +0.28% above
+  - HVN at 5008.29300 (4.9% vol) | +0.17% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 4970.37820 | -0.59% - price may move fast through this level
+  - LVN at 4975.79460 | -0.48% - price may move fast through this level
+  - LVN at 4981.21100 | -0.37% - price may move fast through this level
+
+## TECHNICAL INDICATORS
+### Momentum
+- **RSI(14)**: 36.5 (Neutral)
+- **MACD**: -4.56060 | Signal: -4.05052
+  - Bearish (MACD < Signal)
+
+### Trend
+- **EMA20**: 5007.34358 (Price below)
+- **EMA50**: 5023.27794 (Price below)
+- **ADX**: 24.1 (Weak/No trend)
+- **Regime**: ranging
+
+### Volatility
+- **ATR(14)**: 16.94357
+- **Volatility**: normal
+
+### Volume
+- **Current Volume**: 969
+- **Avg Volume (20)**: 14,825
+- **Volume Ratio**: 0.07x average
+
+
+
+## LESSONS FROM YOUR PAST TRADES (XAUUSD)
+
+### Performance (last 10 trades)
+- Win rate: 20% (2/10) | Total P/L: $-40.53 | Avg: $-4.05
+- Direction accuracy: 30% (3/10)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. BUY @ 4989.06 -> breakeven_stop @ 4988.70 | -0.36 | SL 0.9% from entry (tight)
+2. BUY @ 5002.54 -> stale_cleanup @ 5002.54 | +0.00 | SL 1.9% from entry
+3. SELL @ 5023.64 -> Manual close @ 5024.00 | -0.36 | SL 0.6% from entry (tight)
+4. BUY @ 5071.93 -> SL hit @ 5059.20 | -12.73 | SL 0.3% from entry ⚠️ EXTREMELY TIGHT
+5. SELL @ 5105.47 -> unknown @ 5097.43 | +8.04 | SL 0.5% from entry (tight)
+
+⚠️ **CRITICAL PATTERN**: 4/5 recent trades had SL too tight (<1% from entry).
+Your stops are getting hit or positions closed at a loss because SL is too close to entry.
+**ACTION REQUIRED**: Place SL at least 1-1.5x ATR from entry, or beyond the nearest OB/FVG zone. Do NOT use SL within 0.5% of entry.
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 7x)
+- Good entry timing contributed to the win. (occurred 2x)
+- Manual exit resulted in loss. Consider letting SL/TP play out.
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+
+## YOUR TASK
+
+Analyze the Volume Profile data and make a systematic trading decision.
+
+Think step-by-step:
+1. Where is price relative to POC? (above/below/at)
+2. Where is price relative to Value Area? (inside/above/below)
+3. Are there nearby HVN levels for support/resistance?
+4. Are there LVN zones that could accelerate price movement?
+5. What Volume Profile setup applies? (mean reversion, VA edge, breakout, HVN bounce)
+6. Where should stop loss be placed? (behind HVN preferred)
+7. What's the risk:reward ratio? (must be >1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when price is at VAL, below POC in discount, or bouncing off bullish HVN. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when price is at VAH, above POC in premium, or rejecting at bearish HVN. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when price is at fair value (inside VA near POC), no clear setup, or in LVN territory.
+- **close** - Close existing position. Use when original thesis is invalidated.
+
+## ORDER TYPE (you MUST pick one for buy/sell signals)
+- **market** - Execute immediately at current market price. Use when:
+  - Price is ALREADY AT the VAL/VAH/HVN zone (within 0.1%)
+  - Price is bouncing off HVN right now
+  - Setup is confirmed and you don't want to miss it
+- **limit** - Place pending order at entry_price. Use when:
+  - Price is approaching but NOT YET at VAL/VAH
+  - You want better entry at the HVN level
+  - Waiting for price to reach POC for mean reversion
+
+Remember:
+- Volume Profile shows WHERE institutional volume traded
+- POC is a magnet - price tends to return
+- Value Area edges are decision points
+- HVN = consolidation/reversal zones
+- LVN = acceleration zones
+- Trade mean reversion inside VA, breakouts outside VA
+2026-03-18 08:08:01,472 | 
+================================================================================
+
+2026-03-18 08:08:07,164 | --- LLM RESPONSE (Structured) [took 5.7s] ---
+2026-03-18 08:08:07,164 | Signal: hold
+2026-03-18 08:08:07,164 | Confidence: 0.85
+2026-03-18 08:08:07,165 | Entry: None | SL: None | TP: None
+2026-03-18 08:08:07,165 | Justification: Price is inside Value Area near POC in a ranging market with low volume and no clear Volume Profile setup for mean reversion, edge fade, breakout, or HVN bounce.
+2026-03-18 08:08:07,165 | Invalidation: Price closes outside Value Area (below 4973 or above 5162) on increased volume
+2026-03-18 08:08:07,166 | Raw decision dict: {'symbol': 'XAUUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price closes outside Value Area (below 4973 or above 5162) on increased volume', 'justification': 'Price is inside Value Area near POC in a ranging market with low volume and no clear Volume Profile setup for mean reversion, edge fade, breakout, or HVN bounce.', 'confidence': 0.85, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-18 08:08:07,166 | 
+================================================================================
+
+2026-03-18 08:08:07,167 | Structured output SUCCESS - returning vp_quant_decision with signal=hold
+2026-03-18 09:08:08,217 | 
+================================================================================
+VOLUME PROFILE QUANT ANALYSIS - XAUUSD
+================================================================================
+2026-03-18 09:08:08,217 | Symbol: XAUUSD | Date: 2026-03-18 | Price: 5000.49
+2026-03-18 09:08:08,218 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 5000.49000
+- **Date**: 2026-03-18
+- **Trading Session**: asian
+- **Market Regime**: trending-down
+- **Volatility Regime**: normal
+
+## VOLUME PROFILE ANALYSIS
+### Volume Profile
+**POC (Point of Control)**: 5002.87660 (5.5% of volume)
+  - Price is -0.05% below POC - POC acts as magnet
+**Value Area**: 4973.08640 - 5162.66040 (70% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 5002.87660 (5.5% vol) | AT PRICE
+  - HVN at 5013.70940 (5.1% vol) | +0.26% above
+  - HVN at 5008.29300 (4.9% vol) | +0.16% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 4970.37820 | -0.60% - price may move fast through this level
+  - LVN at 4975.79460 | -0.49% - price may move fast through this level
+  - LVN at 4981.21100 | -0.39% - price may move fast through this level
+
+## TECHNICAL INDICATORS
+### Momentum
+- **RSI(14)**: 34.0 (Neutral)
+- **MACD**: -4.57256 | Signal: -4.15391
+  - Bearish (MACD < Signal)
+
+### Trend
+- **EMA20**: 5006.68918 (Price below)
+- **EMA50**: 5022.38372 (Price below)
+- **ADX**: 26.4 (Strong trend)
+- **Regime**: trending-down
+
+### Volatility
+- **ATR(14)**: 16.71571
+- **Volatility**: normal
+
+### Volume
+- **Current Volume**: 1,127
+- **Avg Volume (20)**: 14,425
+- **Volume Ratio**: 0.08x average
+
+2026-03-18 09:08:08,220 | 
+--- FULL PROMPT ---
+You are a systematic Volume Profile trader with strict risk discipline. You trade based on volume-at-price analysis to identify high-probability entries.
+
+## VOLUME PROFILE TRADING RULES
+
+### Core Concepts
+1. **POC (Point of Control)**: The price level where most volume traded. Acts as a MAGNET - price tends to return here. Use as profit target in ranging markets.
+
+2. **Value Area (VA)**: The price range containing 70% of volume. This is "fair value."
+   - Price ABOVE VA = Premium, look for SHORTS (mean reversion down)
+   - Price BELOW VA = Discount, look for LONGS (mean reversion up)
+   - Price INSIDE VA = Fair value, wait for extremes or breakouts
+
+3. **Value Area High (VAH)**: Upper boundary of value area. Acts as RESISTANCE.
+4. **Value Area Low (VAL)**: Lower boundary of value area. Acts as SUPPORT.
+
+5. **High Volume Nodes (HVN)**: Price levels with high volume.
+   - Act as strong support/resistance
+   - Good for stop loss placement (behind HVN)
+   - Price tends to consolidate at HVN
+
+6. **Low Volume Nodes (LVN)**: Price levels with low volume.
+   - Price moves FAST through these zones
+   - Avoid placing entries in LVN (will get run through)
+   - Can be used to identify breakout acceleration zones
+
+### Trading Setups
+
+**Setup 1: Mean Reversion to POC**
+- Price is significantly above/below POC
+- Enter in direction of POC
+- Target: POC level
+- Stop: Beyond the extreme
+
+**Setup 2: Value Area Edge Trade**
+- Price touches VAH/VAL from inside
+- Fade the move (short at VAH, long at VAL)
+- Target: POC
+- Stop: Beyond VAH/VAL by 1 ATR
+
+**Setup 3: Value Area Breakout**
+- Price closes outside VA with increasing volume
+- Trade the breakout direction
+- Target: Next HVN or previous day's POC
+- Stop: Back inside VA
+
+**Setup 4: HVN Bounce**
+- Price approaches significant HVN
+- Enter on rejection at HVN
+- Target: Next HVN or POC
+- Stop: Beyond the HVN
+
+## RISK MANAGEMENT RULES (NEVER BREAK)
+
+1. **Risk no more than 1-2% of account value per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation before entry**
+5. **Place stops behind HVN levels when possible** (avoid LVN for stops)
+6. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+7. **Leverage is a tool, not a goal - default 5-20x**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- Prefer placing stops behind HVN (high volume = strong support/resistance)
+- If you cannot identify a valid stop loss placement, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 5000.49000
+- **Date**: 2026-03-18
+- **Trading Session**: asian
+- **Market Regime**: trending-down
+- **Volatility Regime**: normal
+
+## VOLUME PROFILE ANALYSIS
+### Volume Profile
+**POC (Point of Control)**: 5002.87660 (5.5% of volume)
+  - Price is -0.05% below POC - POC acts as magnet
+**Value Area**: 4973.08640 - 5162.66040 (70% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 5002.87660 (5.5% vol) | AT PRICE
+  - HVN at 5013.70940 (5.1% vol) | +0.26% above
+  - HVN at 5008.29300 (4.9% vol) | +0.16% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 4970.37820 | -0.60% - price may move fast through this level
+  - LVN at 4975.79460 | -0.49% - price may move fast through this level
+  - LVN at 4981.21100 | -0.39% - price may move fast through this level
+
+## TECHNICAL INDICATORS
+### Momentum
+- **RSI(14)**: 34.0 (Neutral)
+- **MACD**: -4.57256 | Signal: -4.15391
+  - Bearish (MACD < Signal)
+
+### Trend
+- **EMA20**: 5006.68918 (Price below)
+- **EMA50**: 5022.38372 (Price below)
+- **ADX**: 26.4 (Strong trend)
+- **Regime**: trending-down
+
+### Volatility
+- **ATR(14)**: 16.71571
+- **Volatility**: normal
+
+### Volume
+- **Current Volume**: 1,127
+- **Avg Volume (20)**: 14,425
+- **Volume Ratio**: 0.08x average
+
+
+
+## LESSONS FROM YOUR PAST TRADES (XAUUSD)
+
+### Performance (last 10 trades)
+- Win rate: 20% (2/10) | Total P/L: $-40.53 | Avg: $-4.05
+- Direction accuracy: 30% (3/10)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. BUY @ 4989.06 -> breakeven_stop @ 4988.70 | -0.36 | SL 0.9% from entry (tight)
+2. BUY @ 5002.54 -> stale_cleanup @ 5002.54 | +0.00 | SL 1.9% from entry
+3. SELL @ 5023.64 -> Manual close @ 5024.00 | -0.36 | SL 0.6% from entry (tight)
+4. BUY @ 5071.93 -> SL hit @ 5059.20 | -12.73 | SL 0.3% from entry ⚠️ EXTREMELY TIGHT
+5. SELL @ 5105.47 -> unknown @ 5097.43 | +8.04 | SL 0.5% from entry (tight)
+
+⚠️ **CRITICAL PATTERN**: 4/5 recent trades had SL too tight (<1% from entry).
+Your stops are getting hit or positions closed at a loss because SL is too close to entry.
+**ACTION REQUIRED**: Place SL at least 1-1.5x ATR from entry, or beyond the nearest OB/FVG zone. Do NOT use SL within 0.5% of entry.
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 7x)
+- Good entry timing contributed to the win. (occurred 2x)
+- Manual exit resulted in loss. Consider letting SL/TP play out.
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+
+## YOUR TASK
+
+Analyze the Volume Profile data and make a systematic trading decision.
+
+Think step-by-step:
+1. Where is price relative to POC? (above/below/at)
+2. Where is price relative to Value Area? (inside/above/below)
+3. Are there nearby HVN levels for support/resistance?
+4. Are there LVN zones that could accelerate price movement?
+5. What Volume Profile setup applies? (mean reversion, VA edge, breakout, HVN bounce)
+6. Where should stop loss be placed? (behind HVN preferred)
+7. What's the risk:reward ratio? (must be >1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when price is at VAL, below POC in discount, or bouncing off bullish HVN. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when price is at VAH, above POC in premium, or rejecting at bearish HVN. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when price is at fair value (inside VA near POC), no clear setup, or in LVN territory.
+- **close** - Close existing position. Use when original thesis is invalidated.
+
+## ORDER TYPE (you MUST pick one for buy/sell signals)
+- **market** - Execute immediately at current market price. Use when:
+  - Price is ALREADY AT the VAL/VAH/HVN zone (within 0.1%)
+  - Price is bouncing off HVN right now
+  - Setup is confirmed and you don't want to miss it
+- **limit** - Place pending order at entry_price. Use when:
+  - Price is approaching but NOT YET at VAL/VAH
+  - You want better entry at the HVN level
+  - Waiting for price to reach POC for mean reversion
+
+Remember:
+- Volume Profile shows WHERE institutional volume traded
+- POC is a magnet - price tends to return
+- Value Area edges are decision points
+- HVN = consolidation/reversal zones
+- LVN = acceleration zones
+- Trade mean reversion inside VA, breakouts outside VA
+2026-03-18 09:08:08,233 | 
+================================================================================
+
+2026-03-18 09:08:16,509 | --- LLM RESPONSE (Structured) [took 8.3s] ---
+2026-03-18 09:08:16,510 | Signal: hold
+2026-03-18 09:08:16,510 | Confidence: 0.85
+2026-03-18 09:08:16,511 | Entry: None | SL: None | TP: None
+2026-03-18 09:08:16,511 | Justification: Price is inside value area near POC in a low-volume Asian session with bearish trend indicators but no clear Volume Profile setup for entry; wait for edge or breakout confirmation.
+2026-03-18 09:08:16,511 | Invalidation: Price breaks decisively above POC at 5002.88 with increasing volume
+2026-03-18 09:08:16,512 | Raw decision dict: {'symbol': 'XAUUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price breaks decisively above POC at 5002.88 with increasing volume', 'justification': 'Price is inside value area near POC in a low-volume Asian session with bearish trend indicators but no clear Volume Profile setup for entry; wait for edge or breakout confirmation.', 'confidence': 0.85, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-18 09:08:16,512 | 
+================================================================================
+
+2026-03-18 09:08:16,513 | Structured output SUCCESS - returning vp_quant_decision with signal=hold
+2026-03-18 10:08:21,862 | 
+================================================================================
+VOLUME PROFILE QUANT ANALYSIS - XAUUSD
+================================================================================
+2026-03-18 10:08:21,862 | Symbol: XAUUSD | Date: 2026-03-18 | Price: 5011.91
+2026-03-18 10:08:21,863 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 5011.91000
+- **Date**: 2026-03-18
+- **Trading Session**: asian
+- **Market Regime**: trending-down
+- **Volatility Regime**: normal
+
+## VOLUME PROFILE ANALYSIS
+### Volume Profile
+**POC (Point of Control)**: 5002.87660 (5.7% of volume)
+  - Price is +0.18% above POC - POC acts as magnet
+**Value Area**: 4973.08640 - 5168.07680 (73% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 5002.87660 (5.7% vol) | -0.18% below
+  - HVN at 5013.70940 (5.1% vol) | AT PRICE
+  - HVN at 5008.29300 (5.0% vol) | AT PRICE
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 4970.37820 | -0.83% - price may move fast through this level
+  - LVN at 4975.79460 | -0.72% - price may move fast through this level
+  - LVN at 4981.21100 | -0.61% - price may move fast through this level
+
+## TECHNICAL INDICATORS
+### Momentum
+- **RSI(14)**: 50.8 (Neutral)
+- **MACD**: -3.46678 | Signal: -3.98393
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 5007.39755 (Price above)
+- **EMA50**: 5022.06565 (Price below)
+- **ADX**: 28.1 (Strong trend)
+- **Regime**: trending-down
+
+### Volatility
+- **ATR(14)**: 16.46571
+- **Volatility**: normal
+
+### Volume
+- **Current Volume**: 1,908
+- **Avg Volume (20)**: 14,109
+- **Volume Ratio**: 0.14x average
+
+2026-03-18 10:08:21,866 | 
+--- FULL PROMPT ---
+You are a systematic Volume Profile trader with strict risk discipline. You trade based on volume-at-price analysis to identify high-probability entries.
+
+## VOLUME PROFILE TRADING RULES
+
+### Core Concepts
+1. **POC (Point of Control)**: The price level where most volume traded. Acts as a MAGNET - price tends to return here. Use as profit target in ranging markets.
+
+2. **Value Area (VA)**: The price range containing 70% of volume. This is "fair value."
+   - Price ABOVE VA = Premium, look for SHORTS (mean reversion down)
+   - Price BELOW VA = Discount, look for LONGS (mean reversion up)
+   - Price INSIDE VA = Fair value, wait for extremes or breakouts
+
+3. **Value Area High (VAH)**: Upper boundary of value area. Acts as RESISTANCE.
+4. **Value Area Low (VAL)**: Lower boundary of value area. Acts as SUPPORT.
+
+5. **High Volume Nodes (HVN)**: Price levels with high volume.
+   - Act as strong support/resistance
+   - Good for stop loss placement (behind HVN)
+   - Price tends to consolidate at HVN
+
+6. **Low Volume Nodes (LVN)**: Price levels with low volume.
+   - Price moves FAST through these zones
+   - Avoid placing entries in LVN (will get run through)
+   - Can be used to identify breakout acceleration zones
+
+### Trading Setups
+
+**Setup 1: Mean Reversion to POC**
+- Price is significantly above/below POC
+- Enter in direction of POC
+- Target: POC level
+- Stop: Beyond the extreme
+
+**Setup 2: Value Area Edge Trade**
+- Price touches VAH/VAL from inside
+- Fade the move (short at VAH, long at VAL)
+- Target: POC
+- Stop: Beyond VAH/VAL by 1 ATR
+
+**Setup 3: Value Area Breakout**
+- Price closes outside VA with increasing volume
+- Trade the breakout direction
+- Target: Next HVN or previous day's POC
+- Stop: Back inside VA
+
+**Setup 4: HVN Bounce**
+- Price approaches significant HVN
+- Enter on rejection at HVN
+- Target: Next HVN or POC
+- Stop: Beyond the HVN
+
+## RISK MANAGEMENT RULES (NEVER BREAK)
+
+1. **Risk no more than 1-2% of account value per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation before entry**
+5. **Place stops behind HVN levels when possible** (avoid LVN for stops)
+6. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+7. **Leverage is a tool, not a goal - default 5-20x**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- Prefer placing stops behind HVN (high volume = strong support/resistance)
+- If you cannot identify a valid stop loss placement, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 5011.91000
+- **Date**: 2026-03-18
+- **Trading Session**: asian
+- **Market Regime**: trending-down
+- **Volatility Regime**: normal
+
+## VOLUME PROFILE ANALYSIS
+### Volume Profile
+**POC (Point of Control)**: 5002.87660 (5.7% of volume)
+  - Price is +0.18% above POC - POC acts as magnet
+**Value Area**: 4973.08640 - 5168.07680 (73% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 5002.87660 (5.7% vol) | -0.18% below
+  - HVN at 5013.70940 (5.1% vol) | AT PRICE
+  - HVN at 5008.29300 (5.0% vol) | AT PRICE
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 4970.37820 | -0.83% - price may move fast through this level
+  - LVN at 4975.79460 | -0.72% - price may move fast through this level
+  - LVN at 4981.21100 | -0.61% - price may move fast through this level
+
+## TECHNICAL INDICATORS
+### Momentum
+- **RSI(14)**: 50.8 (Neutral)
+- **MACD**: -3.46678 | Signal: -3.98393
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 5007.39755 (Price above)
+- **EMA50**: 5022.06565 (Price below)
+- **ADX**: 28.1 (Strong trend)
+- **Regime**: trending-down
+
+### Volatility
+- **ATR(14)**: 16.46571
+- **Volatility**: normal
+
+### Volume
+- **Current Volume**: 1,908
+- **Avg Volume (20)**: 14,109
+- **Volume Ratio**: 0.14x average
+
+
+
+## LESSONS FROM YOUR PAST TRADES (XAUUSD)
+
+### Performance (last 10 trades)
+- Win rate: 20% (2/10) | Total P/L: $-40.53 | Avg: $-4.05
+- Direction accuracy: 30% (3/10)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. BUY @ 4989.06 -> breakeven_stop @ 4988.70 | -0.36 | SL 0.9% from entry (tight)
+2. BUY @ 5002.54 -> stale_cleanup @ 5002.54 | +0.00 | SL 1.9% from entry
+3. SELL @ 5023.64 -> Manual close @ 5024.00 | -0.36 | SL 0.6% from entry (tight)
+4. BUY @ 5071.93 -> SL hit @ 5059.20 | -12.73 | SL 0.3% from entry ⚠️ EXTREMELY TIGHT
+5. SELL @ 5105.47 -> unknown @ 5097.43 | +8.04 | SL 0.5% from entry (tight)
+
+⚠️ **CRITICAL PATTERN**: 4/5 recent trades had SL too tight (<1% from entry).
+Your stops are getting hit or positions closed at a loss because SL is too close to entry.
+**ACTION REQUIRED**: Place SL at least 1-1.5x ATR from entry, or beyond the nearest OB/FVG zone. Do NOT use SL within 0.5% of entry.
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 7x)
+- Good entry timing contributed to the win. (occurred 2x)
+- Manual exit resulted in loss. Consider letting SL/TP play out.
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+
+## YOUR TASK
+
+Analyze the Volume Profile data and make a systematic trading decision.
+
+Think step-by-step:
+1. Where is price relative to POC? (above/below/at)
+2. Where is price relative to Value Area? (inside/above/below)
+3. Are there nearby HVN levels for support/resistance?
+4. Are there LVN zones that could accelerate price movement?
+5. What Volume Profile setup applies? (mean reversion, VA edge, breakout, HVN bounce)
+6. Where should stop loss be placed? (behind HVN preferred)
+7. What's the risk:reward ratio? (must be >1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when price is at VAL, below POC in discount, or bouncing off bullish HVN. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when price is at VAH, above POC in premium, or rejecting at bearish HVN. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when price is at fair value (inside VA near POC), no clear setup, or in LVN territory.
+- **close** - Close existing position. Use when original thesis is invalidated.
+
+## ORDER TYPE (you MUST pick one for buy/sell signals)
+- **market** - Execute immediately at current market price. Use when:
+  - Price is ALREADY AT the VAL/VAH/HVN zone (within 0.1%)
+  - Price is bouncing off HVN right now
+  - Setup is confirmed and you don't want to miss it
+- **limit** - Place pending order at entry_price. Use when:
+  - Price is approaching but NOT YET at VAL/VAH
+  - You want better entry at the HVN level
+  - Waiting for price to reach POC for mean reversion
+
+Remember:
+- Volume Profile shows WHERE institutional volume traded
+- POC is a magnet - price tends to return
+- Value Area edges are decision points
+- HVN = consolidation/reversal zones
+- LVN = acceleration zones
+- Trade mean reversion inside VA, breakouts outside VA
+2026-03-18 10:08:21,879 | 
+================================================================================
+
+2026-03-18 10:08:29,080 | --- LLM RESPONSE (Structured) [took 7.2s] ---
+2026-03-18 10:08:29,080 | Signal: hold
+2026-03-18 10:08:29,080 | Confidence: 0.85
+2026-03-18 10:08:29,081 | Entry: None | SL: None | TP: None
+2026-03-18 10:08:29,081 | Justification: Price is inside Value Area at fair value near POC and HVNs with no clear mean reversion, edge, or breakout setup in a downtrending regime; wait for extremes or confirmation.
+2026-03-18 10:08:29,081 | Invalidation: Price closes outside Value Area with increasing volume
+2026-03-18 10:08:29,082 | Raw decision dict: {'symbol': 'XAUUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price closes outside Value Area with increasing volume', 'justification': 'Price is inside Value Area at fair value near POC and HVNs with no clear mean reversion, edge, or breakout setup in a downtrending regime; wait for extremes or confirmation.', 'confidence': 0.85, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-18 10:08:29,082 | 
+================================================================================
+
+2026-03-18 10:08:29,083 | Structured output SUCCESS - returning vp_quant_decision with signal=hold
+2026-03-18 11:08:30,163 | 
+================================================================================
+VOLUME PROFILE QUANT ANALYSIS - XAUUSD
+================================================================================
+2026-03-18 11:08:30,163 | Symbol: XAUUSD | Date: 2026-03-18 | Price: 5012.09
+2026-03-18 11:08:30,164 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 5012.09000
+- **Date**: 2026-03-18
+- **Trading Session**: asian
+- **Market Regime**: trending-down
+- **Volatility Regime**: normal
+
+## VOLUME PROFILE ANALYSIS
+### Volume Profile
+**POC (Point of Control)**: 5002.87660 (6.0% of volume)
+  - Price is +0.18% above POC - POC acts as magnet
+**Value Area**: 4973.08640 - 5168.07680 (73% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 5002.87660 (6.0% vol) | -0.18% below
+  - HVN at 5008.29300 (5.2% vol) | AT PRICE
+  - HVN at 5013.70940 (5.2% vol) | AT PRICE
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 4970.37820 | -0.83% - price may move fast through this level
+  - LVN at 4975.79460 | -0.72% - price may move fast through this level
+  - LVN at 4981.21100 | -0.62% - price may move fast through this level
+
+## TECHNICAL INDICATORS
+### Momentum
+- **RSI(14)**: 59.3 (Neutral)
+- **MACD**: -3.17340 | Signal: -3.91870
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 5007.18187 (Price above)
+- **EMA50**: 5021.38488 (Price below)
+- **ADX**: 27.4 (Strong trend)
+- **Regime**: trending-down
+
+### Volatility
+- **ATR(14)**: 15.81643
+- **Volatility**: normal
+
+### Volume
+- **Current Volume**: 2,905
+- **Avg Volume (20)**: 14,140
+- **Volume Ratio**: 0.21x average
+
+2026-03-18 11:08:30,167 | 
+--- FULL PROMPT ---
+You are a systematic Volume Profile trader with strict risk discipline. You trade based on volume-at-price analysis to identify high-probability entries.
+
+## VOLUME PROFILE TRADING RULES
+
+### Core Concepts
+1. **POC (Point of Control)**: The price level where most volume traded. Acts as a MAGNET - price tends to return here. Use as profit target in ranging markets.
+
+2. **Value Area (VA)**: The price range containing 70% of volume. This is "fair value."
+   - Price ABOVE VA = Premium, look for SHORTS (mean reversion down)
+   - Price BELOW VA = Discount, look for LONGS (mean reversion up)
+   - Price INSIDE VA = Fair value, wait for extremes or breakouts
+
+3. **Value Area High (VAH)**: Upper boundary of value area. Acts as RESISTANCE.
+4. **Value Area Low (VAL)**: Lower boundary of value area. Acts as SUPPORT.
+
+5. **High Volume Nodes (HVN)**: Price levels with high volume.
+   - Act as strong support/resistance
+   - Good for stop loss placement (behind HVN)
+   - Price tends to consolidate at HVN
+
+6. **Low Volume Nodes (LVN)**: Price levels with low volume.
+   - Price moves FAST through these zones
+   - Avoid placing entries in LVN (will get run through)
+   - Can be used to identify breakout acceleration zones
+
+### Trading Setups
+
+**Setup 1: Mean Reversion to POC**
+- Price is significantly above/below POC
+- Enter in direction of POC
+- Target: POC level
+- Stop: Beyond the extreme
+
+**Setup 2: Value Area Edge Trade**
+- Price touches VAH/VAL from inside
+- Fade the move (short at VAH, long at VAL)
+- Target: POC
+- Stop: Beyond VAH/VAL by 1 ATR
+
+**Setup 3: Value Area Breakout**
+- Price closes outside VA with increasing volume
+- Trade the breakout direction
+- Target: Next HVN or previous day's POC
+- Stop: Back inside VA
+
+**Setup 4: HVN Bounce**
+- Price approaches significant HVN
+- Enter on rejection at HVN
+- Target: Next HVN or POC
+- Stop: Beyond the HVN
+
+## RISK MANAGEMENT RULES (NEVER BREAK)
+
+1. **Risk no more than 1-2% of account value per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation before entry**
+5. **Place stops behind HVN levels when possible** (avoid LVN for stops)
+6. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+7. **Leverage is a tool, not a goal - default 5-20x**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- Prefer placing stops behind HVN (high volume = strong support/resistance)
+- If you cannot identify a valid stop loss placement, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 5012.09000
+- **Date**: 2026-03-18
+- **Trading Session**: asian
+- **Market Regime**: trending-down
+- **Volatility Regime**: normal
+
+## VOLUME PROFILE ANALYSIS
+### Volume Profile
+**POC (Point of Control)**: 5002.87660 (6.0% of volume)
+  - Price is +0.18% above POC - POC acts as magnet
+**Value Area**: 4973.08640 - 5168.07680 (73% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 5002.87660 (6.0% vol) | -0.18% below
+  - HVN at 5008.29300 (5.2% vol) | AT PRICE
+  - HVN at 5013.70940 (5.2% vol) | AT PRICE
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 4970.37820 | -0.83% - price may move fast through this level
+  - LVN at 4975.79460 | -0.72% - price may move fast through this level
+  - LVN at 4981.21100 | -0.62% - price may move fast through this level
+
+## TECHNICAL INDICATORS
+### Momentum
+- **RSI(14)**: 59.3 (Neutral)
+- **MACD**: -3.17340 | Signal: -3.91870
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 5007.18187 (Price above)
+- **EMA50**: 5021.38488 (Price below)
+- **ADX**: 27.4 (Strong trend)
+- **Regime**: trending-down
+
+### Volatility
+- **ATR(14)**: 15.81643
+- **Volatility**: normal
+
+### Volume
+- **Current Volume**: 2,905
+- **Avg Volume (20)**: 14,140
+- **Volume Ratio**: 0.21x average
+
+
+
+## LESSONS FROM YOUR PAST TRADES (XAUUSD)
+
+### Performance (last 10 trades)
+- Win rate: 20% (2/10) | Total P/L: $-40.53 | Avg: $-4.05
+- Direction accuracy: 30% (3/10)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. BUY @ 4989.06 -> breakeven_stop @ 4988.70 | -0.36 | SL 0.9% from entry (tight)
+2. BUY @ 5002.54 -> stale_cleanup @ 5002.54 | +0.00 | SL 1.9% from entry
+3. SELL @ 5023.64 -> Manual close @ 5024.00 | -0.36 | SL 0.6% from entry (tight)
+4. BUY @ 5071.93 -> SL hit @ 5059.20 | -12.73 | SL 0.3% from entry ⚠️ EXTREMELY TIGHT
+5. SELL @ 5105.47 -> unknown @ 5097.43 | +8.04 | SL 0.5% from entry (tight)
+
+⚠️ **CRITICAL PATTERN**: 4/5 recent trades had SL too tight (<1% from entry).
+Your stops are getting hit or positions closed at a loss because SL is too close to entry.
+**ACTION REQUIRED**: Place SL at least 1-1.5x ATR from entry, or beyond the nearest OB/FVG zone. Do NOT use SL within 0.5% of entry.
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 7x)
+- Good entry timing contributed to the win. (occurred 2x)
+- Manual exit resulted in loss. Consider letting SL/TP play out.
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+
+## YOUR TASK
+
+Analyze the Volume Profile data and make a systematic trading decision.
+
+Think step-by-step:
+1. Where is price relative to POC? (above/below/at)
+2. Where is price relative to Value Area? (inside/above/below)
+3. Are there nearby HVN levels for support/resistance?
+4. Are there LVN zones that could accelerate price movement?
+5. What Volume Profile setup applies? (mean reversion, VA edge, breakout, HVN bounce)
+6. Where should stop loss be placed? (behind HVN preferred)
+7. What's the risk:reward ratio? (must be >1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when price is at VAL, below POC in discount, or bouncing off bullish HVN. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when price is at VAH, above POC in premium, or rejecting at bearish HVN. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when price is at fair value (inside VA near POC), no clear setup, or in LVN territory.
+- **close** - Close existing position. Use when original thesis is invalidated.
+
+## ORDER TYPE (you MUST pick one for buy/sell signals)
+- **market** - Execute immediately at current market price. Use when:
+  - Price is ALREADY AT the VAL/VAH/HVN zone (within 0.1%)
+  - Price is bouncing off HVN right now
+  - Setup is confirmed and you don't want to miss it
+- **limit** - Place pending order at entry_price. Use when:
+  - Price is approaching but NOT YET at VAL/VAH
+  - You want better entry at the HVN level
+  - Waiting for price to reach POC for mean reversion
+
+Remember:
+- Volume Profile shows WHERE institutional volume traded
+- POC is a magnet - price tends to return
+- Value Area edges are decision points
+- HVN = consolidation/reversal zones
+- LVN = acceleration zones
+- Trade mean reversion inside VA, breakouts outside VA
+2026-03-18 11:08:30,179 | 
+================================================================================
+
+2026-03-18 11:08:38,904 | --- LLM RESPONSE (Structured) [took 8.7s] ---
+2026-03-18 11:08:38,904 | Signal: hold
+2026-03-18 11:08:38,904 | Confidence: 0.85
+2026-03-18 11:08:38,905 | Entry: None | SL: None | TP: None
+2026-03-18 11:08:38,905 | Justification: Price is inside Value Area at fair value, clustered around multiple HVNs (5008-5013) and just 0.18% above POC during low-volume Asian session; no clear Volume Profile setup (not at VA edges, no rejection/bounce confirmed, inside VA favors waiting); mixed indicators (bullish MACD but trending-down regime) and past lessons show poor direction accuracy warrant no entry.
+2026-03-18 11:08:38,906 | Invalidation: Price breaks decisively outside Value Area (above 5168 or below 4973) with volume > average
+2026-03-18 11:08:38,906 | Raw decision dict: {'symbol': 'XAUUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price breaks decisively outside Value Area (above 5168 or below 4973) with volume > average', 'justification': 'Price is inside Value Area at fair value, clustered around multiple HVNs (5008-5013) and just 0.18% above POC during low-volume Asian session; no clear Volume Profile setup (not at VA edges, no rejection/bounce confirmed, inside VA favors waiting); mixed indicators (bullish MACD but trending-down regime) and past lessons show poor direction accuracy warrant no entry.', 'confidence': 0.85, 'trailing_stop_atr_multiplier': None, 'risk_level': 'Low', 'risk_reward_ratio': None}
+2026-03-18 11:08:38,907 | 
+================================================================================
+
+2026-03-18 11:08:38,908 | Structured output SUCCESS - returning vp_quant_decision with signal=hold
+2026-03-18 12:08:51,270 | 
+================================================================================
+VOLUME PROFILE QUANT ANALYSIS - XAUUSD
+================================================================================
+2026-03-18 12:08:51,270 | Symbol: XAUUSD | Date: 2026-03-18 | Price: 4999.639999999999
+2026-03-18 12:08:51,271 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 4999.64000
+- **Date**: 2026-03-18
+- **Trading Session**: asian
+- **Market Regime**: trending-down
+- **Volatility Regime**: normal
+
+## VOLUME PROFILE ANALYSIS
+### Volume Profile
+**POC (Point of Control)**: 5002.87660 (6.2% of volume)
+  - Price is -0.06% below POC - POC acts as magnet
+**Value Area**: 4973.08640 - 5168.07680 (73% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 5002.87660 (6.2% vol) | AT PRICE
+  - HVN at 5008.29300 (5.4% vol) | +0.17% above
+  - HVN at 5013.70940 (5.3% vol) | +0.28% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 4970.37820 | -0.59% - price may move fast through this level
+  - LVN at 4975.79460 | -0.48% - price may move fast through this level
+  - LVN at 4981.21100 | -0.37% - price may move fast through this level
+
+## TECHNICAL INDICATORS
+### Momentum
+- **RSI(14)**: 46.8 (Neutral)
+- **MACD**: -4.24840 | Signal: -4.15503
+  - Bearish (MACD < Signal)
+
+### Trend
+- **EMA20**: 5005.30468 (Price below)
+- **EMA50**: 5020.02562 (Price below)
+- **ADX**: 27.1 (Strong trend)
+- **Regime**: trending-down
+
+### Volatility
+- **ATR(14)**: 15.91429
+- **Volatility**: normal
+
+### Volume
+- **Current Volume**: 2,587
+- **Avg Volume (20)**: 14,203
+- **Volume Ratio**: 0.18x average
+
+2026-03-18 12:08:51,275 | 
+--- FULL PROMPT ---
+You are a systematic Volume Profile trader with strict risk discipline. You trade based on volume-at-price analysis to identify high-probability entries.
+
+## VOLUME PROFILE TRADING RULES
+
+### Core Concepts
+1. **POC (Point of Control)**: The price level where most volume traded. Acts as a MAGNET - price tends to return here. Use as profit target in ranging markets.
+
+2. **Value Area (VA)**: The price range containing 70% of volume. This is "fair value."
+   - Price ABOVE VA = Premium, look for SHORTS (mean reversion down)
+   - Price BELOW VA = Discount, look for LONGS (mean reversion up)
+   - Price INSIDE VA = Fair value, wait for extremes or breakouts
+
+3. **Value Area High (VAH)**: Upper boundary of value area. Acts as RESISTANCE.
+4. **Value Area Low (VAL)**: Lower boundary of value area. Acts as SUPPORT.
+
+5. **High Volume Nodes (HVN)**: Price levels with high volume.
+   - Act as strong support/resistance
+   - Good for stop loss placement (behind HVN)
+   - Price tends to consolidate at HVN
+
+6. **Low Volume Nodes (LVN)**: Price levels with low volume.
+   - Price moves FAST through these zones
+   - Avoid placing entries in LVN (will get run through)
+   - Can be used to identify breakout acceleration zones
+
+### Trading Setups
+
+**Setup 1: Mean Reversion to POC**
+- Price is significantly above/below POC
+- Enter in direction of POC
+- Target: POC level
+- Stop: Beyond the extreme
+
+**Setup 2: Value Area Edge Trade**
+- Price touches VAH/VAL from inside
+- Fade the move (short at VAH, long at VAL)
+- Target: POC
+- Stop: Beyond VAH/VAL by 1 ATR
+
+**Setup 3: Value Area Breakout**
+- Price closes outside VA with increasing volume
+- Trade the breakout direction
+- Target: Next HVN or previous day's POC
+- Stop: Back inside VA
+
+**Setup 4: HVN Bounce**
+- Price approaches significant HVN
+- Enter on rejection at HVN
+- Target: Next HVN or POC
+- Stop: Beyond the HVN
+
+## RISK MANAGEMENT RULES (NEVER BREAK)
+
+1. **Risk no more than 1-2% of account value per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation before entry**
+5. **Place stops behind HVN levels when possible** (avoid LVN for stops)
+6. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+7. **Leverage is a tool, not a goal - default 5-20x**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- Prefer placing stops behind HVN (high volume = strong support/resistance)
+- If you cannot identify a valid stop loss placement, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 4999.64000
+- **Date**: 2026-03-18
+- **Trading Session**: asian
+- **Market Regime**: trending-down
+- **Volatility Regime**: normal
+
+## VOLUME PROFILE ANALYSIS
+### Volume Profile
+**POC (Point of Control)**: 5002.87660 (6.2% of volume)
+  - Price is -0.06% below POC - POC acts as magnet
+**Value Area**: 4973.08640 - 5168.07680 (73% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 5002.87660 (6.2% vol) | AT PRICE
+  - HVN at 5008.29300 (5.4% vol) | +0.17% above
+  - HVN at 5013.70940 (5.3% vol) | +0.28% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 4970.37820 | -0.59% - price may move fast through this level
+  - LVN at 4975.79460 | -0.48% - price may move fast through this level
+  - LVN at 4981.21100 | -0.37% - price may move fast through this level
+
+## TECHNICAL INDICATORS
+### Momentum
+- **RSI(14)**: 46.8 (Neutral)
+- **MACD**: -4.24840 | Signal: -4.15503
+  - Bearish (MACD < Signal)
+
+### Trend
+- **EMA20**: 5005.30468 (Price below)
+- **EMA50**: 5020.02562 (Price below)
+- **ADX**: 27.1 (Strong trend)
+- **Regime**: trending-down
+
+### Volatility
+- **ATR(14)**: 15.91429
+- **Volatility**: normal
+
+### Volume
+- **Current Volume**: 2,587
+- **Avg Volume (20)**: 14,203
+- **Volume Ratio**: 0.18x average
+
+
+
+## LESSONS FROM YOUR PAST TRADES (XAUUSD)
+
+### Performance (last 10 trades)
+- Win rate: 20% (2/10) | Total P/L: $-40.53 | Avg: $-4.05
+- Direction accuracy: 30% (3/10)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. BUY @ 4989.06 -> breakeven_stop @ 4988.70 | -0.36 | SL 0.9% from entry (tight)
+2. BUY @ 5002.54 -> stale_cleanup @ 5002.54 | +0.00 | SL 1.9% from entry
+3. SELL @ 5023.64 -> Manual close @ 5024.00 | -0.36 | SL 0.6% from entry (tight)
+4. BUY @ 5071.93 -> SL hit @ 5059.20 | -12.73 | SL 0.3% from entry ⚠️ EXTREMELY TIGHT
+5. SELL @ 5105.47 -> unknown @ 5097.43 | +8.04 | SL 0.5% from entry (tight)
+
+⚠️ **CRITICAL PATTERN**: 4/5 recent trades had SL too tight (<1% from entry).
+Your stops are getting hit or positions closed at a loss because SL is too close to entry.
+**ACTION REQUIRED**: Place SL at least 1-1.5x ATR from entry, or beyond the nearest OB/FVG zone. Do NOT use SL within 0.5% of entry.
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 7x)
+- Good entry timing contributed to the win. (occurred 2x)
+- Manual exit resulted in loss. Consider letting SL/TP play out.
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+
+## YOUR TASK
+
+Analyze the Volume Profile data and make a systematic trading decision.
+
+Think step-by-step:
+1. Where is price relative to POC? (above/below/at)
+2. Where is price relative to Value Area? (inside/above/below)
+3. Are there nearby HVN levels for support/resistance?
+4. Are there LVN zones that could accelerate price movement?
+5. What Volume Profile setup applies? (mean reversion, VA edge, breakout, HVN bounce)
+6. Where should stop loss be placed? (behind HVN preferred)
+7. What's the risk:reward ratio? (must be >1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when price is at VAL, below POC in discount, or bouncing off bullish HVN. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when price is at VAH, above POC in premium, or rejecting at bearish HVN. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when price is at fair value (inside VA near POC), no clear setup, or in LVN territory.
+- **close** - Close existing position. Use when original thesis is invalidated.
+
+## ORDER TYPE (you MUST pick one for buy/sell signals)
+- **market** - Execute immediately at current market price. Use when:
+  - Price is ALREADY AT the VAL/VAH/HVN zone (within 0.1%)
+  - Price is bouncing off HVN right now
+  - Setup is confirmed and you don't want to miss it
+- **limit** - Place pending order at entry_price. Use when:
+  - Price is approaching but NOT YET at VAL/VAH
+  - You want better entry at the HVN level
+  - Waiting for price to reach POC for mean reversion
+
+Remember:
+- Volume Profile shows WHERE institutional volume traded
+- POC is a magnet - price tends to return
+- Value Area edges are decision points
+- HVN = consolidation/reversal zones
+- LVN = acceleration zones
+- Trade mean reversion inside VA, breakouts outside VA
+2026-03-18 12:08:51,288 | 
+================================================================================
+
+2026-03-18 12:08:56,433 | --- LLM RESPONSE (Structured) [took 5.1s] ---
+2026-03-18 12:08:56,433 | Signal: hold
+2026-03-18 12:08:56,434 | Confidence: 0.75
+2026-03-18 12:08:56,434 | Entry: None | SL: None | TP: None
+2026-03-18 12:08:56,434 | Justification: Price is inside Value Area near POC in fair value zone during low-volume Asian session with bearish trend regime; no clear Volume Profile setup for mean reversion, edge fade, breakout, or HVN bounce.
+2026-03-18 12:08:56,435 | Invalidation: Price breaks decisively above VAH at 5168.07680 with increasing volume, confirming bullish breakout
+2026-03-18 12:08:56,435 | Raw decision dict: {'symbol': 'XAUUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price breaks decisively above VAH at 5168.07680 with increasing volume, confirming bullish breakout', 'justification': 'Price is inside Value Area near POC in fair value zone during low-volume Asian session with bearish trend regime; no clear Volume Profile setup for mean reversion, edge fade, breakout, or HVN bounce.', 'confidence': 0.75, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-18 12:08:56,436 | 
+================================================================================
+
+2026-03-18 12:08:56,437 | Structured output SUCCESS - returning vp_quant_decision with signal=hold
+2026-03-18 13:09:15,987 | 
+================================================================================
+VOLUME PROFILE QUANT ANALYSIS - XAUUSD
+================================================================================
+2026-03-18 13:09:15,987 | Symbol: XAUUSD | Date: 2026-03-18 | Price: 4992.51
+2026-03-18 13:09:15,988 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 4992.51000
+- **Date**: 2026-03-18
+- **Trading Session**: asian
+- **Market Regime**: trending-down
+- **Volatility Regime**: normal
+
+## VOLUME PROFILE ANALYSIS
+### Volume Profile
+**POC (Point of Control)**: 5002.87660 (6.4% of volume)
+  - Price is -0.21% below POC - POC acts as magnet
+**Value Area**: 4973.08640 - 5168.07680 (73% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 5002.87660 (6.4% vol) | +0.21% above
+  - HVN at 5008.29300 (5.4% vol) | +0.32% above
+  - HVN at 5013.70940 (5.3% vol) | +0.42% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 4970.37820 | -0.44% - price may move fast through this level
+  - LVN at 4975.79460 | -0.33% - price may move fast through this level
+  - LVN at 4981.21100 | -0.23% - price may move fast through this level
+
+## TECHNICAL INDICATORS
+### Momentum
+- **RSI(14)**: 33.0 (Neutral)
+- **MACD**: -5.24102 | Signal: -4.46847
+  - Bearish (MACD < Signal)
+
+### Trend
+- **EMA20**: 5003.42787 (Price below)
+- **EMA50**: 5018.65894 (Price below)
+- **ADX**: 29.7 (Strong trend)
+- **Regime**: trending-down
+
+### Volatility
+- **ATR(14)**: 15.46357
+- **Volatility**: normal
+
+### Volume
+- **Current Volume**: 3,053
+- **Avg Volume (20)**: 14,101
+- **Volume Ratio**: 0.22x average
+
+2026-03-18 13:09:15,992 | 
+--- FULL PROMPT ---
+You are a systematic Volume Profile trader with strict risk discipline. You trade based on volume-at-price analysis to identify high-probability entries.
+
+## VOLUME PROFILE TRADING RULES
+
+### Core Concepts
+1. **POC (Point of Control)**: The price level where most volume traded. Acts as a MAGNET - price tends to return here. Use as profit target in ranging markets.
+
+2. **Value Area (VA)**: The price range containing 70% of volume. This is "fair value."
+   - Price ABOVE VA = Premium, look for SHORTS (mean reversion down)
+   - Price BELOW VA = Discount, look for LONGS (mean reversion up)
+   - Price INSIDE VA = Fair value, wait for extremes or breakouts
+
+3. **Value Area High (VAH)**: Upper boundary of value area. Acts as RESISTANCE.
+4. **Value Area Low (VAL)**: Lower boundary of value area. Acts as SUPPORT.
+
+5. **High Volume Nodes (HVN)**: Price levels with high volume.
+   - Act as strong support/resistance
+   - Good for stop loss placement (behind HVN)
+   - Price tends to consolidate at HVN
+
+6. **Low Volume Nodes (LVN)**: Price levels with low volume.
+   - Price moves FAST through these zones
+   - Avoid placing entries in LVN (will get run through)
+   - Can be used to identify breakout acceleration zones
+
+### Trading Setups
+
+**Setup 1: Mean Reversion to POC**
+- Price is significantly above/below POC
+- Enter in direction of POC
+- Target: POC level
+- Stop: Beyond the extreme
+
+**Setup 2: Value Area Edge Trade**
+- Price touches VAH/VAL from inside
+- Fade the move (short at VAH, long at VAL)
+- Target: POC
+- Stop: Beyond VAH/VAL by 1 ATR
+
+**Setup 3: Value Area Breakout**
+- Price closes outside VA with increasing volume
+- Trade the breakout direction
+- Target: Next HVN or previous day's POC
+- Stop: Back inside VA
+
+**Setup 4: HVN Bounce**
+- Price approaches significant HVN
+- Enter on rejection at HVN
+- Target: Next HVN or POC
+- Stop: Beyond the HVN
+
+## RISK MANAGEMENT RULES (NEVER BREAK)
+
+1. **Risk no more than 1-2% of account value per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation before entry**
+5. **Place stops behind HVN levels when possible** (avoid LVN for stops)
+6. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+7. **Leverage is a tool, not a goal - default 5-20x**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- Prefer placing stops behind HVN (high volume = strong support/resistance)
+- If you cannot identify a valid stop loss placement, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 4992.51000
+- **Date**: 2026-03-18
+- **Trading Session**: asian
+- **Market Regime**: trending-down
+- **Volatility Regime**: normal
+
+## VOLUME PROFILE ANALYSIS
+### Volume Profile
+**POC (Point of Control)**: 5002.87660 (6.4% of volume)
+  - Price is -0.21% below POC - POC acts as magnet
+**Value Area**: 4973.08640 - 5168.07680 (73% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 5002.87660 (6.4% vol) | +0.21% above
+  - HVN at 5008.29300 (5.4% vol) | +0.32% above
+  - HVN at 5013.70940 (5.3% vol) | +0.42% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 4970.37820 | -0.44% - price may move fast through this level
+  - LVN at 4975.79460 | -0.33% - price may move fast through this level
+  - LVN at 4981.21100 | -0.23% - price may move fast through this level
+
+## TECHNICAL INDICATORS
+### Momentum
+- **RSI(14)**: 33.0 (Neutral)
+- **MACD**: -5.24102 | Signal: -4.46847
+  - Bearish (MACD < Signal)
+
+### Trend
+- **EMA20**: 5003.42787 (Price below)
+- **EMA50**: 5018.65894 (Price below)
+- **ADX**: 29.7 (Strong trend)
+- **Regime**: trending-down
+
+### Volatility
+- **ATR(14)**: 15.46357
+- **Volatility**: normal
+
+### Volume
+- **Current Volume**: 3,053
+- **Avg Volume (20)**: 14,101
+- **Volume Ratio**: 0.22x average
+
+
+
+## LESSONS FROM YOUR PAST TRADES (XAUUSD)
+
+### Performance (last 10 trades)
+- Win rate: 20% (2/10) | Total P/L: $-40.53 | Avg: $-4.05
+- Direction accuracy: 30% (3/10)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. BUY @ 4989.06 -> breakeven_stop @ 4988.70 | -0.36 | SL 0.9% from entry (tight)
+2. BUY @ 5002.54 -> stale_cleanup @ 5002.54 | +0.00 | SL 1.9% from entry
+3. SELL @ 5023.64 -> Manual close @ 5024.00 | -0.36 | SL 0.6% from entry (tight)
+4. BUY @ 5071.93 -> SL hit @ 5059.20 | -12.73 | SL 0.3% from entry ⚠️ EXTREMELY TIGHT
+5. SELL @ 5105.47 -> unknown @ 5097.43 | +8.04 | SL 0.5% from entry (tight)
+
+⚠️ **CRITICAL PATTERN**: 4/5 recent trades had SL too tight (<1% from entry).
+Your stops are getting hit or positions closed at a loss because SL is too close to entry.
+**ACTION REQUIRED**: Place SL at least 1-1.5x ATR from entry, or beyond the nearest OB/FVG zone. Do NOT use SL within 0.5% of entry.
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 7x)
+- Good entry timing contributed to the win. (occurred 2x)
+- Manual exit resulted in loss. Consider letting SL/TP play out.
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+
+## YOUR TASK
+
+Analyze the Volume Profile data and make a systematic trading decision.
+
+Think step-by-step:
+1. Where is price relative to POC? (above/below/at)
+2. Where is price relative to Value Area? (inside/above/below)
+3. Are there nearby HVN levels for support/resistance?
+4. Are there LVN zones that could accelerate price movement?
+5. What Volume Profile setup applies? (mean reversion, VA edge, breakout, HVN bounce)
+6. Where should stop loss be placed? (behind HVN preferred)
+7. What's the risk:reward ratio? (must be >1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when price is at VAL, below POC in discount, or bouncing off bullish HVN. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when price is at VAH, above POC in premium, or rejecting at bearish HVN. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when price is at fair value (inside VA near POC), no clear setup, or in LVN territory.
+- **close** - Close existing position. Use when original thesis is invalidated.
+
+## ORDER TYPE (you MUST pick one for buy/sell signals)
+- **market** - Execute immediately at current market price. Use when:
+  - Price is ALREADY AT the VAL/VAH/HVN zone (within 0.1%)
+  - Price is bouncing off HVN right now
+  - Setup is confirmed and you don't want to miss it
+- **limit** - Place pending order at entry_price. Use when:
+  - Price is approaching but NOT YET at VAL/VAH
+  - You want better entry at the HVN level
+  - Waiting for price to reach POC for mean reversion
+
+Remember:
+- Volume Profile shows WHERE institutional volume traded
+- POC is a magnet - price tends to return
+- Value Area edges are decision points
+- HVN = consolidation/reversal zones
+- LVN = acceleration zones
+- Trade mean reversion inside VA, breakouts outside VA
+2026-03-18 13:09:16,003 | 
+================================================================================
+
+2026-03-18 13:09:24,141 | --- LLM RESPONSE (Structured) [took 8.1s] ---
+2026-03-18 13:09:24,142 | Signal: hold
+2026-03-18 13:09:24,142 | Confidence: 0.85
+2026-03-18 13:09:24,142 | Entry: None | SL: None | TP: None
+2026-03-18 13:09:24,142 | Justification: Price is inside Value Area (fair value zone) and only slightly below POC (-0.21%), with no extreme deviation for mean reversion; bearish trend regime but low volume (0.22x avg) and neutral RSI suggest no high-probability setup; await VA edge or HVN rejection.
+2026-03-18 13:09:24,143 | Invalidation: Price breaks below VAL at 4973.08640 with increasing volume, confirming Value Area breakout lower
+2026-03-18 13:09:24,143 | Raw decision dict: {'symbol': 'XAUUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price breaks below VAL at 4973.08640 with increasing volume, confirming Value Area breakout lower', 'justification': 'Price is inside Value Area (fair value zone) and only slightly below POC (-0.21%), with no extreme deviation for mean reversion; bearish trend regime but low volume (0.22x avg) and neutral RSI suggest no high-probability setup; await VA edge or HVN rejection.', 'confidence': 0.85, 'trailing_stop_atr_multiplier': None, 'risk_level': 'Low', 'risk_reward_ratio': None}
+2026-03-18 13:09:24,144 | 
+================================================================================
+
+2026-03-18 13:09:24,144 | Structured output SUCCESS - returning vp_quant_decision with signal=hold
+2026-03-18 14:09:30,953 | 
+================================================================================
+VOLUME PROFILE QUANT ANALYSIS - XAUUSD
+================================================================================
+2026-03-18 14:09:30,953 | Symbol: XAUUSD | Date: 2026-03-18 | Price: 4992.02
+2026-03-18 14:09:30,954 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 4992.02000
+- **Date**: 2026-03-18
+- **Trading Session**: asian
+- **Market Regime**: trending-down
+- **Volatility Regime**: normal
+
+## VOLUME PROFILE ANALYSIS
+### Volume Profile
+**POC (Point of Control)**: 5002.87660 (6.4% of volume)
+  - Price is -0.22% below POC - POC acts as magnet
+**Value Area**: 4973.08640 - 5168.07680 (73% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 5002.87660 (6.4% vol) | +0.22% above
+  - HVN at 5008.29300 (5.4% vol) | +0.33% above
+  - HVN at 5013.70940 (5.3% vol) | +0.43% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 4970.37820 | -0.43% - price may move fast through this level
+  - LVN at 4975.79460 | -0.33% - price may move fast through this level
+  - LVN at 4981.21100 | -0.22% - price may move fast through this level
+
+## TECHNICAL INDICATORS
+### Momentum
+- **RSI(14)**: 26.7 (Oversold)
+- **MACD**: -5.59828 | Signal: -4.70924
+  - Bearish (MACD < Signal)
+
+### Trend
+- **EMA20**: 5002.23288 (Price below)
+- **EMA50**: 5017.56714 (Price below)
+- **ADX**: 33.5 (Strong trend)
+- **Regime**: trending-down
+
+### Volatility
+- **ATR(14)**: 14.13500
+- **Volatility**: normal
+
+### Volume
+- **Current Volume**: 1,780
+- **Avg Volume (20)**: 14,086
+- **Volume Ratio**: 0.13x average
+
+2026-03-18 14:09:30,957 | 
+--- FULL PROMPT ---
+You are a systematic Volume Profile trader with strict risk discipline. You trade based on volume-at-price analysis to identify high-probability entries.
+
+## VOLUME PROFILE TRADING RULES
+
+### Core Concepts
+1. **POC (Point of Control)**: The price level where most volume traded. Acts as a MAGNET - price tends to return here. Use as profit target in ranging markets.
+
+2. **Value Area (VA)**: The price range containing 70% of volume. This is "fair value."
+   - Price ABOVE VA = Premium, look for SHORTS (mean reversion down)
+   - Price BELOW VA = Discount, look for LONGS (mean reversion up)
+   - Price INSIDE VA = Fair value, wait for extremes or breakouts
+
+3. **Value Area High (VAH)**: Upper boundary of value area. Acts as RESISTANCE.
+4. **Value Area Low (VAL)**: Lower boundary of value area. Acts as SUPPORT.
+
+5. **High Volume Nodes (HVN)**: Price levels with high volume.
+   - Act as strong support/resistance
+   - Good for stop loss placement (behind HVN)
+   - Price tends to consolidate at HVN
+
+6. **Low Volume Nodes (LVN)**: Price levels with low volume.
+   - Price moves FAST through these zones
+   - Avoid placing entries in LVN (will get run through)
+   - Can be used to identify breakout acceleration zones
+
+### Trading Setups
+
+**Setup 1: Mean Reversion to POC**
+- Price is significantly above/below POC
+- Enter in direction of POC
+- Target: POC level
+- Stop: Beyond the extreme
+
+**Setup 2: Value Area Edge Trade**
+- Price touches VAH/VAL from inside
+- Fade the move (short at VAH, long at VAL)
+- Target: POC
+- Stop: Beyond VAH/VAL by 1 ATR
+
+**Setup 3: Value Area Breakout**
+- Price closes outside VA with increasing volume
+- Trade the breakout direction
+- Target: Next HVN or previous day's POC
+- Stop: Back inside VA
+
+**Setup 4: HVN Bounce**
+- Price approaches significant HVN
+- Enter on rejection at HVN
+- Target: Next HVN or POC
+- Stop: Beyond the HVN
+
+## RISK MANAGEMENT RULES (NEVER BREAK)
+
+1. **Risk no more than 1-2% of account value per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation before entry**
+5. **Place stops behind HVN levels when possible** (avoid LVN for stops)
+6. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+7. **Leverage is a tool, not a goal - default 5-20x**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- Prefer placing stops behind HVN (high volume = strong support/resistance)
+- If you cannot identify a valid stop loss placement, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 4992.02000
+- **Date**: 2026-03-18
+- **Trading Session**: asian
+- **Market Regime**: trending-down
+- **Volatility Regime**: normal
+
+## VOLUME PROFILE ANALYSIS
+### Volume Profile
+**POC (Point of Control)**: 5002.87660 (6.4% of volume)
+  - Price is -0.22% below POC - POC acts as magnet
+**Value Area**: 4973.08640 - 5168.07680 (73% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 5002.87660 (6.4% vol) | +0.22% above
+  - HVN at 5008.29300 (5.4% vol) | +0.33% above
+  - HVN at 5013.70940 (5.3% vol) | +0.43% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 4970.37820 | -0.43% - price may move fast through this level
+  - LVN at 4975.79460 | -0.33% - price may move fast through this level
+  - LVN at 4981.21100 | -0.22% - price may move fast through this level
+
+## TECHNICAL INDICATORS
+### Momentum
+- **RSI(14)**: 26.7 (Oversold)
+- **MACD**: -5.59828 | Signal: -4.70924
+  - Bearish (MACD < Signal)
+
+### Trend
+- **EMA20**: 5002.23288 (Price below)
+- **EMA50**: 5017.56714 (Price below)
+- **ADX**: 33.5 (Strong trend)
+- **Regime**: trending-down
+
+### Volatility
+- **ATR(14)**: 14.13500
+- **Volatility**: normal
+
+### Volume
+- **Current Volume**: 1,780
+- **Avg Volume (20)**: 14,086
+- **Volume Ratio**: 0.13x average
+
+
+
+## LESSONS FROM YOUR PAST TRADES (XAUUSD)
+
+### Performance (last 10 trades)
+- Win rate: 20% (2/10) | Total P/L: $-40.53 | Avg: $-4.05
+- Direction accuracy: 30% (3/10)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. BUY @ 4989.06 -> breakeven_stop @ 4988.70 | -0.36 | SL 0.9% from entry (tight)
+2. BUY @ 5002.54 -> stale_cleanup @ 5002.54 | +0.00 | SL 1.9% from entry
+3. SELL @ 5023.64 -> Manual close @ 5024.00 | -0.36 | SL 0.6% from entry (tight)
+4. BUY @ 5071.93 -> SL hit @ 5059.20 | -12.73 | SL 0.3% from entry ⚠️ EXTREMELY TIGHT
+5. SELL @ 5105.47 -> unknown @ 5097.43 | +8.04 | SL 0.5% from entry (tight)
+
+⚠️ **CRITICAL PATTERN**: 4/5 recent trades had SL too tight (<1% from entry).
+Your stops are getting hit or positions closed at a loss because SL is too close to entry.
+**ACTION REQUIRED**: Place SL at least 1-1.5x ATR from entry, or beyond the nearest OB/FVG zone. Do NOT use SL within 0.5% of entry.
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 7x)
+- Good entry timing contributed to the win. (occurred 2x)
+- Manual exit resulted in loss. Consider letting SL/TP play out.
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+
+## YOUR TASK
+
+Analyze the Volume Profile data and make a systematic trading decision.
+
+Think step-by-step:
+1. Where is price relative to POC? (above/below/at)
+2. Where is price relative to Value Area? (inside/above/below)
+3. Are there nearby HVN levels for support/resistance?
+4. Are there LVN zones that could accelerate price movement?
+5. What Volume Profile setup applies? (mean reversion, VA edge, breakout, HVN bounce)
+6. Where should stop loss be placed? (behind HVN preferred)
+7. What's the risk:reward ratio? (must be >1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when price is at VAL, below POC in discount, or bouncing off bullish HVN. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when price is at VAH, above POC in premium, or rejecting at bearish HVN. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when price is at fair value (inside VA near POC), no clear setup, or in LVN territory.
+- **close** - Close existing position. Use when original thesis is invalidated.
+
+## ORDER TYPE (you MUST pick one for buy/sell signals)
+- **market** - Execute immediately at current market price. Use when:
+  - Price is ALREADY AT the VAL/VAH/HVN zone (within 0.1%)
+  - Price is bouncing off HVN right now
+  - Setup is confirmed and you don't want to miss it
+- **limit** - Place pending order at entry_price. Use when:
+  - Price is approaching but NOT YET at VAL/VAH
+  - You want better entry at the HVN level
+  - Waiting for price to reach POC for mean reversion
+
+Remember:
+- Volume Profile shows WHERE institutional volume traded
+- POC is a magnet - price tends to return
+- Value Area edges are decision points
+- HVN = consolidation/reversal zones
+- LVN = acceleration zones
+- Trade mean reversion inside VA, breakouts outside VA
+2026-03-18 14:09:30,969 | 
+================================================================================
+
+2026-03-18 14:09:35,876 | --- LLM RESPONSE (Structured) [took 4.9s] ---
+2026-03-18 14:09:35,876 | Signal: hold
+2026-03-18 14:09:35,877 | Confidence: 0.85
+2026-03-18 14:09:35,877 | Entry: None | SL: None | TP: None
+2026-03-18 14:09:35,878 | Justification: Price is inside Value Area at fair value with no clear Volume Profile setup (not at edges, no HVN rejection, no breakout); trending-down regime but oversold RSI suggests caution without confirmation.
+2026-03-18 14:09:35,878 | Invalidation: Price closes below VAL at 4973.08640 on increasing volume, confirming VA breakout lower
+2026-03-18 14:09:35,878 | Raw decision dict: {'symbol': 'XAUUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price closes below VAL at 4973.08640 on increasing volume, confirming VA breakout lower', 'justification': 'Price is inside Value Area at fair value with no clear Volume Profile setup (not at edges, no HVN rejection, no breakout); trending-down regime but oversold RSI suggests caution without confirmation.', 'confidence': 0.85, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-18 14:09:35,879 | 
+================================================================================
+
+2026-03-18 14:09:35,879 | Structured output SUCCESS - returning vp_quant_decision with signal=hold
+2026-03-18 15:09:37,158 | 
+================================================================================
+VOLUME PROFILE QUANT ANALYSIS - XAUUSD
+================================================================================
+2026-03-18 15:09:37,159 | Symbol: XAUUSD | Date: 2026-03-18 | Price: 4990.63
+2026-03-18 15:09:37,159 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 4990.63000
+- **Date**: 2026-03-18
+- **Trading Session**: asian
+- **Market Regime**: trending-down
+- **Volatility Regime**: normal
+
+## VOLUME PROFILE ANALYSIS
+### Volume Profile
+**POC (Point of Control)**: 5002.87660 (6.4% of volume)
+  - Price is -0.25% below POC - POC acts as magnet
+**Value Area**: 4973.08640 - 5168.07680 (72% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 5002.87660 (6.4% vol) | +0.25% above
+  - HVN at 5008.29300 (5.5% vol) | +0.35% above
+  - HVN at 5013.70940 (5.3% vol) | +0.46% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 4970.37820 | -0.41% - price may move fast through this level
+  - LVN at 4975.79460 | -0.30% - price may move fast through this level
+  - LVN at 4981.21100 | -0.19% - price may move fast through this level
+
+## TECHNICAL INDICATORS
+### Momentum
+- **RSI(14)**: 33.2 (Neutral)
+- **MACD**: -6.15333 | Signal: -5.06034
+  - Bearish (MACD < Signal)
+
+### Trend
+- **EMA20**: 5000.69877 (Price below)
+- **EMA50**: 5016.32331 (Price below)
+- **ADX**: 37.4 (Strong trend)
+- **Regime**: trending-down
+
+### Volatility
+- **ATR(14)**: 13.92714
+- **Volatility**: normal
+
+### Volume
+- **Current Volume**: 2,219
+- **Avg Volume (20)**: 13,942
+- **Volume Ratio**: 0.16x average
+
+2026-03-18 15:09:37,163 | 
+--- FULL PROMPT ---
+You are a systematic Volume Profile trader with strict risk discipline. You trade based on volume-at-price analysis to identify high-probability entries.
+
+## VOLUME PROFILE TRADING RULES
+
+### Core Concepts
+1. **POC (Point of Control)**: The price level where most volume traded. Acts as a MAGNET - price tends to return here. Use as profit target in ranging markets.
+
+2. **Value Area (VA)**: The price range containing 70% of volume. This is "fair value."
+   - Price ABOVE VA = Premium, look for SHORTS (mean reversion down)
+   - Price BELOW VA = Discount, look for LONGS (mean reversion up)
+   - Price INSIDE VA = Fair value, wait for extremes or breakouts
+
+3. **Value Area High (VAH)**: Upper boundary of value area. Acts as RESISTANCE.
+4. **Value Area Low (VAL)**: Lower boundary of value area. Acts as SUPPORT.
+
+5. **High Volume Nodes (HVN)**: Price levels with high volume.
+   - Act as strong support/resistance
+   - Good for stop loss placement (behind HVN)
+   - Price tends to consolidate at HVN
+
+6. **Low Volume Nodes (LVN)**: Price levels with low volume.
+   - Price moves FAST through these zones
+   - Avoid placing entries in LVN (will get run through)
+   - Can be used to identify breakout acceleration zones
+
+### Trading Setups
+
+**Setup 1: Mean Reversion to POC**
+- Price is significantly above/below POC
+- Enter in direction of POC
+- Target: POC level
+- Stop: Beyond the extreme
+
+**Setup 2: Value Area Edge Trade**
+- Price touches VAH/VAL from inside
+- Fade the move (short at VAH, long at VAL)
+- Target: POC
+- Stop: Beyond VAH/VAL by 1 ATR
+
+**Setup 3: Value Area Breakout**
+- Price closes outside VA with increasing volume
+- Trade the breakout direction
+- Target: Next HVN or previous day's POC
+- Stop: Back inside VA
+
+**Setup 4: HVN Bounce**
+- Price approaches significant HVN
+- Enter on rejection at HVN
+- Target: Next HVN or POC
+- Stop: Beyond the HVN
+
+## RISK MANAGEMENT RULES (NEVER BREAK)
+
+1. **Risk no more than 1-2% of account value per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation before entry**
+5. **Place stops behind HVN levels when possible** (avoid LVN for stops)
+6. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+7. **Leverage is a tool, not a goal - default 5-20x**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- Prefer placing stops behind HVN (high volume = strong support/resistance)
+- If you cannot identify a valid stop loss placement, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 4990.63000
+- **Date**: 2026-03-18
+- **Trading Session**: asian
+- **Market Regime**: trending-down
+- **Volatility Regime**: normal
+
+## VOLUME PROFILE ANALYSIS
+### Volume Profile
+**POC (Point of Control)**: 5002.87660 (6.4% of volume)
+  - Price is -0.25% below POC - POC acts as magnet
+**Value Area**: 4973.08640 - 5168.07680 (72% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 5002.87660 (6.4% vol) | +0.25% above
+  - HVN at 5008.29300 (5.5% vol) | +0.35% above
+  - HVN at 5013.70940 (5.3% vol) | +0.46% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 4970.37820 | -0.41% - price may move fast through this level
+  - LVN at 4975.79460 | -0.30% - price may move fast through this level
+  - LVN at 4981.21100 | -0.19% - price may move fast through this level
+
+## TECHNICAL INDICATORS
+### Momentum
+- **RSI(14)**: 33.2 (Neutral)
+- **MACD**: -6.15333 | Signal: -5.06034
+  - Bearish (MACD < Signal)
+
+### Trend
+- **EMA20**: 5000.69877 (Price below)
+- **EMA50**: 5016.32331 (Price below)
+- **ADX**: 37.4 (Strong trend)
+- **Regime**: trending-down
+
+### Volatility
+- **ATR(14)**: 13.92714
+- **Volatility**: normal
+
+### Volume
+- **Current Volume**: 2,219
+- **Avg Volume (20)**: 13,942
+- **Volume Ratio**: 0.16x average
+
+
+
+## LESSONS FROM YOUR PAST TRADES (XAUUSD)
+
+### Performance (last 10 trades)
+- Win rate: 20% (2/10) | Total P/L: $-40.53 | Avg: $-4.05
+- Direction accuracy: 30% (3/10)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. BUY @ 4989.06 -> breakeven_stop @ 4988.70 | -0.36 | SL 0.9% from entry (tight)
+2. BUY @ 5002.54 -> stale_cleanup @ 5002.54 | +0.00 | SL 1.9% from entry
+3. SELL @ 5023.64 -> Manual close @ 5024.00 | -0.36 | SL 0.6% from entry (tight)
+4. BUY @ 5071.93 -> SL hit @ 5059.20 | -12.73 | SL 0.3% from entry ⚠️ EXTREMELY TIGHT
+5. SELL @ 5105.47 -> unknown @ 5097.43 | +8.04 | SL 0.5% from entry (tight)
+
+⚠️ **CRITICAL PATTERN**: 4/5 recent trades had SL too tight (<1% from entry).
+Your stops are getting hit or positions closed at a loss because SL is too close to entry.
+**ACTION REQUIRED**: Place SL at least 1-1.5x ATR from entry, or beyond the nearest OB/FVG zone. Do NOT use SL within 0.5% of entry.
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 7x)
+- Good entry timing contributed to the win. (occurred 2x)
+- Manual exit resulted in loss. Consider letting SL/TP play out.
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+
+## YOUR TASK
+
+Analyze the Volume Profile data and make a systematic trading decision.
+
+Think step-by-step:
+1. Where is price relative to POC? (above/below/at)
+2. Where is price relative to Value Area? (inside/above/below)
+3. Are there nearby HVN levels for support/resistance?
+4. Are there LVN zones that could accelerate price movement?
+5. What Volume Profile setup applies? (mean reversion, VA edge, breakout, HVN bounce)
+6. Where should stop loss be placed? (behind HVN preferred)
+7. What's the risk:reward ratio? (must be >1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when price is at VAL, below POC in discount, or bouncing off bullish HVN. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when price is at VAH, above POC in premium, or rejecting at bearish HVN. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when price is at fair value (inside VA near POC), no clear setup, or in LVN territory.
+- **close** - Close existing position. Use when original thesis is invalidated.
+
+## ORDER TYPE (you MUST pick one for buy/sell signals)
+- **market** - Execute immediately at current market price. Use when:
+  - Price is ALREADY AT the VAL/VAH/HVN zone (within 0.1%)
+  - Price is bouncing off HVN right now
+  - Setup is confirmed and you don't want to miss it
+- **limit** - Place pending order at entry_price. Use when:
+  - Price is approaching but NOT YET at VAL/VAH
+  - You want better entry at the HVN level
+  - Waiting for price to reach POC for mean reversion
+
+Remember:
+- Volume Profile shows WHERE institutional volume traded
+- POC is a magnet - price tends to return
+- Value Area edges are decision points
+- HVN = consolidation/reversal zones
+- LVN = acceleration zones
+- Trade mean reversion inside VA, breakouts outside VA
+2026-03-18 15:09:37,174 | 
+================================================================================
+
+2026-03-18 15:09:43,191 | --- LLM RESPONSE (Structured) [took 6.0s] ---
+2026-03-18 15:09:43,191 | Signal: hold
+2026-03-18 15:09:43,191 | Confidence: 0.85
+2026-03-18 15:09:43,191 | Entry: None | SL: None | TP: None
+2026-03-18 15:09:43,192 | Justification: Price is inside Value Area at fair value, below POC but no clear mean reversion or edge setup in low volume Asian session with bearish trend; avoid entry without high-probability confirmation to prevent repeating past tight SL losses.
+2026-03-18 15:09:43,192 | Invalidation: Price breaks above POC at 5002.88 with increasing volume confirming breakout
+2026-03-18 15:09:43,192 | Raw decision dict: {'symbol': 'XAUUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price breaks above POC at 5002.88 with increasing volume confirming breakout', 'justification': 'Price is inside Value Area at fair value, below POC but no clear mean reversion or edge setup in low volume Asian session with bearish trend; avoid entry without high-probability confirmation to prevent repeating past tight SL losses.', 'confidence': 0.85, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-18 15:09:43,193 | 
+================================================================================
+
+2026-03-18 15:09:43,193 | Structured output SUCCESS - returning vp_quant_decision with signal=hold
+2026-03-18 16:09:53,811 | 
+================================================================================
+VOLUME PROFILE QUANT ANALYSIS - XAUUSD
+================================================================================
+2026-03-18 16:09:53,812 | Symbol: XAUUSD | Date: 2026-03-18 | Price: 5002.12
+2026-03-18 16:09:53,812 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 5002.12000
+- **Date**: 2026-03-18
+- **Trading Session**: asian
+- **Market Regime**: trending-down
+- **Volatility Regime**: low
+
+## VOLUME PROFILE ANALYSIS
+### Volume Profile
+**POC (Point of Control)**: 5002.87660 (6.5% of volume)
+  - Price is -0.02% below POC - POC acts as magnet
+**Value Area**: 4973.08640 - 5168.07680 (72% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 5002.87660 (6.5% vol) | AT PRICE
+  - HVN at 5008.29300 (5.5% vol) | +0.12% above
+  - HVN at 5013.70940 (5.4% vol) | +0.23% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 4970.37820 | -0.63% - price may move fast through this level
+  - LVN at 4975.79460 | -0.53% - price may move fast through this level
+  - LVN at 4981.21100 | -0.42% - price may move fast through this level
+
+## TECHNICAL INDICATORS
+### Momentum
+- **RSI(14)**: 54.0 (Neutral)
+- **MACD**: -4.85797 | Signal: -4.92899
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 5001.43907 (Price above)
+- **EMA50**: 5016.03099 (Price below)
+- **ADX**: 34.5 (Strong trend)
+- **Regime**: trending-down
+
+### Volatility
+- **ATR(14)**: 12.08429
+- **Volatility**: low
+
+### Volume
+- **Current Volume**: 2,587
+- **Avg Volume (20)**: 14,020
+- **Volume Ratio**: 0.18x average
+
+2026-03-18 16:09:53,815 | 
+--- FULL PROMPT ---
+You are a systematic Volume Profile trader with strict risk discipline. You trade based on volume-at-price analysis to identify high-probability entries.
+
+## VOLUME PROFILE TRADING RULES
+
+### Core Concepts
+1. **POC (Point of Control)**: The price level where most volume traded. Acts as a MAGNET - price tends to return here. Use as profit target in ranging markets.
+
+2. **Value Area (VA)**: The price range containing 70% of volume. This is "fair value."
+   - Price ABOVE VA = Premium, look for SHORTS (mean reversion down)
+   - Price BELOW VA = Discount, look for LONGS (mean reversion up)
+   - Price INSIDE VA = Fair value, wait for extremes or breakouts
+
+3. **Value Area High (VAH)**: Upper boundary of value area. Acts as RESISTANCE.
+4. **Value Area Low (VAL)**: Lower boundary of value area. Acts as SUPPORT.
+
+5. **High Volume Nodes (HVN)**: Price levels with high volume.
+   - Act as strong support/resistance
+   - Good for stop loss placement (behind HVN)
+   - Price tends to consolidate at HVN
+
+6. **Low Volume Nodes (LVN)**: Price levels with low volume.
+   - Price moves FAST through these zones
+   - Avoid placing entries in LVN (will get run through)
+   - Can be used to identify breakout acceleration zones
+
+### Trading Setups
+
+**Setup 1: Mean Reversion to POC**
+- Price is significantly above/below POC
+- Enter in direction of POC
+- Target: POC level
+- Stop: Beyond the extreme
+
+**Setup 2: Value Area Edge Trade**
+- Price touches VAH/VAL from inside
+- Fade the move (short at VAH, long at VAL)
+- Target: POC
+- Stop: Beyond VAH/VAL by 1 ATR
+
+**Setup 3: Value Area Breakout**
+- Price closes outside VA with increasing volume
+- Trade the breakout direction
+- Target: Next HVN or previous day's POC
+- Stop: Back inside VA
+
+**Setup 4: HVN Bounce**
+- Price approaches significant HVN
+- Enter on rejection at HVN
+- Target: Next HVN or POC
+- Stop: Beyond the HVN
+
+## RISK MANAGEMENT RULES (NEVER BREAK)
+
+1. **Risk no more than 1-2% of account value per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation before entry**
+5. **Place stops behind HVN levels when possible** (avoid LVN for stops)
+6. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+7. **Leverage is a tool, not a goal - default 5-20x**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- Prefer placing stops behind HVN (high volume = strong support/resistance)
+- If you cannot identify a valid stop loss placement, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 5002.12000
+- **Date**: 2026-03-18
+- **Trading Session**: asian
+- **Market Regime**: trending-down
+- **Volatility Regime**: low
+
+## VOLUME PROFILE ANALYSIS
+### Volume Profile
+**POC (Point of Control)**: 5002.87660 (6.5% of volume)
+  - Price is -0.02% below POC - POC acts as magnet
+**Value Area**: 4973.08640 - 5168.07680 (72% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 5002.87660 (6.5% vol) | AT PRICE
+  - HVN at 5008.29300 (5.5% vol) | +0.12% above
+  - HVN at 5013.70940 (5.4% vol) | +0.23% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 4970.37820 | -0.63% - price may move fast through this level
+  - LVN at 4975.79460 | -0.53% - price may move fast through this level
+  - LVN at 4981.21100 | -0.42% - price may move fast through this level
+
+## TECHNICAL INDICATORS
+### Momentum
+- **RSI(14)**: 54.0 (Neutral)
+- **MACD**: -4.85797 | Signal: -4.92899
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 5001.43907 (Price above)
+- **EMA50**: 5016.03099 (Price below)
+- **ADX**: 34.5 (Strong trend)
+- **Regime**: trending-down
+
+### Volatility
+- **ATR(14)**: 12.08429
+- **Volatility**: low
+
+### Volume
+- **Current Volume**: 2,587
+- **Avg Volume (20)**: 14,020
+- **Volume Ratio**: 0.18x average
+
+
+
+## LESSONS FROM YOUR PAST TRADES (XAUUSD)
+
+### Performance (last 10 trades)
+- Win rate: 20% (2/10) | Total P/L: $-40.53 | Avg: $-4.05
+- Direction accuracy: 30% (3/10)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. BUY @ 4989.06 -> breakeven_stop @ 4988.70 | -0.36 | SL 0.9% from entry (tight)
+2. BUY @ 5002.54 -> stale_cleanup @ 5002.54 | +0.00 | SL 1.9% from entry
+3. SELL @ 5023.64 -> Manual close @ 5024.00 | -0.36 | SL 0.6% from entry (tight)
+4. BUY @ 5071.93 -> SL hit @ 5059.20 | -12.73 | SL 0.3% from entry ⚠️ EXTREMELY TIGHT
+5. SELL @ 5105.47 -> unknown @ 5097.43 | +8.04 | SL 0.5% from entry (tight)
+
+⚠️ **CRITICAL PATTERN**: 4/5 recent trades had SL too tight (<1% from entry).
+Your stops are getting hit or positions closed at a loss because SL is too close to entry.
+**ACTION REQUIRED**: Place SL at least 1-1.5x ATR from entry, or beyond the nearest OB/FVG zone. Do NOT use SL within 0.5% of entry.
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 7x)
+- Good entry timing contributed to the win. (occurred 2x)
+- Manual exit resulted in loss. Consider letting SL/TP play out.
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+
+## YOUR TASK
+
+Analyze the Volume Profile data and make a systematic trading decision.
+
+Think step-by-step:
+1. Where is price relative to POC? (above/below/at)
+2. Where is price relative to Value Area? (inside/above/below)
+3. Are there nearby HVN levels for support/resistance?
+4. Are there LVN zones that could accelerate price movement?
+5. What Volume Profile setup applies? (mean reversion, VA edge, breakout, HVN bounce)
+6. Where should stop loss be placed? (behind HVN preferred)
+7. What's the risk:reward ratio? (must be >1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when price is at VAL, below POC in discount, or bouncing off bullish HVN. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when price is at VAH, above POC in premium, or rejecting at bearish HVN. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when price is at fair value (inside VA near POC), no clear setup, or in LVN territory.
+- **close** - Close existing position. Use when original thesis is invalidated.
+
+## ORDER TYPE (you MUST pick one for buy/sell signals)
+- **market** - Execute immediately at current market price. Use when:
+  - Price is ALREADY AT the VAL/VAH/HVN zone (within 0.1%)
+  - Price is bouncing off HVN right now
+  - Setup is confirmed and you don't want to miss it
+- **limit** - Place pending order at entry_price. Use when:
+  - Price is approaching but NOT YET at VAL/VAH
+  - You want better entry at the HVN level
+  - Waiting for price to reach POC for mean reversion
+
+Remember:
+- Volume Profile shows WHERE institutional volume traded
+- POC is a magnet - price tends to return
+- Value Area edges are decision points
+- HVN = consolidation/reversal zones
+- LVN = acceleration zones
+- Trade mean reversion inside VA, breakouts outside VA
+2026-03-18 16:09:53,824 | 
+================================================================================
+
+2026-03-18 16:09:59,331 | --- LLM RESPONSE (Structured) [took 5.5s] ---
+2026-03-18 16:09:59,332 | Signal: hold
+2026-03-18 16:09:59,332 | Confidence: 0.85
+2026-03-18 16:09:59,332 | Entry: None | SL: None | TP: None
+2026-03-18 16:09:59,333 | Justification: Price is inside value area at POC/HVN in fair value zone during low volume Asian session with no clear Volume Profile setup for entry; trending-down regime but neutral momentum suggests consolidation.
+2026-03-18 16:09:59,333 | Invalidation: Price breaks decisively above 5013.70940 HVN or below 4973.08640 VAL on increased volume
+2026-03-18 16:09:59,334 | Raw decision dict: {'symbol': 'XAUUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price breaks decisively above 5013.70940 HVN or below 4973.08640 VAL on increased volume', 'justification': 'Price is inside value area at POC/HVN in fair value zone during low volume Asian session with no clear Volume Profile setup for entry; trending-down regime but neutral momentum suggests consolidation.', 'confidence': 0.85, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-18 16:09:59,334 | 
+================================================================================
+
+2026-03-18 16:09:59,335 | Structured output SUCCESS - returning vp_quant_decision with signal=hold
+2026-03-18 17:10:12,010 | 
+================================================================================
+VOLUME PROFILE QUANT ANALYSIS - XAUUSD
+================================================================================
+2026-03-18 17:10:12,011 | Symbol: XAUUSD | Date: 2026-03-18 | Price: 5012.01
+2026-03-18 17:10:12,011 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 5012.01000
+- **Date**: 2026-03-18
+- **Trading Session**: london
+- **Market Regime**: trending-down
+- **Volatility Regime**: low
+
+## VOLUME PROFILE ANALYSIS
+### Volume Profile
+**POC (Point of Control)**: 5002.87660 (6.7% of volume)
+  - Price is +0.18% above POC - POC acts as magnet
+**Value Area**: 4973.08640 - 5168.07680 (72% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 5002.87660 (6.7% vol) | -0.18% below
+  - HVN at 5008.29300 (5.7% vol) | AT PRICE
+  - HVN at 5013.70940 (5.6% vol) | AT PRICE
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 4970.37820 | -0.83% - price may move fast through this level
+  - LVN at 4975.79460 | -0.72% - price may move fast through this level
+  - LVN at 4981.21100 | -0.61% - price may move fast through this level
+
+## TECHNICAL INDICATORS
+### Momentum
+- **RSI(14)**: 58.5 (Neutral)
+- **MACD**: -2.99232 | Signal: -4.44810
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 5003.06886 (Price above)
+- **EMA50**: 5016.14597 (Price below)
+- **ADX**: 34.2 (Strong trend)
+- **Regime**: trending-down
+
+### Volatility
+- **ATR(14)**: 12.41929
+- **Volatility**: low
+
+### Volume
+- **Current Volume**: 2,066
+- **Avg Volume (20)**: 13,998
+- **Volume Ratio**: 0.15x average
+
+2026-03-18 17:10:12,013 | 
+--- FULL PROMPT ---
+You are a systematic Volume Profile trader with strict risk discipline. You trade based on volume-at-price analysis to identify high-probability entries.
+
+## VOLUME PROFILE TRADING RULES
+
+### Core Concepts
+1. **POC (Point of Control)**: The price level where most volume traded. Acts as a MAGNET - price tends to return here. Use as profit target in ranging markets.
+
+2. **Value Area (VA)**: The price range containing 70% of volume. This is "fair value."
+   - Price ABOVE VA = Premium, look for SHORTS (mean reversion down)
+   - Price BELOW VA = Discount, look for LONGS (mean reversion up)
+   - Price INSIDE VA = Fair value, wait for extremes or breakouts
+
+3. **Value Area High (VAH)**: Upper boundary of value area. Acts as RESISTANCE.
+4. **Value Area Low (VAL)**: Lower boundary of value area. Acts as SUPPORT.
+
+5. **High Volume Nodes (HVN)**: Price levels with high volume.
+   - Act as strong support/resistance
+   - Good for stop loss placement (behind HVN)
+   - Price tends to consolidate at HVN
+
+6. **Low Volume Nodes (LVN)**: Price levels with low volume.
+   - Price moves FAST through these zones
+   - Avoid placing entries in LVN (will get run through)
+   - Can be used to identify breakout acceleration zones
+
+### Trading Setups
+
+**Setup 1: Mean Reversion to POC**
+- Price is significantly above/below POC
+- Enter in direction of POC
+- Target: POC level
+- Stop: Beyond the extreme
+
+**Setup 2: Value Area Edge Trade**
+- Price touches VAH/VAL from inside
+- Fade the move (short at VAH, long at VAL)
+- Target: POC
+- Stop: Beyond VAH/VAL by 1 ATR
+
+**Setup 3: Value Area Breakout**
+- Price closes outside VA with increasing volume
+- Trade the breakout direction
+- Target: Next HVN or previous day's POC
+- Stop: Back inside VA
+
+**Setup 4: HVN Bounce**
+- Price approaches significant HVN
+- Enter on rejection at HVN
+- Target: Next HVN or POC
+- Stop: Beyond the HVN
+
+## RISK MANAGEMENT RULES (NEVER BREAK)
+
+1. **Risk no more than 1-2% of account value per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation before entry**
+5. **Place stops behind HVN levels when possible** (avoid LVN for stops)
+6. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+7. **Leverage is a tool, not a goal - default 5-20x**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- Prefer placing stops behind HVN (high volume = strong support/resistance)
+- If you cannot identify a valid stop loss placement, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 5012.01000
+- **Date**: 2026-03-18
+- **Trading Session**: london
+- **Market Regime**: trending-down
+- **Volatility Regime**: low
+
+## VOLUME PROFILE ANALYSIS
+### Volume Profile
+**POC (Point of Control)**: 5002.87660 (6.7% of volume)
+  - Price is +0.18% above POC - POC acts as magnet
+**Value Area**: 4973.08640 - 5168.07680 (72% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 5002.87660 (6.7% vol) | -0.18% below
+  - HVN at 5008.29300 (5.7% vol) | AT PRICE
+  - HVN at 5013.70940 (5.6% vol) | AT PRICE
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 4970.37820 | -0.83% - price may move fast through this level
+  - LVN at 4975.79460 | -0.72% - price may move fast through this level
+  - LVN at 4981.21100 | -0.61% - price may move fast through this level
+
+## TECHNICAL INDICATORS
+### Momentum
+- **RSI(14)**: 58.5 (Neutral)
+- **MACD**: -2.99232 | Signal: -4.44810
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 5003.06886 (Price above)
+- **EMA50**: 5016.14597 (Price below)
+- **ADX**: 34.2 (Strong trend)
+- **Regime**: trending-down
+
+### Volatility
+- **ATR(14)**: 12.41929
+- **Volatility**: low
+
+### Volume
+- **Current Volume**: 2,066
+- **Avg Volume (20)**: 13,998
+- **Volume Ratio**: 0.15x average
+
+
+
+## LESSONS FROM YOUR PAST TRADES (XAUUSD)
+
+### Performance (last 10 trades)
+- Win rate: 20% (2/10) | Total P/L: $-40.53 | Avg: $-4.05
+- Direction accuracy: 30% (3/10)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. BUY @ 4989.06 -> breakeven_stop @ 4988.70 | -0.36 | SL 0.9% from entry (tight)
+2. BUY @ 5002.54 -> stale_cleanup @ 5002.54 | +0.00 | SL 1.9% from entry
+3. SELL @ 5023.64 -> Manual close @ 5024.00 | -0.36 | SL 0.6% from entry (tight)
+4. BUY @ 5071.93 -> SL hit @ 5059.20 | -12.73 | SL 0.3% from entry ⚠️ EXTREMELY TIGHT
+5. SELL @ 5105.47 -> unknown @ 5097.43 | +8.04 | SL 0.5% from entry (tight)
+
+⚠️ **CRITICAL PATTERN**: 4/5 recent trades had SL too tight (<1% from entry).
+Your stops are getting hit or positions closed at a loss because SL is too close to entry.
+**ACTION REQUIRED**: Place SL at least 1-1.5x ATR from entry, or beyond the nearest OB/FVG zone. Do NOT use SL within 0.5% of entry.
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 7x)
+- Good entry timing contributed to the win. (occurred 2x)
+- Manual exit resulted in loss. Consider letting SL/TP play out.
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+
+## YOUR TASK
+
+Analyze the Volume Profile data and make a systematic trading decision.
+
+Think step-by-step:
+1. Where is price relative to POC? (above/below/at)
+2. Where is price relative to Value Area? (inside/above/below)
+3. Are there nearby HVN levels for support/resistance?
+4. Are there LVN zones that could accelerate price movement?
+5. What Volume Profile setup applies? (mean reversion, VA edge, breakout, HVN bounce)
+6. Where should stop loss be placed? (behind HVN preferred)
+7. What's the risk:reward ratio? (must be >1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when price is at VAL, below POC in discount, or bouncing off bullish HVN. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when price is at VAH, above POC in premium, or rejecting at bearish HVN. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when price is at fair value (inside VA near POC), no clear setup, or in LVN territory.
+- **close** - Close existing position. Use when original thesis is invalidated.
+
+## ORDER TYPE (you MUST pick one for buy/sell signals)
+- **market** - Execute immediately at current market price. Use when:
+  - Price is ALREADY AT the VAL/VAH/HVN zone (within 0.1%)
+  - Price is bouncing off HVN right now
+  - Setup is confirmed and you don't want to miss it
+- **limit** - Place pending order at entry_price. Use when:
+  - Price is approaching but NOT YET at VAL/VAH
+  - You want better entry at the HVN level
+  - Waiting for price to reach POC for mean reversion
+
+Remember:
+- Volume Profile shows WHERE institutional volume traded
+- POC is a magnet - price tends to return
+- Value Area edges are decision points
+- HVN = consolidation/reversal zones
+- LVN = acceleration zones
+- Trade mean reversion inside VA, breakouts outside VA
+2026-03-18 17:10:12,025 | 
+================================================================================
+
+2026-03-18 17:10:18,284 | --- LLM RESPONSE (Structured) [took 6.3s] ---
+2026-03-18 17:10:18,285 | Signal: hold
+2026-03-18 17:10:18,285 | Confidence: 0.85
+2026-03-18 17:10:18,285 | Entry: None | SL: None | TP: None
+2026-03-18 17:10:18,285 | Justification: Price is inside Value Area at HVN levels near POC in a fair value zone with no clear mean reversion, breakout, or bounce setup; trending-down regime but neutral momentum advises waiting for extremes.
+2026-03-18 17:10:18,286 | Invalidation: Price breaks outside Value Area (above 5168 or below 4973) with increasing volume
+2026-03-18 17:10:18,286 | Raw decision dict: {'symbol': 'XAUUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price breaks outside Value Area (above 5168 or below 4973) with increasing volume', 'justification': 'Price is inside Value Area at HVN levels near POC in a fair value zone with no clear mean reversion, breakout, or bounce setup; trending-down regime but neutral momentum advises waiting for extremes.', 'confidence': 0.85, 'trailing_stop_atr_multiplier': None, 'risk_level': 'Low', 'risk_reward_ratio': None}
+2026-03-18 17:10:18,287 | 
+================================================================================
+
+2026-03-18 17:10:18,287 | Structured output SUCCESS - returning vp_quant_decision with signal=hold
+2026-03-18 18:10:20,787 | 
+================================================================================
+VOLUME PROFILE QUANT ANALYSIS - XAUUSD
+================================================================================
+2026-03-18 18:10:20,787 | Symbol: XAUUSD | Date: 2026-03-18 | Price: 4992.74
+2026-03-18 18:10:20,788 | 
+--- DATA CONTEXT ---
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 4992.74000
+- **Date**: 2026-03-18
+- **Trading Session**: london
+- **Market Regime**: trending-down
+- **Volatility Regime**: normal
+
+## VOLUME PROFILE ANALYSIS
+### Volume Profile
+**POC (Point of Control)**: 5002.87660 (6.8% of volume)
+  - Price is -0.20% below POC - POC acts as magnet
+**Value Area**: 4973.08640 - 5168.07680 (72% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 5002.87660 (6.8% vol) | +0.20% above
+  - HVN at 5008.29300 (5.8% vol) | +0.31% above
+  - HVN at 5013.70940 (5.6% vol) | +0.42% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 4970.37820 | -0.45% - price may move fast through this level
+  - LVN at 4975.79460 | -0.34% - price may move fast through this level
+  - LVN at 4981.21100 | -0.23% - price may move fast through this level
+
+## TECHNICAL INDICATORS
+### Momentum
+- **RSI(14)**: 43.2 (Neutral)
+- **MACD**: -4.53150 | Signal: -4.68023
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 5000.62208 (Price below)
+- **EMA50**: 5014.58854 (Price below)
+- **ADX**: 31.3 (Strong trend)
+- **Regime**: trending-down
+
+### Volatility
+- **ATR(14)**: 13.56214
+- **Volatility**: normal
+
+### Volume
+- **Current Volume**: 2,588
+- **Avg Volume (20)**: 14,000
+- **Volume Ratio**: 0.18x average
+
+2026-03-18 18:10:20,791 | 
+--- FULL PROMPT ---
+You are a systematic Volume Profile trader with strict risk discipline. You trade based on volume-at-price analysis to identify high-probability entries.
+
+## VOLUME PROFILE TRADING RULES
+
+### Core Concepts
+1. **POC (Point of Control)**: The price level where most volume traded. Acts as a MAGNET - price tends to return here. Use as profit target in ranging markets.
+
+2. **Value Area (VA)**: The price range containing 70% of volume. This is "fair value."
+   - Price ABOVE VA = Premium, look for SHORTS (mean reversion down)
+   - Price BELOW VA = Discount, look for LONGS (mean reversion up)
+   - Price INSIDE VA = Fair value, wait for extremes or breakouts
+
+3. **Value Area High (VAH)**: Upper boundary of value area. Acts as RESISTANCE.
+4. **Value Area Low (VAL)**: Lower boundary of value area. Acts as SUPPORT.
+
+5. **High Volume Nodes (HVN)**: Price levels with high volume.
+   - Act as strong support/resistance
+   - Good for stop loss placement (behind HVN)
+   - Price tends to consolidate at HVN
+
+6. **Low Volume Nodes (LVN)**: Price levels with low volume.
+   - Price moves FAST through these zones
+   - Avoid placing entries in LVN (will get run through)
+   - Can be used to identify breakout acceleration zones
+
+### Trading Setups
+
+**Setup 1: Mean Reversion to POC**
+- Price is significantly above/below POC
+- Enter in direction of POC
+- Target: POC level
+- Stop: Beyond the extreme
+
+**Setup 2: Value Area Edge Trade**
+- Price touches VAH/VAL from inside
+- Fade the move (short at VAH, long at VAL)
+- Target: POC
+- Stop: Beyond VAH/VAL by 1 ATR
+
+**Setup 3: Value Area Breakout**
+- Price closes outside VA with increasing volume
+- Trade the breakout direction
+- Target: Next HVN or previous day's POC
+- Stop: Back inside VA
+
+**Setup 4: HVN Bounce**
+- Price approaches significant HVN
+- Enter on rejection at HVN
+- Target: Next HVN or POC
+- Stop: Beyond the HVN
+
+## RISK MANAGEMENT RULES (NEVER BREAK)
+
+1. **Risk no more than 1-2% of account value per trade**
+2. **Never hold >3 positions at once**
+3. **Never pyramid or average down**
+4. **Always pre-define profit target, stop loss, and invalidation before entry**
+5. **Place stops behind HVN levels when possible** (avoid LVN for stops)
+6. **Fees are 0.025% maker / 0.05% taker + funding - size accordingly**
+7. **Leverage is a tool, not a goal - default 5-20x**
+
+## STOP LOSS VALIDATION (CRITICAL)
+- For BUY orders: Stop loss MUST be BELOW entry price
+- For SELL orders: Stop loss MUST be ABOVE entry price
+- Prefer placing stops behind HVN (high volume = strong support/resistance)
+- If you cannot identify a valid stop loss placement, output "hold"
+
+## CURRENT MARKET DATA
+- **Symbol**: XAUUSD
+- **Current Price**: 4992.74000
+- **Date**: 2026-03-18
+- **Trading Session**: london
+- **Market Regime**: trending-down
+- **Volatility Regime**: normal
+
+## VOLUME PROFILE ANALYSIS
+### Volume Profile
+**POC (Point of Control)**: 5002.87660 (6.8% of volume)
+  - Price is -0.20% below POC - POC acts as magnet
+**Value Area**: 4973.08640 - 5168.07680 (72% of volume)
+  - Price is INSIDE value area (fair value zone)
+**High Volume Nodes** (support/resistance):
+  - HVN at 5002.87660 (6.8% vol) | +0.20% above
+  - HVN at 5008.29300 (5.8% vol) | +0.31% above
+  - HVN at 5013.70940 (5.6% vol) | +0.42% above
+**Low Volume Nodes** (fast-move zones):
+  - LVN at 4970.37820 | -0.45% - price may move fast through this level
+  - LVN at 4975.79460 | -0.34% - price may move fast through this level
+  - LVN at 4981.21100 | -0.23% - price may move fast through this level
+
+## TECHNICAL INDICATORS
+### Momentum
+- **RSI(14)**: 43.2 (Neutral)
+- **MACD**: -4.53150 | Signal: -4.68023
+  - Bullish (MACD > Signal)
+
+### Trend
+- **EMA20**: 5000.62208 (Price below)
+- **EMA50**: 5014.58854 (Price below)
+- **ADX**: 31.3 (Strong trend)
+- **Regime**: trending-down
+
+### Volatility
+- **ATR(14)**: 13.56214
+- **Volatility**: normal
+
+### Volume
+- **Current Volume**: 2,588
+- **Avg Volume (20)**: 14,000
+- **Volume Ratio**: 0.18x average
+
+
+
+## LESSONS FROM YOUR PAST TRADES (XAUUSD)
+
+### Performance (last 10 trades)
+- Win rate: 20% (2/10) | Total P/L: $-40.53 | Avg: $-4.05
+- Direction accuracy: 30% (3/10)
+
+### Key Insight
+Direction prediction needs improvement. Review signal quality and regime alignment.
+
+### Recent Outcomes
+1. BUY @ 4989.06 -> breakeven_stop @ 4988.70 | -0.36 | SL 0.9% from entry (tight)
+2. BUY @ 5002.54 -> stale_cleanup @ 5002.54 | +0.00 | SL 1.9% from entry
+3. SELL @ 5023.64 -> Manual close @ 5024.00 | -0.36 | SL 0.6% from entry (tight)
+4. BUY @ 5071.93 -> SL hit @ 5059.20 | -12.73 | SL 0.3% from entry ⚠️ EXTREMELY TIGHT
+5. SELL @ 5105.47 -> unknown @ 5097.43 | +8.04 | SL 0.5% from entry (tight)
+
+⚠️ **CRITICAL PATTERN**: 4/5 recent trades had SL too tight (<1% from entry).
+Your stops are getting hit or positions closed at a loss because SL is too close to entry.
+**ACTION REQUIRED**: Place SL at least 1-1.5x ATR from entry, or beyond the nearest OB/FVG zone. Do NOT use SL within 0.5% of entry.
+
+### Apply These Lessons
+- Direction was wrong. Review analysis for signal quality. (occurred 7x)
+- Good entry timing contributed to the win. (occurred 2x)
+- Manual exit resulted in loss. Consider letting SL/TP play out.
+
+IMPORTANT: The above lessons are from YOUR past trades on this symbol. Study what went wrong
+and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placement accordingly.
+
+
+## YOUR TASK
+
+Analyze the Volume Profile data and make a systematic trading decision.
+
+Think step-by-step:
+1. Where is price relative to POC? (above/below/at)
+2. Where is price relative to Value Area? (inside/above/below)
+3. Are there nearby HVN levels for support/resistance?
+4. Are there LVN zones that could accelerate price movement?
+5. What Volume Profile setup applies? (mean reversion, VA edge, breakout, HVN bounce)
+6. Where should stop loss be placed? (behind HVN preferred)
+7. What's the risk:reward ratio? (must be >1.5:1)
+
+## SIGNAL OPTIONS (you MUST pick one)
+- **buy_to_enter** - Open a long position. Use when price is at VAL, below POC in discount, or bouncing off bullish HVN. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when price is at VAH, above POC in premium, or rejecting at bearish HVN. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use when price is at fair value (inside VA near POC), no clear setup, or in LVN territory.
+- **close** - Close existing position. Use when original thesis is invalidated.
+
+## ORDER TYPE (you MUST pick one for buy/sell signals)
+- **market** - Execute immediately at current market price. Use when:
+  - Price is ALREADY AT the VAL/VAH/HVN zone (within 0.1%)
+  - Price is bouncing off HVN right now
+  - Setup is confirmed and you don't want to miss it
+- **limit** - Place pending order at entry_price. Use when:
+  - Price is approaching but NOT YET at VAL/VAH
+  - You want better entry at the HVN level
+  - Waiting for price to reach POC for mean reversion
+
+Remember:
+- Volume Profile shows WHERE institutional volume traded
+- POC is a magnet - price tends to return
+- Value Area edges are decision points
+- HVN = consolidation/reversal zones
+- LVN = acceleration zones
+- Trade mean reversion inside VA, breakouts outside VA
+2026-03-18 18:10:20,804 | 
+================================================================================
+
+2026-03-18 18:10:27,659 | --- LLM RESPONSE (Structured) [took 6.9s] ---
+2026-03-18 18:10:27,659 | Signal: hold
+2026-03-18 18:10:27,660 | Confidence: 0.7
+2026-03-18 18:10:27,660 | Entry: None | SL: None | TP: None
+2026-03-18 18:10:27,661 | Justification: Price is inside Value Area at fair value, below POC but not significantly deviated for mean reversion setup; no clear touch or rejection at VA edges, HVN, or LVN acceleration; trending-down regime but low volume and neutral RSI suggest waiting for better confirmation to avoid poor direction accuracy from past trades.
+2026-03-18 18:10:27,661 | Invalidation: Price breaks below VAL at 4973.08640 with increasing volume, confirming VA breakout lower
+2026-03-18 18:10:27,662 | Raw decision dict: {'symbol': 'XAUUSD', 'signal': 'hold', 'order_type': None, 'quantity': None, 'leverage': None, 'risk_usd': None, 'profit_target': None, 'stop_loss': None, 'entry_price': None, 'invalidation_condition': 'Price breaks below VAL at 4973.08640 with increasing volume, confirming VA breakout lower', 'justification': 'Price is inside Value Area at fair value, below POC but not significantly deviated for mean reversion setup; no clear touch or rejection at VA edges, HVN, or LVN acceleration; trending-down regime but low volume and neutral RSI suggest waiting for better confirmation to avoid poor direction accuracy from past trades.', 'confidence': 0.7, 'trailing_stop_atr_multiplier': None, 'risk_level': None, 'risk_reward_ratio': None}
+2026-03-18 18:10:27,662 | 
+================================================================================
+
+2026-03-18 18:10:27,663 | Structured output SUCCESS - returning vp_quant_decision with signal=hold

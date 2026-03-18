@@ -1,58 +1,10 @@
 {
   "last_analysis_time": {
-    "XAUUSD": "2026-03-18T06:05:03.977640"
+    "XAUUSD": "2026-03-18T18:06:11.374352"
   },
-  "last_updated": "2026-03-18T07:53:39.612036",
+  "last_updated": "2026-03-18T18:48:30.673423",
   "status": "running",
   "analysis_results": [
-    {
-      "timestamp": "2026-03-16T18:50:46.867094",
-      "symbol": "XAUUSD",
-      "pipeline": "breakout_quant",
-      "signal": "HOLD",
-      "confidence": 0.2,
-      "entry_price": null,
-      "stop_loss": null,
-      "take_profit": null,
-      "rationale": "Market is not consolidating (explicitly stated), no BB squeeze, neutral expansion regime, and strong ADX trend indicating expansion rather than contraction ideal for breakouts.\n\n**Invalidation**: No clear consolidation present; market not in squeeze or tight range suitable for breakout setup",
-      "trailing_stop_atr_multiplier": null,
-      "executed": false,
-      "execution_ticket": null,
-      "execution_error": null,
-      "duration_seconds": 9.810132265090942
-    },
-    {
-      "timestamp": "2026-03-16T19:06:20.045997",
-      "symbol": "XAUUSD",
-      "pipeline": "breakout_quant",
-      "signal": "HOLD",
-      "confidence": 0.2,
-      "entry_price": null,
-      "stop_loss": null,
-      "take_profit": null,
-      "rationale": "Market is not consolidating (explicitly stated), BB squeeze absent, neutral structure bias with no clear higher lows or lower highs; price in discount zone but bearish SMC bias and strong ADX trend contradict ranging regime - wait for clear consolidation and directional bias.\n\n**Invalidation**: N/A - no trade setup",
-      "trailing_stop_atr_multiplier": null,
-      "executed": false,
-      "execution_ticket": null,
-      "execution_error": null,
-      "duration_seconds": 19.092568397521973
-    },
-    {
-      "timestamp": "2026-03-16T19:21:26.056177",
-      "symbol": "XAUUSD",
-      "pipeline": "breakout_quant",
-      "signal": "HOLD",
-      "confidence": 0.3,
-      "entry_price": null,
-      "stop_loss": null,
-      "take_profit": null,
-      "rationale": "Market is not consolidating (explicitly stated, no BB squeeze), structure bias neutral, price mid-to-lower range without breakout confirmation; per rules, hold when no clear consolidation or direction.\n\n**Invalidation**: Clear consolidation pattern with directional structure bias forms",
-      "trailing_stop_atr_multiplier": null,
-      "executed": false,
-      "execution_ticket": null,
-      "execution_error": null,
-      "duration_seconds": 9.523967504501343
-    },
     {
       "timestamp": "2026-03-16T19:37:22.684103",
       "symbol": "XAUUSD",
@@ -1604,6 +1556,54 @@
       "execution_ticket": null,
       "execution_error": null,
       "duration_seconds": 6.5846168994903564
+    },
+    {
+      "timestamp": "2026-03-18T10:05:21.555151",
+      "symbol": "XAUUSD",
+      "pipeline": "breakout_quant",
+      "signal": "HOLD",
+      "confidence": 0.95,
+      "entry_price": null,
+      "stop_loss": null,
+      "take_profit": null,
+      "rationale": "Market is not consolidating with no BB squeeze, no volume contraction, neutral structure bias, and no confirmed breakout, making it unsuitable for breakout entry per strict rules.\n\n**Invalidation**: No clear consolidation forming or price breaks into a defined range with volume contraction and structure bias",
+      "trailing_stop_atr_multiplier": null,
+      "executed": false,
+      "execution_ticket": null,
+      "execution_error": null,
+      "duration_seconds": 6.213354110717773
+    },
+    {
+      "timestamp": "2026-03-18T14:05:56.331025",
+      "symbol": "XAUUSD",
+      "pipeline": "breakout_quant",
+      "signal": "HOLD",
+      "confidence": 0.95,
+      "entry_price": null,
+      "stop_loss": null,
+      "take_profit": null,
+      "rationale": "Market is not consolidating (explicitly stated), no BB squeeze, neutral structure bias, extreme volatility regime, no volume contraction or breakout confirmation, wide range (8.84%), making any breakout trade invalid per rules.\n\n**Invalidation**: Formation of clear consolidation range with BB squeeze and volume contraction",
+      "trailing_stop_atr_multiplier": null,
+      "executed": false,
+      "execution_ticket": null,
+      "execution_error": null,
+      "duration_seconds": 26.30035638809204
+    },
+    {
+      "timestamp": "2026-03-18T18:06:19.366405",
+      "symbol": "XAUUSD",
+      "pipeline": "breakout_quant",
+      "signal": "HOLD",
+      "confidence": 0.85,
+      "entry_price": null,
+      "stop_loss": null,
+      "take_profit": null,
+      "rationale": "No consolidation present, neutral structure bias, no volume contraction, and no confirmed breakout in extreme volatility regime; wait for clear setup.\n\n**Invalidation**: Price closes outside the range (above 5419 or below 4960) with volume surge >1.5x average",
+      "trailing_stop_atr_multiplier": null,
+      "executed": false,
+      "execution_ticket": null,
+      "execution_error": null,
+      "duration_seconds": 7.990058183670044
     }
   ],
   "position_results": [
@@ -2808,6 +2808,6 @@
       "pnl": 0.0
     }
   ],
-  "last_assumption_review": "2026-03-18T07:08:37.186303",
+  "last_assumption_review": "2026-03-18T18:08:57.915880",
   "assumption_review_results": []
 }
