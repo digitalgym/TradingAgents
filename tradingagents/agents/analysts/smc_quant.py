@@ -20,48 +20,18 @@ Trading Logic:
 - Place stops beyond OB zones
 """
 
-import logging
-import os
-from datetime import datetime
 from typing import Optional, Dict, Any, List
 from tradingagents.schemas import QuantAnalystDecision, RiskLevel
 from tradingagents.indicators.smart_money import SmartMoneyAnalyzer
 from tradingagents.dataflows.smc_trade_plan import SMCTradePlanGenerator, safe_get
 
 
-# Set up SMC quant prompt logger
-_smc_quant_logger = None
+from tradingagents.agents.analysts.quant_utils import create_quant_logger
 
 
 def _get_smc_quant_logger():
     """Get or create the SMC quant prompt logger."""
-    global _smc_quant_logger
-    if _smc_quant_logger is None:
-        _smc_quant_logger = logging.getLogger("smc_quant_prompts")
-        _smc_quant_logger.setLevel(logging.DEBUG)
-
-        # Create logs directory if it doesn't exist
-        log_dir = os.path.join(
-            os.path.dirname(__file__), "..", "..", "..", "logs", "smc_quant_prompts"
-        )
-        os.makedirs(log_dir, exist_ok=True)
-
-        # Create file handler with date-based filename
-        log_file = os.path.join(
-            log_dir, f"smc_quant_prompts_{datetime.now().strftime('%Y%m%d')}.log"
-        )
-        file_handler = logging.FileHandler(log_file, encoding="utf-8")
-        file_handler.setLevel(logging.DEBUG)
-
-        # Create formatter
-        formatter = logging.Formatter("%(asctime)s | %(message)s")
-        file_handler.setFormatter(formatter)
-
-        # Add handler (avoid duplicates)
-        if not _smc_quant_logger.handlers:
-            _smc_quant_logger.addHandler(file_handler)
-
-    return _smc_quant_logger
+    return create_quant_logger("smc_quant_prompts", "smc_quant_prompts")
 
 
 def create_smc_quant(llm, use_structured_output: bool = True):
@@ -626,45 +596,8 @@ def _format_smc_quant_report(decision: QuantAnalystDecision) -> str:
     return "\n".join(lines)
 
 
-def get_smc_quant_decision_for_modal(smc_quant_decision: dict) -> dict:
-    """
-    Convert an SMC quant decision dict to trade modal format.
-
-    Args:
-        smc_quant_decision: The smc_quant_decision dict from agent state
-
-    Returns:
-        Dict formatted for TradeExecutionWizard props
-    """
-    if not smc_quant_decision:
-        return {}
-
-    signal_map = {
-        "buy_to_enter": "BUY",
-        "sell_to_enter": "SELL",
-        "hold": "HOLD",
-        "close": "HOLD",
-    }
-
-    signal = smc_quant_decision.get("signal", "hold")
-    if isinstance(signal, dict):
-        signal = signal.get("value", "hold")
-
-    # Extract order_type
-    order_type = smc_quant_decision.get("order_type", "market")
-    if isinstance(order_type, dict):
-        order_type = order_type.get("value", "market")
-
-    return {
-        "symbol": smc_quant_decision.get("symbol", ""),
-        "signal": signal_map.get(signal, "HOLD"),
-        "orderType": order_type,  # "market" or "limit"
-        "suggestedEntry": smc_quant_decision.get("entry_price"),
-        "suggestedStopLoss": smc_quant_decision.get("stop_loss"),
-        "suggestedTakeProfit": smc_quant_decision.get("profit_target"),
-        "rationale": f"{smc_quant_decision.get('justification', '')}. Invalidation: {smc_quant_decision.get('invalidation_condition', '')}",
-        "confidence": smc_quant_decision.get("confidence", 0.5),
-    }
+# Re-export from shared utils for backward compatibility
+from tradingagents.agents.analysts.quant_utils import get_smc_quant_decision_for_modal
 
 
 def analyze_smc_for_quant(

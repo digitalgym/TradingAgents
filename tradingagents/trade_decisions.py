@@ -270,6 +270,92 @@ def _generate_outcome_lessons(
 # Directory for storing decisions
 DECISIONS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "examples", "trade_decisions")
 
+# Index file for fast ticket lookup
+TICKET_INDEX_FILE = os.path.join(DECISIONS_DIR, "_ticket_index.json")
+
+
+def _load_ticket_index() -> Dict[int, str]:
+    """Load the ticket -> decision_id index."""
+    if not os.path.exists(TICKET_INDEX_FILE):
+        return {}
+    try:
+        with open(TICKET_INDEX_FILE, "r") as f:
+            # Keys are stored as strings in JSON, convert back to int
+            data = json.load(f)
+            return {int(k): v for k, v in data.items()}
+    except Exception:
+        return {}
+
+
+def _save_ticket_index(index: Dict[int, str]) -> None:
+    """Save the ticket -> decision_id index."""
+    os.makedirs(DECISIONS_DIR, exist_ok=True)
+    try:
+        with open(TICKET_INDEX_FILE, "w") as f:
+            # Convert int keys to strings for JSON
+            json.dump({str(k): v for k, v in index.items()}, f)
+    except Exception:
+        pass
+
+
+def _update_ticket_index(mt5_ticket: int, decision_id: str) -> None:
+    """Add or update a ticket in the index."""
+    if mt5_ticket is None:
+        return
+    index = _load_ticket_index()
+    index[mt5_ticket] = decision_id
+    _save_ticket_index(index)
+
+
+def _remove_from_ticket_index(mt5_ticket: int) -> None:
+    """Remove a ticket from the index (when decision is closed)."""
+    if mt5_ticket is None:
+        return
+    index = _load_ticket_index()
+    if mt5_ticket in index:
+        del index[mt5_ticket]
+        _save_ticket_index(index)
+
+
+# Active decisions index for fast listing
+ACTIVE_INDEX_FILE = os.path.join(DECISIONS_DIR, "_active_index.json")
+
+
+def _load_active_index() -> Dict[str, Dict[str, Any]]:
+    """Load active decisions index: {decision_id: {symbol, created_at}}."""
+    if not os.path.exists(ACTIVE_INDEX_FILE):
+        return {}
+    try:
+        with open(ACTIVE_INDEX_FILE, "r") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _save_active_index(index: Dict[str, Dict[str, Any]]) -> None:
+    """Save active decisions index."""
+    os.makedirs(DECISIONS_DIR, exist_ok=True)
+    try:
+        with open(ACTIVE_INDEX_FILE, "w") as f:
+            json.dump(index, f)
+    except Exception:
+        pass
+
+
+def _add_to_active_index(decision_id: str, symbol: str, created_at: str) -> None:
+    """Add a decision to the active index."""
+    index = _load_active_index()
+    index[decision_id] = {"symbol": symbol, "created_at": created_at}
+    _save_active_index(index)
+
+
+def _remove_from_active_index(decision_id: str) -> None:
+    """Remove a decision from the active index (when closed)."""
+    index = _load_active_index()
+    if decision_id in index:
+        del index[decision_id]
+        _save_active_index(index)
+
 
 def store_decision(
     symbol: str,
@@ -395,11 +481,19 @@ def store_decision(
     decision_file = os.path.join(DECISIONS_DIR, f"{decision_id}.json")
     with open(decision_file, "w") as f:
         json.dump(decision, f, indent=2, default=str)
-    
+
+    # Update ticket index for fast lookup
+    if mt5_ticket:
+        _update_ticket_index(mt5_ticket, decision_id)
+
+    # Add to active index if status is active
+    if status == "active":
+        _add_to_active_index(decision_id, symbol, decision["created_at"])
+
     print(f"💾 Decision stored: {decision_id}")
     print(f"   Type: {decision_type} | Action: {action}")
     print(f"   Symbol: {symbol} @ {entry_price or 'market'}")
-    
+
     return decision_id
 
 
@@ -641,6 +735,9 @@ def close_decision(
     with open(decision_file, "w") as f:
         json.dump(decision, f, indent=2, default=str)
 
+    # Remove from active index
+    _remove_from_active_index(decision_id)
+
     print(f"[OK] Decision closed: {decision_id}")
     print(f"   Entry: {entry_price} -> Exit: {exit_price}")
     print(f"   P&L: {pnl_percent:+.2f}% ({'Correct' if was_correct else 'Incorrect'})")
@@ -680,22 +777,62 @@ def list_decisions(symbol: Optional[str] = None, limit: int = 100) -> List[Dict[
 
 
 def list_active_decisions(symbol: Optional[str] = None) -> List[Dict[str, Any]]:
-    """List all active (unclosed) decisions."""
+    """List all active (unclosed) decisions.
+
+    Uses an active index for faster lookup. Falls back to full scan if
+    index is missing or inconsistent (handles legacy data).
+    """
     if not os.path.exists(DECISIONS_DIR):
         return []
-    
+
+    # Try fast index lookup
+    index = _load_active_index()
+    if index:
+        decisions = []
+        stale_ids = []
+        for decision_id, meta in index.items():
+            # Filter by symbol if specified
+            if symbol is not None and meta.get("symbol") != symbol:
+                continue
+            try:
+                decision = load_decision(decision_id)
+                # Verify still active (index could be stale)
+                if decision["status"] == "active":
+                    decisions.append(decision)
+                else:
+                    stale_ids.append(decision_id)
+            except FileNotFoundError:
+                stale_ids.append(decision_id)
+            except Exception:
+                continue
+
+        # Clean up stale entries
+        if stale_ids:
+            for stale_id in stale_ids:
+                _remove_from_active_index(stale_id)
+
+        if decisions:
+            return sorted(decisions, key=lambda d: d["created_at"], reverse=True)
+
+    # Fallback: scan all files (handles pre-index data, rebuilds index)
     decisions = []
     for f in os.listdir(DECISIONS_DIR):
-        if f.endswith(".json"):
+        if f.endswith(".json") and not f.startswith("_"):
             decision_id = f.replace(".json", "")
             try:
                 decision = load_decision(decision_id)
                 if decision["status"] == "active":
+                    # Rebuild index entry
+                    _add_to_active_index(
+                        decision_id,
+                        decision["symbol"],
+                        decision["created_at"],
+                    )
                     if symbol is None or decision["symbol"] == symbol:
                         decisions.append(decision)
             except Exception:
                 continue
-    
+
     return sorted(decisions, key=lambda d: d["created_at"], reverse=True)
 
 
@@ -844,29 +981,49 @@ def link_decision_to_ticket(decision_id: str, mt5_ticket: int):
     """Link a decision to an MT5 ticket after execution."""
     decision = load_decision(decision_id)
     decision["mt5_ticket"] = mt5_ticket
-    
+
     decision_file = os.path.join(DECISIONS_DIR, f"{decision_id}.json")
     with open(decision_file, "w") as f:
         json.dump(decision, f, indent=2, default=str)
-    
+
+    # Update ticket index for fast lookup
+    _update_ticket_index(mt5_ticket, decision_id)
+
     print(f"🔗 Decision {decision_id} linked to MT5 ticket {mt5_ticket}")
 
 
 def find_decision_by_ticket(mt5_ticket: int) -> Optional[Dict[str, Any]]:
-    """Find a decision by its MT5 ticket."""
+    """Find a decision by its MT5 ticket.
+
+    Uses a ticket index for O(1) lookup instead of scanning all files.
+    Falls back to full scan if index miss (handles legacy data).
+    """
     if not os.path.exists(DECISIONS_DIR):
         return None
-    
+
+    # Try fast index lookup first
+    index = _load_ticket_index()
+    if mt5_ticket in index:
+        decision_id = index[mt5_ticket]
+        try:
+            return load_decision(decision_id)
+        except FileNotFoundError:
+            # Index stale, remove entry and fall through to scan
+            _remove_from_ticket_index(mt5_ticket)
+
+    # Fallback: scan all files (handles pre-index decisions)
     for f in os.listdir(DECISIONS_DIR):
-        if f.endswith(".json"):
+        if f.endswith(".json") and not f.startswith("_"):
             decision_id = f.replace(".json", "")
             try:
                 decision = load_decision(decision_id)
                 if decision.get("mt5_ticket") == mt5_ticket:
+                    # Update index for future lookups
+                    _update_ticket_index(mt5_ticket, decision_id)
                     return decision
             except Exception:
                 continue
-    
+
     return None
 
 

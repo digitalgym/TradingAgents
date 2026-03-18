@@ -41,3 +41,4 @@ web/frontend/node_modules/
 web/frontend/.next/
 web/frontend/out/
 web/backend/__pycache__/
+.vercel

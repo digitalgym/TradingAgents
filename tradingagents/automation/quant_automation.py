@@ -57,6 +57,29 @@ from tradingagents.dataflows.mt5_data import get_closed_deal_by_ticket
 # Project root for resolving state/config files regardless of CWD
 _PROJECT_ROOT = Path(__file__).parent.parent.parent
 
+
+def normalize_signal(signal) -> str:
+    """
+    Normalize a signal value from various formats to BUY/SELL/HOLD.
+
+    Handles:
+    - Dict format: {"value": "buy_to_enter"}
+    - String format: "buy_to_enter", "BUY_TO_ENTER", "buy", "BUY"
+
+    Returns: "BUY", "SELL", or "HOLD"
+    """
+    if signal is None:
+        return "HOLD"
+    if isinstance(signal, dict):
+        signal = signal.get("value", "HOLD")
+    signal = str(signal).upper()
+
+    if signal in ["BUY_TO_ENTER", "BUY"]:
+        return "BUY"
+    elif signal in ["SELL_TO_ENTER", "SELL"]:
+        return "SELL"
+    return "HOLD"
+
 # Global symbol limits file (shared across all automations)
 _SYMBOL_LIMITS_FILE = _PROJECT_ROOT / "automation_symbol_limits.json"
 
@@ -133,6 +156,14 @@ class QuantAutomationConfig:
     # Position assumption review settings
     assumption_review_interval_seconds: int = 3600  # 1 hour default
     assumption_review_auto_apply: bool = False  # Auto-apply SL/TP adjustments from review
+
+    # Remote trade queue settings
+    enable_trade_queue: bool = True  # Process remote trade commands from web UI
+    trade_queue_poll_seconds: int = 5  # Check queue every 5 seconds
+
+    # Remote control settings
+    enable_remote_control: bool = True  # Allow start/stop/config from web UI
+    control_poll_seconds: int = 3  # Check for control commands every 3 seconds
 
     # State persistence
     state_file: str = "quant_automation_state.json"
@@ -227,6 +258,9 @@ class QuantAutomation:
         # Lock for state file writes (multiple async loops share this)
         self._state_lock = asyncio.Lock()
 
+        # Shared aiohttp session for API calls (created lazily)
+        self._http_session: Optional["aiohttp.ClientSession"] = None
+
         # Risk management
         self.guardrails = RiskGuardrails(
             daily_loss_limit_pct=self.config.daily_loss_limit_pct,
@@ -268,6 +302,20 @@ class QuantAutomation:
             logging.Formatter("%(asctime)s - %(message)s")
         )
         self.logger.addHandler(console_handler)
+
+    async def _get_http_session(self) -> "aiohttp.ClientSession":
+        """Get or create shared aiohttp session."""
+        import aiohttp
+
+        if self._http_session is None or self._http_session.closed:
+            self._http_session = aiohttp.ClientSession()
+        return self._http_session
+
+    async def _close_http_session(self) -> None:
+        """Close the shared HTTP session."""
+        if self._http_session and not self._http_session.closed:
+            await self._http_session.close()
+            self._http_session = None
 
     def _load_state(self):
         """Load automation state from file."""
@@ -367,16 +415,16 @@ class QuantAutomation:
             import aiohttp
 
             # Call the quant analysis API endpoint
-            async with aiohttp.ClientSession() as session:
-                payload = {
-                    "symbol": symbol,
-                    "timeframe": self.config.timeframe,
-                }
-                async with session.post(
-                    "http://localhost:8000/api/analysis/quant",
-                    json=payload,
-                    timeout=aiohttp.ClientTimeout(total=120)
-                ) as response:
+            session = await self._get_http_session()
+            payload = {
+                "symbol": symbol,
+                "timeframe": self.config.timeframe,
+            }
+            async with session.post(
+                "http://localhost:8000/api/analysis/quant",
+                json=payload,
+                timeout=aiohttp.ClientTimeout(total=120)
+            ) as response:
                     if response.status != 200:
                         error_text = await response.text()
                         self.logger.error(f"Quant API error: {error_text}")
@@ -428,19 +476,7 @@ class QuantAutomation:
             if decision.get("rationale"):
                 self.logger.info(f"Rationale: {str(decision.get('rationale', ''))[:200]}")
 
-            # Extract signal - handle both string and dict formats
-            signal = decision.get("signal", "HOLD")
-            if isinstance(signal, dict):
-                signal = signal.get("value", "HOLD")
-            signal = signal.upper()
-
-            if signal in ["BUY_TO_ENTER", "BUY"]:
-                signal = "BUY"
-            elif signal in ["SELL_TO_ENTER", "SELL"]:
-                signal = "SELL"
-            else:
-                signal = "HOLD"
-
+            signal = normalize_signal(decision.get("signal"))
             self.logger.info(f"Mapped signal for {symbol}: {signal}")
 
             return AnalysisCycleResult(
@@ -479,16 +515,16 @@ class QuantAutomation:
 
             self.logger.info(f"SMC Quant: calling API for {symbol} (timeout=120s)...")
 
-            async with aiohttp.ClientSession() as session:
-                payload = {
-                    "symbol": symbol,
-                    "timeframe": self.config.timeframe,
-                }
-                async with session.post(
-                    "http://localhost:8000/api/analysis/smc-quant",
-                    json=payload,
-                    timeout=aiohttp.ClientTimeout(total=120)
-                ) as response:
+            session = await self._get_http_session()
+            payload = {
+                "symbol": symbol,
+                "timeframe": self.config.timeframe,
+            }
+            async with session.post(
+                "http://localhost:8000/api/analysis/smc-quant",
+                json=payload,
+                timeout=aiohttp.ClientTimeout(total=120)
+            ) as response:
                     api_duration = time.time() - start_time
                     if response.status != 200:
                         error_text = await response.text()
@@ -545,17 +581,7 @@ class QuantAutomation:
                 f"sl={decision.get('stop_loss')}, tp={decision.get('take_profit')}"
             )
 
-            signal = decision.get("signal", "HOLD")
-            if isinstance(signal, dict):
-                signal = signal.get("value", "HOLD")
-            signal = signal.upper()
-
-            if signal in ["BUY_TO_ENTER", "BUY"]:
-                signal = "BUY"
-            elif signal in ["SELL_TO_ENTER", "SELL"]:
-                signal = "SELL"
-            else:
-                signal = "HOLD"
+            signal = normalize_signal(decision.get("signal"))
 
             return AnalysisCycleResult(
                 timestamp=datetime.now(),
@@ -607,16 +633,16 @@ class QuantAutomation:
 
             self.logger.info(f"Breakout Quant: calling API for {symbol} (timeout=120s)...")
 
-            async with aiohttp.ClientSession() as session:
-                payload = {
-                    "symbol": symbol,
-                    "timeframe": self.config.timeframe,
-                }
-                async with session.post(
-                    "http://localhost:8000/api/analysis/breakout-quant",
-                    json=payload,
-                    timeout=aiohttp.ClientTimeout(total=120)
-                ) as response:
+            session = await self._get_http_session()
+            payload = {
+                "symbol": symbol,
+                "timeframe": self.config.timeframe,
+            }
+            async with session.post(
+                "http://localhost:8000/api/analysis/breakout-quant",
+                json=payload,
+                timeout=aiohttp.ClientTimeout(total=120)
+            ) as response:
                     api_duration = time.time() - start_time
                     if response.status != 200:
                         error_text = await response.text()
@@ -684,17 +710,7 @@ class QuantAutomation:
                 f"sl={decision.get('stop_loss')}, tp={decision.get('take_profit')}"
             )
 
-            signal = decision.get("signal", "HOLD")
-            if isinstance(signal, dict):
-                signal = signal.get("value", "HOLD")
-            signal = signal.upper()
-
-            if signal in ["BUY_TO_ENTER", "BUY"]:
-                signal = "BUY"
-            elif signal in ["SELL_TO_ENTER", "SELL"]:
-                signal = "SELL"
-            else:
-                signal = "HOLD"
+            signal = normalize_signal(decision.get("signal"))
 
             return AnalysisCycleResult(
                 timestamp=datetime.now(),
@@ -746,16 +762,16 @@ class QuantAutomation:
 
             self.logger.info(f"Range Quant: calling API for {symbol} (timeout=120s)...")
 
-            async with aiohttp.ClientSession() as session:
-                payload = {
-                    "symbol": symbol,
-                    "timeframe": self.config.timeframe,
-                }
-                async with session.post(
-                    "http://localhost:8000/api/analysis/range-quant",
-                    json=payload,
-                    timeout=aiohttp.ClientTimeout(total=120)
-                ) as response:
+            session = await self._get_http_session()
+            payload = {
+                "symbol": symbol,
+                "timeframe": self.config.timeframe,
+            }
+            async with session.post(
+                "http://localhost:8000/api/analysis/range-quant",
+                json=payload,
+                timeout=aiohttp.ClientTimeout(total=120)
+            ) as response:
                     api_duration = time.time() - start_time
                     if response.status != 200:
                         error_text = await response.text()
@@ -821,17 +837,7 @@ class QuantAutomation:
                 f"sl={decision.get('stop_loss')}, tp={decision.get('take_profit')}"
             )
 
-            signal = decision.get("signal", "HOLD")
-            if isinstance(signal, dict):
-                signal = signal.get("value", "HOLD")
-            signal = signal.upper()
-
-            if signal in ["BUY_TO_ENTER", "BUY"]:
-                signal = "BUY"
-            elif signal in ["SELL_TO_ENTER", "SELL"]:
-                signal = "SELL"
-            else:
-                signal = "HOLD"
+            signal = normalize_signal(decision.get("signal"))
 
             return AnalysisCycleResult(
                 timestamp=datetime.now(),
@@ -883,16 +889,16 @@ class QuantAutomation:
 
             self.logger.info(f"VP Quant: calling API for {symbol} (timeout=120s)...")
 
-            async with aiohttp.ClientSession() as session:
-                payload = {
-                    "symbol": symbol,
-                    "timeframe": self.config.timeframe,
-                }
-                async with session.post(
-                    "http://localhost:8000/api/analysis/vp-quant",
-                    json=payload,
-                    timeout=aiohttp.ClientTimeout(total=120)
-                ) as response:
+            session = await self._get_http_session()
+            payload = {
+                "symbol": symbol,
+                "timeframe": self.config.timeframe,
+            }
+            async with session.post(
+                "http://localhost:8000/api/analysis/vp-quant",
+                json=payload,
+                timeout=aiohttp.ClientTimeout(total=120)
+            ) as response:
                     api_duration = time.time() - start_time
                     if response.status != 200:
                         error_text = await response.text()
@@ -939,18 +945,7 @@ class QuantAutomation:
             if result.get("justification"):
                 self.logger.info(f"[VP] Justification: {str(result.get('justification', ''))[:200]}")
 
-            signal = result.get("signal", "HOLD")
-            if isinstance(signal, dict):
-                signal = signal.get("value", "HOLD")
-            signal = signal.upper()
-
-            if signal in ["BUY_TO_ENTER", "BUY"]:
-                signal = "BUY"
-            elif signal in ["SELL_TO_ENTER", "SELL"]:
-                signal = "SELL"
-            else:
-                signal = "HOLD"
-
+            signal = normalize_signal(result.get("signal"))
             justification = result.get("justification", "")
             invalidation = result.get("invalidation", "")
             rationale = f"{justification}\n\n**Invalidation**: {invalidation}" if invalidation else justification
@@ -1004,16 +999,16 @@ class QuantAutomation:
 
             self.logger.info(f"Rule-Based: calling API for {symbol} (no LLM)...")
 
-            async with aiohttp.ClientSession() as session:
-                payload = {
-                    "symbol": symbol,
-                    "timeframe": self.config.timeframe,
-                }
-                async with session.post(
-                    "http://localhost:8000/api/analysis/rule-based",
-                    json=payload,
-                    timeout=aiohttp.ClientTimeout(total=30)
-                ) as response:
+            session = await self._get_http_session()
+            payload = {
+                "symbol": symbol,
+                "timeframe": self.config.timeframe,
+            }
+            async with session.post(
+                "http://localhost:8000/api/analysis/rule-based",
+                json=payload,
+                timeout=aiohttp.ClientTimeout(total=30)
+            ) as response:
                     api_duration = time.time() - start_time
                     if response.status != 200:
                         error_text = await response.text()
@@ -1047,13 +1042,7 @@ class QuantAutomation:
                     duration_seconds=api_duration,
                 )
 
-            signal = decision.get("signal", "HOLD").upper()
-            if signal in ["BUY_TO_ENTER", "BUY"]:
-                signal = "BUY"
-            elif signal in ["SELL_TO_ENTER", "SELL"]:
-                signal = "SELL"
-            else:
-                signal = "HOLD"
+            signal = normalize_signal(decision.get("signal"))
 
             self.logger.info(
                 f"Rule-Based decision for {symbol}: signal={signal}, "
@@ -1111,16 +1100,16 @@ class QuantAutomation:
 
             self.logger.info(f"SMC MTF: calling API for {symbol} (no LLM)...")
 
-            async with aiohttp.ClientSession() as session:
-                payload = {
-                    "symbol": symbol,
-                    "timeframe": self.config.timeframe,
-                }
-                async with session.post(
-                    "http://localhost:8000/api/analysis/smc-mtf",
-                    json=payload,
-                    timeout=aiohttp.ClientTimeout(total=30)
-                ) as response:
+            session = await self._get_http_session()
+            payload = {
+                "symbol": symbol,
+                "timeframe": self.config.timeframe,
+            }
+            async with session.post(
+                "http://localhost:8000/api/analysis/smc-mtf",
+                json=payload,
+                timeout=aiohttp.ClientTimeout(total=30)
+            ) as response:
                     api_duration = time.time() - start_time
                     if response.status != 200:
                         error_text = await response.text()
@@ -1163,13 +1152,7 @@ class QuantAutomation:
                     duration_seconds=api_duration,
                 )
 
-            signal = decision.get("signal", "HOLD").upper()
-            if signal in ["BUY_TO_ENTER", "BUY"]:
-                signal = "BUY"
-            elif signal in ["SELL_TO_ENTER", "SELL"]:
-                signal = "SELL"
-            else:
-                signal = "HOLD"
+            signal = normalize_signal(decision.get("signal"))
 
             self.logger.info(
                 f"SMC MTF decision for {symbol}: signal={signal}, "
@@ -2295,6 +2278,230 @@ class QuantAutomation:
             except asyncio.TimeoutError:
                 pass
 
+    async def _trade_queue_loop(self):
+        """
+        Process remote trade commands from the Postgres queue.
+
+        Allows the web UI to trigger trades that this automation executes.
+        """
+        from tradingagents.storage.trade_queue import get_trade_queue
+
+        self.logger.info("Trade queue loop started")
+        queue = get_trade_queue()
+
+        while self._running:
+            try:
+                # Get pending commands
+                commands = await queue.get_pending_commands(limit=5)
+
+                for cmd in commands:
+                    # Claim command to prevent double-execution
+                    claimed = await queue.claim_command(cmd.command_id)
+                    if not claimed:
+                        continue
+
+                    self.logger.info(f"[QUEUE] Processing: {cmd.command_type} {cmd.symbol}")
+
+                    try:
+                        result = await self._execute_queue_command(cmd)
+                        await queue.complete_command(cmd.command_id, result)
+                        self.logger.info(f"[QUEUE] Completed: {cmd.command_id}")
+
+                    except Exception as e:
+                        await queue.fail_command(cmd.command_id, str(e))
+                        self.logger.error(f"[QUEUE] Failed: {cmd.command_id} - {e}")
+
+            except Exception as e:
+                self.logger.error(f"Trade queue error: {e}")
+
+            # Wait for next poll or shutdown
+            try:
+                await asyncio.wait_for(
+                    self._shutdown_event.wait(),
+                    timeout=self.config.trade_queue_poll_seconds,
+                )
+                break
+            except asyncio.TimeoutError:
+                pass
+
+    async def _execute_queue_command(self, cmd) -> dict:
+        """Execute a queued trade command."""
+        payload = cmd.payload
+
+        if cmd.command_type == "execute":
+            # Execute trade
+            symbol = cmd.symbol
+            direction = payload.get("direction", "").upper()
+            volume = payload.get("volume", self.config.default_lot_size)
+            stop_loss = payload.get("stop_loss")
+            take_profit = payload.get("take_profit")
+            decision_id = payload.get("decision_id")
+
+            # Get current price
+            price_info = get_mt5_current_price(symbol)
+            if not price_info:
+                raise ValueError(f"Could not get price for {symbol}")
+            entry_price = price_info["ask"] if direction == "BUY" else price_info["bid"]
+
+            # Execute
+            result = execute_trade_signal(
+                symbol=symbol,
+                signal=direction,
+                entry_price=entry_price,
+                stop_loss=stop_loss,
+                take_profit=take_profit,
+                volume=volume,
+            )
+
+            if not result.get("success"):
+                raise ValueError(result.get("error", "Trade failed"))
+
+            ticket = result.get("ticket")
+
+            # Store decision
+            if not decision_id:
+                decision_id = store_decision(
+                    symbol=symbol,
+                    decision_type="OPEN",
+                    action=direction,
+                    rationale=f"Remote queue: {cmd.command_id}",
+                    source=cmd.source,
+                    entry_price=entry_price,
+                    stop_loss=stop_loss,
+                    take_profit=take_profit,
+                    volume=volume,
+                    mt5_ticket=ticket,
+                )
+
+            return {
+                "status": "success",
+                "ticket": ticket,
+                "decision_id": decision_id,
+                "entry_price": entry_price,
+            }
+
+        elif cmd.command_type == "modify_sl":
+            ticket = payload.get("ticket")
+            new_sl = payload.get("new_sl")
+            result = modify_position(ticket, sl=new_sl)
+            return {"status": "success" if result.get("success") else "error", **result}
+
+        elif cmd.command_type == "modify_tp":
+            ticket = payload.get("ticket")
+            new_tp = payload.get("new_tp")
+            result = modify_position(ticket, tp=new_tp)
+            return {"status": "success" if result.get("success") else "error", **result}
+
+        elif cmd.command_type == "close":
+            ticket = payload.get("ticket")
+            volume = payload.get("volume")
+            result = close_position(ticket, volume=volume)
+            return {"status": "success" if result.get("success") else "error", **result}
+
+        else:
+            raise ValueError(f"Unknown command: {cmd.command_type}")
+
+    async def _update_remote_status(self):
+        """Update automation status in Postgres for remote monitoring."""
+        try:
+            from tradingagents.storage.automation_control import get_automation_control
+
+            control = get_automation_control()
+            active_decisions = list_active_decisions()
+            active_for_symbols = [
+                d for d in active_decisions
+                if d.get("symbol") in self.config.symbols
+            ]
+
+            await control.update_status(
+                instance_name=self._source,
+                status=self._status.value,
+                pipeline=self.config.pipeline.value,
+                symbols=self.config.symbols,
+                auto_execute=self.config.auto_execute,
+                last_analysis=self._last_analysis_time.get(self.config.symbols[0]) if self.config.symbols else None,
+                active_positions=len(active_for_symbols),
+                error_message=self._error_message,
+                config=self.config.to_dict(),
+            )
+        except Exception as e:
+            self.logger.warning(f"Failed to update remote status: {e}")
+
+    async def _control_loop(self):
+        """
+        Poll for remote control commands (start/stop/pause/config updates).
+
+        Allows the web UI to control this automation instance.
+        """
+        from tradingagents.storage.automation_control import get_automation_control
+
+        self.logger.info("Control loop started")
+        control = get_automation_control()
+
+        while self._running:
+            try:
+                # Get pending commands for this instance
+                commands = await control.get_pending_commands(self._source)
+
+                for cmd in commands:
+                    self.logger.info(f"[CONTROL] Received: {cmd.action} from {cmd.source}")
+
+                    try:
+                        await self._apply_control_command(cmd)
+                        await control.mark_applied(cmd.command_id)
+                        self.logger.info(f"[CONTROL] Applied: {cmd.action}")
+
+                    except Exception as e:
+                        await control.mark_failed(cmd.command_id, str(e))
+                        self.logger.error(f"[CONTROL] Failed: {cmd.action} - {e}")
+
+                # Update status periodically
+                await self._update_remote_status()
+
+            except Exception as e:
+                self.logger.error(f"Control loop error: {e}")
+
+            # Wait for next poll
+            try:
+                await asyncio.wait_for(
+                    self._shutdown_event.wait(),
+                    timeout=self.config.control_poll_seconds,
+                )
+                break
+            except asyncio.TimeoutError:
+                pass
+
+        # Final status update on shutdown
+        await self._update_remote_status()
+
+    async def _apply_control_command(self, cmd):
+        """Apply a control command."""
+        if cmd.action == "stop":
+            self.stop()
+
+        elif cmd.action == "pause":
+            self.pause()
+
+        elif cmd.action == "resume":
+            self.resume()
+
+        elif cmd.action == "update_config":
+            # Update configuration
+            self.update_config(cmd.payload)
+            self.logger.info(f"[CONTROL] Config updated: {cmd.payload}")
+
+        elif cmd.action == "restart":
+            # Stop and let external supervisor restart
+            self.logger.info("[CONTROL] Restart requested - stopping...")
+            self.stop()
+
+        elif cmd.action == "start":
+            # Already running, just acknowledge
+            self.logger.info("[CONTROL] Start command received - already running")
+
+        else:
+            raise ValueError(f"Unknown control action: {cmd.action}")
+
     async def start(self):
         """Start the automation."""
         if self._running:
@@ -2321,15 +2528,32 @@ class QuantAutomation:
         self.logger.info(f"Analysis interval: {self.config.analysis_interval_seconds}s")
         self.logger.info(f"Assumption review interval: {self.config.assumption_review_interval_seconds}s")
         self.logger.info(f"Auto-execute: {self.config.auto_execute}")
+        self.logger.info(f"Trade queue: {'enabled' if self.config.enable_trade_queue else 'disabled'}")
+        self.logger.info(f"Remote control: {'enabled' if self.config.enable_remote_control else 'disabled'}")
         self.logger.info("=" * 50)
+
+        # Report initial status to Postgres
+        if self.config.enable_remote_control:
+            await self._update_remote_status()
+
+        # Build list of loops to run
+        loops = [
+            self._analysis_loop(),
+            self._position_loop(),
+            self._assumption_review_loop(),
+        ]
+
+        # Add trade queue loop if enabled
+        if self.config.enable_trade_queue:
+            loops.append(self._trade_queue_loop())
+
+        # Add control loop if enabled
+        if self.config.enable_remote_control:
+            loops.append(self._control_loop())
 
         # Run all loops concurrently
         try:
-            await asyncio.gather(
-                self._analysis_loop(),
-                self._position_loop(),
-                self._assumption_review_loop(),
-            )
+            await asyncio.gather(*loops)
         except Exception as e:
             self._status = AutomationStatus.ERROR
             self._error_message = str(e)
@@ -2345,6 +2569,12 @@ class QuantAutomation:
         self.logger.info("Stopping quant automation...")
         self._running = False
         self._shutdown_event.set()
+        # Schedule HTTP session cleanup
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(self._close_http_session())
+        except RuntimeError:
+            pass  # No running loop, session will be garbage collected
 
     def pause(self):
         """Pause the automation (stop new trades but continue monitoring)."""

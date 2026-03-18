@@ -60,7 +60,13 @@
       "Bash(wc -l /d/Documents/TradingAgents/tradingagents/agents/analysts/*.py)",
       "Bash(wc -l /d/Documents/TradingAgents/tradingagents/agents/*/*.py)",
       "Bash(wc -l /d/Documents/TradingAgents/tradingagents/dataflows/*.py)",
-      "Bash(wc -l /d/Documents/TradingAgents/tradingagents/automation/*.py)"
+      "Bash(wc -l /d/Documents/TradingAgents/tradingagents/automation/*.py)",
+      "Bash(git show:*)",
+      "WebSearch",
+      "Bash(.venv/Scripts/pip install:*)",
+      "Bash(.venv\\\\Scripts\\\\pip install:*)",
+      "Bash(\".venv/Scripts/pip.exe\" install:*)",
+      "Bash(ren setup_trade_queue.py setup_remote_control.py)"
     ]
   }
 }

@@ -138,7 +138,7 @@ export default function PositionsPage() {
     if (error) {
       alert(`Error: ${error}`)
     } else {
-      alert(data.message)
+      alert(data?.message || "Success")
     }
     setQuickActionTicket(null)
     setQuickActionType(null)
@@ -155,7 +155,7 @@ export default function PositionsPage() {
       if (error) {
         alert(`Error: ${error}`)
       } else {
-        alert(data.message)
+        alert(data?.message || "Success")
       }
     } else {
       // Enable trailing
@@ -163,7 +163,7 @@ export default function PositionsPage() {
       if (error) {
         alert(`Error: ${error}`)
       } else {
-        alert(data.message)
+        alert(data?.message || "Success")
       }
     }
 
@@ -295,8 +295,6 @@ export default function PositionsPage() {
       alert(`Error: ${error}`)
     } else {
       alert("Position updated successfully")
-      setReviewingTicket(null)
-      setReviewData(null)
       fetchData()
     }
   }

@@ -20,7 +20,8 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Optional, Dict, Any
 
-from tradingagents.schemas import QuantAnalystDecision, RiskLevel
+from tradingagents.schemas import QuantAnalystDecision, QuantSignalType, RiskLevel
+from tradingagents.dataflows.smc_trade_plan import safe_get
 
 
 class BaseQuantAnalyst(ABC):
@@ -106,17 +107,18 @@ class BaseQuantAnalyst(ABC):
         logger.debug(f"\n{'='*80}\n{ticker} PROMPT:\n{prompt}\n{'='*80}")
         logger.debug(f"\n{ticker} RESPONSE:\n{response}\n{'='*80}\n")
 
-    def create_hold_decision(self, reason: str) -> QuantAnalystDecision:
+    def create_hold_decision(self, reason: str, symbol: str = "UNKNOWN") -> QuantAnalystDecision:
         """Create a HOLD decision with explanation."""
         return QuantAnalystDecision(
-            action="HOLD",
+            symbol=symbol,
+            signal=QuantSignalType.HOLD,
             confidence=0.5,
             entry_price=None,
             stop_loss=None,
-            take_profit=None,
+            profit_target=None,
             risk_level=RiskLevel.MEDIUM,
-            rationale=reason,
-            setup_type="none",
+            invalidation_condition="N/A",
+            justification=reason,
         )
 
     @abstractmethod
@@ -169,14 +171,11 @@ class BaseQuantAnalyst(ABC):
         This is the main entry point, called by the graph.
         """
         context = self.extract_state_context(state)
-        ticker = context["ticker"]
+        ticker = context["ticker"] or "UNKNOWN"
 
         try:
             prompt = self.build_prompt(state, context)
-            self.log_prompt_and_response(prompt, "[awaiting response]", ticker)
-
             decision = self.invoke_llm(prompt)
-
             self.log_prompt_and_response(prompt, decision, ticker)
 
             return {"quant_signal": decision}
@@ -185,18 +184,11 @@ class BaseQuantAnalyst(ABC):
             self.get_logger().error(f"Error in {self.get_strategy_name()} for {ticker}: {e}")
             return {
                 "quant_signal": self.create_hold_decision(
-                    f"{self.get_strategy_name()} error: {str(e)}"
+                    f"{self.get_strategy_name()} error: {str(e)}",
+                    symbol=ticker,
                 )
             }
 
 
-def safe_get(obj, attr, default=None):
-    """
-    Safely get attribute from dict or dataclass object.
-    Shared utility for all quant analysts.
-    """
-    if obj is None:
-        return default
-    if isinstance(obj, dict):
-        return obj.get(attr, default)
-    return getattr(obj, attr, default)
+# Re-export safe_get for backwards compatibility
+__all__ = ["BaseQuantAnalyst", "safe_get"]

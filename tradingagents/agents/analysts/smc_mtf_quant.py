@@ -24,8 +24,6 @@ EXECUTION RULES (from video strategy):
 Based on ICT (Inner Circle Trader) methodology.
 """
 
-import logging
-import os
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List, Tuple
 import numpy as np
@@ -37,35 +35,12 @@ from tradingagents.schemas import QuantAnalystDecision, RiskLevel
 from tradingagents.dataflows.smc_trade_plan import safe_get
 
 
-# Logger setup
-_mtf_logger = None
+from tradingagents.agents.analysts.quant_utils import create_quant_logger
 
 
 def _get_mtf_logger():
     """Get or create the MTF quant prompt logger."""
-    global _mtf_logger
-    if _mtf_logger is None:
-        _mtf_logger = logging.getLogger("smc_mtf_quant_prompts")
-        _mtf_logger.setLevel(logging.DEBUG)
-
-        log_dir = os.path.join(
-            os.path.dirname(__file__), "..", "..", "..", "logs", "smc_mtf_quant_prompts"
-        )
-        os.makedirs(log_dir, exist_ok=True)
-
-        log_file = os.path.join(
-            log_dir, f"smc_mtf_quant_{datetime.now().strftime('%Y%m%d')}.log"
-        )
-        file_handler = logging.FileHandler(log_file, encoding="utf-8")
-        file_handler.setLevel(logging.DEBUG)
-
-        formatter = logging.Formatter("%(asctime)s | %(message)s")
-        file_handler.setFormatter(formatter)
-
-        if not _mtf_logger.handlers:
-            _mtf_logger.addHandler(file_handler)
-
-    return _mtf_logger
+    return create_quant_logger("smc_mtf_quant_prompts", "smc_mtf_quant_prompts")
 
 
 # =============================================================================
@@ -1569,44 +1544,8 @@ def _format_mtf_report(decision: QuantAnalystDecision, analysis: MTFAnalysis) ->
     return "\n".join(lines)
 
 
-def get_mtf_quant_decision_for_modal(mtf_decision: dict) -> dict:
-    """
-    Convert MTF quant decision dict to trade modal format.
-
-    Args:
-        mtf_decision: The smc_mtf_decision dict from agent state
-
-    Returns:
-        Dict formatted for TradeExecutionWizard props
-    """
-    if not mtf_decision:
-        return {}
-
-    signal_map = {
-        "buy_to_enter": "BUY",
-        "sell_to_enter": "SELL",
-        "hold": "HOLD",
-        "close": "HOLD",
-    }
-
-    signal = mtf_decision.get("signal", "hold")
-    if isinstance(signal, dict):
-        signal = signal.get("value", "hold")
-
-    order_type = mtf_decision.get("order_type", "market")
-    if isinstance(order_type, dict):
-        order_type = order_type.get("value", "market")
-
-    return {
-        "symbol": mtf_decision.get("symbol", ""),
-        "signal": signal_map.get(signal, "HOLD"),
-        "orderType": order_type,
-        "suggestedEntry": mtf_decision.get("entry_price"),
-        "suggestedStopLoss": mtf_decision.get("stop_loss"),
-        "suggestedTakeProfit": mtf_decision.get("profit_target"),
-        "rationale": f"{mtf_decision.get('justification', '')}. Invalidation: {mtf_decision.get('invalidation_condition', '')}",
-        "confidence": mtf_decision.get("confidence", 0.5),
-    }
+# Re-export from shared utils for backward compatibility
+from tradingagents.agents.analysts.quant_utils import get_mtf_quant_decision_for_modal
 
 
 def analyze_mtf_for_quant(
