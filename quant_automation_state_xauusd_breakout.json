@@ -1,26 +1,10 @@
 {
   "last_analysis_time": {
-    "XAUUSD": "2026-03-19T03:31:10.672380"
+    "XAUUSD": "2026-03-19T07:31:43.844276"
   },
-  "last_updated": "2026-03-19T05:34:01.359109",
+  "last_updated": "2026-03-19T07:40:57.974282",
   "status": "running",
   "analysis_results": [
-    {
-      "timestamp": "2026-03-12T05:01:38.886690",
-      "symbol": "XAUUSD",
-      "pipeline": "breakout_quant",
-      "signal": "HOLD",
-      "confidence": 0.85,
-      "entry_price": null,
-      "stop_loss": null,
-      "take_profit": null,
-      "rationale": "Market in tight BB squeeze consolidation with bearish structure bias, but current price mid-range (not near high for anticipation sell or breakdown below low), conflicting bullish SMC bias, and past poor direction accuracy warrant waiting for better entry alignment.\n\n**Invalidation**: Price breaks above range high at 5223.08 with momentum, confirming bullish reversal",
-      "trailing_stop_atr_multiplier": null,
-      "executed": false,
-      "execution_ticket": null,
-      "execution_error": null,
-      "duration_seconds": 12.78227686882019
-    },
     {
       "timestamp": "2026-03-12T05:16:56.036016",
       "symbol": "XAUUSD",
@@ -1604,6 +1588,22 @@
       "execution_ticket": null,
       "execution_error": null,
       "duration_seconds": 8.511233568191528
+    },
+    {
+      "timestamp": "2026-03-19T07:31:54.112506",
+      "symbol": "XAUUSD",
+      "pipeline": "breakout_quant",
+      "signal": "HOLD",
+      "confidence": 0.95,
+      "entry_price": null,
+      "stop_loss": null,
+      "take_profit": null,
+      "rationale": "Market is not consolidating (no BB squeeze, no volume contraction, wide range), price below range low without confirmed breakout (no volume surge), extreme volatility, and poor setup alignment per rules.\n\n**Invalidation**: Clear consolidation forms with BB squeeze, volume contraction, and defined structure bias",
+      "trailing_stop_atr_multiplier": null,
+      "executed": false,
+      "execution_ticket": null,
+      "execution_error": null,
+      "duration_seconds": 10.26723051071167
     }
   ],
   "position_results": [
@@ -2808,6 +2808,6 @@
       "pnl": -64.37
     }
   ],
-  "last_assumption_review": "2026-03-19T05:34:01.287301",
+  "last_assumption_review": "2026-03-19T07:36:43.851459",
   "assumption_review_results": []
 }

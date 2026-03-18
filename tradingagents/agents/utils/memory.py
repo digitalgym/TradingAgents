@@ -1015,7 +1015,7 @@ class SMCPatternMemory:
             "direction": direction,
             "timestamp": timestamp,
             # SMC context (flattened for ChromaDB)
-            "entry_zone": smc_context.get("entry_zone", "unknown"),
+            "entry_zone": smc_context.get("entry_zone") or "unknown",
             "entry_zone_strength": float(smc_context.get("entry_zone_strength") or 0.5),
             "with_trend": str(smc_context.get("with_trend") or "unknown"),
             "higher_tf_aligned": str(smc_context.get("higher_tf_aligned") or "unknown"),
@@ -1031,6 +1031,11 @@ class SMCPatternMemory:
             # Lesson
             "lesson": lesson[:500] if lesson else "",  # Truncate for metadata
         }
+
+        # ChromaDB rejects None values in metadata — replace with defaults
+        for k, v in list(metadata.items()):
+            if v is None:
+                metadata[k] = "unknown"
 
         embedding = self.get_embedding(search_text)
 

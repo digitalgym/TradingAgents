@@ -807,6 +807,9 @@ export default function AutomationPage() {
       max_positions_per_symbol: 1,
       enable_trailing_stop: true,
       trailing_stop_atr_multiplier: defaults.atrMultiplier,
+      enable_breakeven_stop: true,
+      move_to_breakeven_atr_mult: 1.5,
+      enable_reversal_close: true,
       default_lot_size: 0.01,
       max_risk_per_trade_pct: 1.0,
     }
@@ -1872,6 +1875,49 @@ export default function AutomationPage() {
                                 />
                               </div>
                             )}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Label htmlFor={`be-${name}`} className="text-xs">Breakeven Stop</Label>
+                                <HelpTooltip content="Moves SL to entry price once profit exceeds a threshold (N × ATR). Protects from turning a winner into a loser, but can cause early exits if price retraces briefly. Disable this when testing to avoid interference." />
+                              </div>
+                              <Switch
+                                id={`be-${name}`}
+                                checked={inst.config.enable_breakeven_stop ?? true}
+                                onCheckedChange={(v) => handleInstanceConfigUpdate(name, 'enable_breakeven_stop', v)}
+                                disabled={isRunning}
+                              />
+                            </div>
+                            {inst.config.enable_breakeven_stop && (
+                              <div className="flex items-center justify-between pl-4">
+                                <div className="flex items-center gap-2">
+                                  <Label htmlFor={`be-mult-${name}`} className="text-xs">BE Threshold (ATR×)</Label>
+                                  <HelpTooltip content="How much profit (as ATR multiple) before moving SL to breakeven. 1.0× = early, moves quickly but more false exits. 1.5× = standard. 2.0-3.0× = conservative, gives trade more room." />
+                                </div>
+                                <Input
+                                  id={`be-mult-${name}`}
+                                  type="number"
+                                  step={0.5}
+                                  min={0.5}
+                                  max={10}
+                                  className="h-7 w-20 text-xs"
+                                  value={inst.config.move_to_breakeven_atr_mult ?? 1.5}
+                                  onChange={(e) => handleInstanceConfigUpdate(name, 'move_to_breakeven_atr_mult', parseFloat(e.target.value) || 1.5)}
+                                  disabled={isRunning}
+                                />
+                              </div>
+                            )}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Label htmlFor={`rev-${name}`} className="text-xs">Reversal Close</Label>
+                                <HelpTooltip content="Runs analysis each position check cycle and closes the position if a strong reversal signal is detected (opposite direction with >70% confidence). Disable this to let trades run to SL/TP only." />
+                              </div>
+                              <Switch
+                                id={`rev-${name}`}
+                                checked={inst.config.enable_reversal_close ?? true}
+                                onCheckedChange={(v) => handleInstanceConfigUpdate(name, 'enable_reversal_close', v)}
+                                disabled={isRunning}
+                              />
+                            </div>
                           </div>
 
                           {/* Test Analysis */}

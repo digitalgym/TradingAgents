@@ -145,7 +145,9 @@ class QuantAutomationConfig:
     max_positions_per_symbol: int = 1  # Max positions THIS automation can open per symbol
     enable_trailing_stop: bool = True
     trailing_stop_atr_multiplier: float = 1.5
+    enable_breakeven_stop: bool = True  # Move SL to breakeven after profit >= N * ATR
     move_to_breakeven_atr_mult: float = 1.5  # Move SL to breakeven after profit >= 1.5x ATR
+    enable_reversal_close: bool = True  # Close position on reversal signal from analysis
 
     # Risk settings
     max_risk_per_trade_pct: float = 1.0  # 1% of account per trade
@@ -1569,9 +1571,15 @@ class QuantAutomation:
         # MT5 deal comment is most reliable — broker tags "sl", "tp", etc.
         if deal_comment:
             comment_lower = deal_comment.lower().strip()
+            # Exact match
             if comment_lower in ("sl", "stop loss"):
                 return "sl_hit"
             if comment_lower in ("tp", "take profit"):
+                return "tp_hit"
+            # Bracket format: "[sl 4988.70]", "[tp 5130.89]"
+            if "[sl" in comment_lower:
+                return "sl_hit"
+            if "[tp" in comment_lower:
                 return "tp_hit"
             if "trailing" in comment_lower:
                 return "trailing_stop"
@@ -1787,12 +1795,6 @@ class QuantAutomation:
                 current_tp = position.get("tp", 0)
                 profit = position.get("profit", 0)
 
-                self.logger.info(
-                    f"Managing position #{ticket} {symbol} {direction}: "
-                    f"entry={entry_price}, current={current_price}, "
-                    f"sl={current_sl}, tp={current_tp}, profit={profit:.2f}"
-                )
-
                 # Calculate P&L percentage
                 if entry_price > 0 and current_price > 0:
                     if direction == "BUY":
@@ -1801,11 +1803,6 @@ class QuantAutomation:
                         pnl_pct = ((entry_price - current_price) / entry_price) * 100
                 else:
                     pnl_pct = 0
-                    if current_price <= 0:
-                        self.logger.warning(
-                            f"  Invalid current_price={current_price} for #{ticket}, "
-                            f"skipping SL adjustments"
-                        )
 
                 result = PositionManagementResult(
                     timestamp=datetime.now(),
@@ -1816,65 +1813,66 @@ class QuantAutomation:
                     old_tp=current_tp,
                 )
 
+                # Structured log tracking for summary
+                be_status = "disabled"
+                trail_status = "disabled"
+                reversal_status = "disabled"
+
                 try:
+                    if current_price <= 0:
+                        be_status = trail_status = reversal_status = "skip:invalid_price"
+                        raise ValueError(f"Invalid current_price={current_price}")
+
                     # Get ATR for stop calculations
                     atr = get_atr_for_symbol(symbol, period=14)
-                    self.logger.debug(f"  ATR={atr:.5f}, pnl_pct={pnl_pct:.2f}%")
 
-                    # Check breakeven condition (ATR-based: profit must exceed N * ATR)
-                    breakeven_threshold_distance = self.config.move_to_breakeven_atr_mult * atr
-                    if direction == "BUY":
-                        profit_distance = current_price - entry_price
-                    else:
-                        profit_distance = entry_price - current_price
+                    # --- Breakeven Stop ---
+                    if self.config.enable_breakeven_stop:
+                        breakeven_threshold_distance = self.config.move_to_breakeven_atr_mult * atr
+                        if direction == "BUY":
+                            profit_distance = current_price - entry_price
+                        else:
+                            profit_distance = entry_price - current_price
 
-                    breakeven_eligible = profit_distance >= breakeven_threshold_distance and current_sl != 0
+                        breakeven_eligible = profit_distance >= breakeven_threshold_distance and current_sl != 0
 
-                    if breakeven_eligible:
-                        self.logger.info(
-                            f"  Breakeven check: profit_distance {profit_distance:.5f} >= "
-                            f"threshold {breakeven_threshold_distance:.5f} ({self.config.move_to_breakeven_atr_mult}x ATR)"
-                        )
-                        breakeven_sl, is_eligible = self.stop_loss_manager.calculate_breakeven_stop(
-                            entry_price=entry_price,
-                            current_price=current_price,
-                            direction=direction,
-                            atr=atr,
-                        )
-                        self.logger.info(f"  Breakeven SL={breakeven_sl}, eligible={is_eligible}")
-
-                        if is_eligible and breakeven_sl:
-                            is_better = (
-                                (direction == "BUY" and breakeven_sl > current_sl) or
-                                (direction == "SELL" and breakeven_sl < current_sl)
+                        if breakeven_eligible:
+                            breakeven_sl, is_eligible = self.stop_loss_manager.calculate_breakeven_stop(
+                                entry_price=entry_price,
+                                current_price=current_price,
+                                direction=direction,
+                                atr=atr,
                             )
-
-                            if is_better and self.config.auto_execute:
-                                self.logger.info(f"  Modifying SL to breakeven: {current_sl:.5f} -> {breakeven_sl:.5f}")
-                                modify_result = modify_position(ticket, sl=breakeven_sl)
-                                self.logger.info(f"  Modify result: {modify_result}")
-                                if modify_result.get("success"):
-                                    result.action = "adjusted_sl"
-                                    result.new_sl = breakeven_sl
-                                    self.logger.info(
-                                        f"  BREAKEVEN SET for {symbol} #{ticket}: {current_sl:.5f} -> {breakeven_sl:.5f}"
-                                    )
-                                    dec = find_decision_by_ticket(ticket)
-                                    if dec:
-                                        add_trade_event(dec["decision_id"], "breakeven_set", {
-                                            "old_sl": current_sl, "new_sl": breakeven_sl,
-                                            "price": current_price, "pnl_pct": round(pnl_pct, 3),
-                                        }, source=self._source)
+                            if is_eligible and breakeven_sl:
+                                is_better = (
+                                    (direction == "BUY" and breakeven_sl > current_sl) or
+                                    (direction == "SELL" and breakeven_sl < current_sl)
+                                )
+                                if is_better and self.config.auto_execute:
+                                    modify_result = modify_position(ticket, sl=breakeven_sl)
+                                    if modify_result.get("success"):
+                                        result.action = "adjusted_sl"
+                                        result.new_sl = breakeven_sl
+                                        be_status = f"SET {current_sl:.2f}->{breakeven_sl:.2f}"
+                                        dec = find_decision_by_ticket(ticket)
+                                        if dec:
+                                            add_trade_event(dec["decision_id"], "breakeven_set", {
+                                                "old_sl": current_sl, "new_sl": breakeven_sl,
+                                                "price": current_price, "pnl_pct": round(pnl_pct, 3),
+                                            }, source=self._source)
+                                    else:
+                                        be_status = f"FAILED: {modify_result.get('error', 'unknown')}"
+                                elif not self.config.auto_execute:
+                                    be_status = "eligible:auto_execute=off"
                                 else:
-                                    self.logger.error(f"  Failed to set breakeven for #{ticket}: {modify_result}")
-                            elif not self.config.auto_execute:
-                                self.logger.info(f"  Breakeven eligible but auto_execute=False, skipping")
+                                    be_status = "not_better"
                             else:
-                                self.logger.debug(f"  Breakeven not better: current_sl={current_sl}, breakeven_sl={breakeven_sl}")
+                                be_status = "not_eligible"
+                        else:
+                            be_status = f"not_reached({profit_distance:.2f}/{breakeven_threshold_distance:.2f})"
 
-                    # Check trailing stop condition
-                    elif self.config.enable_trailing_stop and pnl_pct > 0:
-                        # Use per-trade LLM-suggested multiplier if available, else config default
+                    # --- Trailing Stop ---
+                    if self.config.enable_trailing_stop and pnl_pct > 0:
                         trail_mult = ticket_trail_mult.get(ticket, self.config.trailing_stop_atr_multiplier)
                         trail_distance = trail_mult * atr
                         if direction == "BUY":
@@ -1883,92 +1881,94 @@ class QuantAutomation:
                         else:
                             candidate_sl = round(current_price + trail_distance, 5)
                             should_trail = candidate_sl < current_sl
-                        new_sl = candidate_sl if should_trail else current_sl
-                        self.logger.debug(f"  Trailing stop check: mult={trail_mult}x ATR, new_sl={new_sl}, should_trail={should_trail}")
 
-                        if should_trail and new_sl and self.config.auto_execute:
-                            self.logger.info(f"  Trailing SL: {current_sl:.5f} -> {new_sl:.5f}")
-                            modify_result = modify_position(ticket, sl=new_sl)
-                            self.logger.info(f"  Modify result: {modify_result}")
+                        if should_trail and self.config.auto_execute:
+                            modify_result = modify_position(ticket, sl=candidate_sl)
                             if modify_result.get("success"):
                                 result.action = "adjusted_sl"
-                                result.new_sl = new_sl
-                                self.logger.info(
-                                    f"  TRAILING STOP for {symbol} #{ticket}: {current_sl:.5f} -> {new_sl:.5f} ({trail_mult}x ATR)"
-                                )
+                                result.new_sl = candidate_sl
+                                trail_status = f"MOVED {current_sl:.2f}->{candidate_sl:.2f} ({trail_mult}x)"
                                 dec = find_decision_by_ticket(ticket)
                                 if dec:
                                     add_trade_event(dec["decision_id"], "trailing_stop", {
-                                        "old_sl": current_sl, "new_sl": new_sl,
+                                        "old_sl": current_sl, "new_sl": candidate_sl,
                                         "price": current_price, "pnl_pct": round(pnl_pct, 3),
                                         "atr_mult": trail_mult,
                                     }, source=self._source)
                             else:
-                                self.logger.error(f"  Failed to trail stop for #{ticket}: {modify_result}")
+                                trail_status = f"FAILED: {modify_result.get('error', 'unknown')}"
                         elif should_trail and not self.config.auto_execute:
-                            self.logger.info(f"  Trailing stop eligible but auto_execute=False, skipping")
-                    else:
-                        self.logger.debug(f"  No SL adjustment needed: pnl_pct={pnl_pct:.2f}%, trailing={self.config.enable_trailing_stop}")
-
-                    # Run quick analysis to check for close signal
-                    if self.config.pipeline in (PipelineType.SMC_QUANT_BASIC, PipelineType.SMC_QUANT, PipelineType.BREAKOUT_QUANT, PipelineType.RANGE_QUANT, PipelineType.RULE_BASED, PipelineType.SMC_MTF):
-                        self.logger.info(f"  Running reversal check analysis for #{ticket} {symbol}...")
-                        if self.config.pipeline == PipelineType.SMC_QUANT:
-                            analysis = await self._run_smc_quant_analysis(symbol)
-                        elif self.config.pipeline == PipelineType.BREAKOUT_QUANT:
-                            analysis = await self._run_breakout_quant_analysis(symbol)
-                        elif self.config.pipeline == PipelineType.RANGE_QUANT:
-                            analysis = await self._run_range_quant_analysis(symbol)
-                        elif self.config.pipeline == PipelineType.RULE_BASED:
-                            analysis = await self._run_rule_based_analysis(symbol)
-                        elif self.config.pipeline == PipelineType.SMC_MTF:
-                            analysis = await self._run_smc_mtf_analysis(symbol)
+                            trail_status = "eligible:auto_execute=off"
                         else:
-                            analysis = await self._run_quant_analysis(symbol)
-                        self.logger.info(f"  Reversal check result: signal={analysis.signal}, confidence={analysis.confidence:.2f}")
+                            trail_status = "no_move"
+                    elif self.config.enable_trailing_stop:
+                        trail_status = f"no_profit(pnl={pnl_pct:.2f}%)"
 
-                        if analysis.signal == "CLOSE" or (
-                            analysis.signal != "HOLD" and
-                            analysis.signal != direction and
-                            analysis.confidence > 0.7
-                        ):
-                            self.logger.warning(
-                                f"  REVERSAL SIGNAL for #{ticket} {symbol}: "
-                                f"signal={analysis.signal} (position={direction}), confidence={analysis.confidence:.2f}"
-                            )
-                            # Strong reversal signal
-                            if self.config.auto_execute:
-                                close_result = close_position(ticket)
-                                self.logger.info(f"  Close result: {close_result}")
-                                if close_result.get("success"):
-                                    result.action = "closed"
-                                    result.close_reason = f"Reversal signal: {analysis.signal}"
-                                    result.pnl = profit
-                                    self.logger.info(
-                                        f"  POSITION CLOSED #{ticket} {symbol}: {result.close_reason}, pnl={profit:.2f}"
-                                    )
-                                    # Log reversal event and close the linked trade decision
-                                    dec = find_decision_by_ticket(ticket)
-                                    if dec:
-                                        add_trade_event(dec["decision_id"], "reversal_signal", {
-                                            "new_signal": analysis.signal, "position_direction": direction,
-                                            "confidence": round(analysis.confidence, 2),
-                                            "price": current_price, "profit": profit,
-                                        }, source=self._source)
-                                    deal_info = get_closed_deal_by_ticket(ticket, days_back=7)
-                                    exit_px = deal_info["price"] if deal_info else current_price
-                                    self._close_decision_for_ticket(
-                                        ticket, exit_px, profit, "reversal_signal",
-                                        f"Reversal signal: {analysis.signal}"
-                                    )
-                                else:
-                                    self.logger.error(f"  Failed to close position #{ticket}: {close_result}")
+                    # --- Reversal Signal Close ---
+                    if self.config.enable_reversal_close:
+                        if self.config.pipeline in (PipelineType.SMC_QUANT_BASIC, PipelineType.SMC_QUANT, PipelineType.BREAKOUT_QUANT, PipelineType.RANGE_QUANT, PipelineType.RULE_BASED, PipelineType.SMC_MTF):
+                            if self.config.pipeline == PipelineType.SMC_QUANT:
+                                analysis = await self._run_smc_quant_analysis(symbol)
+                            elif self.config.pipeline == PipelineType.BREAKOUT_QUANT:
+                                analysis = await self._run_breakout_quant_analysis(symbol)
+                            elif self.config.pipeline == PipelineType.RANGE_QUANT:
+                                analysis = await self._run_range_quant_analysis(symbol)
+                            elif self.config.pipeline == PipelineType.RULE_BASED:
+                                analysis = await self._run_rule_based_analysis(symbol)
+                            elif self.config.pipeline == PipelineType.SMC_MTF:
+                                analysis = await self._run_smc_mtf_analysis(symbol)
                             else:
-                                self.logger.info(f"  Reversal detected but auto_execute=False, skipping close")
+                                analysis = await self._run_quant_analysis(symbol)
 
+                            is_reversal = analysis.signal == "CLOSE" or (
+                                analysis.signal != "HOLD" and
+                                analysis.signal != direction and
+                                analysis.confidence > 0.7
+                            )
+
+                            if is_reversal:
+                                if self.config.auto_execute:
+                                    close_result = close_position(ticket)
+                                    if close_result.get("success"):
+                                        result.action = "closed"
+                                        result.close_reason = f"Reversal signal: {analysis.signal}"
+                                        result.pnl = profit
+                                        reversal_status = f"CLOSED sig={analysis.signal} conf={analysis.confidence:.0%}"
+                                        dec = find_decision_by_ticket(ticket)
+                                        if dec:
+                                            add_trade_event(dec["decision_id"], "reversal_signal", {
+                                                "new_signal": analysis.signal, "position_direction": direction,
+                                                "confidence": round(analysis.confidence, 2),
+                                                "price": current_price, "profit": profit,
+                                            }, source=self._source)
+                                        deal_info = get_closed_deal_by_ticket(ticket, days_back=7)
+                                        exit_px = deal_info["price"] if deal_info else current_price
+                                        self._close_decision_for_ticket(
+                                            ticket, exit_px, profit, "reversal_signal",
+                                            f"Reversal signal: {analysis.signal}"
+                                        )
+                                    else:
+                                        reversal_status = f"CLOSE_FAILED: {close_result.get('error', 'unknown')}"
+                                else:
+                                    reversal_status = f"detected:auto_execute=off (sig={analysis.signal})"
+                            else:
+                                reversal_status = f"no_signal(sig={analysis.signal} conf={analysis.confidence:.0%})"
+                        else:
+                            reversal_status = "unsupported_pipeline"
+
+                except ValueError:
+                    pass  # Already set status above
                 except Exception as e:
                     import traceback
                     self.logger.error(f"Error managing position #{ticket}: {e}\n{traceback.format_exc()}")
+                    be_status = trail_status = reversal_status = f"ERROR: {e}"
+
+                # Structured summary log
+                self.logger.info(
+                    f"POS_MGMT #{ticket} {symbol} {direction}: "
+                    f"entry={entry_price} cur={current_price} pnl={pnl_pct:+.2f}% "
+                    f"| BE: {be_status} | TRAIL: {trail_status} | REV: {reversal_status}"
+                )
 
                 results.append(result)
 

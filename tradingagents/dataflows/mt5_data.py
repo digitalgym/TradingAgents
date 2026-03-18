@@ -1169,49 +1169,71 @@ def modify_order(ticket: int, price: float = None, sl: float = None, tp: float =
     }
 
 
+def _deal_to_dict(deal) -> dict:
+    """Convert an MT5 deal object to a dictionary."""
+    return {
+        "ticket": deal.ticket,
+        "position_id": deal.position_id,
+        "symbol": deal.symbol,
+        "type": "BUY" if deal.type == 0 else "SELL",
+        "volume": deal.volume,
+        "price": deal.price,  # This is the exit price
+        "profit": deal.profit,
+        "commission": deal.commission,
+        "swap": deal.swap,
+        "time": datetime.fromtimestamp(deal.time).strftime('%Y-%m-%d %H:%M:%S'),
+        "comment": getattr(deal, "comment", ""),  # e.g. "sl", "tp", "[sl 4988.70]"
+        "reason": getattr(deal, "reason", None),  # MT5 deal reason code
+    }
+
+
 def get_closed_deal_by_ticket(ticket: int, days_back: int = 30) -> dict:
     """
     Get closed deal info from MT5 history by position ticket.
-    
+
+    Uses two strategies:
+    1. Position-based lookup (most reliable, doesn't depend on date range)
+    2. Date-range scan fallback
+
     Args:
         ticket: The position ticket number
         days_back: How many days back to search in history
-        
+
     Returns:
         dict with deal info including exit price, or None if not found
     """
     from datetime import timedelta
-    
+
     _ensure_mt5_initialized()
-    
-    # Get deals from history
+
+    # Strategy 1: Direct position-based lookup (most reliable)
+    try:
+        deals = mt5.history_deals_get(position=ticket)
+        if deals and len(deals) > 0:
+            # Find the closing deal (entry=1 means out/close)
+            for deal in deals:
+                if deal.entry == 1:
+                    return _deal_to_dict(deal)
+            # If no entry=1 deal found but there are deals, use the last one
+            # (some brokers may use different entry codes)
+            if len(deals) > 1:
+                return _deal_to_dict(deals[-1])
+    except Exception:
+        pass  # Fall through to date-range scan
+
+    # Strategy 2: Date-range scan fallback
     from_date = datetime.now() - timedelta(days=days_back)
     to_date = datetime.now() + timedelta(days=1)
-    
+
     deals = mt5.history_deals_get(from_date, to_date)
-    
+
     if deals is None or len(deals) == 0:
         return None
-    
-    # Find deals matching this position ticket
-    # Look for the closing deal (entry=1 means out/close)
+
     for deal in deals:
-        if deal.position_id == ticket and deal.entry == 1:  # entry=1 means closing deal
-            return {
-                "ticket": deal.ticket,
-                "position_id": deal.position_id,
-                "symbol": deal.symbol,
-                "type": "BUY" if deal.type == 0 else "SELL",
-                "volume": deal.volume,
-                "price": deal.price,  # This is the exit price
-                "profit": deal.profit,
-                "commission": deal.commission,
-                "swap": deal.swap,
-                "time": datetime.fromtimestamp(deal.time).strftime('%Y-%m-%d %H:%M:%S'),
-                "comment": getattr(deal, "comment", ""),  # e.g. "sl", "tp", EA name
-                "reason": getattr(deal, "reason", None),  # MT5 deal reason code
-            }
-    
+        if deal.position_id == ticket and deal.entry == 1:
+            return _deal_to_dict(deal)
+
     return None
 
 
