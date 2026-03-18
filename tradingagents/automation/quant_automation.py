@@ -222,6 +222,7 @@ class QuantAutomation:
         self._position_results: List[PositionManagementResult] = []
         self._assumption_review_results: List[Dict[str, Any]] = []
         self._error_message: Optional[str] = None
+        self._missing_ticket_counts: Dict[int, int] = {}  # ticket -> consecutive missing count
 
         # Lock for state file writes (multiple async loops share this)
         self._state_lock = asyncio.Lock()
@@ -2032,7 +2033,42 @@ class QuantAutomation:
                             action="closed", close_reason=exit_reason, pnl=mt5_profit,
                         ))
                     else:
-                        self.logger.debug(f"  Decision {dec['decision_id']} ticket #{dec_ticket} gone but no deal history found")
+                        # Track consecutive checks where ticket is gone but no deal found
+                        self._missing_ticket_counts[dec_ticket] = self._missing_ticket_counts.get(dec_ticket, 0) + 1
+                        miss_count = self._missing_ticket_counts[dec_ticket]
+                        self.logger.info(
+                            f"  Decision {dec['decision_id']} ticket #{dec_ticket} gone but no deal history found "
+                            f"(check {miss_count}/3)"
+                        )
+                        if miss_count >= 3:
+                            # Position confirmed gone — close decision with best-effort data
+                            entry_price = dec.get("entry_price", 0)
+                            self.logger.warning(
+                                f"  Closing stale decision {dec['decision_id']} ticket #{dec_ticket} — "
+                                f"gone for {miss_count} consecutive checks, no MT5 deal found"
+                            )
+                            add_trade_event(dec["decision_id"], "stale_cleanup", {
+                                "exit_price": entry_price,
+                                "mt5_profit": 0,
+                                "inferred_reason": "stale_cleanup",
+                                "note": f"Ticket #{dec_ticket} missing from MT5 for {miss_count} checks, no deal history found",
+                                "entry_price": entry_price,
+                                "sl": dec.get("stop_loss"),
+                                "tp": dec.get("take_profit"),
+                            }, source=self._source)
+                            self._close_decision_for_ticket(
+                                dec_ticket, entry_price, 0.0, "stale_cleanup",
+                                f"Position gone from MT5 for {miss_count} checks, no deal history — closed as stale"
+                            )
+                            del self._missing_ticket_counts[dec_ticket]
+                            results.append(PositionManagementResult(
+                                timestamp=datetime.now(), ticket=dec_ticket, symbol=dec_symbol,
+                                action="closed", close_reason="stale_cleanup", pnl=0.0,
+                            ))
+                # Clear missing counts for tickets that reappeared (e.g. race condition resolved)
+                for ticket in list(self._missing_ticket_counts.keys()):
+                    if ticket in open_tickets:
+                        del self._missing_ticket_counts[ticket]
             except Exception as e:
                 self.logger.error(f"Error detecting closed positions: {e}")
 

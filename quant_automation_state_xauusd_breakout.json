@@ -1,58 +1,10 @@
 {
   "last_analysis_time": {
-    "XAUUSD": "2026-03-13T23:09:04.919055"
+    "XAUUSD": "2026-03-19T03:31:10.672380"
   },
-  "last_updated": "2026-03-13T23:18:28.487017",
+  "last_updated": "2026-03-19T05:34:01.359109",
   "status": "running",
   "analysis_results": [
-    {
-      "timestamp": "2026-03-12T04:16:00.922446",
-      "symbol": "XAUUSD",
-      "pipeline": "breakout_quant",
-      "signal": "HOLD",
-      "confidence": 0.4,
-      "entry_price": null,
-      "stop_loss": null,
-      "take_profit": null,
-      "rationale": "Market in tight BB squeeze consolidation with bearish structure (lower highs), but current price in lower third of range, not near range high for anticipation short or below range low for breakdown confirmation; conflicting bullish SMC bias adds uncertainty.\n\n**Invalidation**: Price breaks above range high at 5223.08 with strong momentum, shifting structure to bullish",
-      "trailing_stop_atr_multiplier": null,
-      "executed": false,
-      "execution_ticket": null,
-      "execution_error": null,
-      "duration_seconds": 9.530793190002441
-    },
-    {
-      "timestamp": "2026-03-12T04:31:12.742863",
-      "symbol": "XAUUSD",
-      "pipeline": "breakout_quant",
-      "signal": "HOLD",
-      "confidence": 0.4,
-      "entry_price": null,
-      "stop_loss": null,
-      "take_profit": null,
-      "rationale": "Market in tight BB squeeze consolidation with bearish structure (lower highs), but current price is mid-range below midpoint, not at range high for anticipation sell or broken low for breakdown confirmation; SMC shows bullish bias with unfilled FVGs below, adding uncertainty.\n\n**Invalidation**: Price breaks above range high at 5223.08 with momentum, invalidating bearish structure",
-      "trailing_stop_atr_multiplier": null,
-      "executed": false,
-      "execution_ticket": null,
-      "execution_error": null,
-      "duration_seconds": 9.82639217376709
-    },
-    {
-      "timestamp": "2026-03-12T04:46:23.493127",
-      "symbol": "XAUUSD",
-      "pipeline": "breakout_quant",
-      "signal": "HOLD",
-      "confidence": 0.7,
-      "entry_price": null,
-      "stop_loss": null,
-      "take_profit": null,
-      "rationale": "Market in tight BB squeeze consolidation with bearish structure bias but price in mid-range not at entry zone, conflicting bullish SMC bias, and poor past direction accuracy warrant no entry.\n\n**Invalidation**: Breakout above range high at 5223.08 without retrace or breakdown below range low at 5149.39 with momentum",
-      "trailing_stop_atr_multiplier": null,
-      "executed": false,
-      "execution_ticket": null,
-      "execution_error": null,
-      "duration_seconds": 9.382738828659058
-    },
     {
       "timestamp": "2026-03-12T05:01:38.886690",
       "symbol": "XAUUSD",
@@ -1604,6 +1556,54 @@
       "execution_ticket": null,
       "execution_error": null,
       "duration_seconds": 13.750045776367188
+    },
+    {
+      "timestamp": "2026-03-18T19:30:34.623699",
+      "symbol": "XAUUSD",
+      "pipeline": "breakout_quant",
+      "signal": "HOLD",
+      "confidence": 0.95,
+      "entry_price": null,
+      "stop_loss": null,
+      "take_profit": null,
+      "rationale": "Market is not consolidating (explicit flag: Not consolidating), no BB squeeze, neutral structure bias, no volume contraction, no breakout confirmed, extreme volatility regime - wait for proper setup per breakout strategy rules.\n\n**Invalidation**: Formation of clear consolidation range with defined structure bias and volume contraction",
+      "trailing_stop_atr_multiplier": null,
+      "executed": false,
+      "execution_ticket": null,
+      "execution_error": null,
+      "duration_seconds": 22.20596742630005
+    },
+    {
+      "timestamp": "2026-03-18T23:30:43.324200",
+      "symbol": "XAUUSD",
+      "pipeline": "breakout_quant",
+      "signal": "HOLD",
+      "confidence": 0.8,
+      "entry_price": null,
+      "stop_loss": null,
+      "take_profit": null,
+      "rationale": "Market is not consolidating (no BB squeeze, wide 8.84% range, extreme volatility), no volume contraction inside range, no confirmed breakout with volume surge; structure bearish but price already below range low without confirmation\u2014high risk of false move.\n\n**Invalidation**: No current consolidation or confirmed breakout; wait for BB squeeze and volume contraction.",
+      "trailing_stop_atr_multiplier": null,
+      "executed": false,
+      "execution_ticket": null,
+      "execution_error": null,
+      "duration_seconds": 7.72812557220459
+    },
+    {
+      "timestamp": "2026-03-19T03:31:19.184587",
+      "symbol": "XAUUSD",
+      "pipeline": "breakout_quant",
+      "signal": "HOLD",
+      "confidence": 0.85,
+      "entry_price": null,
+      "stop_loss": null,
+      "take_profit": null,
+      "rationale": "No consolidation present (explicitly 'Not consolidating', no BB squeeze, no volume contraction), no breakout confirmed despite price below range low (missing volume surge), extreme volatility regime unsuitable for breakout entries, wide range (8.84%) indicates lack of tight setup; hold for proper coiled spring conditions.\n\n**Invalidation**: Clear consolidation forms with volume contraction and confirmed structure bias",
+      "trailing_stop_atr_multiplier": null,
+      "executed": false,
+      "execution_ticket": null,
+      "execution_error": null,
+      "duration_seconds": 8.511233568191528
     }
   ],
   "position_results": [
@@ -2807,5 +2807,7 @@
       "close_reason": "sl_hit",
       "pnl": -64.37
     }
-  ]
+  ],
+  "last_assumption_review": "2026-03-19T05:34:01.287301",
+  "assumption_review_results": []
 }

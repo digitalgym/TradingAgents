@@ -813,6 +813,16 @@ export const stopQuantAutomation = (instanceName: string = 'quant') =>
     method: 'POST',
   })
 
+export const startAllQuantAutomations = () =>
+  fetchApi<{ results: Record<string, { status: string; error?: string }> }>('/automation/quant/start-all', {
+    method: 'POST',
+  })
+
+export const stopAllQuantAutomations = () =>
+  fetchApi<{ results: Record<string, { status: string; error?: string }> }>('/automation/quant/stop-all', {
+    method: 'POST',
+  })
+
 export const pauseQuantAutomation = (instanceName: string = 'quant') =>
   fetchApi<{ status: string }>(`/automation/quant/pause?instance=${instanceName}`, {
     method: 'POST',

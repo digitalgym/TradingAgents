@@ -11,7 +11,7 @@
   "volume": 0.01,
   "mt5_ticket": 1641405,
   "created_at": "2026-03-18T12:01:40.202668",
-  "status": "active",
+  "status": "closed",
   "execution_error": null,
   "setup_type": null,
   "higher_tf_bias": null,
@@ -29,19 +29,19 @@
   "volatility_regime": null,
   "market_regime": null,
   "session": null,
-  "exit_price": null,
-  "exit_date": null,
-  "pnl": null,
-  "pnl_percent": null,
-  "outcome_notes": null,
-  "was_correct": null,
+  "exit_price": 4947.47,
+  "exit_date": "2026-03-18T21:27:46.870611",
+  "pnl": -53.109999999999665,
+  "pnl_percent": -1.062076799091299,
+  "outcome_notes": "Position closed externally (sl_hit). MT5 profit: -74.36",
+  "was_correct": false,
   "trailing_stop_atr_multiplier": null,
-  "exit_reason": null,
-  "rr_planned": null,
-  "rr_realized": null,
-  "reward_signal": null,
-  "sharpe_contribution": null,
-  "drawdown_impact": null,
+  "exit_reason": "sl_hit",
+  "rr_planned": 1.2213112454680017,
+  "rr_realized": -0.9999260081112459,
+  "reward_signal": -0.2553199496972396,
+  "sharpe_contribution": 0.43135104744371056,
+  "drawdown_impact": -0.05081713104715213,
   "pattern_tags": [],
   "events": [
     {
@@ -53,7 +53,56 @@
       "sl": 4947.46607,
       "tp": 5065.44864,
       "volume": 0.01
+    },
+    {
+      "timestamp": "2026-03-18T21:27:46.756992",
+      "type": "external_close",
+      "source": "xauusd_smc_mtf",
+      "exit_price": 4947.47,
+      "mt5_profit": -74.36,
+      "inferred_reason": "sl_hit",
+      "deal_type": "SELL",
+      "deal_comment": "[sl 4947.47]",
+      "entry_price": 5000.58,
+      "sl": 4947.46607,
+      "tp": 5065.44864
+    },
+    {
+      "timestamp": "2026-03-18T21:27:46.885571",
+      "type": "closed",
+      "source": "xauusd_smc_mtf",
+      "exit_price": 4947.47,
+      "exit_reason": "sl_hit",
+      "mt5_profit": -74.36,
+      "pnl_percent": -1.062076799091299,
+      "was_correct": false,
+      "result": "loss"
     }
   ],
-  "has_context": false
+  "has_context": false,
+  "structured_outcome": {
+    "result": "loss",
+    "returns_pct": -1.0621,
+    "pnl_pips": -53.11,
+    "max_favorable_pips": null,
+    "max_adverse_pips": null,
+    "entry_quality": "good",
+    "entry_timing": "on_time",
+    "entry_vs_plan_pct": 0.0,
+    "exit_type": "sl_hit",
+    "direction_correct": false,
+    "sl_placement": "appropriate",
+    "tp_placement": "appropriate",
+    "held_duration_hours": null,
+    "lessons": [
+      "Direction was wrong. Review analysis for signal quality."
+    ]
+  },
+  "direction_correct": false,
+  "sl_placement": "appropriate",
+  "tp_placement": "appropriate",
+  "entry_quality": "good",
+  "outcome_lessons": [
+    "Direction was wrong. Review analysis for signal quality."
+  ]
 }

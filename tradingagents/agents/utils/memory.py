@@ -1016,18 +1016,18 @@ class SMCPatternMemory:
             "timestamp": timestamp,
             # SMC context (flattened for ChromaDB)
             "entry_zone": smc_context.get("entry_zone", "unknown"),
-            "entry_zone_strength": float(smc_context.get("entry_zone_strength", 0.5)),
-            "with_trend": str(smc_context.get("with_trend", "unknown")),
-            "higher_tf_aligned": str(smc_context.get("higher_tf_aligned", "unknown")),
-            "confluences": json.dumps(smc_context.get("confluences", [])),
-            "zone_tested_before": str(smc_context.get("zone_tested_before", "unknown")),
+            "entry_zone_strength": float(smc_context.get("entry_zone_strength") or 0.5),
+            "with_trend": str(smc_context.get("with_trend") or "unknown"),
+            "higher_tf_aligned": str(smc_context.get("higher_tf_aligned") or "unknown"),
+            "confluences": json.dumps(smc_context.get("confluences") or []),
+            "zone_tested_before": str(smc_context.get("zone_tested_before") or "unknown"),
             # Outcome
             "was_win": str(outcome.get("result") == "win"),
-            "returns_pct": float(outcome.get("returns_pct", 0)),
-            "direction_correct": str(outcome.get("direction_correct", "unknown")),
-            "sl_placement": outcome.get("sl_placement", "unknown"),
-            "tp_placement": outcome.get("tp_placement", "unknown"),
-            "exit_type": outcome.get("exit_type", "unknown"),
+            "returns_pct": float(outcome.get("returns_pct") or 0),
+            "direction_correct": str(outcome.get("direction_correct") or "unknown"),
+            "sl_placement": outcome.get("sl_placement") or "unknown",
+            "tp_placement": outcome.get("tp_placement") or "unknown",
+            "exit_type": outcome.get("exit_type") or "unknown",
             # Lesson
             "lesson": lesson[:500] if lesson else "",  # Truncate for metadata
         }

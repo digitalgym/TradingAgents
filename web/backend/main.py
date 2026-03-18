@@ -8741,8 +8741,8 @@ async def start_quant_automation(config: QuantAutomationConfigRequest):
         task = asyncio.create_task(automation.start())
         _automation_tasks[instance_name] = task
 
-        # Give it time to start and check for immediate failures
-        await asyncio.sleep(1.0)
+        # Brief check for immediate startup failures
+        await asyncio.sleep(0.2)
 
         # Check if the task failed during startup
         if task.done():
@@ -8766,6 +8766,106 @@ async def start_quant_automation(config: QuantAutomationConfigRequest):
         _automation_instances.pop(instance_name, None)
         _automation_tasks.pop(instance_name, None)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/automation/quant/start-all")
+async def start_all_quant_automations():
+    """Start all configured automation instances concurrently."""
+    import json as _json
+
+    config_path = os.path.join(os.path.dirname(__file__), "../../automation_configs.json")
+    if not os.path.exists(config_path):
+        raise HTTPException(status_code=404, detail="No automation_configs.json found")
+
+    with open(config_path) as f:
+        all_configs = _json.load(f)
+
+    results = {}
+    tasks_to_await = []
+
+    for instance_name, cfg in all_configs.items():
+        existing = _get_automation_instance(instance_name)
+        if existing and existing._running:
+            results[instance_name] = {"status": "already_running"}
+            continue
+
+        try:
+            from tradingagents.automation.quant_automation import (
+                QuantAutomation,
+                QuantAutomationConfig,
+                PipelineType,
+            )
+
+            pipeline_name = cfg.get("pipeline", "smc_quant")
+            if pipeline_name == "quant":
+                pipeline_name = "smc_quant_basic"
+
+            instance_state_file = cfg.get("state_file", f"quant_automation_state_{instance_name}.json")
+
+            auto_config = QuantAutomationConfig(
+                instance_name=instance_name,
+                pipeline=PipelineType(pipeline_name),
+                symbols=cfg.get("symbols", []),
+                timeframe=cfg.get("timeframe", "D1"),
+                analysis_interval_seconds=cfg.get("analysis_interval_seconds", 3600),
+                position_check_interval_seconds=cfg.get("position_check_interval_seconds", 60),
+                auto_execute=cfg.get("auto_execute", False),
+                min_confidence=cfg.get("min_confidence", 0.65),
+                max_positions_per_symbol=cfg.get("max_positions_per_symbol", 1),
+                enable_trailing_stop=cfg.get("enable_trailing_stop", True),
+                trailing_stop_atr_multiplier=cfg.get("trailing_stop_atr_multiplier", 1.5),
+                move_to_breakeven_atr_mult=cfg.get("move_to_breakeven_atr_mult", 1.5),
+                max_risk_per_trade_pct=cfg.get("max_risk_per_trade_pct", 1.0),
+                default_lot_size=cfg.get("default_lot_size", 0.01),
+                daily_loss_limit_pct=cfg.get("daily_loss_limit_pct", 3.0),
+                max_consecutive_losses=cfg.get("max_consecutive_losses", 3),
+                state_file=instance_state_file,
+            )
+
+            automation = QuantAutomation(auto_config)
+            _automation_instances[instance_name] = automation
+            _save_config(instance_name, auto_config.to_dict())
+
+            task = asyncio.create_task(automation.start())
+            _automation_tasks[instance_name] = task
+            tasks_to_await.append((instance_name, task))
+            results[instance_name] = {"status": "starting"}
+
+        except Exception as e:
+            results[instance_name] = {"status": "error", "error": str(e)}
+
+    # Brief wait for immediate crashes
+    if tasks_to_await:
+        await asyncio.sleep(0.3)
+        for name, task in tasks_to_await:
+            if task.done():
+                exc = task.exception()
+                if exc:
+                    results[name] = {"status": "error", "error": str(exc)}
+                    _automation_instances.pop(name, None)
+                    _automation_tasks.pop(name, None)
+                else:
+                    results[name] = {"status": "started"}
+            else:
+                results[name] = {"status": "started"}
+
+    return {"results": results}
+
+
+@app.post("/api/automation/quant/stop-all")
+async def stop_all_quant_automations():
+    """Stop all running automation instances."""
+    results = {}
+    for name, automation in list(_automation_instances.items()):
+        if automation._running:
+            try:
+                await automation.stop()
+                results[name] = {"status": "stopped"}
+            except Exception as e:
+                results[name] = {"status": "error", "error": str(e)}
+        else:
+            results[name] = {"status": "already_stopped"}
+    return {"results": results}
 
 
 @app.post("/api/automation/quant/stop")

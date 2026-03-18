@@ -25,6 +25,8 @@ import {
   listAutomationInstances,
   startQuantAutomation,
   stopQuantAutomation,
+  startAllQuantAutomations,
+  stopAllQuantAutomations,
   pauseQuantAutomation,
   resumeQuantAutomation,
   updateQuantAutomationConfig,
@@ -606,33 +608,75 @@ export default function AutomationPage() {
     if (!inst) return
     updateInstance(name, { actionLoading: "start", error: null })
     const result = await startQuantAutomation({ ...inst.config, instance_name: name })
-    if (result.data) {
-      await fetchData()
-    } else if (result.error) {
+    if (result.error) {
       updateInstance(name, { error: result.error })
     }
     updateInstance(name, { actionLoading: null })
+    fetchData() // non-blocking refresh
   }
 
   const handleInstanceStop = async (name: string) => {
     updateInstance(name, { actionLoading: "stop" })
     await stopQuantAutomation(name)
-    await fetchData()
     updateInstance(name, { actionLoading: null })
+    fetchData() // non-blocking refresh
   }
 
   const handleInstancePause = async (name: string) => {
     updateInstance(name, { actionLoading: "pause" })
     await pauseQuantAutomation(name)
-    await fetchData()
     updateInstance(name, { actionLoading: null })
+    fetchData() // non-blocking refresh
   }
 
   const handleInstanceResume = async (name: string) => {
     updateInstance(name, { actionLoading: "resume" })
     await resumeQuantAutomation(name)
-    await fetchData()
     updateInstance(name, { actionLoading: null })
+    fetchData() // non-blocking refresh
+  }
+
+  const handleStartAll = async () => {
+    const stoppedNames = Object.entries(instances)
+      .filter(([, inst]) => !inst.status?.running)
+      .map(([name]) => name)
+    if (stoppedNames.length === 0) return
+
+    // Set all to loading
+    stoppedNames.forEach(name => updateInstance(name, { actionLoading: "start", error: null }))
+
+    // Single bulk request — backend starts all from automation_configs.json
+    const result = await startAllQuantAutomations()
+    if (result.data?.results) {
+      for (const [name, res] of Object.entries(result.data.results)) {
+        if (res.error) updateInstance(name, { error: res.error })
+        updateInstance(name, { actionLoading: null })
+      }
+    } else {
+      stoppedNames.forEach(name => updateInstance(name, { actionLoading: null }))
+    }
+
+    fetchData()
+  }
+
+  const handleStopAll = async () => {
+    const runningNames = Object.entries(instances)
+      .filter(([, inst]) => inst.status?.running)
+      .map(([name]) => name)
+    if (runningNames.length === 0) return
+
+    runningNames.forEach(name => updateInstance(name, { actionLoading: "stop" }))
+
+    const result = await stopAllQuantAutomations()
+    if (result.data?.results) {
+      for (const [name] of Object.entries(result.data.results)) {
+        updateInstance(name, { actionLoading: null })
+      }
+    } else {
+      runningNames.forEach(name => updateInstance(name, { actionLoading: null }))
+    }
+
+    fetchData()
   }
 
   const handleInstanceTest = async (name: string) => {
@@ -1472,6 +1516,18 @@ export default function AutomationPage() {
               <Badge variant="outline" className="capitalize text-xs">
                 {marketSession.replace(/_/g, " ")}
               </Badge>
+            )}
+            {Object.values(instances).some(i => !i.status?.running) && (
+              <Button variant="outline" size="sm" onClick={handleStartAll}>
+                <Play className="mr-1 h-3 w-3" />
+                Start All
+              </Button>
+            )}
+            {Object.values(instances).some(i => i.status?.running) && (
+              <Button variant="outline" size="sm" onClick={handleStopAll}>
+                <Square className="mr-1 h-3 w-3" />
+                Stop All
+              </Button>
             )}
             <Button onClick={() => setAddDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
