@@ -6,3 +6,6 @@ pydantic>=2.5.0
 python-multipart>=0.0.6
 langchain-xai>=0.2.0
 langchain-openai>=0.2.0
+sqlalchemy>=2.0.0
+pg8000>=1.30.0
+python-dotenv>=1.0.0

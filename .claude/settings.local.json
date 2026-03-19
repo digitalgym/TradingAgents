@@ -66,7 +66,17 @@
       "Bash(.venv/Scripts/pip install:*)",
       "Bash(.venv\\\\Scripts\\\\pip install:*)",
       "Bash(\".venv/Scripts/pip.exe\" install:*)",
-      "Bash(ren setup_trade_queue.py setup_remote_control.py)"
+      "Bash(ren setup_trade_queue.py setup_remote_control.py)",
+      "Bash(vercel --prod)",
+      "Bash(vercel env:*)",
+      "Bash(rm -rf .vercel)",
+      "Bash(vercel link:*)",
+      "Bash(vercel --prod --public)",
+      "Bash(openssl rand:*)",
+      "Bash(vercel logs:*)",
+      "Bash(vercel inspect:*)",
+      "Bash(printf \"c2e53dc553025c14dd578336f231e0979e41fe505752a0bef717c5ee82f87302\")",
+      "Bash(printf \"HPIy6Fn5WzA6D6WjOtt57hFL2MMgZ7pX\")"
     ]
   }
 }
