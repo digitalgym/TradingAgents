@@ -1977,13 +1977,25 @@ class QuantAutomation:
             try:
                 my_source = self._source
                 active_decisions = list_active_decisions()
+                # Collect all sources from active decisions to identify orphans
+                all_sources = {d.get("source") for d in active_decisions if d.get("source")}
                 for dec in active_decisions:
                     dec_ticket = dec.get("mt5_ticket")
                     dec_symbol = dec.get("symbol", "")
-                    # Only check decisions owned by this automation
-                    if dec.get("source") != my_source:
+                    dec_source = dec.get("source", "")
+                    # Skip decisions for symbols this instance doesn't handle
+                    if dec_symbol not in self.config.symbols:
                         continue
-                    if not dec_ticket or dec_ticket in open_tickets or dec_symbol not in self.config.symbols:
+                    # Process decisions owned by this instance directly
+                    # Also process orphan decisions (e.g. web_ui, manual) — sources
+                    # that don't start with any symbol prefix are orphans
+                    is_mine = dec_source == my_source
+                    is_orphan = not any(
+                        dec_source.startswith(sym.lower()) for sym in self.config.symbols
+                    ) and dec_source != my_source
+                    if not is_mine and not is_orphan:
+                        continue
+                    if not dec_ticket or dec_ticket in open_tickets:
                         continue
                     # This decision's position is gone - close it
                     deal_info = get_closed_deal_by_ticket(dec_ticket, days_back=14)
