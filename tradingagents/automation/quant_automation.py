@@ -377,16 +377,31 @@ class QuantAutomation:
             "assumption_review_results": self._assumption_review_results,
         }
 
-        # Atomic write: write to temp file, then rename
-        tmp_file = state_file.with_suffix(".tmp")
+        # Atomic write: write to unique temp file, then rename
+        # Use PID + thread to avoid collisions between concurrent async tasks
+        tmp_file = state_file.with_suffix(f".{os.getpid()}.tmp")
         try:
             with open(tmp_file, "w") as f:
                 json.dump(state, f, indent=2)
-            # On Windows, os.replace is atomic and overwrites the target
-            os.replace(str(tmp_file), str(state_file))
+            # On Windows, os.replace can fail with Access Denied if antivirus
+            # or another process briefly locks the target. Retry a few times.
+            last_err = None
+            for attempt in range(4):
+                try:
+                    os.replace(str(tmp_file), str(state_file))
+                    last_err = None
+                    break
+                except PermissionError as e:
+                    last_err = e
+                    if attempt < 3:
+                        import time
+                        time.sleep(0.1 * (attempt + 1))
+            if last_err:
+                self.logger.warning(f"Failed to save state after 4 attempts: {last_err}")
         except Exception as e:
             self.logger.warning(f"Failed to save state: {e}")
-            # Clean up temp file on failure
+        finally:
+            # Clean up temp file if it still exists
             try:
                 tmp_file.unlink(missing_ok=True)
             except Exception:
@@ -1973,7 +1988,18 @@ class QuantAutomation:
                 results.append(result)
 
             # Detect positions that disappeared (SL/TP hit externally)
+            # Include both filled positions AND pending orders — limit orders
+            # may not fill immediately, so the ticket exists as a pending order
+            # before it becomes a position.
             open_tickets = {p.get("ticket") for p in managed_positions}
+            try:
+                import MetaTrader5 as mt5
+                pending_orders = mt5.orders_get()
+                if pending_orders:
+                    for order in pending_orders:
+                        open_tickets.add(order.ticket)
+            except Exception:
+                pass  # If orders_get fails, proceed with positions only
             try:
                 my_source = self._source
                 active_decisions = list_active_decisions()
@@ -2033,9 +2059,9 @@ class QuantAutomation:
                         miss_count = self._missing_ticket_counts[dec_ticket]
                         self.logger.info(
                             f"  Decision {dec['decision_id']} ticket #{dec_ticket} gone but no deal history found "
-                            f"(check {miss_count}/3)"
+                            f"(check {miss_count}/5)"
                         )
-                        if miss_count >= 3:
+                        if miss_count >= 5:
                             # Position confirmed gone — close decision with best-effort data
                             entry_price = dec.get("entry_price", 0)
                             self.logger.warning(

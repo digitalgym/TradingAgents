@@ -656,9 +656,9 @@ class SMCTradePlanGenerator:
             ob_strength = safe_get(ob, 'strength', 0.5)
             ob_mid = (ob_top + ob_bottom) / 2
 
-            if direction == "BUY" and ob_mid > min_tp_price:
+            if direction == "BUY" and ob_bottom > min_tp_price:
                 tp_candidates.append((ob_bottom, ob_strength * 100, "opposing_ob", ob))
-            elif direction == "SELL" and ob_mid < max_tp_price:
+            elif direction == "SELL" and ob_top < max_tp_price:
                 tp_candidates.append((ob_top, ob_strength * 100, "opposing_ob", ob))
 
         # Look for equal levels (proven support/resistance) as TP targets
@@ -726,6 +726,21 @@ class SMCTradePlanGenerator:
         tp_candidates.sort(key=lambda x: -x[4])
 
         tp_price, strength, tp_type, zone, score = tp_candidates[0]
+
+        # Safety check: TP must be on the correct side of entry
+        # BUY: TP above entry, SELL: TP below entry
+        if direction == "BUY" and tp_price <= entry_price:
+            # Fallback: 2x the distance to current price, or 2% above entry
+            fallback_dist = max(abs(current_price - entry_price) * 2, entry_price * 0.02)
+            tp_price = entry_price + fallback_dist
+            tp_type = "calculated"
+            strength = 0
+        elif direction == "SELL" and tp_price >= entry_price:
+            fallback_dist = max(abs(current_price - entry_price) * 2, entry_price * 0.02)
+            tp_price = entry_price - fallback_dist
+            tp_type = "calculated"
+            strength = 0
+
         tp_zone = {"type": tp_type, "price": tp_price, "strength": strength}
 
         return tp_price, tp_zone

@@ -8773,8 +8773,8 @@ async def start_all_quant_automations():
     """Start all configured automation instances concurrently."""
     import json as _json
 
-    config_path = os.path.join(os.path.dirname(__file__), "../../automation_configs.json")
-    if not os.path.exists(config_path):
+    config_path = _AUTOMATION_CONFIGS_FILE
+    if not config_path.exists():
         raise HTTPException(status_code=404, detail="No automation_configs.json found")
 
     with open(config_path) as f:
@@ -8814,12 +8814,21 @@ async def start_all_quant_automations():
                 max_positions_per_symbol=cfg.get("max_positions_per_symbol", 1),
                 enable_trailing_stop=cfg.get("enable_trailing_stop", True),
                 trailing_stop_atr_multiplier=cfg.get("trailing_stop_atr_multiplier", 1.5),
+                enable_breakeven_stop=cfg.get("enable_breakeven_stop", True),
                 move_to_breakeven_atr_mult=cfg.get("move_to_breakeven_atr_mult", 1.5),
+                enable_reversal_close=cfg.get("enable_reversal_close", True),
                 max_risk_per_trade_pct=cfg.get("max_risk_per_trade_pct", 1.0),
                 default_lot_size=cfg.get("default_lot_size", 0.01),
                 daily_loss_limit_pct=cfg.get("daily_loss_limit_pct", 3.0),
                 max_consecutive_losses=cfg.get("max_consecutive_losses", 3),
+                assumption_review_interval_seconds=cfg.get("assumption_review_interval_seconds", 3600),
+                assumption_review_auto_apply=cfg.get("assumption_review_auto_apply", False),
+                enable_trade_queue=cfg.get("enable_trade_queue", True),
+                trade_queue_poll_seconds=cfg.get("trade_queue_poll_seconds", 5),
+                enable_remote_control=cfg.get("enable_remote_control", True),
+                control_poll_seconds=cfg.get("control_poll_seconds", 3),
                 state_file=instance_state_file,
+                logs_dir=cfg.get("logs_dir", "logs/quant_automation"),
             )
 
             automation = QuantAutomation(auto_config)
