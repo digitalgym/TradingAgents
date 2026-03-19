@@ -16,6 +16,13 @@ echo Starting backend (port 8000)...
 cd /d "%~dp0web\backend"
 start "TradingAgents Backend" cmd /k "title TradingAgents Backend && python -m uvicorn main:app --host 0.0.0.0 --port 8000"
 
+:: Start MT5 worker (polls trade queue from Postgres) - optional with --mt5 flag
+if "%1"=="--mt5" (
+    echo Starting MT5 worker...
+    cd /d "%~dp0web\backend"
+    start "MT5 Worker" cmd /k "title MT5 Worker && python mt5_worker.py"
+)
+
 :: Wait for backend to be ready
 echo Waiting for backend...
 timeout /t 5 /nobreak >nul

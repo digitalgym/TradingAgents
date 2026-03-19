@@ -1,4 +1,6 @@
 const API_BASE = '/api'
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY || ''
+const VERCEL_BYPASS = process.env.NEXT_PUBLIC_VERCEL_BYPASS || ''
 
 export interface ApiResponse<T> {
   data?: T
@@ -7,12 +9,24 @@ export interface ApiResponse<T> {
 
 async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<ApiResponse<T>> {
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(options?.headers as Record<string, string>),
+    }
+
+    // Add API key if configured
+    if (API_KEY) {
+      headers['X-API-Key'] = API_KEY
+    }
+
+    // Add Vercel protection bypass if configured
+    if (VERCEL_BYPASS) {
+      headers['x-vercel-protection-bypass'] = VERCEL_BYPASS
+    }
+
     const response = await fetch(`${API_BASE}${endpoint}`, {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
+      headers,
     })
 
     if (!response.ok) {
