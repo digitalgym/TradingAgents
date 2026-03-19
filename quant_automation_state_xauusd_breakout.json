@@ -2,7 +2,7 @@
   "last_analysis_time": {
     "XAUUSD": "2026-03-20T07:34:15.073340"
   },
-  "last_updated": "2026-03-20T07:36:28.838582",
+  "last_updated": "2026-03-20T08:09:23.330838",
   "status": "running",
   "analysis_results": [
     {
@@ -2808,6 +2808,6 @@
       "pnl": -64.37
     }
   ],
-  "last_assumption_review": "2026-03-20T06:41:07.589318",
+  "last_assumption_review": "2026-03-20T07:42:31.428323",
   "assumption_review_results": []
 }

@@ -263,6 +263,10 @@ class QuantAutomation:
         # Shared aiohttp session for API calls (created lazily)
         self._http_session: Optional["aiohttp.ClientSession"] = None
 
+        # Postgres pool for state persistence (created lazily)
+        self._pg_pool: Optional[Any] = None
+        self._pg_url: Optional[str] = os.environ.get("POSTGRES_URL")
+
         # Risk management
         self.guardrails = RiskGuardrails(
             daily_loss_limit_pct=self.config.daily_loss_limit_pct,
@@ -319,47 +323,101 @@ class QuantAutomation:
             await self._http_session.close()
             self._http_session = None
 
+    async def _get_pg_pool(self):
+        """Get or create asyncpg connection pool for state persistence."""
+        if self._pg_pool is None and self._pg_url:
+            try:
+                import asyncpg
+                self._pg_pool = await asyncpg.create_pool(
+                    self._pg_url, min_size=1, max_size=2,
+                    statement_cache_size=0,  # Required for Neon pooler (PgBouncer)
+                )
+                # Ensure state column exists
+                async with self._pg_pool.acquire() as conn:
+                    await conn.execute("""
+                        ALTER TABLE automation_status
+                        ADD COLUMN IF NOT EXISTS state jsonb
+                    """)
+                self.logger.info("Postgres state persistence enabled")
+            except Exception as e:
+                self.logger.warning(f"Postgres state persistence unavailable: {e}")
+                self._pg_pool = None
+        return self._pg_pool
+
     def _load_state(self):
-        """Load automation state from file."""
+        """Load automation state from file (sync, used in __init__)."""
         state_file = _PROJECT_ROOT / self.config.state_file
         if state_file.exists():
             try:
                 with open(state_file, "r") as f:
                     state = json.load(f)
-                self._last_analysis_time = {
-                    k: datetime.fromisoformat(v)
-                    for k, v in state.get("last_analysis_time", {}).items()
-                }
-                # Restore persisted results history
-                for item in state.get("analysis_results", []):
-                    try:
-                        item["timestamp"] = datetime.fromisoformat(item["timestamp"])
-                        self._analysis_results.append(AnalysisCycleResult(**item))
-                    except Exception:
-                        continue
-                for item in state.get("position_results", []):
-                    try:
-                        item["timestamp"] = datetime.fromisoformat(item["timestamp"])
-                        self._position_results.append(PositionManagementResult(**item))
-                    except Exception:
-                        continue
-                # Restore assumption review state
-                last_review = state.get("last_assumption_review")
-                if last_review:
-                    self._last_assumption_review = datetime.fromisoformat(last_review)
-                self._assumption_review_results = state.get("assumption_review_results", [])
+                self._apply_state(state)
             except Exception as e:
-                self.logger.warning(f"Could not load state: {e}")
+                self.logger.warning(f"Could not load state from file: {e}")
 
-    def _save_state(self):
-        """Save automation state to file.
+    async def _load_state_from_db(self):
+        """Load state from Postgres if available (async, called after startup)."""
+        pool = await self._get_pg_pool()
+        if not pool:
+            return
+        try:
+            async with pool.acquire() as conn:
+                row = await conn.fetchrow(
+                    "SELECT state FROM automation_status WHERE instance_name = $1",
+                    self._source,
+                )
+                if row and row["state"]:
+                    state = json.loads(row["state"]) if isinstance(row["state"], str) else row["state"]
+                    # DB state is newer if it has a later last_updated
+                    db_updated = state.get("last_updated")
+                    file_updated = None
+                    state_file = _PROJECT_ROOT / self.config.state_file
+                    if state_file.exists():
+                        try:
+                            with open(state_file, "r") as f:
+                                file_state = json.load(f)
+                            file_updated = file_state.get("last_updated")
+                        except Exception:
+                            pass
+                    if db_updated and (not file_updated or db_updated > file_updated):
+                        self._apply_state(state)
+                        self.logger.info(f"Loaded state from Postgres (updated {db_updated})")
+        except Exception as e:
+            self.logger.warning(f"Could not load state from Postgres: {e}")
 
-        Uses atomic write (write to temp, then rename) to avoid corruption
-        when multiple async loops call this concurrently.
+    def _apply_state(self, state: dict):
+        """Apply a state dict to instance attributes."""
+        self._last_analysis_time = {
+            k: datetime.fromisoformat(v)
+            for k, v in state.get("last_analysis_time", {}).items()
+        }
+        # Restore persisted results history
+        self._analysis_results.clear()
+        for item in state.get("analysis_results", []):
+            try:
+                item["timestamp"] = datetime.fromisoformat(item["timestamp"])
+                self._analysis_results.append(AnalysisCycleResult(**item))
+            except Exception:
+                continue
+        self._position_results.clear()
+        for item in state.get("position_results", []):
+            try:
+                item["timestamp"] = datetime.fromisoformat(item["timestamp"])
+                self._position_results.append(PositionManagementResult(**item))
+            except Exception:
+                continue
+        # Restore assumption review state
+        last_review = state.get("last_assumption_review")
+        if last_review:
+            self._last_assumption_review = datetime.fromisoformat(last_review)
+        self._assumption_review_results = state.get("assumption_review_results", [])
+
+    async def _save_state(self):
+        """Save automation state to Postgres (primary) and JSON file (fallback).
+
+        Postgres eliminates Windows file-locking issues with os.replace().
+        JSON file kept as fallback when POSTGRES_URL is not set.
         """
-        state_file = _PROJECT_ROOT / self.config.state_file
-        state_file.parent.mkdir(parents=True, exist_ok=True)
-
         def _serialize_result(r):
             d = asdict(r)
             d["timestamp"] = r.timestamp.isoformat()
@@ -377,14 +435,31 @@ class QuantAutomation:
             "assumption_review_results": self._assumption_review_results,
         }
 
-        # Atomic write: write to unique temp file, then rename
-        # Use PID + thread to avoid collisions between concurrent async tasks
+        saved_to_db = False
+
+        # Primary: write to Postgres
+        pool = await self._get_pg_pool()
+        if pool:
+            try:
+                state_json = json.dumps(state)
+                async with pool.acquire() as conn:
+                    await conn.execute("""
+                        INSERT INTO automation_status (instance_name, status, state, updated_at)
+                        VALUES ($1, $2, $3::jsonb, NOW())
+                        ON CONFLICT (instance_name)
+                        DO UPDATE SET status = $2, state = $3::jsonb, updated_at = NOW()
+                    """, self._source, self._status.value, state_json)
+                saved_to_db = True
+            except Exception as e:
+                self.logger.warning(f"Failed to save state to Postgres: {e}")
+
+        # Fallback: write to JSON file (always, for local tooling / backend reads)
+        state_file = _PROJECT_ROOT / self.config.state_file
+        state_file.parent.mkdir(parents=True, exist_ok=True)
         tmp_file = state_file.with_suffix(f".{os.getpid()}.tmp")
         try:
             with open(tmp_file, "w") as f:
                 json.dump(state, f, indent=2)
-            # On Windows, os.replace can fail with Access Denied if antivirus
-            # or another process briefly locks the target. Retry a few times.
             last_err = None
             for attempt in range(4):
                 try:
@@ -394,14 +469,16 @@ class QuantAutomation:
                 except PermissionError as e:
                     last_err = e
                     if attempt < 3:
-                        import time
-                        time.sleep(0.1 * (attempt + 1))
+                        await asyncio.sleep(0.1 * (attempt + 1))
             if last_err:
-                self.logger.warning(f"Failed to save state after 4 attempts: {last_err}")
+                if saved_to_db:
+                    self.logger.debug(f"File save failed but state saved to Postgres: {last_err}")
+                else:
+                    self.logger.warning(f"Failed to save state (file + DB both failed): {last_err}")
         except Exception as e:
-            self.logger.warning(f"Failed to save state: {e}")
+            if not saved_to_db:
+                self.logger.warning(f"Failed to save state: {e}")
         finally:
-            # Clean up temp file if it still exists
             try:
                 tmp_file.unlink(missing_ok=True)
             except Exception:
@@ -2062,29 +2139,57 @@ class QuantAutomation:
                             f"(check {miss_count}/5)"
                         )
                         if miss_count >= 5:
-                            # Position confirmed gone — close decision with best-effort data
+                            # Position confirmed gone — determine if order never filled
+                            # or if a filled position disappeared
                             entry_price = dec.get("entry_price", 0)
+                            # Check events: if we only have an "executed" event with deal_id=0
+                            # and no POS_MGMT ever ran, the order was placed but never filled
+                            events = dec.get("events", [])
+                            executed_evt = next((e for e in events if e.get("type") == "executed"), None)
+                            had_fill = any(e.get("type") in ("position_update", "external_close") for e in events)
+                            # deal_id=0 from MT5 means limit order placed, not filled
+                            order_never_filled = (
+                                executed_evt
+                                and not had_fill
+                                and executed_evt.get("deal_id", -1) == 0
+                            )
+                            if not order_never_filled:
+                                # Also check: if no deal history and pnl=0, likely unfilled
+                                order_never_filled = not had_fill
+
+                            if order_never_filled:
+                                exit_reason = "order_unfilled"
+                                event_type = "order_unfilled"
+                                note = f"Limit order #{dec_ticket} was placed but never filled — expired or cancelled (insufficient margin, price moved away, etc.)"
+                                close_reason = "order_unfilled"
+                            else:
+                                exit_reason = "stale_cleanup"
+                                event_type = "stale_cleanup"
+                                note = f"Ticket #{dec_ticket} missing from MT5 for {miss_count} checks, no deal history found"
+                                close_reason = "stale_cleanup"
+
                             self.logger.warning(
-                                f"  Closing stale decision {dec['decision_id']} ticket #{dec_ticket} — "
+                                f"  Closing {'unfilled order' if order_never_filled else 'stale'} decision "
+                                f"{dec['decision_id']} ticket #{dec_ticket} — "
                                 f"gone for {miss_count} consecutive checks, no MT5 deal found"
                             )
-                            add_trade_event(dec["decision_id"], "stale_cleanup", {
+                            add_trade_event(dec["decision_id"], event_type, {
                                 "exit_price": entry_price,
                                 "mt5_profit": 0,
-                                "inferred_reason": "stale_cleanup",
-                                "note": f"Ticket #{dec_ticket} missing from MT5 for {miss_count} checks, no deal history found",
+                                "inferred_reason": exit_reason,
+                                "note": note,
                                 "entry_price": entry_price,
                                 "sl": dec.get("stop_loss"),
                                 "tp": dec.get("take_profit"),
                             }, source=self._source)
                             self._close_decision_for_ticket(
-                                dec_ticket, entry_price, 0.0, "stale_cleanup",
-                                f"Position gone from MT5 for {miss_count} checks, no deal history — closed as stale"
+                                dec_ticket, entry_price, 0.0, exit_reason,
+                                note
                             )
                             del self._missing_ticket_counts[dec_ticket]
                             results.append(PositionManagementResult(
                                 timestamp=datetime.now(), ticket=dec_ticket, symbol=dec_symbol,
-                                action="closed", close_reason="stale_cleanup", pnl=0.0,
+                                action="closed", close_reason=close_reason, pnl=0.0,
                             ))
                 # Clear missing counts for tickets that reappeared (e.g. race condition resolved)
                 for ticket in list(self._missing_ticket_counts.keys()):
@@ -2164,7 +2269,7 @@ class QuantAutomation:
                     # Update last analysis time
                     self._last_analysis_time[symbol] = now
 
-                self._save_state()
+                await self._save_state()
 
             except Exception as e:
                 self.logger.error(f"Analysis loop error: {e}")
@@ -2300,7 +2405,7 @@ class QuantAutomation:
                     summary = format_review_summary(reports)
                     self.logger.info(summary)
 
-                    self._save_state()
+                    await self._save_state()
 
             except Exception as e:
                 import traceback
@@ -2525,7 +2630,7 @@ class QuantAutomation:
 
         elif cmd.action == "update_config":
             # Update configuration
-            self.update_config(cmd.payload)
+            await self.update_config(cmd.payload)
             self.logger.info(f"[CONTROL] Config updated: {cmd.payload}")
 
         elif cmd.action == "restart":
@@ -2552,6 +2657,9 @@ class QuantAutomation:
             self._status = AutomationStatus.ERROR
             self._error_message = "MT5 not connected"
             raise RuntimeError("MT5 not connected")
+
+        # Try loading state from Postgres (may be newer than local file)
+        await self._load_state_from_db()
 
         self._running = True
         self._status = AutomationStatus.RUNNING
@@ -2607,12 +2715,15 @@ class QuantAutomation:
         self.logger.info("Stopping quant automation...")
         self._running = False
         self._shutdown_event.set()
-        # Schedule HTTP session cleanup
+        # Schedule HTTP session and DB pool cleanup
         try:
             loop = asyncio.get_running_loop()
             loop.create_task(self._close_http_session())
+            if self._pg_pool:
+                loop.create_task(self._pg_pool.close())
+                self._pg_pool = None
         except RuntimeError:
-            pass  # No running loop, session will be garbage collected
+            pass  # No running loop, resources will be garbage collected
 
     def pause(self):
         """Pause the automation (stop new trades but continue monitoring)."""
@@ -2626,7 +2737,7 @@ class QuantAutomation:
         self._status = AutomationStatus.RUNNING
         self.logger.info("Automation resumed - auto-execute enabled")
 
-    def update_config(self, updates: Dict[str, Any]):
+    async def update_config(self, updates: Dict[str, Any]):
         """Update configuration dynamically."""
         for key, value in updates.items():
             if hasattr(self.config, key):
@@ -2637,7 +2748,7 @@ class QuantAutomation:
                 self.logger.info(f"Config updated: {key} = {old_value} -> {value}")
             else:
                 self.logger.warning(f"Config update ignored: unknown key '{key}'")
-        self._save_state()
+        await self._save_state()
 
     def get_status(self) -> Dict[str, Any]:
         """Get current automation status."""

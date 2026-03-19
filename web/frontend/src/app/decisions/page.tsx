@@ -142,11 +142,19 @@ export default function DecisionsPage() {
 
   const getOutcomeVariant = (outcome: any) => {
     if (!outcome) return "secondary"
+    if (outcome.status === "order_unfilled") return "secondary"
     if (outcome.status === "failed") return "destructive"
     if (outcome.status === "retried") return "secondary"
     if (outcome.status === "open" || outcome.status === "active") return "outline"
     if (outcome.was_correct) return "success"
     return "destructive"
+  }
+
+  const getOutcomeLabel = (outcome: any) => {
+    if (!outcome) return ""
+    if (outcome.status === "order_unfilled") return "Order Unfilled"
+    if (outcome.exit_reason === "stale_cleanup") return "Stale"
+    return outcome.status
   }
 
   return (
@@ -528,11 +536,15 @@ export default function DecisionsPage() {
                       </td>
                       <td className="p-4">
                         <Badge variant={getOutcomeVariant(dec.outcome)}>
-                          {dec.outcome?.status || "pending"}
+                          {(dec.outcome && getOutcomeLabel(dec.outcome)) || dec.outcome?.status || "pending"}
                         </Badge>
                       </td>
                       <td className="p-4">
-                        {dec.outcome?.status === "failed" ? (
+                        {dec.outcome?.status === "order_unfilled" ? (
+                          <span className="text-xs text-yellow-500 max-w-[200px] truncate block" title={dec.outcome?.exit_reason || "Order placed but never filled"}>
+                            Order never filled
+                          </span>
+                        ) : dec.outcome?.status === "failed" ? (
                           <span className="text-xs text-red-500 max-w-[200px] truncate block" title={dec.execution_error}>
                             {dec.execution_error || "Execution failed"}
                           </span>
@@ -724,7 +736,7 @@ export default function DecisionsPage() {
                                             <Badge
                                               variant={getOutcomeVariant(selectedDecision.outcome)}
                                             >
-                                              {selectedDecision.outcome.status}
+                                              {getOutcomeLabel(selectedDecision.outcome) || selectedDecision.outcome.status}
                                             </Badge>
                                           </div>
                                           {selectedDecision.outcome.exit_price && (

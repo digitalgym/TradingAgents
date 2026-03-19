@@ -8935,7 +8935,7 @@ async def update_quant_automation_config(updates: Dict[str, Any], instance: str 
 
     if automation is not None:
         # Running instance: update live config
-        automation.update_config(updates)
+        await automation.update_config(updates)
         config_dict = automation.config.to_dict()
     else:
         # No running instance: merge updates into saved config
