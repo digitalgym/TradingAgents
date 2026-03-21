@@ -14,7 +14,7 @@ import logging
 import os
 import time
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Literal
 from dataclasses import dataclass, field, fields, asdict
@@ -256,6 +256,7 @@ class QuantAutomation:
         self._assumption_review_results: List[Dict[str, Any]] = []
         self._error_message: Optional[str] = None
         self._missing_ticket_counts: Dict[int, int] = {}  # ticket -> consecutive missing count
+        self._market_closed_until: Optional[datetime] = None  # suppress modifications when market is closed
 
         # Lock for state file writes (multiple async loops share this)
         self._state_lock = asyncio.Lock()
@@ -452,6 +453,9 @@ class QuantAutomation:
                 saved_to_db = True
             except Exception as e:
                 self.logger.warning(f"Failed to save state to Postgres: {e}")
+                # Reset pool on connection errors to force reconnect next time
+                if "closed" in str(e).lower() or "release" in str(e).lower():
+                    self._pg_pool = None
 
         # Fallback: write to JSON file (always, for local tooling / backend reads)
         state_file = _PROJECT_ROOT / self.config.state_file
@@ -1740,15 +1744,21 @@ class QuantAutomation:
             }, source=self._source)
 
             # Record in guardrails for circuit breaker
+            # Skip stale cleanups and unfilled orders — they aren't real losses
+            closed_exit_reason = closed.get("exit_reason", "") if closed else exit_reason
+            is_real_trade = closed_exit_reason not in ("stale_cleanup", "order_unfilled")
             pnl_pct = closed.get("pnl_percent", 0) if closed else 0
             was_win = closed.get("was_correct", False) if closed else profit > 0
             try:
-                self.guardrails.record_trade_result(
-                    was_win=was_win,
-                    pnl_pct=pnl_pct,
-                    account_balance=self._get_account_balance(),
-                )
-                self.logger.info(f"  Guardrails updated: {'win' if was_win else 'loss'} {pnl_pct:+.2f}%")
+                if is_real_trade:
+                    self.guardrails.record_trade_result(
+                        was_win=was_win,
+                        pnl_pct=pnl_pct,
+                        account_balance=self._get_account_balance(),
+                    )
+                    self.logger.info(f"  Guardrails updated: {'win' if was_win else 'loss'} {pnl_pct:+.2f}%")
+                else:
+                    self.logger.info(f"  Guardrails skipped for {closed_exit_reason} (not a real trade)")
             except Exception as e:
                 self.logger.warning(f"  Failed to update guardrails: {e}")
 
@@ -1829,6 +1839,11 @@ class QuantAutomation:
         """Manage existing positions - trailing stops, breakeven, close signals."""
         results = []
         self.logger.debug("--- Position management cycle start ---")
+
+        # Skip if market was recently detected as closed
+        if self._market_closed_until and datetime.now() < self._market_closed_until:
+            self.logger.debug(f"Market closed — skipping position management until {self._market_closed_until.strftime('%H:%M')}")
+            return results
 
         try:
             # Verify MT5 is connected before proceeding
@@ -1953,7 +1968,11 @@ class QuantAutomation:
                                                 "price": current_price, "pnl_pct": round(pnl_pct, 3),
                                             }, source=self._source)
                                     else:
-                                        be_status = f"FAILED: {modify_result.get('error', 'unknown')}"
+                                        be_error = modify_result.get("error", "unknown")
+                                        be_status = f"FAILED: {be_error}"
+                                        if modify_result.get("market_closed") or "Market closed" in be_error:
+                                            self._market_closed_until = datetime.now() + timedelta(minutes=30)
+                                            self.logger.info(f"Market closed — suppressing modifications until {self._market_closed_until.strftime('%H:%M')}")
                                 elif not self.config.auto_execute:
                                     be_status = "eligible:auto_execute=off"
                                 else:
@@ -1988,7 +2007,11 @@ class QuantAutomation:
                                         "atr_mult": trail_mult,
                                     }, source=self._source)
                             else:
-                                trail_status = f"FAILED: {modify_result.get('error', 'unknown')}"
+                                error_msg = modify_result.get("error", "unknown")
+                                trail_status = f"FAILED: {error_msg}"
+                                if modify_result.get("market_closed") or "Market closed" in error_msg:
+                                    self._market_closed_until = datetime.now() + timedelta(minutes=30)
+                                    self.logger.info(f"Market closed — suppressing modifications until {self._market_closed_until.strftime('%H:%M')}")
                         elif should_trail and not self.config.auto_execute:
                             trail_status = "eligible:auto_execute=off"
                         else:
@@ -2455,7 +2478,15 @@ class QuantAutomation:
                         self.logger.error(f"[QUEUE] Failed: {cmd.command_id} - {e}")
 
             except Exception as e:
-                self.logger.error(f"Trade queue error: {e}")
+                self.logger.error(f"Trade queue error: {e!r}")
+                # Reset pool on connection errors to force reconnect
+                if "closed" in str(e).lower() or "release" in str(e).lower() or "connect" in str(e).lower():
+                    try:
+                        queue = get_trade_queue()
+                        await queue._reset_pool()
+                        self.logger.info("Trade queue pool reset after connection error")
+                    except Exception:
+                        pass
 
             # Wait for next poll or shutdown
             try:
@@ -2602,7 +2633,14 @@ class QuantAutomation:
                 await self._update_remote_status()
 
             except Exception as e:
-                self.logger.error(f"Control loop error: {e}")
+                self.logger.error(f"Control loop error: {e!r}")
+                # Reset pool on connection errors to force reconnect
+                if "closed" in str(e).lower() or "release" in str(e).lower() or "connect" in str(e).lower():
+                    try:
+                        await control._reset_pool()
+                        self.logger.info("Control pool reset after connection error")
+                    except Exception:
+                        pass
 
             # Wait for next poll
             try:

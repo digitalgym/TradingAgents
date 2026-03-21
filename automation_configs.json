@@ -12,7 +12,7 @@
     "min_confidence": 0.65,
     "max_positions_per_symbol": 1,
     "enable_trailing_stop": true,
-    "trailing_stop_atr_multiplier": 1.5,
+    "trailing_stop_atr_multiplier": 1.0,
     "enable_breakeven_stop": true,
     "move_to_breakeven_atr_mult": 1.5,
     "enable_reversal_close": true,

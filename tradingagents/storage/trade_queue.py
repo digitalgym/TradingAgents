@@ -68,16 +68,27 @@ class TradeQueueStore:
         return url
 
     async def _get_pool(self):
-        if self._pool is None:
+        if self._pool is None or self._pool._closed:
             import asyncpg
             self._pool = await asyncpg.create_pool(
                 self._get_connection_string(),
                 min_size=1,
-                max_size=5,
+                max_size=3,
                 command_timeout=30,
                 statement_cache_size=0,  # Required for Neon pooler (PgBouncer)
             )
+            self._initialized = False  # Re-check tables on reconnect
         return self._pool
+
+    async def _reset_pool(self):
+        """Reset the connection pool after a server-side disconnect."""
+        if self._pool and not self._pool._closed:
+            try:
+                await self._pool.close()
+            except Exception:
+                pass
+        self._pool = None
+        self._initialized = False
 
     async def _ensure_tables(self):
         if self._initialized:
