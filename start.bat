@@ -16,11 +16,25 @@ echo Starting backend (port 8000)...
 cd /d "%~dp0web\backend"
 start "TradingAgents Backend" cmd /k "title TradingAgents Backend && python -m uvicorn main:app --host 0.0.0.0 --port 8000"
 
-:: Start MT5 worker (polls trade queue from Postgres) - optional with --mt5 flag
+:: MT5 worker commands: --mt5-restart, --mt5-stop
+if "%1"=="--mt5-restart" (
+    echo Restarting MT5 worker...
+    cd /d "%~dp0web\backend"
+    python mt5_worker.py stop
+    timeout /t 3 /nobreak >nul
+    start "MT5 Worker" cmd /k "title MT5 Worker && python mt5_worker.py start"
+    goto :end
+)
+if "%1"=="--mt5-stop" (
+    echo Stopping MT5 worker...
+    cd /d "%~dp0web\backend"
+    python mt5_worker.py stop
+    goto :end
+)
 if "%1"=="--mt5" (
     echo Starting MT5 worker...
     cd /d "%~dp0web\backend"
-    start "MT5 Worker" cmd /k "title MT5 Worker && python mt5_worker.py"
+    start "MT5 Worker" cmd /k "title MT5 Worker && python mt5_worker.py start"
 )
 
 :: Wait for backend to be ready
@@ -47,4 +61,5 @@ echo  Backend:  http://localhost:8000
 echo ==========================================
 echo.
 echo Close the Backend and Frontend windows to stop.
+:end
 pause

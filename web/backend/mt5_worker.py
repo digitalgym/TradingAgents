@@ -314,6 +314,16 @@ class MT5Worker:
                 account = mt5.account_info()
                 if account:
                     async with self.pool.acquire() as conn:
+                        # Check for stop request
+                        row = await conn.fetchrow("""
+                            SELECT status FROM automation_status
+                            WHERE instance_name = 'mt5_worker'
+                        """)
+                        if row and row["status"] == "stop_requested":
+                            print("[MT5 Worker] Stop requested, shutting down...")
+                            self.running = False
+                            break
+
                         await conn.execute("""
                             INSERT INTO automation_status (instance_name, status, last_heartbeat, metadata)
                             VALUES ('mt5_worker', 'running', NOW(), $1)
@@ -329,7 +339,7 @@ class MT5Worker:
             except Exception as e:
                 print(f"[MT5 Worker] Status update error: {e}")
 
-            await asyncio.sleep(30)  # Update every 30 seconds
+            await asyncio.sleep(10)  # Check every 10 seconds
 
 
 async def main():
@@ -343,5 +353,27 @@ async def main():
         await worker.stop()
 
 
+async def stop_worker():
+    """Send stop command to running worker via database."""
+    pool = await asyncpg.create_pool(DATABASE_URL, min_size=1, max_size=1)
+    async with pool.acquire() as conn:
+        await conn.execute("""
+            UPDATE automation_status
+            SET status = 'stop_requested'
+            WHERE instance_name = 'mt5_worker'
+        """)
+    await pool.close()
+    print("[MT5 Worker] Stop signal sent")
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    import argparse
+    parser = argparse.ArgumentParser(description="MT5 Worker - Trade queue executor")
+    parser.add_argument("command", nargs="?", default="start", choices=["start", "stop"],
+                        help="start or stop the worker")
+    args = parser.parse_args()
+
+    if args.command == "stop":
+        asyncio.run(stop_worker())
+    else:
+        asyncio.run(main())
