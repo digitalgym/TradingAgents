@@ -208,6 +208,9 @@ class AnalysisCycleResult:
     take_profit: Optional[float] = None
     rationale: str = ""
     trailing_stop_atr_multiplier: Optional[float] = None
+    htf_bias: Optional[str] = None  # "bullish", "bearish", "neutral" from higher TF
+    htf_bias_details: Optional[str] = None  # Human-readable HTF summary
+    htf_timeframe: Optional[str] = None  # e.g. "H4", "D1"
     executed: bool = False
     execution_ticket: Optional[int] = None
     execution_error: Optional[str] = None
@@ -675,11 +678,18 @@ class QuantAutomation:
                     duration_seconds=time.time() - start_time,
                 )
 
+            # Extract HTF bias
+            htf_info = result.get("htf_bias", {})
+            htf_bias = htf_info.get("htf_bias") if isinstance(htf_info, dict) else None
+            htf_bias_details = htf_info.get("htf_details") if isinstance(htf_info, dict) else None
+            htf_timeframe = htf_info.get("htf_timeframe") if isinstance(htf_info, dict) else None
+
             self.logger.info(
                 f"SMC Quant decision for {symbol}: signal={decision.get('signal')}, "
                 f"confidence={decision.get('confidence')}, "
                 f"entry={decision.get('entry_price')}, "
-                f"sl={decision.get('stop_loss')}, tp={decision.get('take_profit')}"
+                f"sl={decision.get('stop_loss')}, tp={decision.get('take_profit')}, "
+                f"htf_bias={htf_bias} ({htf_timeframe})"
             )
 
             signal = normalize_signal(decision.get("signal"))
@@ -695,6 +705,9 @@ class QuantAutomation:
                 take_profit=decision.get("take_profit"),
                 rationale=decision.get("rationale", ""),
                 trailing_stop_atr_multiplier=decision.get("trailing_stop_atr_multiplier"),
+                htf_bias=htf_bias,
+                htf_bias_details=htf_bias_details,
+                htf_timeframe=htf_timeframe,
                 duration_seconds=time.time() - start_time,
             )
 
@@ -1145,11 +1158,18 @@ class QuantAutomation:
 
             signal = normalize_signal(decision.get("signal"))
 
+            # Extract HTF bias
+            htf_info = result.get("htf_bias", {})
+            htf_bias = htf_info.get("htf_bias") if isinstance(htf_info, dict) else None
+            htf_bias_details = htf_info.get("htf_details") if isinstance(htf_info, dict) else None
+            htf_timeframe = htf_info.get("htf_timeframe") if isinstance(htf_info, dict) else None
+
             self.logger.info(
                 f"Rule-Based decision for {symbol}: signal={signal}, "
                 f"confidence={decision.get('confidence')}, "
                 f"entry={decision.get('entry_price')}, "
-                f"sl={decision.get('stop_loss')}, tp={decision.get('take_profit')}"
+                f"sl={decision.get('stop_loss')}, tp={decision.get('take_profit')}, "
+                f"htf_bias={htf_bias} ({htf_timeframe})"
             )
 
             return AnalysisCycleResult(
@@ -1162,6 +1182,9 @@ class QuantAutomation:
                 stop_loss=decision.get("stop_loss"),
                 take_profit=decision.get("take_profit"),
                 rationale=decision.get("rationale", ""),
+                htf_bias=htf_bias,
+                htf_bias_details=htf_bias_details,
+                htf_timeframe=htf_timeframe,
                 duration_seconds=api_duration,
             )
 
@@ -1255,11 +1278,16 @@ class QuantAutomation:
 
             signal = normalize_signal(decision.get("signal"))
 
+            # MTF endpoint already provides htf_bias in mtf_details
+            htf_bias = mtf_details.get("htf_bias")
+            htf_timeframe = result.get("higher_tf")
+
             self.logger.info(
                 f"SMC MTF decision for {symbol}: signal={signal}, "
                 f"confidence={decision.get('confidence')}, "
                 f"entry={decision.get('entry_price')}, "
-                f"sl={decision.get('stop_loss')}, tp={decision.get('take_profit')}"
+                f"sl={decision.get('stop_loss')}, tp={decision.get('take_profit')}, "
+                f"htf_bias={htf_bias} ({htf_timeframe})"
             )
 
             return AnalysisCycleResult(
@@ -1272,6 +1300,8 @@ class QuantAutomation:
                 stop_loss=decision.get("stop_loss"),
                 take_profit=decision.get("take_profit"),
                 rationale=decision.get("rationale", ""),
+                htf_bias=htf_bias,
+                htf_timeframe=htf_timeframe,
                 duration_seconds=api_duration,
             )
 
@@ -1598,6 +1628,24 @@ class QuantAutomation:
                     pipeline=result.pipeline,
                     trailing_stop_atr_multiplier=result.trailing_stop_atr_multiplier,
                 )
+
+                # Populate SMC context (HTF bias) on the decision
+                if decision_id and result.htf_bias:
+                    try:
+                        from tradingagents.trade_decisions import set_smc_context
+                        signal_bias = "bullish" if result.signal == "BUY" else "bearish"
+                        htf_aligned = result.htf_bias == signal_bias or result.htf_bias == "neutral"
+                        set_smc_context(
+                            decision_id,
+                            with_trend=htf_aligned,
+                            higher_tf_aligned=htf_aligned,
+                        )
+                        self.logger.info(
+                            f"Set SMC context on {decision_id}: "
+                            f"htf_aligned={htf_aligned}, htf_bias={result.htf_bias}"
+                        )
+                    except Exception as e:
+                        self.logger.warning(f"Failed to set SMC context: {e}")
 
                 # Post signal to X/Twitter (non-blocking, failures are swallowed)
                 try:
@@ -2284,8 +2332,26 @@ class QuantAutomation:
                         result = await self._run_multi_agent_analysis(symbol)
 
                     self.logger.info(
-                        f"{symbol}: {result.signal} (confidence: {result.confidence:.2f})"
+                        f"{symbol}: {result.signal} (confidence: {result.confidence:.2f}, htf_bias: {result.htf_bias})"
                     )
+
+                    # --- HTF Bias Gate ---
+                    # Block trades that conflict with higher-timeframe structure.
+                    # BUY requires bullish or neutral HTF; SELL requires bearish or neutral HTF.
+                    if result.signal in ["BUY", "SELL"] and result.htf_bias:
+                        signal_bias = "bullish" if result.signal == "BUY" else "bearish"
+                        if result.htf_bias != "neutral" and result.htf_bias != signal_bias:
+                            self.logger.warning(
+                                f"HTF BIAS GATE: {result.symbol} {result.signal} BLOCKED — "
+                                f"HTF ({result.htf_timeframe}) is {result.htf_bias}, "
+                                f"signal is {signal_bias}. {result.htf_bias_details or ''}"
+                            )
+                            result.rationale += (
+                                f"\n\n⚠️ **BLOCKED by HTF bias**: {result.htf_timeframe} structure is "
+                                f"{result.htf_bias}, conflicting with {result.signal} signal."
+                            )
+                            result.signal = "HOLD"
+                            result.confidence = 0.0
 
                     # Execute trade if conditions met
                     if result.signal in ["BUY", "SELL"]:

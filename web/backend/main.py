@@ -5534,6 +5534,9 @@ async def run_rule_based_analysis(request: RuleBasedAnalysisRequest):
         else:
             market_regime = "ranging"
 
+        # === HTF Bias Check ===
+        htf_info = _calculate_htf_bias(request.symbol, request.timeframe)
+
         # === STEP 2: Run SMC Analysis ===
         from tradingagents.indicators.smart_money import SmartMoneyAnalyzer
 
@@ -5777,6 +5780,7 @@ The systematic SMC rules did not identify a high-probability trade setup at this
                 "adx": round(adx, 2) if not np.isnan(adx) else None,
                 "atr": round(atr, 5) if not np.isnan(atr) else None
             },
+            "htf_bias": htf_info,
             "analysis_mode": "rule-based",
             "llm_used": False
         }
@@ -7213,6 +7217,10 @@ async def run_smc_quant_analysis(request: SmcQuantAnalysisRequest):
                 "full_report": smc_quant_report
             }
 
+        # === HTF Bias Check ===
+        htf_info = _calculate_htf_bias(request.symbol, request.timeframe)
+        logger.info(f"[SMC QUANT API] HTF bias for {request.symbol}: {htf_info['htf_bias']} ({htf_info['htf_timeframe']})")
+
         # Extract SMC levels for chart display
         from tradingagents.indicators.smart_money import SmartMoneyAnalyzer
         # Use the extended analysis for chart levels
@@ -7264,6 +7272,7 @@ async def run_smc_quant_analysis(request: SmcQuantAnalysisRequest):
                 "adx": round(adx, 2) if not np.isnan(adx) else None,
                 "atr": round(atr, 5) if not np.isnan(atr) else None
             },
+            "htf_bias": htf_info,
             "analysis_mode": "smc_quant",
             "llm_used": True,
             "llm_duration_seconds": round(_llm_duration, 2),
@@ -7612,6 +7621,129 @@ def _extract_smc_levels_for_chart(smc_result: dict) -> list:
                 })
 
     return smc_levels
+
+
+def _calculate_htf_bias(symbol: str, analysis_timeframe: str) -> dict:
+    """
+    Calculate higher-timeframe bias by loading the next TF up and checking
+    swing structure (higher highs/lows vs lower highs/lows) + EMA alignment.
+
+    Returns dict with:
+        htf_bias: "bullish" | "bearish" | "neutral"
+        htf_timeframe: e.g. "H4"
+        htf_details: human-readable summary
+    """
+    import MetaTrader5 as mt5
+    import pandas as pd
+    import numpy as np
+
+    # Map analysis TF → higher TF
+    htf_map = {
+        "M15": ("H1", mt5.TIMEFRAME_H1),
+        "M30": ("H1", mt5.TIMEFRAME_H1),
+        "H1": ("H4", mt5.TIMEFRAME_H4),
+        "H4": ("D1", mt5.TIMEFRAME_D1),
+        "D1": ("W1", mt5.TIMEFRAME_W1),
+    }
+    htf_name, htf_tf = htf_map.get(analysis_timeframe.upper(), ("H4", mt5.TIMEFRAME_H4))
+
+    try:
+        rates = mt5.copy_rates_from_pos(symbol, htf_tf, 0, 100)
+        if rates is None or len(rates) < 20:
+            return {"htf_bias": "neutral", "htf_timeframe": htf_name, "htf_details": "Insufficient HTF data"}
+
+        df = pd.DataFrame(rates)
+        close = df['close'].values
+        high = df['high'].values
+        low = df['low'].values
+
+        # --- Swing detection (simple pivot highs/lows, lookback=3) ---
+        lookback = 3
+        swing_highs = []
+        swing_lows = []
+        for i in range(lookback, len(high) - lookback):
+            if all(high[i] >= high[i - j] for j in range(1, lookback + 1)) and \
+               all(high[i] >= high[i + j] for j in range(1, lookback + 1)):
+                swing_highs.append((i, high[i]))
+            if all(low[i] <= low[i - j] for j in range(1, lookback + 1)) and \
+               all(low[i] <= low[i + j] for j in range(1, lookback + 1)):
+                swing_lows.append((i, low[i]))
+
+        # Need at least 2 swing highs and 2 swing lows to determine structure
+        details_parts = []
+        structure_score = 0  # positive = bullish, negative = bearish
+
+        if len(swing_highs) >= 2 and len(swing_lows) >= 2:
+            # Check last 2 swing highs
+            sh1, sh2 = swing_highs[-2][1], swing_highs[-1][1]
+            # Check last 2 swing lows
+            sl1, sl2 = swing_lows[-2][1], swing_lows[-1][1]
+
+            if sh2 > sh1:
+                structure_score += 1
+                details_parts.append("Higher High")
+            elif sh2 < sh1:
+                structure_score -= 1
+                details_parts.append("Lower High")
+
+            if sl2 > sl1:
+                structure_score += 1
+                details_parts.append("Higher Low")
+            elif sl2 < sl1:
+                structure_score -= 1
+                details_parts.append("Lower Low")
+
+        # --- EMA alignment ---
+        ema20 = pd.Series(close).ewm(span=20, adjust=False).mean().iloc[-1]
+        ema50 = pd.Series(close).ewm(span=50, adjust=False).mean().iloc[-1]
+        current = close[-1]
+
+        if current > ema20 > ema50:
+            structure_score += 1
+            details_parts.append("Price > EMA20 > EMA50")
+        elif current < ema20 < ema50:
+            structure_score -= 1
+            details_parts.append("Price < EMA20 < EMA50")
+        else:
+            details_parts.append("EMAs mixed")
+
+        # --- ADX trend strength on HTF ---
+        high_low = df['high'] - df['low']
+        plus_dm = df['high'].diff()
+        minus_dm = -df['low'].diff()
+        plus_dm[plus_dm < 0] = 0
+        minus_dm[minus_dm < 0] = 0
+        atr_14 = high_low.rolling(14).mean()
+        plus_di = 100 * (plus_dm.rolling(14).mean() / atr_14)
+        minus_di = 100 * (minus_dm.rolling(14).mean() / atr_14)
+        dx = 100 * abs(plus_di - minus_di) / (plus_di + minus_di + 0.0001)
+        adx_val = dx.rolling(14).mean().iloc[-1]
+
+        if not np.isnan(adx_val) and adx_val > 25:
+            if plus_di.iloc[-1] > minus_di.iloc[-1]:
+                structure_score += 1
+                details_parts.append(f"ADX {adx_val:.0f} bullish")
+            else:
+                structure_score -= 1
+                details_parts.append(f"ADX {adx_val:.0f} bearish")
+        else:
+            adx_display = f"{adx_val:.0f}" if not np.isnan(adx_val) else "N/A"
+            details_parts.append(f"ADX {adx_display} weak trend")
+
+        # Determine bias
+        if structure_score >= 2:
+            bias = "bullish"
+        elif structure_score <= -2:
+            bias = "bearish"
+        else:
+            bias = "neutral"
+
+        details = f"{htf_name} bias: {bias} (score {structure_score}). {', '.join(details_parts)}"
+        return {"htf_bias": bias, "htf_timeframe": htf_name, "htf_details": details}
+
+    except Exception as e:
+        logger.warning(f"HTF bias calculation failed for {symbol}/{htf_name}: {e}")
+        return {"htf_bias": "neutral", "htf_timeframe": htf_name, "htf_details": f"Error: {e}"}
 
 
 def _get_trading_session() -> str:

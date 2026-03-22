@@ -1,26 +1,10 @@
 {
   "last_analysis_time": {
-    "XAUUSD": "2026-03-21T07:37:52.316958"
+    "XAUUSD": "2026-03-23T07:31:41.662942"
   },
-  "last_updated": "2026-03-23T07:20:38.111705",
+  "last_updated": "2026-03-23T07:37:44.314820",
   "status": "running",
   "analysis_results": [
-    {
-      "timestamp": "2026-03-12T08:20:43.369111",
-      "symbol": "XAUUSD",
-      "pipeline": "breakout_quant",
-      "signal": "HOLD",
-      "confidence": 0.45,
-      "entry_price": null,
-      "stop_loss": null,
-      "take_profit": null,
-      "rationale": "Market in tight BB squeeze consolidation with bearish structure bias (lower highs), ideal for downside breakout, but current price at 5175.31 is below midpoint (5184.94) and near range low (5149.39), not at range high for anticipation short or confirmed breakdown below low; await better entry zone per rules.\n\n**Invalidation**: Price breaks above range high at 5220.49000 with momentum, confirming bullish structure instead.",
-      "trailing_stop_atr_multiplier": null,
-      "executed": false,
-      "execution_ticket": null,
-      "execution_error": null,
-      "duration_seconds": 13.692831039428711
-    },
     {
       "timestamp": "2026-03-12T08:36:04.535774",
       "symbol": "XAUUSD",
@@ -1604,6 +1588,22 @@
       "execution_ticket": null,
       "execution_error": null,
       "duration_seconds": 7.096446990966797
+    },
+    {
+      "timestamp": "2026-03-23T07:31:42.446418",
+      "symbol": "XAUUSD",
+      "pipeline": "breakout_quant",
+      "signal": "HOLD",
+      "confidence": 0.0,
+      "entry_price": null,
+      "stop_loss": null,
+      "take_profit": null,
+      "rationale": "API Error: 500",
+      "trailing_stop_atr_multiplier": null,
+      "executed": false,
+      "execution_ticket": null,
+      "execution_error": null,
+      "duration_seconds": 0.6967108249664307
     }
   ],
   "position_results": [
