@@ -837,6 +837,8 @@ export default function AutomationPage() {
     volume_profile: "Volume Profile",
     rule_based: "Rule-Based SMC",
     multi_agent: "Multi-Agent AI",
+    xgboost: "XGBoost ML",
+    xgboost_ensemble: "XGBoost Ensemble",
   }
 
   const pipelineColors: Record<string, string> = {
@@ -848,6 +850,8 @@ export default function AutomationPage() {
     volume_profile: "text-blue-500",
     rule_based: "text-cyan-500",
     multi_agent: "text-amber-500",
+    xgboost: "text-rose-500",
+    xgboost_ensemble: "text-pink-500",
   }
 
   // Pipeline descriptions with backtest results from XAUUSD (Oct 2022 - Dec 2025, 827 D1 bars)
@@ -901,6 +905,18 @@ export default function AutomationPage() {
       recommendedTimeframes: "H4, D1",
       recommendedInterval: "120-240 min",
     },
+    xgboost: {
+      summary: "XGBoost ML strategy — auto-selects best model for the pair. Zero API cost, sub-100ms.",
+      details: "Uses trained XGBoost models to predict price direction. Strategy selector picks the best model (trend following, mean reversion, breakout, SMC zones, or volume profile) based on backtest performance for this pair. No LLM calls — pure ML inference. Must train models first.",
+      recommendedTimeframes: "D1 (best), H4",
+      recommendedInterval: "15-60 min (instant inference)",
+    },
+    xgboost_ensemble: {
+      summary: "XGBoost ensemble — multiple ML models vote. Zero API cost, sub-100ms.",
+      details: "Runs all available trained XGBoost models and uses majority voting (min 2 agree at 60%+ probability). Higher conviction than single model but requires multiple trained models. No LLM calls.",
+      recommendedTimeframes: "D1 (best), H4",
+      recommendedInterval: "15-60 min (instant inference)",
+    },
   }
 
   // Sensible defaults per pipeline. Timeframe from XAUUSD backtest (D1 wins across all strategies).
@@ -915,6 +931,8 @@ export default function AutomationPage() {
     range_quant:    { timeframe: "D1", interval: 3600,  confidence: 0.70, atrMultiplier: 2.5 },
     volume_profile: { timeframe: "H4", interval: 1800,  confidence: 0.65, atrMultiplier: 2.0 },
     multi_agent:    { timeframe: "D1", interval: 7200,  confidence: 0.70, atrMultiplier: 2.0 },
+    xgboost:        { timeframe: "D1", interval: 900,   confidence: 0.60, atrMultiplier: 1.5 },
+    xgboost_ensemble:{ timeframe: "D1", interval: 900,  confidence: 0.60, atrMultiplier: 1.5 },
   }
 
   const executionModeColors: Record<string, string> = {
@@ -2411,6 +2429,8 @@ export default function AutomationPage() {
                   <SelectItem value="range_quant">Range Quant (SMC levels)</SelectItem>
                   <SelectItem value="volume_profile">Volume Profile</SelectItem>
                   <SelectItem value="multi_agent">Multi-Agent AI</SelectItem>
+                  <SelectItem value="xgboost">XGBoost ML</SelectItem>
+                  <SelectItem value="xgboost_ensemble">XGBoost Ensemble</SelectItem>
                 </SelectContent>
               </Select>
               {pipelineDescriptions[newInstancePipeline] && (

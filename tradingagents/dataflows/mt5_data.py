@@ -1090,18 +1090,18 @@ def cancel_order(ticket: int) -> dict:
 def modify_position(ticket: int, sl: float = None, tp: float = None) -> dict:
     """Modify stop loss and/or take profit of an open position."""
     _ensure_mt5_initialized()
-    
+
     # Get position info
     position = mt5.positions_get(ticket=ticket)
     if not position:
         return {"success": False, "error": f"Position {ticket} not found"}
-    
+
     position = position[0]
-    
+
     # Use existing values if not specified
     new_sl = sl if sl is not None else position.sl
     new_tp = tp if tp is not None else position.tp
-    
+
     request = {
         "action": mt5.TRADE_ACTION_SLTP,
         "symbol": position.symbol,
@@ -1109,16 +1109,17 @@ def modify_position(ticket: int, sl: float = None, tp: float = None) -> dict:
         "sl": new_sl,
         "tp": new_tp,
     }
-    
+
     result = mt5.order_send(request)
-    
+
     if result is None:
         error = mt5.last_error()
         return {"success": False, "error": f"Modify failed: {error}"}
-    
+
     if result.retcode != mt5.TRADE_RETCODE_DONE:
-        return {"success": False, "error": f"Modify failed: {result.comment}", "retcode": result.retcode}
-    
+        is_market_closed = result.retcode == 10018 or "market" in (result.comment or "").lower()
+        return {"success": False, "error": f"Modify failed: {result.comment}", "retcode": result.retcode, "market_closed": is_market_closed}
+
     return {
         "success": True,
         "ticket": ticket,

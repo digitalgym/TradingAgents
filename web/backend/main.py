@@ -5534,6 +5534,9 @@ async def run_rule_based_analysis(request: RuleBasedAnalysisRequest):
         else:
             market_regime = "ranging"
 
+        # === HTF Bias Check ===
+        htf_info = _calculate_htf_bias(request.symbol, request.timeframe)
+
         # === STEP 2: Run SMC Analysis ===
         from tradingagents.indicators.smart_money import SmartMoneyAnalyzer
 
@@ -5777,6 +5780,7 @@ The systematic SMC rules did not identify a high-probability trade setup at this
                 "adx": round(adx, 2) if not np.isnan(adx) else None,
                 "atr": round(atr, 5) if not np.isnan(atr) else None
             },
+            "htf_bias": htf_info,
             "analysis_mode": "rule-based",
             "llm_used": False
         }
@@ -5790,6 +5794,288 @@ The systematic SMC rules did not identify a high-probability trade setup at this
             "error": str(e),
             "traceback": traceback.format_exc()
         }
+
+
+# ----- XGBoost Strategy Analysis (No LLM, local inference) -----
+
+class XGBoostAnalysisRequest(BaseModel):
+    symbol: str
+    timeframe: str = "D1"
+    strategy: str = ""  # Empty = auto-select best strategy
+    ensemble: bool = False  # If True, use ensemble voting
+
+
+@app.post("/api/analysis/xgboost")
+async def run_xgboost_analysis(request: XGBoostAnalysisRequest):
+    """
+    Run XGBoost strategy analysis. No LLM call — pure ML inference.
+    Sub-100ms response time.
+    """
+    import time as _time
+    start = _time.time()
+
+    try:
+        from tradingagents.automation.auto_tuner import load_mt5_data, _compute_atr
+        from tradingagents.xgb_quant.predictor import LivePredictor
+        import numpy as np_local
+
+        df = load_mt5_data(request.symbol, request.timeframe, bars=500)
+        high = df["high"].values.astype(float)
+        low = df["low"].values.astype(float)
+        close = df["close"].values.astype(float)
+        atr = _compute_atr(high, low, close)
+        current_atr = float(atr[-1]) if not np_local.isnan(atr[-1]) else 1.0
+        current_price = float(close[-1])
+
+        predictor = LivePredictor()
+
+        if request.ensemble:
+            available = predictor.get_available_models(request.symbol, request.timeframe)
+            if len(available) < 2:
+                return {
+                    "status": "success",
+                    "decision": {
+                        "signal": "HOLD",
+                        "confidence": 0.0,
+                        "rationale": f"Only {len(available)} models available for ensemble, need 2+",
+                    },
+                    "available_models": available,
+                    "duration_seconds": _time.time() - start,
+                }
+            signal = predictor.predict_ensemble(
+                available, request.symbol, request.timeframe,
+                df, current_price, current_atr,
+            )
+        else:
+            strategy_name = request.strategy
+            if not strategy_name:
+                from tradingagents.xgb_quant.strategy_selector import StrategySelector
+                selector = StrategySelector()
+                selection = selector.select(request.symbol)
+                strategy_name = selection.recommended_strategy
+
+            signal = predictor.predict_single(
+                strategy_name, request.symbol, request.timeframe,
+                df, current_price, current_atr,
+            )
+
+        return {
+            "status": "success",
+            "decision": {
+                "signal": signal.direction,
+                "confidence": signal.confidence,
+                "entry_price": signal.entry,
+                "stop_loss": signal.stop_loss,
+                "take_profit": signal.take_profit,
+                "rationale": signal.rationale,
+                "strategies_agreed": signal.strategies_agreed,
+            },
+            "available_models": predictor.get_available_models(request.symbol, request.timeframe),
+            "duration_seconds": _time.time() - start,
+        }
+
+    except Exception as e:
+        import traceback
+        return {
+            "status": "error",
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+        }
+
+
+class XGBoostTrainRequest(BaseModel):
+    symbol: str = "XAUUSD"
+    timeframe: str = "D1"
+    timeframes: list = []  # Empty = just use timeframe field; non-empty = train across all listed TFs
+    strategies: list = []  # Empty = all strategies
+    bars: int = 2000
+    use_trade_labels: bool = False
+    skip_existing: bool = True  # Skip strategies that already have a trained model for this symbol+TF
+
+
+@app.post("/api/xgboost/train")
+async def train_xgboost_models(request: XGBoostTrainRequest):
+    """Train XGBoost models for a symbol. Runs walk-forward backtest and saves models."""
+    import time as _time
+    start = _time.time()
+
+    try:
+        from tradingagents.automation.auto_tuner import load_mt5_data
+        from tradingagents.xgb_quant.trainer import WalkForwardTrainer
+        from tradingagents.xgb_quant.strategies.trend_following import TrendFollowingStrategy
+        from tradingagents.xgb_quant.strategies.mean_reversion import MeanReversionStrategy
+        from tradingagents.xgb_quant.strategies.breakout import BreakoutStrategy
+        from tradingagents.xgb_quant.strategies.smc_zones import SMCZonesStrategy
+        from tradingagents.xgb_quant.strategies.volume_profile_strat import VolumeProfileStrategy
+
+        all_strategies = {
+            "trend_following": TrendFollowingStrategy,
+            "mean_reversion": MeanReversionStrategy,
+            "breakout": BreakoutStrategy,
+            "smc_zones": SMCZonesStrategy,
+            "volume_profile_strat": VolumeProfileStrategy,
+        }
+
+        # Filter strategies if specified
+        if request.strategies:
+            selected = {k: v for k, v in all_strategies.items() if k in request.strategies}
+        else:
+            selected = all_strategies
+
+        if not selected:
+            return {"status": "error", "error": f"No valid strategies. Available: {list(all_strategies.keys())}"}
+
+        # Determine timeframes to train across
+        timeframes = request.timeframes if request.timeframes else [request.timeframe]
+
+        from tradingagents.xgb_quant.config import MODELS_DIR
+
+        trainer = WalkForwardTrainer()
+        results = []
+
+        for tf in timeframes:
+            # Load data for this timeframe
+            df = await asyncio.to_thread(load_mt5_data, request.symbol, tf, request.bars)
+
+            for name, strategy_cls in selected.items():
+                # Skip if model already exists
+                if request.skip_existing:
+                    model_path = MODELS_DIR / name / f"{request.symbol}_{tf}.json"
+                    if model_path.exists():
+                        results.append({
+                            "strategy": name,
+                            "timeframe": tf,
+                            "status": "skipped",
+                            "reason": "Model already exists",
+                        })
+                        continue
+
+                try:
+                    strategy = strategy_cls()
+                    result = await asyncio.to_thread(
+                        trainer.train_and_evaluate,
+                        strategy=strategy,
+                        df=df,
+                        symbol=request.symbol,
+                        timeframe=tf,
+                        use_trade_labels=request.use_trade_labels,
+                    )
+                    results.append({
+                        "strategy": name,
+                        "timeframe": tf,
+                        "total_trades": result.total_trades,
+                        "win_rate": result.win_rate,
+                        "profit_factor": result.profit_factor,
+                        "sharpe": result.sharpe,
+                        "max_drawdown_pct": result.max_drawdown_pct,
+                        "status": "success",
+                    })
+                except Exception as e:
+                    results.append({
+                        "strategy": name,
+                        "timeframe": tf,
+                        "status": "error",
+                        "error": str(e),
+                    })
+
+        # For skipped models, load their existing results so we can compare
+        from tradingagents.xgb_quant.config import RESULTS_DIR
+        import json as _json
+        for r in results:
+            if r["status"] == "skipped":
+                result_file = RESULTS_DIR / request.symbol / f"{r['strategy']}_{r['timeframe']}.json"
+                if result_file.exists():
+                    try:
+                        data = _json.loads(result_file.read_text())
+                        r["total_trades"] = data.get("total_trades", 0)
+                        r["win_rate"] = data.get("win_rate", 0)
+                        r["profit_factor"] = data.get("profit_factor", 0)
+                        r["sharpe"] = data.get("sharpe", 0)
+                        r["max_drawdown_pct"] = data.get("max_drawdown_pct", 0)
+                    except Exception:
+                        pass
+
+        # Find best combo across trained + skipped
+        candidates = [r for r in results if r.get("total_trades", 0) > 0 and r["status"] in ("success", "skipped")]
+        best = max(candidates, key=lambda r: r.get("sharpe", 0)) if candidates else None
+
+        return {
+            "status": "success",
+            "symbol": request.symbol,
+            "timeframes": timeframes,
+            "results": results,
+            "best": {
+                "strategy": best["strategy"],
+                "timeframe": best["timeframe"],
+                "sharpe": best["sharpe"],
+                "profit_factor": best["profit_factor"],
+                "win_rate": best["win_rate"],
+            } if best else None,
+            "duration_seconds": round(_time.time() - start, 1),
+        }
+
+    except Exception as e:
+        import traceback
+        return {"status": "error", "error": str(e), "traceback": traceback.format_exc()}
+
+
+@app.get("/api/xgboost/models")
+async def get_xgboost_models():
+    """List all available trained XGBoost models."""
+    try:
+        from tradingagents.xgb_quant.config import MODELS_DIR
+        models = {}
+        if MODELS_DIR.exists():
+            for strategy_dir in MODELS_DIR.iterdir():
+                if strategy_dir.is_dir():
+                    strategy_name = strategy_dir.name
+                    models[strategy_name] = []
+                    for model_file in strategy_dir.glob("*.json"):
+                        parts = model_file.stem.split("_")
+                        if len(parts) >= 2:
+                            models[strategy_name].append({
+                                "symbol": parts[0],
+                                "timeframe": parts[1],
+                                "file": model_file.name,
+                            })
+        return {"status": "success", "models": models}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/xgboost/performance-matrix")
+async def get_xgboost_performance_matrix():
+    """Get performance matrix: symbol × strategy → metrics."""
+    try:
+        from tradingagents.xgb_quant.strategy_selector import StrategySelector
+        selector = StrategySelector()
+        matrix = selector.get_performance_matrix()
+        return {"status": "success", "matrix": matrix}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/xgboost/scan")
+async def run_pair_scan():
+    """Scan watchlist for pairs on the move."""
+    try:
+        from tradingagents.xgb_quant.scanner import PairScanner
+        from dataclasses import asdict
+
+        scanner = PairScanner()
+        result = scanner.scan()
+
+        return {
+            "status": "success",
+            "timestamp": result.timestamp,
+            "watchlist_size": result.watchlist_size,
+            "shortlist": [asdict(s) for s in result.shortlist],
+            "disqualified_count": len(result.disqualified),
+            "best_candidate": asdict(result.best_candidate) if result.best_candidate else None,
+        }
+    except Exception as e:
+        import traceback
+        return {"status": "error", "error": str(e), "traceback": traceback.format_exc()}
 
 
 # ----- SMC MTF Analysis (Multi-Timeframe OTE & Channel, No LLM) -----
@@ -6931,6 +7217,10 @@ async def run_smc_quant_analysis(request: SmcQuantAnalysisRequest):
                 "full_report": smc_quant_report
             }
 
+        # === HTF Bias Check ===
+        htf_info = _calculate_htf_bias(request.symbol, request.timeframe)
+        logger.info(f"[SMC QUANT API] HTF bias for {request.symbol}: {htf_info['htf_bias']} ({htf_info['htf_timeframe']})")
+
         # Extract SMC levels for chart display
         from tradingagents.indicators.smart_money import SmartMoneyAnalyzer
         # Use the extended analysis for chart levels
@@ -6982,6 +7272,7 @@ async def run_smc_quant_analysis(request: SmcQuantAnalysisRequest):
                 "adx": round(adx, 2) if not np.isnan(adx) else None,
                 "atr": round(atr, 5) if not np.isnan(atr) else None
             },
+            "htf_bias": htf_info,
             "analysis_mode": "smc_quant",
             "llm_used": True,
             "llm_duration_seconds": round(_llm_duration, 2),
@@ -7330,6 +7621,129 @@ def _extract_smc_levels_for_chart(smc_result: dict) -> list:
                 })
 
     return smc_levels
+
+
+def _calculate_htf_bias(symbol: str, analysis_timeframe: str) -> dict:
+    """
+    Calculate higher-timeframe bias by loading the next TF up and checking
+    swing structure (higher highs/lows vs lower highs/lows) + EMA alignment.
+
+    Returns dict with:
+        htf_bias: "bullish" | "bearish" | "neutral"
+        htf_timeframe: e.g. "H4"
+        htf_details: human-readable summary
+    """
+    import MetaTrader5 as mt5
+    import pandas as pd
+    import numpy as np
+
+    # Map analysis TF → higher TF
+    htf_map = {
+        "M15": ("H1", mt5.TIMEFRAME_H1),
+        "M30": ("H1", mt5.TIMEFRAME_H1),
+        "H1": ("H4", mt5.TIMEFRAME_H4),
+        "H4": ("D1", mt5.TIMEFRAME_D1),
+        "D1": ("W1", mt5.TIMEFRAME_W1),
+    }
+    htf_name, htf_tf = htf_map.get(analysis_timeframe.upper(), ("H4", mt5.TIMEFRAME_H4))
+
+    try:
+        rates = mt5.copy_rates_from_pos(symbol, htf_tf, 0, 100)
+        if rates is None or len(rates) < 20:
+            return {"htf_bias": "neutral", "htf_timeframe": htf_name, "htf_details": "Insufficient HTF data"}
+
+        df = pd.DataFrame(rates)
+        close = df['close'].values
+        high = df['high'].values
+        low = df['low'].values
+
+        # --- Swing detection (simple pivot highs/lows, lookback=3) ---
+        lookback = 3
+        swing_highs = []
+        swing_lows = []
+        for i in range(lookback, len(high) - lookback):
+            if all(high[i] >= high[i - j] for j in range(1, lookback + 1)) and \
+               all(high[i] >= high[i + j] for j in range(1, lookback + 1)):
+                swing_highs.append((i, high[i]))
+            if all(low[i] <= low[i - j] for j in range(1, lookback + 1)) and \
+               all(low[i] <= low[i + j] for j in range(1, lookback + 1)):
+                swing_lows.append((i, low[i]))
+
+        # Need at least 2 swing highs and 2 swing lows to determine structure
+        details_parts = []
+        structure_score = 0  # positive = bullish, negative = bearish
+
+        if len(swing_highs) >= 2 and len(swing_lows) >= 2:
+            # Check last 2 swing highs
+            sh1, sh2 = swing_highs[-2][1], swing_highs[-1][1]
+            # Check last 2 swing lows
+            sl1, sl2 = swing_lows[-2][1], swing_lows[-1][1]
+
+            if sh2 > sh1:
+                structure_score += 1
+                details_parts.append("Higher High")
+            elif sh2 < sh1:
+                structure_score -= 1
+                details_parts.append("Lower High")
+
+            if sl2 > sl1:
+                structure_score += 1
+                details_parts.append("Higher Low")
+            elif sl2 < sl1:
+                structure_score -= 1
+                details_parts.append("Lower Low")
+
+        # --- EMA alignment ---
+        ema20 = pd.Series(close).ewm(span=20, adjust=False).mean().iloc[-1]
+        ema50 = pd.Series(close).ewm(span=50, adjust=False).mean().iloc[-1]
+        current = close[-1]
+
+        if current > ema20 > ema50:
+            structure_score += 1
+            details_parts.append("Price > EMA20 > EMA50")
+        elif current < ema20 < ema50:
+            structure_score -= 1
+            details_parts.append("Price < EMA20 < EMA50")
+        else:
+            details_parts.append("EMAs mixed")
+
+        # --- ADX trend strength on HTF ---
+        high_low = df['high'] - df['low']
+        plus_dm = df['high'].diff()
+        minus_dm = -df['low'].diff()
+        plus_dm[plus_dm < 0] = 0
+        minus_dm[minus_dm < 0] = 0
+        atr_14 = high_low.rolling(14).mean()
+        plus_di = 100 * (plus_dm.rolling(14).mean() / atr_14)
+        minus_di = 100 * (minus_dm.rolling(14).mean() / atr_14)
+        dx = 100 * abs(plus_di - minus_di) / (plus_di + minus_di + 0.0001)
+        adx_val = dx.rolling(14).mean().iloc[-1]
+
+        if not np.isnan(adx_val) and adx_val > 25:
+            if plus_di.iloc[-1] > minus_di.iloc[-1]:
+                structure_score += 1
+                details_parts.append(f"ADX {adx_val:.0f} bullish")
+            else:
+                structure_score -= 1
+                details_parts.append(f"ADX {adx_val:.0f} bearish")
+        else:
+            adx_display = f"{adx_val:.0f}" if not np.isnan(adx_val) else "N/A"
+            details_parts.append(f"ADX {adx_display} weak trend")
+
+        # Determine bias
+        if structure_score >= 2:
+            bias = "bullish"
+        elif structure_score <= -2:
+            bias = "bearish"
+        else:
+            bias = "neutral"
+
+        details = f"{htf_name} bias: {bias} (score {structure_score}). {', '.join(details_parts)}"
+        return {"htf_bias": bias, "htf_timeframe": htf_name, "htf_details": details}
+
+    except Exception as e:
+        logger.warning(f"HTF bias calculation failed for {symbol}/{htf_name}: {e}")
+        return {"htf_bias": "neutral", "htf_timeframe": htf_name, "htf_details": f"Error: {e}"}
 
 
 def _get_trading_session() -> str:
@@ -8773,8 +9187,8 @@ async def start_all_quant_automations():
     """Start all configured automation instances concurrently."""
     import json as _json
 
-    config_path = os.path.join(os.path.dirname(__file__), "../../automation_configs.json")
-    if not os.path.exists(config_path):
+    config_path = _AUTOMATION_CONFIGS_FILE
+    if not config_path.exists():
         raise HTTPException(status_code=404, detail="No automation_configs.json found")
 
     with open(config_path) as f:
@@ -8814,12 +9228,21 @@ async def start_all_quant_automations():
                 max_positions_per_symbol=cfg.get("max_positions_per_symbol", 1),
                 enable_trailing_stop=cfg.get("enable_trailing_stop", True),
                 trailing_stop_atr_multiplier=cfg.get("trailing_stop_atr_multiplier", 1.5),
+                enable_breakeven_stop=cfg.get("enable_breakeven_stop", True),
                 move_to_breakeven_atr_mult=cfg.get("move_to_breakeven_atr_mult", 1.5),
+                enable_reversal_close=cfg.get("enable_reversal_close", True),
                 max_risk_per_trade_pct=cfg.get("max_risk_per_trade_pct", 1.0),
                 default_lot_size=cfg.get("default_lot_size", 0.01),
                 daily_loss_limit_pct=cfg.get("daily_loss_limit_pct", 3.0),
                 max_consecutive_losses=cfg.get("max_consecutive_losses", 3),
+                assumption_review_interval_seconds=cfg.get("assumption_review_interval_seconds", 3600),
+                assumption_review_auto_apply=cfg.get("assumption_review_auto_apply", False),
+                enable_trade_queue=cfg.get("enable_trade_queue", True),
+                trade_queue_poll_seconds=cfg.get("trade_queue_poll_seconds", 5),
+                enable_remote_control=cfg.get("enable_remote_control", True),
+                control_poll_seconds=cfg.get("control_poll_seconds", 3),
                 state_file=instance_state_file,
+                logs_dir=cfg.get("logs_dir", "logs/quant_automation"),
             )
 
             automation = QuantAutomation(auto_config)
@@ -8926,7 +9349,7 @@ async def update_quant_automation_config(updates: Dict[str, Any], instance: str 
 
     if automation is not None:
         # Running instance: update live config
-        automation.update_config(updates)
+        await automation.update_config(updates)
         config_dict = automation.config.to_dict()
     else:
         # No running instance: merge updates into saved config

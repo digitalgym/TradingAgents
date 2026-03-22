@@ -945,5 +945,157 @@
       "applied_at": null,
       "config_before_apply": null
     }
+  ],
+  "XAUUSD_xgboost": [
+    {
+      "timestamp": "2026-03-22T21:08:10.013026",
+      "symbol": "XAUUSD",
+      "pipeline": "xgboost",
+      "bars": 800,
+      "duration_seconds": 14.8,
+      "best": {
+        "strategy": "xgboost",
+        "timeframe": "D1",
+        "params": {
+          "signal_threshold": 0.6,
+          "hold": 20,
+          "atr_sl_mult": 2.5,
+          "rr_ratio": 3.0
+        },
+        "total_trades": 42,
+        "winners": 34,
+        "losers": 8,
+        "win_rate": 80.95238095238095,
+        "avg_pnl": 3.0752916449175123,
+        "total_pnl": 129.16224908653552,
+        "sharpe": 1.7245938838086592,
+        "profit_factor": 6.8651639592100295,
+        "buy_trades": 26,
+        "sell_trades": 16,
+        "buy_win_rate": 88.46153846153845,
+        "sell_win_rate": 68.75
+      },
+      "top_5": [
+        {
+          "strategy": "xgboost",
+          "timeframe": "D1",
+          "params": {
+            "signal_threshold": 0.6,
+            "hold": 20,
+            "atr_sl_mult": 2.5,
+            "rr_ratio": 3.0
+          },
+          "total_trades": 42,
+          "winners": 34,
+          "losers": 8,
+          "win_rate": 80.95238095238095,
+          "avg_pnl": 3.0752916449175123,
+          "total_pnl": 129.16224908653552,
+          "sharpe": 1.7245938838086592,
+          "profit_factor": 6.8651639592100295,
+          "buy_trades": 26,
+          "sell_trades": 16,
+          "buy_win_rate": 88.46153846153845,
+          "sell_win_rate": 68.75
+        },
+        {
+          "strategy": "xgboost",
+          "timeframe": "D1",
+          "params": {
+            "signal_threshold": 0.7,
+            "hold": 20,
+            "atr_sl_mult": 2.5,
+            "rr_ratio": 1.5
+          },
+          "total_trades": 40,
+          "winners": 29,
+          "losers": 11,
+          "win_rate": 72.5,
+          "avg_pnl": 2.2657577760295724,
+          "total_pnl": 90.63031104118289,
+          "sharpe": 1.561573925645138,
+          "profit_factor": 4.34508021036579,
+          "buy_trades": 28,
+          "sell_trades": 12,
+          "buy_win_rate": 82.14285714285714,
+          "sell_win_rate": 50.0
+        },
+        {
+          "strategy": "xgboost",
+          "timeframe": "D1",
+          "params": {
+            "signal_threshold": 0.7,
+            "hold": 20,
+            "atr_sl_mult": 2.0,
+            "rr_ratio": 2.0
+          },
+          "total_trades": 39,
+          "winners": 26,
+          "losers": 13,
+          "win_rate": 66.66666666666666,
+          "avg_pnl": 2.213113485548198,
+          "total_pnl": 86.31142593637972,
+          "sharpe": 1.5057766713960021,
+          "profit_factor": 4.0916577957634415,
+          "buy_trades": 26,
+          "sell_trades": 13,
+          "buy_win_rate": 76.92307692307693,
+          "sell_win_rate": 46.15384615384615
+        },
+        {
+          "strategy": "xgboost",
+          "timeframe": "D1",
+          "params": {
+            "signal_threshold": 0.7,
+            "hold": 20,
+            "atr_sl_mult": 2.5,
+            "rr_ratio": 3.0
+          },
+          "total_trades": 34,
+          "winners": 21,
+          "losers": 13,
+          "win_rate": 61.76470588235294,
+          "avg_pnl": 2.3030241010411245,
+          "total_pnl": 78.30281943539823,
+          "sharpe": 1.4350519357850806,
+          "profit_factor": 3.818435681728627,
+          "buy_trades": 22,
+          "sell_trades": 12,
+          "buy_win_rate": 68.18181818181817,
+          "sell_win_rate": 50.0
+        },
+        {
+          "strategy": "xgboost",
+          "timeframe": "D1",
+          "params": {
+            "signal_threshold": 0.7,
+            "hold": 20,
+            "atr_sl_mult": 2.5,
+            "rr_ratio": 2.0
+          },
+          "total_trades": 35,
+          "winners": 24,
+          "losers": 11,
+          "win_rate": 68.57142857142857,
+          "avg_pnl": 2.0465285339373622,
+          "total_pnl": 71.62849868780768,
+          "sharpe": 1.410050697484503,
+          "profit_factor": 3.5927990802741996,
+          "buy_trades": 23,
+          "sell_trades": 12,
+          "buy_win_rate": 82.6086956521739,
+          "sell_win_rate": 41.66666666666667
+        }
+      ],
+      "config_updates": {
+        "timeframe": "D1",
+        "analysis_interval_minutes": 240,
+        "trailing_stop_atr_multiplier": 2.5,
+        "min_confidence": 0.6
+      },
+      "applied": false,
+      "applied_at": null,
+      "config_before_apply": null
+    }
   ]
 }

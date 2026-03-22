@@ -99,6 +99,7 @@ class PostgresDecisionStore(DecisionStore):
                 min_size=1,
                 max_size=10,
                 command_timeout=60,
+                statement_cache_size=0,  # Required for Neon pooler (PgBouncer)
             )
         return self._pool
 
@@ -464,6 +465,7 @@ class PostgresAutomationStateStore(AutomationStateStore):
                 min_size=1,
                 max_size=5,
                 command_timeout=30,
+                statement_cache_size=0,  # Required for Neon pooler (PgBouncer)
             )
         return self._pool
 

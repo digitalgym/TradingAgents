@@ -14,7 +14,8 @@ import logging
 import os
 import time
 import json
-from datetime import datetime
+import numpy as np
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Literal
 from dataclasses import dataclass, field, fields, asdict
@@ -112,6 +113,8 @@ class PipelineType(str, Enum):
     VOLUME_PROFILE = "volume_profile"
     RULE_BASED = "rule_based"
     MULTI_AGENT = "multi_agent"
+    XGBOOST = "xgboost"
+    XGBOOST_ENSEMBLE = "xgboost_ensemble"
 
 
 class AutomationStatus(str, Enum):
@@ -205,6 +208,9 @@ class AnalysisCycleResult:
     take_profit: Optional[float] = None
     rationale: str = ""
     trailing_stop_atr_multiplier: Optional[float] = None
+    htf_bias: Optional[str] = None  # "bullish", "bearish", "neutral" from higher TF
+    htf_bias_details: Optional[str] = None  # Human-readable HTF summary
+    htf_timeframe: Optional[str] = None  # e.g. "H4", "D1"
     executed: bool = False
     execution_ticket: Optional[int] = None
     execution_error: Optional[str] = None
@@ -256,12 +262,17 @@ class QuantAutomation:
         self._assumption_review_results: List[Dict[str, Any]] = []
         self._error_message: Optional[str] = None
         self._missing_ticket_counts: Dict[int, int] = {}  # ticket -> consecutive missing count
+        self._market_closed_until: Optional[datetime] = None  # suppress modifications when market is closed
 
         # Lock for state file writes (multiple async loops share this)
         self._state_lock = asyncio.Lock()
 
         # Shared aiohttp session for API calls (created lazily)
         self._http_session: Optional["aiohttp.ClientSession"] = None
+
+        # Postgres pool for state persistence (created lazily)
+        self._pg_pool: Optional[Any] = None
+        self._pg_url: Optional[str] = os.environ.get("POSTGRES_URL")
 
         # Risk management
         self.guardrails = RiskGuardrails(
@@ -319,47 +330,101 @@ class QuantAutomation:
             await self._http_session.close()
             self._http_session = None
 
+    async def _get_pg_pool(self):
+        """Get or create asyncpg connection pool for state persistence."""
+        if self._pg_pool is None and self._pg_url:
+            try:
+                import asyncpg
+                self._pg_pool = await asyncpg.create_pool(
+                    self._pg_url, min_size=1, max_size=2,
+                    statement_cache_size=0,  # Required for Neon pooler (PgBouncer)
+                )
+                # Ensure state column exists
+                async with self._pg_pool.acquire() as conn:
+                    await conn.execute("""
+                        ALTER TABLE automation_status
+                        ADD COLUMN IF NOT EXISTS state jsonb
+                    """)
+                self.logger.info("Postgres state persistence enabled")
+            except Exception as e:
+                self.logger.warning(f"Postgres state persistence unavailable: {e}")
+                self._pg_pool = None
+        return self._pg_pool
+
     def _load_state(self):
-        """Load automation state from file."""
+        """Load automation state from file (sync, used in __init__)."""
         state_file = _PROJECT_ROOT / self.config.state_file
         if state_file.exists():
             try:
                 with open(state_file, "r") as f:
                     state = json.load(f)
-                self._last_analysis_time = {
-                    k: datetime.fromisoformat(v)
-                    for k, v in state.get("last_analysis_time", {}).items()
-                }
-                # Restore persisted results history
-                for item in state.get("analysis_results", []):
-                    try:
-                        item["timestamp"] = datetime.fromisoformat(item["timestamp"])
-                        self._analysis_results.append(AnalysisCycleResult(**item))
-                    except Exception:
-                        continue
-                for item in state.get("position_results", []):
-                    try:
-                        item["timestamp"] = datetime.fromisoformat(item["timestamp"])
-                        self._position_results.append(PositionManagementResult(**item))
-                    except Exception:
-                        continue
-                # Restore assumption review state
-                last_review = state.get("last_assumption_review")
-                if last_review:
-                    self._last_assumption_review = datetime.fromisoformat(last_review)
-                self._assumption_review_results = state.get("assumption_review_results", [])
+                self._apply_state(state)
             except Exception as e:
-                self.logger.warning(f"Could not load state: {e}")
+                self.logger.warning(f"Could not load state from file: {e}")
 
-    def _save_state(self):
-        """Save automation state to file.
+    async def _load_state_from_db(self):
+        """Load state from Postgres if available (async, called after startup)."""
+        pool = await self._get_pg_pool()
+        if not pool:
+            return
+        try:
+            async with pool.acquire() as conn:
+                row = await conn.fetchrow(
+                    "SELECT state FROM automation_status WHERE instance_name = $1",
+                    self._source,
+                )
+                if row and row["state"]:
+                    state = json.loads(row["state"]) if isinstance(row["state"], str) else row["state"]
+                    # DB state is newer if it has a later last_updated
+                    db_updated = state.get("last_updated")
+                    file_updated = None
+                    state_file = _PROJECT_ROOT / self.config.state_file
+                    if state_file.exists():
+                        try:
+                            with open(state_file, "r") as f:
+                                file_state = json.load(f)
+                            file_updated = file_state.get("last_updated")
+                        except Exception:
+                            pass
+                    if db_updated and (not file_updated or db_updated > file_updated):
+                        self._apply_state(state)
+                        self.logger.info(f"Loaded state from Postgres (updated {db_updated})")
+        except Exception as e:
+            self.logger.warning(f"Could not load state from Postgres: {e}")
 
-        Uses atomic write (write to temp, then rename) to avoid corruption
-        when multiple async loops call this concurrently.
+    def _apply_state(self, state: dict):
+        """Apply a state dict to instance attributes."""
+        self._last_analysis_time = {
+            k: datetime.fromisoformat(v)
+            for k, v in state.get("last_analysis_time", {}).items()
+        }
+        # Restore persisted results history
+        self._analysis_results.clear()
+        for item in state.get("analysis_results", []):
+            try:
+                item["timestamp"] = datetime.fromisoformat(item["timestamp"])
+                self._analysis_results.append(AnalysisCycleResult(**item))
+            except Exception:
+                continue
+        self._position_results.clear()
+        for item in state.get("position_results", []):
+            try:
+                item["timestamp"] = datetime.fromisoformat(item["timestamp"])
+                self._position_results.append(PositionManagementResult(**item))
+            except Exception:
+                continue
+        # Restore assumption review state
+        last_review = state.get("last_assumption_review")
+        if last_review:
+            self._last_assumption_review = datetime.fromisoformat(last_review)
+        self._assumption_review_results = state.get("assumption_review_results", [])
+
+    async def _save_state(self):
+        """Save automation state to Postgres (primary) and JSON file (fallback).
+
+        Postgres eliminates Windows file-locking issues with os.replace().
+        JSON file kept as fallback when POSTGRES_URL is not set.
         """
-        state_file = _PROJECT_ROOT / self.config.state_file
-        state_file.parent.mkdir(parents=True, exist_ok=True)
-
         def _serialize_result(r):
             d = asdict(r)
             d["timestamp"] = r.timestamp.isoformat()
@@ -377,16 +442,53 @@ class QuantAutomation:
             "assumption_review_results": self._assumption_review_results,
         }
 
-        # Atomic write: write to temp file, then rename
-        tmp_file = state_file.with_suffix(".tmp")
+        saved_to_db = False
+
+        # Primary: write to Postgres
+        pool = await self._get_pg_pool()
+        if pool:
+            try:
+                state_json = json.dumps(state)
+                async with pool.acquire() as conn:
+                    await conn.execute("""
+                        INSERT INTO automation_status (instance_name, status, state, updated_at)
+                        VALUES ($1, $2, $3::jsonb, NOW())
+                        ON CONFLICT (instance_name)
+                        DO UPDATE SET status = $2, state = $3::jsonb, updated_at = NOW()
+                    """, self._source, self._status.value, state_json)
+                saved_to_db = True
+            except Exception as e:
+                self.logger.warning(f"Failed to save state to Postgres: {e}")
+                # Reset pool on connection errors to force reconnect next time
+                if "closed" in str(e).lower() or "release" in str(e).lower():
+                    self._pg_pool = None
+
+        # Fallback: write to JSON file (always, for local tooling / backend reads)
+        state_file = _PROJECT_ROOT / self.config.state_file
+        state_file.parent.mkdir(parents=True, exist_ok=True)
+        tmp_file = state_file.with_suffix(f".{os.getpid()}.tmp")
         try:
             with open(tmp_file, "w") as f:
                 json.dump(state, f, indent=2)
-            # On Windows, os.replace is atomic and overwrites the target
-            os.replace(str(tmp_file), str(state_file))
+            last_err = None
+            for attempt in range(4):
+                try:
+                    os.replace(str(tmp_file), str(state_file))
+                    last_err = None
+                    break
+                except PermissionError as e:
+                    last_err = e
+                    if attempt < 3:
+                        await asyncio.sleep(0.1 * (attempt + 1))
+            if last_err:
+                if saved_to_db:
+                    self.logger.debug(f"File save failed but state saved to Postgres: {last_err}")
+                else:
+                    self.logger.warning(f"Failed to save state (file + DB both failed): {last_err}")
         except Exception as e:
-            self.logger.warning(f"Failed to save state: {e}")
-            # Clean up temp file on failure
+            if not saved_to_db:
+                self.logger.warning(f"Failed to save state: {e}")
+        finally:
             try:
                 tmp_file.unlink(missing_ok=True)
             except Exception:
@@ -576,11 +678,18 @@ class QuantAutomation:
                     duration_seconds=time.time() - start_time,
                 )
 
+            # Extract HTF bias
+            htf_info = result.get("htf_bias", {})
+            htf_bias = htf_info.get("htf_bias") if isinstance(htf_info, dict) else None
+            htf_bias_details = htf_info.get("htf_details") if isinstance(htf_info, dict) else None
+            htf_timeframe = htf_info.get("htf_timeframe") if isinstance(htf_info, dict) else None
+
             self.logger.info(
                 f"SMC Quant decision for {symbol}: signal={decision.get('signal')}, "
                 f"confidence={decision.get('confidence')}, "
                 f"entry={decision.get('entry_price')}, "
-                f"sl={decision.get('stop_loss')}, tp={decision.get('take_profit')}"
+                f"sl={decision.get('stop_loss')}, tp={decision.get('take_profit')}, "
+                f"htf_bias={htf_bias} ({htf_timeframe})"
             )
 
             signal = normalize_signal(decision.get("signal"))
@@ -596,6 +705,9 @@ class QuantAutomation:
                 take_profit=decision.get("take_profit"),
                 rationale=decision.get("rationale", ""),
                 trailing_stop_atr_multiplier=decision.get("trailing_stop_atr_multiplier"),
+                htf_bias=htf_bias,
+                htf_bias_details=htf_bias_details,
+                htf_timeframe=htf_timeframe,
                 duration_seconds=time.time() - start_time,
             )
 
@@ -1046,11 +1158,18 @@ class QuantAutomation:
 
             signal = normalize_signal(decision.get("signal"))
 
+            # Extract HTF bias
+            htf_info = result.get("htf_bias", {})
+            htf_bias = htf_info.get("htf_bias") if isinstance(htf_info, dict) else None
+            htf_bias_details = htf_info.get("htf_details") if isinstance(htf_info, dict) else None
+            htf_timeframe = htf_info.get("htf_timeframe") if isinstance(htf_info, dict) else None
+
             self.logger.info(
                 f"Rule-Based decision for {symbol}: signal={signal}, "
                 f"confidence={decision.get('confidence')}, "
                 f"entry={decision.get('entry_price')}, "
-                f"sl={decision.get('stop_loss')}, tp={decision.get('take_profit')}"
+                f"sl={decision.get('stop_loss')}, tp={decision.get('take_profit')}, "
+                f"htf_bias={htf_bias} ({htf_timeframe})"
             )
 
             return AnalysisCycleResult(
@@ -1063,6 +1182,9 @@ class QuantAutomation:
                 stop_loss=decision.get("stop_loss"),
                 take_profit=decision.get("take_profit"),
                 rationale=decision.get("rationale", ""),
+                htf_bias=htf_bias,
+                htf_bias_details=htf_bias_details,
+                htf_timeframe=htf_timeframe,
                 duration_seconds=api_duration,
             )
 
@@ -1156,11 +1278,16 @@ class QuantAutomation:
 
             signal = normalize_signal(decision.get("signal"))
 
+            # MTF endpoint already provides htf_bias in mtf_details
+            htf_bias = mtf_details.get("htf_bias")
+            htf_timeframe = result.get("higher_tf")
+
             self.logger.info(
                 f"SMC MTF decision for {symbol}: signal={signal}, "
                 f"confidence={decision.get('confidence')}, "
                 f"entry={decision.get('entry_price')}, "
-                f"sl={decision.get('stop_loss')}, tp={decision.get('take_profit')}"
+                f"sl={decision.get('stop_loss')}, tp={decision.get('take_profit')}, "
+                f"htf_bias={htf_bias} ({htf_timeframe})"
             )
 
             return AnalysisCycleResult(
@@ -1173,6 +1300,8 @@ class QuantAutomation:
                 stop_loss=decision.get("stop_loss"),
                 take_profit=decision.get("take_profit"),
                 rationale=decision.get("rationale", ""),
+                htf_bias=htf_bias,
+                htf_timeframe=htf_timeframe,
                 duration_seconds=api_duration,
             )
 
@@ -1500,6 +1629,24 @@ class QuantAutomation:
                     trailing_stop_atr_multiplier=result.trailing_stop_atr_multiplier,
                 )
 
+                # Populate SMC context (HTF bias) on the decision
+                if decision_id and result.htf_bias:
+                    try:
+                        from tradingagents.trade_decisions import set_smc_context
+                        signal_bias = "bullish" if result.signal == "BUY" else "bearish"
+                        htf_aligned = result.htf_bias == signal_bias or result.htf_bias == "neutral"
+                        set_smc_context(
+                            decision_id,
+                            with_trend=htf_aligned,
+                            higher_tf_aligned=htf_aligned,
+                        )
+                        self.logger.info(
+                            f"Set SMC context on {decision_id}: "
+                            f"htf_aligned={htf_aligned}, htf_bias={result.htf_bias}"
+                        )
+                    except Exception as e:
+                        self.logger.warning(f"Failed to set SMC context: {e}")
+
                 # Post signal to X/Twitter (non-blocking, failures are swallowed)
                 try:
                     from tradingagents.automation.x_signal_poster import post_trade_signal
@@ -1648,15 +1795,21 @@ class QuantAutomation:
             }, source=self._source)
 
             # Record in guardrails for circuit breaker
+            # Skip stale cleanups and unfilled orders — they aren't real losses
+            closed_exit_reason = closed.get("exit_reason", "") if closed else exit_reason
+            is_real_trade = closed_exit_reason not in ("stale_cleanup", "order_unfilled")
             pnl_pct = closed.get("pnl_percent", 0) if closed else 0
             was_win = closed.get("was_correct", False) if closed else profit > 0
             try:
-                self.guardrails.record_trade_result(
-                    was_win=was_win,
-                    pnl_pct=pnl_pct,
-                    account_balance=self._get_account_balance(),
-                )
-                self.logger.info(f"  Guardrails updated: {'win' if was_win else 'loss'} {pnl_pct:+.2f}%")
+                if is_real_trade:
+                    self.guardrails.record_trade_result(
+                        was_win=was_win,
+                        pnl_pct=pnl_pct,
+                        account_balance=self._get_account_balance(),
+                    )
+                    self.logger.info(f"  Guardrails updated: {'win' if was_win else 'loss'} {pnl_pct:+.2f}%")
+                else:
+                    self.logger.info(f"  Guardrails skipped for {closed_exit_reason} (not a real trade)")
             except Exception as e:
                 self.logger.warning(f"  Failed to update guardrails: {e}")
 
@@ -1737,6 +1890,11 @@ class QuantAutomation:
         """Manage existing positions - trailing stops, breakeven, close signals."""
         results = []
         self.logger.debug("--- Position management cycle start ---")
+
+        # Skip if market was recently detected as closed
+        if self._market_closed_until and datetime.now() < self._market_closed_until:
+            self.logger.debug(f"Market closed — skipping position management until {self._market_closed_until.strftime('%H:%M')}")
+            return results
 
         try:
             # Verify MT5 is connected before proceeding
@@ -1861,7 +2019,11 @@ class QuantAutomation:
                                                 "price": current_price, "pnl_pct": round(pnl_pct, 3),
                                             }, source=self._source)
                                     else:
-                                        be_status = f"FAILED: {modify_result.get('error', 'unknown')}"
+                                        be_error = modify_result.get("error", "unknown")
+                                        be_status = f"FAILED: {be_error}"
+                                        if modify_result.get("market_closed") or "Market closed" in be_error:
+                                            self._market_closed_until = datetime.now() + timedelta(minutes=30)
+                                            self.logger.info(f"Market closed — suppressing modifications until {self._market_closed_until.strftime('%H:%M')}")
                                 elif not self.config.auto_execute:
                                     be_status = "eligible:auto_execute=off"
                                 else:
@@ -1896,7 +2058,11 @@ class QuantAutomation:
                                         "atr_mult": trail_mult,
                                     }, source=self._source)
                             else:
-                                trail_status = f"FAILED: {modify_result.get('error', 'unknown')}"
+                                error_msg = modify_result.get("error", "unknown")
+                                trail_status = f"FAILED: {error_msg}"
+                                if modify_result.get("market_closed") or "Market closed" in error_msg:
+                                    self._market_closed_until = datetime.now() + timedelta(minutes=30)
+                                    self.logger.info(f"Market closed — suppressing modifications until {self._market_closed_until.strftime('%H:%M')}")
                         elif should_trail and not self.config.auto_execute:
                             trail_status = "eligible:auto_execute=off"
                         else:
@@ -1906,7 +2072,7 @@ class QuantAutomation:
 
                     # --- Reversal Signal Close ---
                     if self.config.enable_reversal_close:
-                        if self.config.pipeline in (PipelineType.SMC_QUANT_BASIC, PipelineType.SMC_QUANT, PipelineType.BREAKOUT_QUANT, PipelineType.RANGE_QUANT, PipelineType.RULE_BASED, PipelineType.SMC_MTF):
+                        if self.config.pipeline in (PipelineType.SMC_QUANT_BASIC, PipelineType.SMC_QUANT, PipelineType.BREAKOUT_QUANT, PipelineType.RANGE_QUANT, PipelineType.RULE_BASED, PipelineType.SMC_MTF, PipelineType.XGBOOST, PipelineType.XGBOOST_ENSEMBLE):
                             if self.config.pipeline == PipelineType.SMC_QUANT:
                                 analysis = await self._run_smc_quant_analysis(symbol)
                             elif self.config.pipeline == PipelineType.BREAKOUT_QUANT:
@@ -1917,6 +2083,8 @@ class QuantAutomation:
                                 analysis = await self._run_rule_based_analysis(symbol)
                             elif self.config.pipeline == PipelineType.SMC_MTF:
                                 analysis = await self._run_smc_mtf_analysis(symbol)
+                            elif self.config.pipeline in (PipelineType.XGBOOST, PipelineType.XGBOOST_ENSEMBLE):
+                                analysis = await self._run_xgboost_analysis(symbol)
                             else:
                                 analysis = await self._run_quant_analysis(symbol)
 
@@ -1973,17 +2141,40 @@ class QuantAutomation:
                 results.append(result)
 
             # Detect positions that disappeared (SL/TP hit externally)
+            # Include both filled positions AND pending orders — limit orders
+            # may not fill immediately, so the ticket exists as a pending order
+            # before it becomes a position.
             open_tickets = {p.get("ticket") for p in managed_positions}
+            try:
+                import MetaTrader5 as mt5
+                pending_orders = mt5.orders_get()
+                if pending_orders:
+                    for order in pending_orders:
+                        open_tickets.add(order.ticket)
+            except Exception:
+                pass  # If orders_get fails, proceed with positions only
             try:
                 my_source = self._source
                 active_decisions = list_active_decisions()
+                # Collect all sources from active decisions to identify orphans
+                all_sources = {d.get("source") for d in active_decisions if d.get("source")}
                 for dec in active_decisions:
                     dec_ticket = dec.get("mt5_ticket")
                     dec_symbol = dec.get("symbol", "")
-                    # Only check decisions owned by this automation
-                    if dec.get("source") != my_source:
+                    dec_source = dec.get("source", "")
+                    # Skip decisions for symbols this instance doesn't handle
+                    if dec_symbol not in self.config.symbols:
                         continue
-                    if not dec_ticket or dec_ticket in open_tickets or dec_symbol not in self.config.symbols:
+                    # Process decisions owned by this instance directly
+                    # Also process orphan decisions (e.g. web_ui, manual) — sources
+                    # that don't start with any symbol prefix are orphans
+                    is_mine = dec_source == my_source
+                    is_orphan = not any(
+                        dec_source.startswith(sym.lower()) for sym in self.config.symbols
+                    ) and dec_source != my_source
+                    if not is_mine and not is_orphan:
+                        continue
+                    if not dec_ticket or dec_ticket in open_tickets:
                         continue
                     # This decision's position is gone - close it
                     deal_info = get_closed_deal_by_ticket(dec_ticket, days_back=14)
@@ -2021,32 +2212,60 @@ class QuantAutomation:
                         miss_count = self._missing_ticket_counts[dec_ticket]
                         self.logger.info(
                             f"  Decision {dec['decision_id']} ticket #{dec_ticket} gone but no deal history found "
-                            f"(check {miss_count}/3)"
+                            f"(check {miss_count}/5)"
                         )
-                        if miss_count >= 3:
-                            # Position confirmed gone — close decision with best-effort data
+                        if miss_count >= 5:
+                            # Position confirmed gone — determine if order never filled
+                            # or if a filled position disappeared
                             entry_price = dec.get("entry_price", 0)
+                            # Check events: if we only have an "executed" event with deal_id=0
+                            # and no POS_MGMT ever ran, the order was placed but never filled
+                            events = dec.get("events", [])
+                            executed_evt = next((e for e in events if e.get("type") == "executed"), None)
+                            had_fill = any(e.get("type") in ("position_update", "external_close") for e in events)
+                            # deal_id=0 from MT5 means limit order placed, not filled
+                            order_never_filled = (
+                                executed_evt
+                                and not had_fill
+                                and executed_evt.get("deal_id", -1) == 0
+                            )
+                            if not order_never_filled:
+                                # Also check: if no deal history and pnl=0, likely unfilled
+                                order_never_filled = not had_fill
+
+                            if order_never_filled:
+                                exit_reason = "order_unfilled"
+                                event_type = "order_unfilled"
+                                note = f"Limit order #{dec_ticket} was placed but never filled — expired or cancelled (insufficient margin, price moved away, etc.)"
+                                close_reason = "order_unfilled"
+                            else:
+                                exit_reason = "stale_cleanup"
+                                event_type = "stale_cleanup"
+                                note = f"Ticket #{dec_ticket} missing from MT5 for {miss_count} checks, no deal history found"
+                                close_reason = "stale_cleanup"
+
                             self.logger.warning(
-                                f"  Closing stale decision {dec['decision_id']} ticket #{dec_ticket} — "
+                                f"  Closing {'unfilled order' if order_never_filled else 'stale'} decision "
+                                f"{dec['decision_id']} ticket #{dec_ticket} — "
                                 f"gone for {miss_count} consecutive checks, no MT5 deal found"
                             )
-                            add_trade_event(dec["decision_id"], "stale_cleanup", {
+                            add_trade_event(dec["decision_id"], event_type, {
                                 "exit_price": entry_price,
                                 "mt5_profit": 0,
-                                "inferred_reason": "stale_cleanup",
-                                "note": f"Ticket #{dec_ticket} missing from MT5 for {miss_count} checks, no deal history found",
+                                "inferred_reason": exit_reason,
+                                "note": note,
                                 "entry_price": entry_price,
                                 "sl": dec.get("stop_loss"),
                                 "tp": dec.get("take_profit"),
                             }, source=self._source)
                             self._close_decision_for_ticket(
-                                dec_ticket, entry_price, 0.0, "stale_cleanup",
-                                f"Position gone from MT5 for {miss_count} checks, no deal history — closed as stale"
+                                dec_ticket, entry_price, 0.0, exit_reason,
+                                note
                             )
                             del self._missing_ticket_counts[dec_ticket]
                             results.append(PositionManagementResult(
                                 timestamp=datetime.now(), ticket=dec_ticket, symbol=dec_symbol,
-                                action="closed", close_reason="stale_cleanup", pnl=0.0,
+                                action="closed", close_reason=close_reason, pnl=0.0,
                             ))
                 # Clear missing counts for tickets that reappeared (e.g. race condition resolved)
                 for ticket in list(self._missing_ticket_counts.keys()):
@@ -2107,12 +2326,32 @@ class QuantAutomation:
                         result = await self._run_vp_analysis(symbol)
                     elif self.config.pipeline == PipelineType.RULE_BASED:
                         result = await self._run_rule_based_analysis(symbol)
+                    elif self.config.pipeline in (PipelineType.XGBOOST, PipelineType.XGBOOST_ENSEMBLE):
+                        result = await self._run_xgboost_analysis(symbol)
                     else:
                         result = await self._run_multi_agent_analysis(symbol)
 
                     self.logger.info(
-                        f"{symbol}: {result.signal} (confidence: {result.confidence:.2f})"
+                        f"{symbol}: {result.signal} (confidence: {result.confidence:.2f}, htf_bias: {result.htf_bias})"
                     )
+
+                    # --- HTF Bias Gate ---
+                    # Block trades that conflict with higher-timeframe structure.
+                    # BUY requires bullish or neutral HTF; SELL requires bearish or neutral HTF.
+                    if result.signal in ["BUY", "SELL"] and result.htf_bias:
+                        signal_bias = "bullish" if result.signal == "BUY" else "bearish"
+                        if result.htf_bias != "neutral" and result.htf_bias != signal_bias:
+                            self.logger.warning(
+                                f"HTF BIAS GATE: {result.symbol} {result.signal} BLOCKED — "
+                                f"HTF ({result.htf_timeframe}) is {result.htf_bias}, "
+                                f"signal is {signal_bias}. {result.htf_bias_details or ''}"
+                            )
+                            result.rationale += (
+                                f"\n\n⚠️ **BLOCKED by HTF bias**: {result.htf_timeframe} structure is "
+                                f"{result.htf_bias}, conflicting with {result.signal} signal."
+                            )
+                            result.signal = "HOLD"
+                            result.confidence = 0.0
 
                     # Execute trade if conditions met
                     if result.signal in ["BUY", "SELL"]:
@@ -2126,7 +2365,7 @@ class QuantAutomation:
                     # Update last analysis time
                     self._last_analysis_time[symbol] = now
 
-                self._save_state()
+                await self._save_state()
 
             except Exception as e:
                 self.logger.error(f"Analysis loop error: {e}")
@@ -2262,7 +2501,7 @@ class QuantAutomation:
                     summary = format_review_summary(reports)
                     self.logger.info(summary)
 
-                    self._save_state()
+                    await self._save_state()
 
             except Exception as e:
                 import traceback
@@ -2312,7 +2551,15 @@ class QuantAutomation:
                         self.logger.error(f"[QUEUE] Failed: {cmd.command_id} - {e}")
 
             except Exception as e:
-                self.logger.error(f"Trade queue error: {e}")
+                self.logger.error(f"Trade queue error: {e!r}")
+                # Reset pool on connection errors to force reconnect
+                if "closed" in str(e).lower() or "release" in str(e).lower() or "connect" in str(e).lower():
+                    try:
+                        queue = get_trade_queue()
+                        await queue._reset_pool()
+                        self.logger.info("Trade queue pool reset after connection error")
+                    except Exception:
+                        pass
 
             # Wait for next poll or shutdown
             try:
@@ -2459,7 +2706,14 @@ class QuantAutomation:
                 await self._update_remote_status()
 
             except Exception as e:
-                self.logger.error(f"Control loop error: {e}")
+                self.logger.error(f"Control loop error: {e!r}")
+                # Reset pool on connection errors to force reconnect
+                if "closed" in str(e).lower() or "release" in str(e).lower() or "connect" in str(e).lower():
+                    try:
+                        await control._reset_pool()
+                        self.logger.info("Control pool reset after connection error")
+                    except Exception:
+                        pass
 
             # Wait for next poll
             try:
@@ -2487,7 +2741,7 @@ class QuantAutomation:
 
         elif cmd.action == "update_config":
             # Update configuration
-            self.update_config(cmd.payload)
+            await self.update_config(cmd.payload)
             self.logger.info(f"[CONTROL] Config updated: {cmd.payload}")
 
         elif cmd.action == "restart":
@@ -2514,6 +2768,9 @@ class QuantAutomation:
             self._status = AutomationStatus.ERROR
             self._error_message = "MT5 not connected"
             raise RuntimeError("MT5 not connected")
+
+        # Try loading state from Postgres (may be newer than local file)
+        await self._load_state_from_db()
 
         self._running = True
         self._status = AutomationStatus.RUNNING
@@ -2569,12 +2826,15 @@ class QuantAutomation:
         self.logger.info("Stopping quant automation...")
         self._running = False
         self._shutdown_event.set()
-        # Schedule HTTP session cleanup
+        # Schedule HTTP session and DB pool cleanup
         try:
             loop = asyncio.get_running_loop()
             loop.create_task(self._close_http_session())
+            if self._pg_pool:
+                loop.create_task(self._pg_pool.close())
+                self._pg_pool = None
         except RuntimeError:
-            pass  # No running loop, session will be garbage collected
+            pass  # No running loop, resources will be garbage collected
 
     def pause(self):
         """Pause the automation (stop new trades but continue monitoring)."""
@@ -2588,7 +2848,7 @@ class QuantAutomation:
         self._status = AutomationStatus.RUNNING
         self.logger.info("Automation resumed - auto-execute enabled")
 
-    def update_config(self, updates: Dict[str, Any]):
+    async def update_config(self, updates: Dict[str, Any]):
         """Update configuration dynamically."""
         for key, value in updates.items():
             if hasattr(self.config, key):
@@ -2599,7 +2859,7 @@ class QuantAutomation:
                 self.logger.info(f"Config updated: {key} = {old_value} -> {value}")
             else:
                 self.logger.warning(f"Config update ignored: unknown key '{key}'")
-        self._save_state()
+        await self._save_state()
 
     def get_status(self) -> Dict[str, Any]:
         """Get current automation status."""
@@ -2655,8 +2915,94 @@ class QuantAutomation:
             return await self._run_vp_analysis(symbol)
         elif self.config.pipeline == PipelineType.RULE_BASED:
             return await self._run_rule_based_analysis(symbol)
+        elif self.config.pipeline in (PipelineType.XGBOOST, PipelineType.XGBOOST_ENSEMBLE):
+            return await self._run_xgboost_analysis(symbol)
         else:
             return await self._run_multi_agent_analysis(symbol)
+
+    async def _run_xgboost_analysis(self, symbol: str) -> "AnalysisCycleResult":
+        """Run XGBoost strategy analysis — local inference, no LLM call."""
+        import time as _time
+        start = _time.time()
+
+        try:
+            from tradingagents.automation.auto_tuner import load_mt5_data, _compute_atr
+            from tradingagents.xgb_quant.predictor import LivePredictor
+            from tradingagents.xgb_quant.config import REGIME_SUITABILITY
+
+            df = load_mt5_data(symbol, self.config.timeframe, bars=500)
+            high = df["high"].values.astype(float)
+            low = df["low"].values.astype(float)
+            close = df["close"].values.astype(float)
+            atr = _compute_atr(high, low, close)
+            current_atr = float(atr[-1]) if not np.isnan(atr[-1]) else 1.0
+            current_price = float(close[-1])
+
+            predictor = LivePredictor()
+
+            if self.config.pipeline == PipelineType.XGBOOST_ENSEMBLE:
+                available = predictor.get_available_models(symbol, self.config.timeframe)
+                if len(available) < 2:
+                    return AnalysisCycleResult(
+                        timestamp=datetime.now(), symbol=symbol,
+                        pipeline=self.config.pipeline.value,
+                        signal="HOLD", confidence=0.0,
+                        rationale=f"Only {len(available)} models available, need 2+",
+                        duration_seconds=_time.time() - start,
+                    )
+                signal = predictor.predict_ensemble(
+                    available, symbol, self.config.timeframe,
+                    df, current_price, current_atr,
+                )
+            else:
+                # Single strategy — use strategy selector to pick best
+                from tradingagents.xgb_quant.strategy_selector import StrategySelector
+                selector = StrategySelector()
+                selection = selector.select(symbol)
+                strategy_name = selection.recommended_strategy
+
+                # Use the timeframe that performed best in training
+                timeframe = selection.recommended_timeframe or self.config.timeframe
+                if timeframe != self.config.timeframe:
+                    self.logger.info(
+                        f"XGBoost: using best timeframe {timeframe} "
+                        f"(trained) instead of {self.config.timeframe} (configured) "
+                        f"for {strategy_name} on {symbol}"
+                    )
+                    df = load_mt5_data(symbol, timeframe, bars=500)
+                    high = df["high"].values.astype(float)
+                    low = df["low"].values.astype(float)
+                    close = df["close"].values.astype(float)
+                    atr = _compute_atr(high, low, close)
+                    current_atr = float(atr[-1]) if not np.isnan(atr[-1]) else 1.0
+                    current_price = float(close[-1])
+
+                signal = predictor.predict_single(
+                    strategy_name, symbol, timeframe,
+                    df, current_price, current_atr,
+                )
+
+            return AnalysisCycleResult(
+                timestamp=datetime.now(), symbol=symbol,
+                pipeline=self.config.pipeline.value,
+                signal=signal.direction,
+                confidence=signal.confidence,
+                entry_price=signal.entry if signal.entry else current_price,
+                stop_loss=signal.stop_loss if signal.stop_loss else None,
+                take_profit=signal.take_profit if signal.take_profit else None,
+                rationale=signal.rationale,
+                duration_seconds=_time.time() - start,
+            )
+
+        except Exception as e:
+            self.logger.error(f"XGBoost analysis failed for {symbol}: {e}")
+            return AnalysisCycleResult(
+                timestamp=datetime.now(), symbol=symbol,
+                pipeline=self.config.pipeline.value,
+                signal="HOLD", confidence=0.0,
+                rationale=f"XGBoost error: {e}",
+                duration_seconds=_time.time() - start,
+            )
 
 
 # Global instance for API access

@@ -30,7 +30,10 @@ class MT5Worker:
     async def start(self):
         """Initialize connections and start polling."""
         # Connect to Postgres
-        self.pool = await asyncpg.create_pool(DATABASE_URL, min_size=1, max_size=5)
+        self.pool = await asyncpg.create_pool(
+            DATABASE_URL, min_size=1, max_size=5,
+            statement_cache_size=0,  # Required for Neon pooler (PgBouncer)
+        )
         print(f"[MT5 Worker] Connected to Postgres")
 
         # Initialize MT5
@@ -63,11 +66,13 @@ class MT5Worker:
             try:
                 async with self.pool.acquire() as conn:
                     # Claim a pending command
+                    # DB schema: command_id (text PK), command_type, symbol, payload (jsonb),
+                    #            status, created_at, processed_at, result (jsonb), error, source
                     row = await conn.fetchrow("""
                         UPDATE trade_queue
-                        SET status = 'processing', claimed_at = NOW()
-                        WHERE id = (
-                            SELECT id FROM trade_queue
+                        SET status = 'processing', processed_at = NOW()
+                        WHERE command_id = (
+                            SELECT command_id FROM trade_queue
                             WHERE status = 'pending'
                             ORDER BY created_at
                             LIMIT 1
@@ -86,9 +91,16 @@ class MT5Worker:
 
     async def _execute_trade_command(self, conn, row):
         """Execute a trade command via MT5."""
-        cmd_id = row["id"]
-        command = row["command"]
-        payload = json.loads(row["payload"]) if row["payload"] else {}
+        cmd_id = row["command_id"]
+        command = row["command_type"]
+        # payload is jsonb — asyncpg returns it as a dict/str depending on driver
+        raw_payload = row["payload"]
+        if isinstance(raw_payload, str):
+            payload = json.loads(raw_payload)
+        elif isinstance(raw_payload, dict):
+            payload = raw_payload
+        else:
+            payload = {}
 
         print(f"[MT5 Worker] Executing: {command} - {payload}")
 
@@ -116,23 +128,24 @@ class MT5Worker:
             if error:
                 await conn.execute("""
                     UPDATE trade_queue
-                    SET status = 'failed', error = $2, completed_at = NOW()
-                    WHERE id = $1
+                    SET status = 'failed', error = $2, processed_at = NOW()
+                    WHERE command_id = $1
                 """, cmd_id, str(error))
                 print(f"[MT5 Worker] Command {cmd_id} failed: {error}")
             else:
+                result_json = json.dumps(result) if result else None
                 await conn.execute("""
                     UPDATE trade_queue
-                    SET status = 'completed', result = $2, completed_at = NOW()
-                    WHERE id = $1
-                """, cmd_id, json.dumps(result) if result else None)
+                    SET status = 'completed', result = $2::jsonb, processed_at = NOW()
+                    WHERE command_id = $1
+                """, cmd_id, result_json)
                 print(f"[MT5 Worker] Command {cmd_id} completed")
 
         except Exception as e:
             await conn.execute("""
                 UPDATE trade_queue
-                SET status = 'failed', error = $2, completed_at = NOW()
-                WHERE id = $1
+                SET status = 'failed', error = $2, processed_at = NOW()
+                WHERE command_id = $1
             """, cmd_id, str(e))
             print(f"[MT5 Worker] Command {cmd_id} exception: {e}")
 
@@ -264,11 +277,13 @@ class MT5Worker:
         while self.running:
             try:
                 async with self.pool.acquire() as conn:
+                    # DB schema: command_id (text PK), instance_name, action,
+                    #            payload (jsonb), status, created_at, applied_at, error, source
                     rows = await conn.fetch("""
                         UPDATE automation_control
-                        SET status = 'processing', processed_at = NOW()
-                        WHERE id IN (
-                            SELECT id FROM automation_control
+                        SET status = 'processing', applied_at = NOW()
+                        WHERE command_id IN (
+                            SELECT command_id FROM automation_control
                             WHERE status = 'pending'
                             ORDER BY created_at
                             LIMIT 10
@@ -287,10 +302,16 @@ class MT5Worker:
 
     async def _execute_control_command(self, conn, row):
         """Execute automation control command."""
-        cmd_id = row["id"]
+        cmd_id = row["command_id"]
         instance = row["instance_name"]
         action = row["action"]
-        config = json.loads(row["config"]) if row["config"] else {}
+        raw_payload = row["payload"]
+        if isinstance(raw_payload, str):
+            config = json.loads(raw_payload)
+        elif isinstance(raw_payload, dict):
+            config = raw_payload
+        else:
+            config = {}
 
         print(f"[MT5 Worker] Control: {action} for {instance}")
 
@@ -298,8 +319,8 @@ class MT5Worker:
         # The actual automation control would integrate with quant_automation
         await conn.execute("""
             UPDATE automation_control
-            SET status = 'completed', processed_at = NOW()
-            WHERE id = $1
+            SET status = 'completed', applied_at = NOW()
+            WHERE command_id = $1
         """, cmd_id)
 
         print(f"[MT5 Worker] Control {cmd_id} completed")
@@ -313,6 +334,13 @@ class MT5Worker:
                 # Get account info
                 account = mt5.account_info()
                 if account:
+                    positions = mt5.positions_get() or []
+                    metadata = {
+                        "balance": account.balance,
+                        "equity": account.equity,
+                        "margin_free": account.margin_free,
+                        "positions": len(positions),
+                    }
                     async with self.pool.acquire() as conn:
                         # Check for stop request
                         row = await conn.fetchrow("""
@@ -324,17 +352,15 @@ class MT5Worker:
                             self.running = False
                             break
 
+                        # DB schema: instance_name (text PK), status, pipeline, symbols (jsonb),
+                        #            auto_execute (bool), last_analysis, last_trade,
+                        #            active_positions (int), error_message, config (jsonb), updated_at
                         await conn.execute("""
-                            INSERT INTO automation_status (instance_name, status, last_heartbeat, metadata)
-                            VALUES ('mt5_worker', 'running', NOW(), $1)
+                            INSERT INTO automation_status (instance_name, status, active_positions, config, updated_at)
+                            VALUES ('mt5_worker', 'running', $1, $2::jsonb, NOW())
                             ON CONFLICT (instance_name)
-                            DO UPDATE SET status = 'running', last_heartbeat = NOW(), metadata = $1
-                        """, json.dumps({
-                            "balance": account.balance,
-                            "equity": account.equity,
-                            "margin_free": account.margin_free,
-                            "positions": len(mt5.positions_get() or []),
-                        }))
+                            DO UPDATE SET status = 'running', active_positions = $1, config = $2::jsonb, updated_at = NOW()
+                        """, len(positions), json.dumps(metadata))
 
             except Exception as e:
                 print(f"[MT5 Worker] Status update error: {e}")

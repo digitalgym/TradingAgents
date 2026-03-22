@@ -76,7 +76,11 @@
       "Bash(vercel logs:*)",
       "Bash(vercel inspect:*)",
       "Bash(printf \"c2e53dc553025c14dd578336f231e0979e41fe505752a0bef717c5ee82f87302\")",
-      "Bash(printf \"HPIy6Fn5WzA6D6WjOtt57hFL2MMgZ7pX\")"
+      "Bash(printf \"HPIy6Fn5WzA6D6WjOtt57hFL2MMgZ7pX\")",
+      "Bash(iconv -f UTF-16LE -t UTF-8)",
+      "Bash(iconv -f UTF-16LE -t UTF-8 /c/Users/User/AppData/Roaming/MetaQuotes/Terminal/9B207513987DDC3C65E0F2AC7EE65D70/logs/20260320.log)",
+      "Bash(d:/Documents/TradingAgents/.venv/Scripts/pip install:*)",
+      "Bash(iconv -f UTF-16LE -t UTF-8 '/c/Users/User/AppData/Roaming/MetaQuotes/Terminal/9B207513987DDC3C65E0F2AC7EE65D70/logs/$\\(date +%Y%m%d\\).log')"
     ]
   }
 }

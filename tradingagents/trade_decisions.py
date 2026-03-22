@@ -711,7 +711,11 @@ def close_decision(
     decision["pnl_percent"] = pnl_percent
     decision["outcome_notes"] = outcome_notes
     decision["was_correct"] = was_correct
-    decision["status"] = "closed"
+    # Use distinct status for orders that were placed but never filled
+    if exit_reason == "order_unfilled":
+        decision["status"] = "order_unfilled"
+    else:
+        decision["status"] = "closed"
     decision["exit_reason"] = exit_reason
     decision["rr_planned"] = rr_planned
     decision["rr_realized"] = rr_realized
@@ -916,7 +920,7 @@ def list_failed_decisions(symbol: Optional[str] = None, limit: int = 50) -> List
             decision_id = f.replace(".json", "")
             try:
                 decision = load_decision(decision_id)
-                if decision["status"] in ("failed", "retried"):
+                if decision["status"] in ("failed", "retried", "order_unfilled"):
                     if symbol is None or decision["symbol"] == symbol:
                         decisions.append(decision)
             except Exception:
