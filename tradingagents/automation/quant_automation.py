@@ -14,6 +14,7 @@ import logging
 import os
 import time
 import json
+import numpy as np
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Literal
@@ -112,6 +113,8 @@ class PipelineType(str, Enum):
     VOLUME_PROFILE = "volume_profile"
     RULE_BASED = "rule_based"
     MULTI_AGENT = "multi_agent"
+    XGBOOST = "xgboost"
+    XGBOOST_ENSEMBLE = "xgboost_ensemble"
 
 
 class AutomationStatus(str, Enum):
@@ -2021,7 +2024,7 @@ class QuantAutomation:
 
                     # --- Reversal Signal Close ---
                     if self.config.enable_reversal_close:
-                        if self.config.pipeline in (PipelineType.SMC_QUANT_BASIC, PipelineType.SMC_QUANT, PipelineType.BREAKOUT_QUANT, PipelineType.RANGE_QUANT, PipelineType.RULE_BASED, PipelineType.SMC_MTF):
+                        if self.config.pipeline in (PipelineType.SMC_QUANT_BASIC, PipelineType.SMC_QUANT, PipelineType.BREAKOUT_QUANT, PipelineType.RANGE_QUANT, PipelineType.RULE_BASED, PipelineType.SMC_MTF, PipelineType.XGBOOST, PipelineType.XGBOOST_ENSEMBLE):
                             if self.config.pipeline == PipelineType.SMC_QUANT:
                                 analysis = await self._run_smc_quant_analysis(symbol)
                             elif self.config.pipeline == PipelineType.BREAKOUT_QUANT:
@@ -2032,6 +2035,8 @@ class QuantAutomation:
                                 analysis = await self._run_rule_based_analysis(symbol)
                             elif self.config.pipeline == PipelineType.SMC_MTF:
                                 analysis = await self._run_smc_mtf_analysis(symbol)
+                            elif self.config.pipeline in (PipelineType.XGBOOST, PipelineType.XGBOOST_ENSEMBLE):
+                                analysis = await self._run_xgboost_analysis(symbol)
                             else:
                                 analysis = await self._run_quant_analysis(symbol)
 
@@ -2273,6 +2278,8 @@ class QuantAutomation:
                         result = await self._run_vp_analysis(symbol)
                     elif self.config.pipeline == PipelineType.RULE_BASED:
                         result = await self._run_rule_based_analysis(symbol)
+                    elif self.config.pipeline in (PipelineType.XGBOOST, PipelineType.XGBOOST_ENSEMBLE):
+                        result = await self._run_xgboost_analysis(symbol)
                     else:
                         result = await self._run_multi_agent_analysis(symbol)
 
@@ -2842,8 +2849,94 @@ class QuantAutomation:
             return await self._run_vp_analysis(symbol)
         elif self.config.pipeline == PipelineType.RULE_BASED:
             return await self._run_rule_based_analysis(symbol)
+        elif self.config.pipeline in (PipelineType.XGBOOST, PipelineType.XGBOOST_ENSEMBLE):
+            return await self._run_xgboost_analysis(symbol)
         else:
             return await self._run_multi_agent_analysis(symbol)
+
+    async def _run_xgboost_analysis(self, symbol: str) -> "AnalysisCycleResult":
+        """Run XGBoost strategy analysis — local inference, no LLM call."""
+        import time as _time
+        start = _time.time()
+
+        try:
+            from tradingagents.automation.auto_tuner import load_mt5_data, _compute_atr
+            from tradingagents.xgb_quant.predictor import LivePredictor
+            from tradingagents.xgb_quant.config import REGIME_SUITABILITY
+
+            df = load_mt5_data(symbol, self.config.timeframe, bars=500)
+            high = df["high"].values.astype(float)
+            low = df["low"].values.astype(float)
+            close = df["close"].values.astype(float)
+            atr = _compute_atr(high, low, close)
+            current_atr = float(atr[-1]) if not np.isnan(atr[-1]) else 1.0
+            current_price = float(close[-1])
+
+            predictor = LivePredictor()
+
+            if self.config.pipeline == PipelineType.XGBOOST_ENSEMBLE:
+                available = predictor.get_available_models(symbol, self.config.timeframe)
+                if len(available) < 2:
+                    return AnalysisCycleResult(
+                        timestamp=datetime.now(), symbol=symbol,
+                        pipeline=self.config.pipeline.value,
+                        signal="HOLD", confidence=0.0,
+                        rationale=f"Only {len(available)} models available, need 2+",
+                        duration_seconds=_time.time() - start,
+                    )
+                signal = predictor.predict_ensemble(
+                    available, symbol, self.config.timeframe,
+                    df, current_price, current_atr,
+                )
+            else:
+                # Single strategy — use strategy selector to pick best
+                from tradingagents.xgb_quant.strategy_selector import StrategySelector
+                selector = StrategySelector()
+                selection = selector.select(symbol)
+                strategy_name = selection.recommended_strategy
+
+                # Use the timeframe that performed best in training
+                timeframe = selection.recommended_timeframe or self.config.timeframe
+                if timeframe != self.config.timeframe:
+                    self.logger.info(
+                        f"XGBoost: using best timeframe {timeframe} "
+                        f"(trained) instead of {self.config.timeframe} (configured) "
+                        f"for {strategy_name} on {symbol}"
+                    )
+                    df = load_mt5_data(symbol, timeframe, bars=500)
+                    high = df["high"].values.astype(float)
+                    low = df["low"].values.astype(float)
+                    close = df["close"].values.astype(float)
+                    atr = _compute_atr(high, low, close)
+                    current_atr = float(atr[-1]) if not np.isnan(atr[-1]) else 1.0
+                    current_price = float(close[-1])
+
+                signal = predictor.predict_single(
+                    strategy_name, symbol, timeframe,
+                    df, current_price, current_atr,
+                )
+
+            return AnalysisCycleResult(
+                timestamp=datetime.now(), symbol=symbol,
+                pipeline=self.config.pipeline.value,
+                signal=signal.direction,
+                confidence=signal.confidence,
+                entry_price=signal.entry if signal.entry else current_price,
+                stop_loss=signal.stop_loss if signal.stop_loss else None,
+                take_profit=signal.take_profit if signal.take_profit else None,
+                rationale=signal.rationale,
+                duration_seconds=_time.time() - start,
+            )
+
+        except Exception as e:
+            self.logger.error(f"XGBoost analysis failed for {symbol}: {e}")
+            return AnalysisCycleResult(
+                timestamp=datetime.now(), symbol=symbol,
+                pipeline=self.config.pipeline.value,
+                signal="HOLD", confidence=0.0,
+                rationale=f"XGBoost error: {e}",
+                duration_seconds=_time.time() - start,
+            )
 
 
 # Global instance for API access

@@ -9,3 +9,7 @@ langchain-openai>=0.2.0
 sqlalchemy>=2.0.0
 pg8000>=1.30.0
 python-dotenv>=1.0.0
+xgboost>=2.0.0
+scikit-learn>=1.4.0
+optuna>=3.5.0
+pyarrow>=15.0.0

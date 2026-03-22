@@ -139,6 +139,12 @@ def get_parameter_grid(pipeline: str) -> Dict[str, List[Any]]:
             "require_channel": [True, False],
             **exit_params,
         }
+    elif pipeline in ("xgboost", "xgboost_ensemble"):
+        return {
+            "signal_threshold": [0.55, 0.60, 0.65, 0.70],
+            "hold": [5, 10, 15, 20],
+            **exit_params,
+        }
     else:
         return {}
 
@@ -154,6 +160,8 @@ def get_tunable_timeframes(pipeline: str) -> List[str]:
         return ["D1", "H4", "H1"]
     elif pipeline in ("range_quant", "breakout_quant", "volume_profile"):
         return ["D1", "H4", "H1"]
+    elif pipeline in ("xgboost", "xgboost_ensemble"):
+        return ["D1", "H4"]
     else:
         return ["D1", "H4", "H1"]
 
@@ -758,6 +766,146 @@ def _backtest_mtf_from_cache(signals, df, hold_days=5, min_alignment=60,
 
 
 # ------------------------------------------------------------------
+# XGBoost backtest
+# ------------------------------------------------------------------
+
+def _precompute_xgboost_signals(df, pipeline, symbol, timeframe):
+    """Run XGBoost model(s) on historical data to generate signals.
+
+    Uses batch prediction: computes features once, then predicts all bars at once.
+    Returns list of dicts: {bar, direction, probability}.
+    """
+    from tradingagents.xgb_quant.predictor import LivePredictor
+    from tradingagents.xgb_quant.strategy_selector import StrategySelector
+
+    predictor = LivePredictor()
+    signals = []
+
+    if pipeline == "xgboost_ensemble":
+        # Get all available models for this symbol/TF
+        strategy_names = predictor.get_available_models(symbol, timeframe)
+        if len(strategy_names) < 2:
+            logger.warning(f"XGBoost ensemble tune: only {len(strategy_names)} models, need 2+")
+            return signals
+
+        # Compute predictions from each model, then find consensus
+        all_probs = {}
+        for name in strategy_names:
+            try:
+                if not predictor.load_strategy(name, symbol, timeframe):
+                    continue
+                key = f"{name}_{symbol}_{timeframe}"
+                strategy = predictor._loaded_strategies[key]
+                features = strategy.get_feature_set().compute(df)
+                probs = strategy.predict_proba_batch(features)
+                all_probs[name] = probs
+            except Exception as e:
+                logger.debug(f"XGBoost tune: {name} failed: {e}")
+                continue
+
+        if len(all_probs) < 2:
+            return signals
+
+        # For each bar, check consensus
+        n = len(df)
+        for i in range(n):
+            buy_votes = 0
+            sell_votes = 0
+            total_prob = 0.0
+            voted = 0
+
+            for name, probs in all_probs.items():
+                if i >= len(probs) or np.isnan(probs[i]):
+                    continue
+                if probs[i] >= 0.55:
+                    buy_votes += 1
+                    total_prob += probs[i]
+                    voted += 1
+                elif probs[i] <= 0.45:
+                    sell_votes += 1
+                    total_prob += (1.0 - probs[i])
+                    voted += 1
+
+            if buy_votes >= 2:
+                signals.append({"bar": i, "direction": "BUY", "probability": total_prob / voted})
+            elif sell_votes >= 2:
+                signals.append({"bar": i, "direction": "SELL", "probability": total_prob / voted})
+
+    else:
+        # Single best strategy
+        selector = StrategySelector()
+        selection = selector.select(symbol)
+        strategy_name = selection.recommended_strategy
+
+        if not predictor.load_strategy(strategy_name, symbol, timeframe):
+            logger.warning(f"XGBoost tune: no model for {strategy_name} on {symbol} {timeframe}")
+            return signals
+
+        key = f"{strategy_name}_{symbol}_{timeframe}"
+        strategy = predictor._loaded_strategies[key]
+
+        # Compute features once (batch)
+        features = strategy.get_feature_set().compute(df)
+
+        # Get probabilities for all bars (batch prediction)
+        probs = strategy.predict_proba_batch(features)
+
+        for i in range(len(probs)):
+            if np.isnan(probs[i]):
+                continue
+            if probs[i] >= 0.55:
+                signals.append({"bar": i, "direction": "BUY", "probability": float(probs[i])})
+            elif probs[i] <= 0.45:
+                signals.append({"bar": i, "direction": "SELL", "probability": float(1.0 - probs[i])})
+
+    logger.info(f"XGBoost precompute: {len(signals)} signals from {len(df)} bars")
+    return signals
+
+
+def _backtest_xgboost_from_cache(
+    signals, df, hold_days=10, signal_threshold=0.60,
+    atr_sl_mult=1.5, rr_ratio=2.0,
+):
+    """Backtest XGBoost signals with given exit parameters."""
+    if not signals:
+        return []
+
+    high = df["high"].values
+    low = df["low"].values
+    close = df["close"].values
+    atr = _compute_atr(high, low, close)
+
+    trades = []
+    last_exit_bar = -1
+
+    for sig in signals:
+        i = sig["bar"]
+        if i <= last_exit_bar or i >= len(close) - 1:
+            continue
+        if sig["probability"] < signal_threshold:
+            continue
+
+        entry = close[i]
+        if np.isnan(atr[i]) or atr[i] <= 0:
+            continue
+
+        sl_dist = atr[i] * atr_sl_mult
+        tp_dist = sl_dist * rr_ratio
+
+        direction = sig["direction"]
+        if direction == "BUY":
+            sl, tp = entry - sl_dist, entry + tp_dist
+        else:
+            sl, tp = entry + sl_dist, entry - tp_dist
+
+        exit_info = _simulate_exit(direction, entry, sl, tp, high, low, close, i, hold_days)
+        trades.append({"bar": i, "direction": direction, "entry": entry, **exit_info})
+        last_exit_bar = i + exit_info["bars"]
+
+    return trades
+
+
+# ------------------------------------------------------------------
 # Pipeline-to-backtest dispatch
 # ------------------------------------------------------------------
 
@@ -836,6 +984,14 @@ def _run_pipeline_sweep(pipeline, df, timeframe, grid, precomputed_cache=None,
                 require_channel=params.get("require_channel", True),
                 atr_sl_mult=atr_sl, rr_ratio=rr,
             )
+        elif pipeline in ("xgboost", "xgboost_ensemble"):
+            if precomputed_cache is None:
+                continue
+            trades = _backtest_xgboost_from_cache(
+                precomputed_cache, df, hold_days=params["hold"],
+                signal_threshold=params.get("signal_threshold", 0.60),
+                atr_sl_mult=atr_sl, rr_ratio=rr,
+            )
         else:
             continue
 
@@ -887,6 +1043,9 @@ def best_params_to_config_updates(pipeline: str, best: TuneResult) -> Dict[str, 
     elif pipeline == "breakout_quant":
         sq = best.params.get("squeeze_threshold", 70)
         updates["min_confidence"] = round(max(0.50, min(0.90, sq / 100)), 2)
+    elif pipeline in ("xgboost", "xgboost_ensemble"):
+        st = best.params.get("signal_threshold", 0.60)
+        updates["min_confidence"] = round(st, 2)
 
     return updates
 
@@ -940,6 +1099,7 @@ async def run_tune(
         else "Pre-compute breakout signals" if pipeline == "breakout_quant"
         else "Pre-compute VP signals" if pipeline == "volume_profile"
         else "Pre-compute MTF alignment" if pipeline == "smc_mtf"
+        else "Pre-compute XGBoost predictions" if pipeline in ("xgboost", "xgboost_ensemble")
         else "Pre-compute signals"
     )
     steps = [
@@ -1054,6 +1214,16 @@ async def run_tune(
                 _precompute_mtf_signals, htf_df, ltf_df, 5, 50,
                 lambda ph, cur, tot, msg: _progress("precompute", cur, tot, msg),
             )
+    elif pipeline in ("xgboost", "xgboost_ensemble"):
+        for tf, df in data.items():
+            total_bars = len(df) - 200
+            _progress("precompute", 0, total_bars,
+                      f"Running XGBoost predictions for {tf} ({total_bars} bars)...")
+            tf_caches[tf] = await asyncio.to_thread(
+                _precompute_xgboost_signals, df, pipeline, symbol, tf,
+            )
+            _progress("precompute", total_bars, total_bars,
+                      f"Got {len(tf_caches[tf])} XGBoost signals for {tf}")
     else:
         for tf in data:
             tf_caches[tf] = None

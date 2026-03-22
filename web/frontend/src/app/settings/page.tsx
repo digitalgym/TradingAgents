@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Settings, Server, Database, Bot, TrendingUp, Loader2, RefreshCw, X, Plus, Search, Sparkles, Shield, Clock, Check, AlertTriangle } from "lucide-react"
+import { Settings, Server, Database, Bot, TrendingUp, Loader2, RefreshCw, X, Plus, Search, Sparkles, Shield, Clock, Check, AlertTriangle, Brain, Play, CheckCircle2, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
@@ -99,6 +99,75 @@ export default function SettingsPage() {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
   const [suggestionsError, setSuggestionsError] = useState<string | null>(null)
   const [showSuggestions, setShowSuggestions] = useState(false)
+
+  // XGBoost training state
+  const [trainSymbol, setTrainSymbol] = useState("XAUUSD")
+  const [trainTimeframe, setTrainTimeframe] = useState("D1")
+  const [trainBars, setTrainBars] = useState(2000)
+  const [trainStrategies, setTrainStrategies] = useState<string[]>([])
+  const [training, setTraining] = useState(false)
+  const [trainResults, setTrainResults] = useState<any>(null)
+  const [trainError, setTrainError] = useState<string | null>(null)
+  const [trainedModels, setTrainedModels] = useState<any>(null)
+  const [perfMatrix, setPerfMatrix] = useState<any>(null)
+  const [forceRetrain, setForceRetrain] = useState(false)
+
+  const allXgbStrategies = [
+    { key: "trend_following", label: "Trend Following" },
+    { key: "mean_reversion", label: "Mean Reversion" },
+    { key: "breakout", label: "Breakout" },
+    { key: "smc_zones", label: "SMC Zones" },
+    { key: "volume_profile_strat", label: "Volume Profile" },
+  ]
+
+  const fetchTrainedModels = async () => {
+    try {
+      const [modelsRes, perfRes] = await Promise.all([
+        fetch("http://localhost:8000/api/xgboost/models"),
+        fetch("http://localhost:8000/api/xgboost/performance-matrix"),
+      ])
+      const modelsData = await modelsRes.json()
+      const perfData = await perfRes.json()
+      if (modelsData.status === "success") setTrainedModels(modelsData.models)
+      if (perfData.status === "success") setPerfMatrix(perfData.matrix)
+    } catch { /* ignore */ }
+  }
+
+  const runTraining = async (trainAll = false) => {
+    setTraining(true)
+    setTrainResults(null)
+    setTrainError(null)
+    try {
+      const body: any = {
+        symbol: trainSymbol,
+        bars: trainBars,
+        strategies: trainStrategies.length > 0 ? trainStrategies : [],
+        skip_existing: !forceRetrain,
+      }
+      if (trainAll) {
+        body.timeframes = ["D1", "H4"]
+      } else {
+        body.timeframe = trainTimeframe
+      }
+
+      const res = await fetch("http://localhost:8000/api/xgboost/train", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+      const data = await res.json()
+      if (data.status === "success") {
+        setTrainResults(data)
+        fetchTrainedModels()
+      } else {
+        setTrainError(data.error || "Training failed")
+      }
+    } catch (e: any) {
+      setTrainError(e.message || "Failed to connect to backend")
+    } finally {
+      setTraining(false)
+    }
+  }
 
   // Config editing state
   const [configEdits, setConfigEdits] = useState<PortfolioConfigUpdateParams>({})
@@ -279,6 +348,7 @@ export default function SettingsPage() {
   useEffect(() => {
     fetchConfig()
     fetchMarketWatch()
+    fetchTrainedModels()
   }, [])
 
   return (
@@ -1038,6 +1108,255 @@ export default function SettingsPage() {
               <span className="text-muted-foreground">Backend</span>
               <span>FastAPI</span>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* XGBoost Model Training */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5" />
+              XGBoost Model Training
+            </CardTitle>
+            <CardDescription>
+              Train ML models on historical data. Models must be trained before XGBoost pipelines can generate signals.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <div className="flex items-center gap-1 mb-1">
+                  <label className="text-sm text-muted-foreground">Symbol</label>
+                  <HelpTooltip content="The trading pair to train models on. Each symbol needs its own trained models." />
+                </div>
+                <Input
+                  value={trainSymbol}
+                  onChange={(e) => setTrainSymbol(e.target.value.toUpperCase())}
+                  placeholder="XAUUSD"
+                />
+              </div>
+              <div>
+                <div className="flex items-center gap-1 mb-1">
+                  <label className="text-sm text-muted-foreground">Timeframe</label>
+                  <HelpTooltip content="Chart timeframe for training. D1 is recommended for most strategies. H4 for more frequent signals." />
+                </div>
+                <Select value={trainTimeframe} onValueChange={setTrainTimeframe}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="H1">H1</SelectItem>
+                    <SelectItem value="H4">H4</SelectItem>
+                    <SelectItem value="D1">D1</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <div className="flex items-center gap-1 mb-1">
+                  <label className="text-sm text-muted-foreground">History Bars</label>
+                  <HelpTooltip content="Number of historical bars to load for training. More bars = better training but slower. 2000 D1 bars ≈ 8 years of data." />
+                </div>
+                <Input
+                  type="number"
+                  value={trainBars}
+                  onChange={(e) => setTrainBars(parseInt(e.target.value) || 2000)}
+                  min={500}
+                  max={5000}
+                  step={500}
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center gap-1 mb-2">
+                <label className="text-sm text-muted-foreground">Strategies</label>
+                <HelpTooltip content="Select which strategies to train. Leave all unchecked to train all 5 strategies. Each strategy uses different features and suits different market conditions." />
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {allXgbStrategies.map((s) => (
+                  <label key={s.key} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={trainStrategies.includes(s.key)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setTrainStrategies([...trainStrategies, s.key])
+                        } else {
+                          setTrainStrategies(trainStrategies.filter((k) => k !== s.key))
+                        }
+                      }}
+                      className="rounded"
+                    />
+                    <span className="text-muted-foreground">{s.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Button onClick={() => runTraining(false)} disabled={training || !trainSymbol}>
+                {training ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Training...
+                  </>
+                ) : (
+                  <>
+                    <Play className="mr-2 h-4 w-4" />
+                    Train {trainTimeframe}
+                  </>
+                )}
+              </Button>
+              <Button onClick={() => runTraining(true)} disabled={training || !trainSymbol} variant="outline">
+                {training ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Training...
+                  </>
+                ) : (
+                  <>
+                    <Brain className="mr-2 h-4 w-4" />
+                    Train All (D1 + H4)
+                  </>
+                )}
+              </Button>
+              <label className="flex items-center gap-1.5 text-sm cursor-pointer ml-2">
+                <input
+                  type="checkbox"
+                  checked={forceRetrain}
+                  onChange={(e) => setForceRetrain(e.target.checked)}
+                  className="rounded"
+                />
+                <span className="text-muted-foreground">Force retrain</span>
+              </label>
+              <HelpTooltip content="'Train All' trains every strategy on D1 and H4, then the strategy selector auto-picks the best combo by Sharpe. Skips strategies that already have a model unless 'Force retrain' is checked." />
+              {training && (
+                <span className="text-sm text-muted-foreground">
+                  This may take several minutes...
+                </span>
+              )}
+            </div>
+
+            {trainError && (
+              <Alert variant="destructive">
+                <AlertDescription>{trainError}</AlertDescription>
+              </Alert>
+            )}
+
+            {trainResults && (
+              <div className="rounded-md border border-border bg-muted/50 p-3 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    {trainResults.symbol} — {(trainResults.timeframes || [trainResults.timeframe]).join(", ")} — {trainResults.duration_seconds}s
+                  </span>
+                </div>
+
+                {trainResults.best && (
+                  <div className="flex items-center gap-2 rounded bg-green-500/10 border border-green-500/30 px-3 py-1.5 text-sm">
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    <span className="font-medium text-green-500">Best:</span>
+                    <span>{trainResults.best.strategy} on {trainResults.best.timeframe}</span>
+                    <span className="text-muted-foreground">
+                      — Sharpe {trainResults.best.sharpe?.toFixed(2)}, PF {trainResults.best.profit_factor?.toFixed(2)}, {trainResults.best.win_rate?.toFixed(1)}% WR
+                    </span>
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  {trainResults.results?.map((r: any, i: number) => (
+                    <div key={`${r.strategy}-${r.timeframe}-${i}`} className={`flex items-center justify-between text-sm ${r.status === "skipped" ? "opacity-50" : ""}`}>
+                      <div className="flex items-center gap-2">
+                        {r.status === "success" && r.total_trades > 0 ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        ) : r.status === "skipped" ? (
+                          <Check className="h-4 w-4 text-muted-foreground" />
+                        ) : r.status === "success" ? (
+                          <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-red-500" />
+                        )}
+                        <span>{r.strategy}</span>
+                        <Badge variant="outline" className="text-xs">{r.timeframe}</Badge>
+                      </div>
+                      {r.status === "success" ? (
+                        <span className="text-muted-foreground">
+                          {r.total_trades} trades, {r.win_rate?.toFixed(1)}% WR, PF {r.profit_factor?.toFixed(2)}, Sharpe {r.sharpe?.toFixed(2)}
+                        </span>
+                      ) : r.status === "skipped" ? (
+                        <span className="text-muted-foreground text-xs">Already trained</span>
+                      ) : (
+                        <span className="text-red-500 text-xs">{r.error}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Trained models comparison table */}
+            {perfMatrix && Object.keys(perfMatrix).length > 0 && (
+              <div>
+                <Separator className="my-2" />
+                <div className="flex items-center gap-1 mb-3">
+                  <label className="text-sm font-medium">Model Performance Comparison</label>
+                  <HelpTooltip content="Backtest results from walk-forward training. PF = Profit Factor (>1.0 is profitable). Sharpe = risk-adjusted return. Higher is better for both." />
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-2 pr-3 text-muted-foreground font-medium">Strategy</th>
+                        <th className="text-left py-2 px-3 text-muted-foreground font-medium">Symbol</th>
+                        <th className="text-left py-2 px-3 text-muted-foreground font-medium">TF</th>
+                        <th className="text-right py-2 px-3 text-muted-foreground font-medium">Trades</th>
+                        <th className="text-right py-2 px-3 text-muted-foreground font-medium">Win Rate</th>
+                        <th className="text-right py-2 px-3 text-muted-foreground font-medium">PF</th>
+                        <th className="text-right py-2 px-3 text-muted-foreground font-medium">Sharpe</th>
+                        <th className="text-right py-2 px-3 text-muted-foreground font-medium">P&L %</th>
+                        <th className="text-right py-2 pl-3 text-muted-foreground font-medium">Max DD %</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(perfMatrix).flatMap(([symbol, strategies]: [string, any]) =>
+                        Object.entries(strategies)
+                          .sort(([, a]: [string, any], [, b]: [string, any]) => (b.sharpe || 0) - (a.sharpe || 0))
+                          .map(([key, metrics]: [string, any]) => (
+                            <tr key={`${symbol}-${key}`} className="border-b border-border/50 hover:bg-muted/30">
+                              <td className="py-1.5 pr-3">
+                                <Badge variant="outline" className="text-xs">{metrics.strategy || key}</Badge>
+                              </td>
+                              <td className="py-1.5 px-3 text-muted-foreground">{symbol}</td>
+                              <td className="py-1.5 px-3 text-muted-foreground">{metrics.timeframe || "-"}</td>
+                              <td className="py-1.5 px-3 text-right">{metrics.total_trades}</td>
+                              <td className={`py-1.5 px-3 text-right ${(metrics.win_rate || 0) >= 50 ? "text-green-500" : "text-red-500"}`}>
+                                {metrics.win_rate?.toFixed(1)}%
+                              </td>
+                              <td className={`py-1.5 px-3 text-right ${(metrics.profit_factor || 0) >= 1.0 ? "text-green-500" : "text-red-500"}`}>
+                                {metrics.profit_factor?.toFixed(2)}
+                              </td>
+                              <td className={`py-1.5 px-3 text-right ${(metrics.sharpe || 0) >= 0 ? "text-green-500" : "text-red-500"}`}>
+                                {metrics.sharpe?.toFixed(2)}
+                              </td>
+                              <td className={`py-1.5 px-3 text-right ${(metrics.total_pnl_pct || 0) >= 0 ? "text-green-500" : "text-red-500"}`}>
+                                {metrics.total_pnl_pct?.toFixed(1)}%
+                              </td>
+                              <td className="py-1.5 pl-3 text-right text-red-500">
+                                {metrics.max_drawdown_pct?.toFixed(1)}%
+                              </td>
+                            </tr>
+                          ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {(!perfMatrix || Object.keys(perfMatrix).length === 0) && trainedModels && Object.keys(trainedModels).length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                No trained models yet. Train models above to enable XGBoost pipelines.
+              </p>
+            )}
           </CardContent>
         </Card>
 

@@ -5792,6 +5792,288 @@ The systematic SMC rules did not identify a high-probability trade setup at this
         }
 
 
+# ----- XGBoost Strategy Analysis (No LLM, local inference) -----
+
+class XGBoostAnalysisRequest(BaseModel):
+    symbol: str
+    timeframe: str = "D1"
+    strategy: str = ""  # Empty = auto-select best strategy
+    ensemble: bool = False  # If True, use ensemble voting
+
+
+@app.post("/api/analysis/xgboost")
+async def run_xgboost_analysis(request: XGBoostAnalysisRequest):
+    """
+    Run XGBoost strategy analysis. No LLM call — pure ML inference.
+    Sub-100ms response time.
+    """
+    import time as _time
+    start = _time.time()
+
+    try:
+        from tradingagents.automation.auto_tuner import load_mt5_data, _compute_atr
+        from tradingagents.xgb_quant.predictor import LivePredictor
+        import numpy as np_local
+
+        df = load_mt5_data(request.symbol, request.timeframe, bars=500)
+        high = df["high"].values.astype(float)
+        low = df["low"].values.astype(float)
+        close = df["close"].values.astype(float)
+        atr = _compute_atr(high, low, close)
+        current_atr = float(atr[-1]) if not np_local.isnan(atr[-1]) else 1.0
+        current_price = float(close[-1])
+
+        predictor = LivePredictor()
+
+        if request.ensemble:
+            available = predictor.get_available_models(request.symbol, request.timeframe)
+            if len(available) < 2:
+                return {
+                    "status": "success",
+                    "decision": {
+                        "signal": "HOLD",
+                        "confidence": 0.0,
+                        "rationale": f"Only {len(available)} models available for ensemble, need 2+",
+                    },
+                    "available_models": available,
+                    "duration_seconds": _time.time() - start,
+                }
+            signal = predictor.predict_ensemble(
+                available, request.symbol, request.timeframe,
+                df, current_price, current_atr,
+            )
+        else:
+            strategy_name = request.strategy
+            if not strategy_name:
+                from tradingagents.xgb_quant.strategy_selector import StrategySelector
+                selector = StrategySelector()
+                selection = selector.select(request.symbol)
+                strategy_name = selection.recommended_strategy
+
+            signal = predictor.predict_single(
+                strategy_name, request.symbol, request.timeframe,
+                df, current_price, current_atr,
+            )
+
+        return {
+            "status": "success",
+            "decision": {
+                "signal": signal.direction,
+                "confidence": signal.confidence,
+                "entry_price": signal.entry,
+                "stop_loss": signal.stop_loss,
+                "take_profit": signal.take_profit,
+                "rationale": signal.rationale,
+                "strategies_agreed": signal.strategies_agreed,
+            },
+            "available_models": predictor.get_available_models(request.symbol, request.timeframe),
+            "duration_seconds": _time.time() - start,
+        }
+
+    except Exception as e:
+        import traceback
+        return {
+            "status": "error",
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+        }
+
+
+class XGBoostTrainRequest(BaseModel):
+    symbol: str = "XAUUSD"
+    timeframe: str = "D1"
+    timeframes: list = []  # Empty = just use timeframe field; non-empty = train across all listed TFs
+    strategies: list = []  # Empty = all strategies
+    bars: int = 2000
+    use_trade_labels: bool = False
+    skip_existing: bool = True  # Skip strategies that already have a trained model for this symbol+TF
+
+
+@app.post("/api/xgboost/train")
+async def train_xgboost_models(request: XGBoostTrainRequest):
+    """Train XGBoost models for a symbol. Runs walk-forward backtest and saves models."""
+    import time as _time
+    start = _time.time()
+
+    try:
+        from tradingagents.automation.auto_tuner import load_mt5_data
+        from tradingagents.xgb_quant.trainer import WalkForwardTrainer
+        from tradingagents.xgb_quant.strategies.trend_following import TrendFollowingStrategy
+        from tradingagents.xgb_quant.strategies.mean_reversion import MeanReversionStrategy
+        from tradingagents.xgb_quant.strategies.breakout import BreakoutStrategy
+        from tradingagents.xgb_quant.strategies.smc_zones import SMCZonesStrategy
+        from tradingagents.xgb_quant.strategies.volume_profile_strat import VolumeProfileStrategy
+
+        all_strategies = {
+            "trend_following": TrendFollowingStrategy,
+            "mean_reversion": MeanReversionStrategy,
+            "breakout": BreakoutStrategy,
+            "smc_zones": SMCZonesStrategy,
+            "volume_profile_strat": VolumeProfileStrategy,
+        }
+
+        # Filter strategies if specified
+        if request.strategies:
+            selected = {k: v for k, v in all_strategies.items() if k in request.strategies}
+        else:
+            selected = all_strategies
+
+        if not selected:
+            return {"status": "error", "error": f"No valid strategies. Available: {list(all_strategies.keys())}"}
+
+        # Determine timeframes to train across
+        timeframes = request.timeframes if request.timeframes else [request.timeframe]
+
+        from tradingagents.xgb_quant.config import MODELS_DIR
+
+        trainer = WalkForwardTrainer()
+        results = []
+
+        for tf in timeframes:
+            # Load data for this timeframe
+            df = await asyncio.to_thread(load_mt5_data, request.symbol, tf, request.bars)
+
+            for name, strategy_cls in selected.items():
+                # Skip if model already exists
+                if request.skip_existing:
+                    model_path = MODELS_DIR / name / f"{request.symbol}_{tf}.json"
+                    if model_path.exists():
+                        results.append({
+                            "strategy": name,
+                            "timeframe": tf,
+                            "status": "skipped",
+                            "reason": "Model already exists",
+                        })
+                        continue
+
+                try:
+                    strategy = strategy_cls()
+                    result = await asyncio.to_thread(
+                        trainer.train_and_evaluate,
+                        strategy=strategy,
+                        df=df,
+                        symbol=request.symbol,
+                        timeframe=tf,
+                        use_trade_labels=request.use_trade_labels,
+                    )
+                    results.append({
+                        "strategy": name,
+                        "timeframe": tf,
+                        "total_trades": result.total_trades,
+                        "win_rate": result.win_rate,
+                        "profit_factor": result.profit_factor,
+                        "sharpe": result.sharpe,
+                        "max_drawdown_pct": result.max_drawdown_pct,
+                        "status": "success",
+                    })
+                except Exception as e:
+                    results.append({
+                        "strategy": name,
+                        "timeframe": tf,
+                        "status": "error",
+                        "error": str(e),
+                    })
+
+        # For skipped models, load their existing results so we can compare
+        from tradingagents.xgb_quant.config import RESULTS_DIR
+        import json as _json
+        for r in results:
+            if r["status"] == "skipped":
+                result_file = RESULTS_DIR / request.symbol / f"{r['strategy']}_{r['timeframe']}.json"
+                if result_file.exists():
+                    try:
+                        data = _json.loads(result_file.read_text())
+                        r["total_trades"] = data.get("total_trades", 0)
+                        r["win_rate"] = data.get("win_rate", 0)
+                        r["profit_factor"] = data.get("profit_factor", 0)
+                        r["sharpe"] = data.get("sharpe", 0)
+                        r["max_drawdown_pct"] = data.get("max_drawdown_pct", 0)
+                    except Exception:
+                        pass
+
+        # Find best combo across trained + skipped
+        candidates = [r for r in results if r.get("total_trades", 0) > 0 and r["status"] in ("success", "skipped")]
+        best = max(candidates, key=lambda r: r.get("sharpe", 0)) if candidates else None
+
+        return {
+            "status": "success",
+            "symbol": request.symbol,
+            "timeframes": timeframes,
+            "results": results,
+            "best": {
+                "strategy": best["strategy"],
+                "timeframe": best["timeframe"],
+                "sharpe": best["sharpe"],
+                "profit_factor": best["profit_factor"],
+                "win_rate": best["win_rate"],
+            } if best else None,
+            "duration_seconds": round(_time.time() - start, 1),
+        }
+
+    except Exception as e:
+        import traceback
+        return {"status": "error", "error": str(e), "traceback": traceback.format_exc()}
+
+
+@app.get("/api/xgboost/models")
+async def get_xgboost_models():
+    """List all available trained XGBoost models."""
+    try:
+        from tradingagents.xgb_quant.config import MODELS_DIR
+        models = {}
+        if MODELS_DIR.exists():
+            for strategy_dir in MODELS_DIR.iterdir():
+                if strategy_dir.is_dir():
+                    strategy_name = strategy_dir.name
+                    models[strategy_name] = []
+                    for model_file in strategy_dir.glob("*.json"):
+                        parts = model_file.stem.split("_")
+                        if len(parts) >= 2:
+                            models[strategy_name].append({
+                                "symbol": parts[0],
+                                "timeframe": parts[1],
+                                "file": model_file.name,
+                            })
+        return {"status": "success", "models": models}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/xgboost/performance-matrix")
+async def get_xgboost_performance_matrix():
+    """Get performance matrix: symbol × strategy → metrics."""
+    try:
+        from tradingagents.xgb_quant.strategy_selector import StrategySelector
+        selector = StrategySelector()
+        matrix = selector.get_performance_matrix()
+        return {"status": "success", "matrix": matrix}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/xgboost/scan")
+async def run_pair_scan():
+    """Scan watchlist for pairs on the move."""
+    try:
+        from tradingagents.xgb_quant.scanner import PairScanner
+        from dataclasses import asdict
+
+        scanner = PairScanner()
+        result = scanner.scan()
+
+        return {
+            "status": "success",
+            "timestamp": result.timestamp,
+            "watchlist_size": result.watchlist_size,
+            "shortlist": [asdict(s) for s in result.shortlist],
+            "disqualified_count": len(result.disqualified),
+            "best_candidate": asdict(result.best_candidate) if result.best_candidate else None,
+        }
+    except Exception as e:
+        import traceback
+        return {"status": "error", "error": str(e), "traceback": traceback.format_exc()}
+
+
 # ----- SMC MTF Analysis (Multi-Timeframe OTE & Channel, No LLM) -----
 
 class SmcMtfAnalysisRequest(BaseModel):
