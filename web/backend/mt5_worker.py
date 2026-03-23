@@ -26,6 +26,9 @@ class MT5Worker:
         self.pool = None
         self.running = False
         self.poll_interval = 3  # seconds
+        # Track running automation instances
+        self._automation_instances: dict = {}
+        self._automation_tasks: dict = {}
 
     async def start(self):
         """Initialize connections and start polling."""
@@ -53,6 +56,14 @@ class MT5Worker:
 
     async def stop(self):
         self.running = False
+
+        # Stop all running automations
+        for name in list(self._automation_instances.keys()):
+            try:
+                await self._stop_automation(name)
+            except Exception as e:
+                print(f"[MT5 Worker] Error stopping {name}: {e}")
+
         if self.pool:
             await self.pool.close()
         mt5.shutdown()
@@ -93,6 +104,7 @@ class MT5Worker:
         """Execute a trade command via MT5."""
         cmd_id = row["command_id"]
         command = row["command_type"]
+        source = row.get("source", "trade_queue")
         # payload is jsonb — asyncpg returns it as a dict/str depending on driver
         raw_payload = row["payload"]
         if isinstance(raw_payload, str):
@@ -116,6 +128,29 @@ class MT5Worker:
                     payload.get("sl"),
                     payload.get("tp"),
                 )
+                # Create decision for successful trades
+                if result and not error:
+                    try:
+                        from tradingagents.trade_decisions import store_decision
+                        decision_id = store_decision(
+                            symbol=payload["symbol"],
+                            decision_type="OPEN",
+                            action=payload["direction"],
+                            rationale=payload.get("rationale", f"Trade queue: {cmd_id}"),
+                            source=source,
+                            entry_price=result.get("price"),
+                            stop_loss=payload.get("sl"),
+                            take_profit=payload.get("tp"),
+                            volume=result.get("volume"),
+                            mt5_ticket=result.get("ticket"),
+                            confidence=payload.get("confidence"),
+                            pipeline=payload.get("pipeline"),
+                        )
+                        result["decision_id"] = decision_id
+                        print(f"[MT5 Worker] Decision created: {decision_id}")
+                    except Exception as e:
+                        print(f"[MT5 Worker] Failed to create decision: {e}")
+
             elif command == "close":
                 result, error = self._mt5_close(payload["ticket"])
             elif command == "modify_sl":
@@ -315,15 +350,149 @@ class MT5Worker:
 
         print(f"[MT5 Worker] Control: {action} for {instance}")
 
-        # For now, just mark as completed
-        # The actual automation control would integrate with quant_automation
-        await conn.execute("""
-            UPDATE automation_control
-            SET status = 'completed', applied_at = NOW()
-            WHERE command_id = $1
-        """, cmd_id)
+        try:
+            if action == "start":
+                await self._start_automation(instance, config)
+            elif action == "stop":
+                await self._stop_automation(instance)
+            elif action == "pause":
+                await self._pause_automation(instance)
+            elif action == "resume":
+                await self._resume_automation(instance)
+            elif action == "update_config":
+                await self._update_automation_config(instance, config)
+            elif action == "restart":
+                await self._stop_automation(instance)
+                await self._start_automation(instance, config)
+            else:
+                print(f"[MT5 Worker] Unknown action: {action}")
 
-        print(f"[MT5 Worker] Control {cmd_id} completed")
+            # Mark as completed
+            await conn.execute("""
+                UPDATE automation_control
+                SET status = 'completed', applied_at = NOW()
+                WHERE command_id = $1
+            """, cmd_id)
+            print(f"[MT5 Worker] Control {cmd_id} completed")
+
+        except Exception as e:
+            print(f"[MT5 Worker] Control {cmd_id} failed: {e}")
+            await conn.execute("""
+                UPDATE automation_control
+                SET status = 'failed', error = $2, applied_at = NOW()
+                WHERE command_id = $1
+            """, cmd_id, str(e))
+
+    async def _start_automation(self, instance_name: str, config: dict):
+        """Start an automation instance."""
+        if instance_name in self._automation_instances:
+            automation = self._automation_instances[instance_name]
+            if automation._running:
+                print(f"[MT5 Worker] {instance_name} is already running")
+                return
+
+        from tradingagents.automation.quant_automation import (
+            QuantAutomation,
+            QuantAutomationConfig,
+            PipelineType,
+        )
+
+        # Build config
+        pipeline_name = config.get("pipeline", "smc_quant_basic")
+        if pipeline_name == "quant":
+            pipeline_name = "smc_quant_basic"
+
+        instance_state_file = config.get("state_file", f"quant_automation_state_{instance_name}.json")
+
+        auto_config = QuantAutomationConfig(
+            instance_name=instance_name,
+            pipeline=PipelineType(pipeline_name),
+            symbols=config.get("symbols", []),
+            timeframe=config.get("timeframe", "H1"),
+            analysis_interval_seconds=config.get("analysis_interval_seconds", 180),
+            position_check_interval_seconds=config.get("position_check_interval_seconds", 60),
+            auto_execute=config.get("auto_execute", False),
+            min_confidence=config.get("min_confidence", 0.65),
+            max_positions_per_symbol=config.get("max_positions_per_symbol", 1),
+            enable_trailing_stop=config.get("enable_trailing_stop", True),
+            trailing_stop_atr_multiplier=config.get("trailing_stop_atr_multiplier", 1.5),
+            enable_breakeven_stop=config.get("enable_breakeven_stop", True),
+            move_to_breakeven_atr_mult=config.get("move_to_breakeven_atr_mult", 1.5),
+            enable_reversal_close=config.get("enable_reversal_close", True),
+            max_risk_per_trade_pct=config.get("max_risk_per_trade_pct", 1.0),
+            default_lot_size=config.get("default_lot_size", 0.01),
+            daily_loss_limit_pct=config.get("daily_loss_limit_pct", 3.0),
+            max_consecutive_losses=config.get("max_consecutive_losses", 3),
+            assumption_review_interval_seconds=config.get("assumption_review_interval_seconds", 3600),
+            assumption_review_auto_apply=config.get("assumption_review_auto_apply", False),
+            enable_trade_queue=config.get("enable_trade_queue", True),
+            trade_queue_poll_seconds=config.get("trade_queue_poll_seconds", 5),
+            enable_remote_control=config.get("enable_remote_control", True),
+            control_poll_seconds=config.get("control_poll_seconds", 3),
+            state_file=instance_state_file,
+            logs_dir=config.get("logs_dir", "logs/quant_automation"),
+        )
+
+        automation = QuantAutomation(auto_config)
+        self._automation_instances[instance_name] = automation
+
+        # Start in background
+        task = asyncio.create_task(automation.start())
+        self._automation_tasks[instance_name] = task
+
+        print(f"[MT5 Worker] Started automation: {instance_name}")
+
+    async def _stop_automation(self, instance_name: str):
+        """Stop an automation instance."""
+        automation = self._automation_instances.get(instance_name)
+        if automation is None:
+            print(f"[MT5 Worker] {instance_name} not found")
+            return
+
+        automation.stop()
+
+        task = self._automation_tasks.get(instance_name)
+        if task:
+            try:
+                await asyncio.wait_for(task, timeout=5.0)
+            except asyncio.TimeoutError:
+                task.cancel()
+            except Exception:
+                pass
+            self._automation_tasks.pop(instance_name, None)
+
+        self._automation_instances.pop(instance_name, None)
+        print(f"[MT5 Worker] Stopped automation: {instance_name}")
+
+    async def _pause_automation(self, instance_name: str):
+        """Pause an automation instance (disable auto-execute)."""
+        automation = self._automation_instances.get(instance_name)
+        if automation is None:
+            print(f"[MT5 Worker] {instance_name} not found")
+            return
+
+        automation.pause()
+        print(f"[MT5 Worker] Paused automation: {instance_name}")
+
+    async def _resume_automation(self, instance_name: str):
+        """Resume an automation instance (enable auto-execute)."""
+        automation = self._automation_instances.get(instance_name)
+        if automation is None:
+            print(f"[MT5 Worker] {instance_name} not found")
+            return
+
+        automation.resume()
+        print(f"[MT5 Worker] Resumed automation: {instance_name}")
+
+    async def _update_automation_config(self, instance_name: str, updates: dict):
+        """Update config for a running automation instance."""
+        automation = self._automation_instances.get(instance_name)
+        if automation is None:
+            print(f"[MT5 Worker] {instance_name} not found for config update")
+            return
+
+        await automation.update_config(updates)
+        print(f"[MT5 Worker] Updated config for: {instance_name}")
 
     async def _status_update_loop(self):
         """Periodically update automation status in DB."""
@@ -342,7 +511,7 @@ class MT5Worker:
                         "positions": len(positions),
                     }
                     async with self.pool.acquire() as conn:
-                        # Check for stop request
+                        # Check for stop request for the worker itself
                         row = await conn.fetchrow("""
                             SELECT status FROM automation_status
                             WHERE instance_name = 'mt5_worker'
@@ -352,15 +521,43 @@ class MT5Worker:
                             self.running = False
                             break
 
-                        # DB schema: instance_name (text PK), status, pipeline, symbols (jsonb),
-                        #            auto_execute (bool), last_analysis, last_trade,
-                        #            active_positions (int), error_message, config (jsonb), updated_at
+                        # Update mt5_worker status
                         await conn.execute("""
                             INSERT INTO automation_status (instance_name, status, active_positions, config, updated_at)
                             VALUES ('mt5_worker', 'running', $1, $2::jsonb, NOW())
                             ON CONFLICT (instance_name)
                             DO UPDATE SET status = 'running', active_positions = $1, config = $2::jsonb, updated_at = NOW()
                         """, len(positions), json.dumps(metadata))
+
+                        # Update status for each running automation instance
+                        for name, automation in self._automation_instances.items():
+                            try:
+                                status = automation.get_status()
+                                config = automation.config.to_dict() if hasattr(automation.config, 'to_dict') else {}
+                                await conn.execute("""
+                                    INSERT INTO automation_status
+                                        (instance_name, status, pipeline, symbols, auto_execute,
+                                         active_positions, config, updated_at)
+                                    VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7::jsonb, NOW())
+                                    ON CONFLICT (instance_name) DO UPDATE SET
+                                        status = $2,
+                                        pipeline = COALESCE($3, automation_status.pipeline),
+                                        symbols = COALESCE($4::jsonb, automation_status.symbols),
+                                        auto_execute = $5,
+                                        active_positions = $6,
+                                        config = COALESCE($7::jsonb, automation_status.config),
+                                        updated_at = NOW()
+                                """,
+                                    name,
+                                    "running" if status.get("running") else "stopped",
+                                    config.get("pipeline"),
+                                    json.dumps(config.get("symbols", [])),
+                                    config.get("auto_execute", False),
+                                    status.get("active_positions", 0),
+                                    json.dumps(config),
+                                )
+                            except Exception as e:
+                                print(f"[MT5 Worker] Failed to update status for {name}: {e}")
 
             except Exception as e:
                 print(f"[MT5 Worker] Status update error: {e}")

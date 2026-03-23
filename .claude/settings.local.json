@@ -80,7 +80,9 @@
       "Bash(iconv -f UTF-16LE -t UTF-8)",
       "Bash(iconv -f UTF-16LE -t UTF-8 /c/Users/User/AppData/Roaming/MetaQuotes/Terminal/9B207513987DDC3C65E0F2AC7EE65D70/logs/20260320.log)",
       "Bash(d:/Documents/TradingAgents/.venv/Scripts/pip install:*)",
-      "Bash(iconv -f UTF-16LE -t UTF-8 '/c/Users/User/AppData/Roaming/MetaQuotes/Terminal/9B207513987DDC3C65E0F2AC7EE65D70/logs/$\\(date +%Y%m%d\\).log')"
+      "Bash(iconv -f UTF-16LE -t UTF-8 '/c/Users/User/AppData/Roaming/MetaQuotes/Terminal/9B207513987DDC3C65E0F2AC7EE65D70/logs/$\\(date +%Y%m%d\\).log')",
+      "Bash(git checkout:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

@@ -246,10 +246,29 @@ class AutomationControlStore:
                 "last_trade": row["last_trade"].isoformat() if row["last_trade"] else None,
                 "active_positions": row["active_positions"],
                 "error_message": row["error_message"],
+                "config": json.loads(row["config"]) if row["config"] else {},
                 "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
             })
 
         return statuses
+
+    async def delete_status(self, instance_name: str) -> bool:
+        """Delete an automation status record."""
+        await self._ensure_tables()
+        pool = await self._get_pool()
+
+        async with pool.acquire() as conn:
+            result = await conn.execute(
+                "DELETE FROM automation_status WHERE instance_name = $1",
+                instance_name,
+            )
+            # Also clean up any pending commands for this instance
+            await conn.execute(
+                "DELETE FROM automation_control WHERE instance_name = $1",
+                instance_name,
+            )
+
+        return "DELETE 1" in result
 
     # === Control methods (written by web UI, read by home machine) ===
 

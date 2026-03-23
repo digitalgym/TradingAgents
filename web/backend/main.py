@@ -8848,29 +8848,129 @@ async def get_pending_predictions(symbol: str = None):
 # ----- Quant Automation -----
 
 # Global state: keyed by instance_name (e.g. "quant", "volume_profile")
+# NOTE: These are only used when running automations locally (same machine as backend)
+# For remote automations, status comes from Postgres and commands go via automation_control table
 _automation_instances: Dict[str, Any] = {}
 _automation_tasks: Dict[str, Any] = {}
 
-# Persist automation configs to disk so they survive restarts/refreshes
+# Legacy file path - configs now stored in Postgres
 _AUTOMATION_CONFIGS_FILE = PROJECT_ROOT / "automation_configs.json"
 
-def _load_saved_configs() -> Dict[str, dict]:
-    """Load saved automation configs from disk."""
-    try:
-        if _AUTOMATION_CONFIGS_FILE.exists():
-            with open(_AUTOMATION_CONFIGS_FILE, "r") as f:
-                return json.load(f)
-    except Exception as e:
-        logger.warning(f"Failed to load automation configs: {e}")
-    return {}
+# Remote automation control via Postgres
+_automation_control = None
 
-def _save_config(instance_name: str, config: dict):
-    """Save an automation config to disk. Raises on failure."""
-    configs = _load_saved_configs()
-    configs[instance_name] = config
-    with open(_AUTOMATION_CONFIGS_FILE, "w") as f:
-        json.dump(configs, f, indent=2)
-    logger.info(f"Saved automation config for '{instance_name}' to {_AUTOMATION_CONFIGS_FILE}")
+def _get_automation_control():
+    """Get the automation control store singleton."""
+    global _automation_control
+    if _automation_control is None:
+        from tradingagents.storage.automation_control import get_automation_control
+        _automation_control = get_automation_control()
+    return _automation_control
+
+
+async def _load_saved_configs() -> Dict[str, dict]:
+    """Load saved automation configs from Postgres.
+
+    Falls back to local file for migration, then syncs to Postgres.
+    """
+    try:
+        control = _get_automation_control()
+        statuses = await control.get_all_statuses()
+
+        configs = {}
+        for status in statuses:
+            name = status.get("instance_name")
+            config = status.get("config") or {}
+            if name and config:
+                configs[name] = config
+
+        # Migration: if we have local configs not in Postgres, sync them
+        if _AUTOMATION_CONFIGS_FILE.exists():
+            try:
+                with open(_AUTOMATION_CONFIGS_FILE, "r") as f:
+                    local_configs = json.load(f)
+                for name, cfg in local_configs.items():
+                    if name not in configs:
+                        # Migrate to Postgres
+                        await control.update_status(
+                            instance_name=name,
+                            status="stopped",
+                            pipeline=cfg.get("pipeline"),
+                            symbols=cfg.get("symbols"),
+                            auto_execute=cfg.get("auto_execute", False),
+                            config=cfg,
+                        )
+                        configs[name] = cfg
+                        logger.info(f"Migrated config '{name}' from local file to Postgres")
+            except Exception as e:
+                logger.warning(f"Failed to migrate local configs: {e}")
+
+        return configs
+    except Exception as e:
+        logger.warning(f"Failed to load configs from Postgres: {e}")
+        # Fallback to local file
+        try:
+            if _AUTOMATION_CONFIGS_FILE.exists():
+                with open(_AUTOMATION_CONFIGS_FILE, "r") as f:
+                    return json.load(f)
+        except Exception:
+            pass
+        return {}
+
+
+def _load_saved_configs_sync() -> Dict[str, dict]:
+    """Synchronous wrapper for loading configs (for non-async contexts)."""
+    import asyncio
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            # We're in an async context, create a task
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                future = pool.submit(asyncio.run, _load_saved_configs())
+                return future.result(timeout=5)
+        else:
+            return loop.run_until_complete(_load_saved_configs())
+    except Exception as e:
+        logger.warning(f"Failed to load configs sync: {e}")
+        # Fallback to local file
+        try:
+            if _AUTOMATION_CONFIGS_FILE.exists():
+                with open(_AUTOMATION_CONFIGS_FILE, "r") as f:
+                    return json.load(f)
+        except Exception:
+            pass
+        return {}
+
+
+async def _save_config(instance_name: str, config: dict):
+    """Save an automation config to Postgres."""
+    try:
+        control = _get_automation_control()
+        await control.update_status(
+            instance_name=instance_name,
+            status="stopped",  # Will be updated when automation starts
+            pipeline=config.get("pipeline"),
+            symbols=config.get("symbols"),
+            auto_execute=config.get("auto_execute", False),
+            config=config,
+        )
+        logger.info(f"Saved automation config for '{instance_name}' to Postgres")
+    except Exception as e:
+        logger.error(f"Failed to save config to Postgres: {e}")
+        # Fallback: save locally
+        try:
+            configs = {}
+            if _AUTOMATION_CONFIGS_FILE.exists():
+                with open(_AUTOMATION_CONFIGS_FILE, "r") as f:
+                    configs = json.load(f)
+            configs[instance_name] = config
+            with open(_AUTOMATION_CONFIGS_FILE, "w") as f:
+                json.dump(configs, f, indent=2)
+            logger.info(f"Saved automation config for '{instance_name}' to local file (fallback)")
+        except Exception as e2:
+            logger.error(f"Failed to save config locally: {e2}")
+            raise
 
 
 # Global symbol position limits (shared across all automations)
@@ -8923,48 +9023,109 @@ def _get_automation_instance(instance_name: str):
 
 @app.get("/api/automation/quant/status")
 async def get_quant_automation_status(instance: str = "quant"):
-    """Get quant automation status for a specific instance."""
+    """Get quant automation status for a specific instance.
+
+    Reads status from Postgres (shared across all web UI instances).
+    Falls back to local instance if running on same machine.
+    """
+    # First check Postgres for remote status
+    try:
+        control = _get_automation_control()
+        remote_status = await control.get_status(instance)
+        if remote_status:
+            # Check if status is stale (no update in 60 seconds = likely stopped)
+            updated_at = remote_status.get("updated_at")
+            if updated_at:
+                from datetime import datetime, timezone
+                try:
+                    last_update = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
+                    now = datetime.now(timezone.utc)
+                    if (now - last_update).total_seconds() > 60:
+                        remote_status["status"] = "stopped"
+                        remote_status["running"] = False
+                        remote_status["stale"] = True
+                    else:
+                        remote_status["running"] = remote_status.get("status") == "running"
+                        remote_status["stale"] = False
+                except Exception:
+                    remote_status["running"] = remote_status.get("status") == "running"
+            return remote_status
+    except Exception as e:
+        logger.warning(f"Failed to get remote status for {instance}: {e}")
+
+    # Fallback to local instance
     automation = _get_automation_instance(instance)
+    if automation is not None:
+        status = automation.get_status()
+        status["instance_name"] = instance
+        return status
 
-    if automation is None:
-        # Return last-saved config so UI can restore form values
-        saved_configs = _load_saved_configs()
-        saved_config = saved_configs.get(instance)
-        return {
-            "status": "stopped",
-            "running": False,
-            "error": None,
-            "config": saved_config,
-            "instance_name": instance,
-        }
-
-    status = automation.get_status()
-    status["instance_name"] = instance
-    return status
+    # Return saved config with stopped status
+    saved_configs = await _load_saved_configs()
+    saved_config = saved_configs.get(instance)
+    return {
+        "status": "stopped",
+        "running": False,
+        "error": None,
+        "config": saved_config,
+        "instance_name": instance,
+    }
 
 
 @app.get("/api/automation/quant/instances")
 async def list_automation_instances():
-    """List all automation instances (saved configs + running status)."""
-    saved_configs = _load_saved_configs()
+    """List all automation instances (from Postgres + local).
+
+    Reads status from Postgres for cross-machine visibility.
+    """
     result = {}
 
-    # Include all saved configs
-    for name, cfg in saved_configs.items():
-        automation = _automation_instances.get(name)
-        if automation:
-            status = automation.get_status()
-        else:
-            status = {
+    # Get all statuses from Postgres (primary source)
+    try:
+        control = _get_automation_control()
+        remote_statuses = await control.get_all_statuses()
+
+        from datetime import datetime, timezone
+
+        for status in remote_statuses:
+            name = status.get("instance_name")
+            if not name:
+                continue
+
+            # Check if status is stale (no update in 60 seconds = likely stopped)
+            updated_at = status.get("updated_at")
+            if updated_at:
+                try:
+                    last_update = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
+                    now = datetime.now(timezone.utc)
+                    if (now - last_update).total_seconds() > 60:
+                        status["status"] = "stopped"
+                        status["running"] = False
+                        status["stale"] = True
+                    else:
+                        status["running"] = status.get("status") == "running"
+                        status["stale"] = False
+                except Exception:
+                    status["running"] = status.get("status") == "running"
+            else:
+                status["running"] = status.get("status") == "running"
+
+            result[name] = status
+
+    except Exception as e:
+        logger.warning(f"Failed to get remote statuses: {e}")
+        # Fallback to saved configs
+        saved_configs = await _load_saved_configs()
+        for name, cfg in saved_configs.items():
+            result[name] = {
                 "status": "stopped",
                 "running": False,
                 "error": None,
                 "config": cfg,
+                "instance_name": name,
             }
-        status["instance_name"] = name
-        result[name] = status
 
-    # Include running instances not in saved configs (shouldn't happen but be safe)
+    # Include local running instances not in Postgres (edge case)
     for name, instance in _automation_instances.items():
         if name not in result:
             status = instance.get_status()
@@ -8983,7 +9144,7 @@ async def get_symbol_limits():
     limits = _load_symbol_limits()
 
     # Collect all symbols from saved automation configs
-    configs = _load_saved_configs()
+    configs = await _load_saved_configs()
     all_symbols: set = set()
     for cfg in configs.values():
         for sym in cfg.get("symbols", []):
@@ -9036,21 +9197,37 @@ async def update_single_symbol_limit(symbol: str, request: dict):
 @app.delete("/api/automation/quant/config/{instance_name}")
 async def delete_automation_config(instance_name: str):
     """Delete a saved automation config. Must be stopped first."""
+    # Check if running locally
     automation = _automation_instances.get(instance_name)
     if automation and automation._running:
         raise HTTPException(status_code=400, detail=f"Instance '{instance_name}' is still running. Stop it first.")
 
-    # Remove from saved configs
+    # Check if running remotely
     try:
-        configs = _load_saved_configs()
-        if instance_name in configs:
-            del configs[instance_name]
-            with open(_AUTOMATION_CONFIGS_FILE, "w") as f:
-                json.dump(configs, f, indent=2)
+        control = _get_automation_control()
+        remote_status = await control.get_status(instance_name)
+        if remote_status and remote_status.get("status") == "running":
+            # Check if stale
+            from datetime import datetime, timezone
+            updated_at = remote_status.get("updated_at")
+            if updated_at:
+                last_update = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
+                now = datetime.now(timezone.utc)
+                if (now - last_update).total_seconds() <= 60:
+                    raise HTTPException(status_code=400, detail=f"Instance '{instance_name}' is still running remotely. Stop it first.")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.warning(f"Failed to check remote status: {e}")
+
+    # Remove from Postgres
+    try:
+        control = _get_automation_control()
+        await control.delete_status(instance_name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete config: {e}")
 
-    # Clean up any stale references
+    # Clean up any stale local references
     _automation_instances.pop(instance_name, None)
     _automation_tasks.pop(instance_name, None)
 
@@ -9065,12 +9242,29 @@ async def rename_automation_config(instance_name: str, new_name: str = Query(...
 
     new_name = new_name.strip()
 
-    # Cannot rename a running instance
+    # Cannot rename a running instance (local)
     automation = _automation_instances.get(instance_name)
     if automation and automation._running:
         raise HTTPException(status_code=400, detail=f"Instance '{instance_name}' is still running. Stop it first.")
 
-    configs = _load_saved_configs()
+    # Cannot rename a running instance (remote)
+    try:
+        control = _get_automation_control()
+        remote_status = await control.get_status(instance_name)
+        if remote_status and remote_status.get("status") == "running":
+            from datetime import datetime, timezone
+            updated_at = remote_status.get("updated_at")
+            if updated_at:
+                last_update = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
+                now = datetime.now(timezone.utc)
+                if (now - last_update).total_seconds() <= 60:
+                    raise HTTPException(status_code=400, detail=f"Instance '{instance_name}' is still running remotely. Stop it first.")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.warning(f"Failed to check remote status: {e}")
+
+    configs = await _load_saved_configs()
     if instance_name not in configs:
         # Instance might exist only in memory (never saved) - grab its config
         mem_instance = _automation_instances.get(instance_name)
@@ -9081,17 +9275,26 @@ async def rename_automation_config(instance_name: str, new_name: str = Query(...
     if new_name in configs:
         raise HTTPException(status_code=409, detail=f"Instance '{new_name}' already exists.")
 
-    # Move config under new name
-    config = configs.pop(instance_name)
+    # Move config under new name in Postgres
+    config = configs[instance_name]
     config["instance_name"] = new_name
-    configs[new_name] = config
     try:
-        with open(_AUTOMATION_CONFIGS_FILE, "w") as f:
-            json.dump(configs, f, indent=2)
+        control = _get_automation_control()
+        # Save new config
+        await control.update_status(
+            instance_name=new_name,
+            status="stopped",
+            pipeline=config.get("pipeline"),
+            symbols=config.get("symbols"),
+            auto_execute=config.get("auto_execute", False),
+            config=config,
+        )
+        # Delete old config
+        await control.delete_status(instance_name)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save renamed config: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to rename config: {e}")
 
-    # Clean up stale references under old name
+    # Clean up stale local references under old name
     _automation_instances.pop(instance_name, None)
     _automation_tasks.pop(instance_name, None)
 
@@ -9101,75 +9304,89 @@ async def rename_automation_config(instance_name: str, new_name: str = Query(...
 
 @app.post("/api/automation/quant/start")
 async def start_quant_automation(config: QuantAutomationConfigRequest):
-    """Start quant automation with given configuration."""
+    """Start quant automation with given configuration.
+
+    Saves config to Postgres and sends a 'start' command for the remote worker.
+    The home machine's worker will pick up the command and start the automation.
+    """
     instance_name = config.instance_name
 
+    # Check if already running (remote)
+    try:
+        control = _get_automation_control()
+        remote_status = await control.get_status(instance_name)
+        if remote_status and remote_status.get("status") == "running":
+            from datetime import datetime, timezone
+            updated_at = remote_status.get("updated_at")
+            if updated_at:
+                last_update = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
+                now = datetime.now(timezone.utc)
+                if (now - last_update).total_seconds() <= 60:
+                    raise HTTPException(status_code=400, detail=f"Instance '{instance_name}' is already running")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.warning(f"Failed to check remote status: {e}")
+
+    # Check if already running (local)
     existing = _get_automation_instance(instance_name)
     if existing and existing._running:
-        raise HTTPException(status_code=400, detail=f"Instance '{instance_name}' is already running")
+        raise HTTPException(status_code=400, detail=f"Instance '{instance_name}' is already running locally")
 
     try:
-        from tradingagents.automation.quant_automation import (
-            QuantAutomation,
-            QuantAutomationConfig,
-            PipelineType,
-        )
-
         # Backward compat: rename old "quant" pipeline to "smc_quant_basic"
         pipeline_name = config.pipeline
         if pipeline_name == "quant":
             pipeline_name = "smc_quant_basic"
 
-        # Create configuration
-        # Each instance gets its own state file to prevent race conditions
-        # when multiple automations run concurrently
+        # Build config dict
         instance_state_file = f"quant_automation_state_{instance_name}.json"
+        config_dict = {
+            "instance_name": instance_name,
+            "pipeline": pipeline_name,
+            "symbols": config.symbols,
+            "timeframe": config.timeframe,
+            "analysis_interval_seconds": config.analysis_interval_seconds,
+            "position_check_interval_seconds": config.position_check_interval_seconds,
+            "auto_execute": config.auto_execute,
+            "min_confidence": config.min_confidence,
+            "max_positions_per_symbol": config.max_positions_per_symbol,
+            "enable_trailing_stop": config.enable_trailing_stop,
+            "trailing_stop_atr_multiplier": config.trailing_stop_atr_multiplier,
+            "move_to_breakeven_atr_mult": config.move_to_breakeven_atr_mult,
+            "max_risk_per_trade_pct": config.max_risk_per_trade_pct,
+            "default_lot_size": config.default_lot_size,
+            "daily_loss_limit_pct": config.daily_loss_limit_pct,
+            "max_consecutive_losses": config.max_consecutive_losses,
+            "state_file": instance_state_file,
+            "enable_remote_control": True,
+            "control_poll_seconds": 3,
+        }
 
-        auto_config = QuantAutomationConfig(
+        # Save config to Postgres
+        control = _get_automation_control()
+        await control.update_status(
             instance_name=instance_name,
-            pipeline=PipelineType(pipeline_name),
+            status="pending_start",
+            pipeline=pipeline_name,
             symbols=config.symbols,
-            timeframe=config.timeframe,
-            analysis_interval_seconds=config.analysis_interval_seconds,
-            position_check_interval_seconds=config.position_check_interval_seconds,
             auto_execute=config.auto_execute,
-            min_confidence=config.min_confidence,
-            max_positions_per_symbol=config.max_positions_per_symbol,
-            enable_trailing_stop=config.enable_trailing_stop,
-            trailing_stop_atr_multiplier=config.trailing_stop_atr_multiplier,
-            move_to_breakeven_atr_mult=config.move_to_breakeven_atr_mult,
-            max_risk_per_trade_pct=config.max_risk_per_trade_pct,
-            default_lot_size=config.default_lot_size,
-            daily_loss_limit_pct=config.daily_loss_limit_pct,
-            max_consecutive_losses=config.max_consecutive_losses,
-            state_file=instance_state_file,
+            config=config_dict,
         )
 
-        automation = QuantAutomation(auto_config)
-        _automation_instances[instance_name] = automation
-
-        # Persist config to disk so it survives page refreshes
-        _save_config(instance_name, auto_config.to_dict())
-
-        # Start in background
-        task = asyncio.create_task(automation.start())
-        _automation_tasks[instance_name] = task
-
-        # Brief check for immediate startup failures
-        await asyncio.sleep(0.2)
-
-        # Check if the task failed during startup
-        if task.done():
-            exc = task.exception()
-            if exc:
-                del _automation_instances[instance_name]
-                del _automation_tasks[instance_name]
-                raise HTTPException(status_code=500, detail=f"Automation failed to start: {exc}")
+        # Send start command for the remote worker to pick up
+        command_id = await control.send_command(
+            instance_name=instance_name,
+            action="start",
+            payload=config_dict,
+        )
 
         return {
-            "status": "started",
+            "status": "start_requested",
             "instance_name": instance_name,
-            "config": auto_config.to_dict(),
+            "config": config_dict,
+            "command_id": command_id,
+            "message": "Start command sent. Worker will pick it up shortly.",
         }
 
     except HTTPException:
@@ -9177,191 +9394,219 @@ async def start_quant_automation(config: QuantAutomationConfigRequest):
     except Exception as e:
         import traceback
         traceback.print_exc()
-        _automation_instances.pop(instance_name, None)
-        _automation_tasks.pop(instance_name, None)
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/api/automation/quant/start-all")
 async def start_all_quant_automations():
-    """Start all configured automation instances concurrently."""
-    import json as _json
+    """Start all configured automation instances.
 
-    config_path = _AUTOMATION_CONFIGS_FILE
-    if not config_path.exists():
-        raise HTTPException(status_code=404, detail="No automation_configs.json found")
+    Sends start commands via Postgres for remote worker to pick up.
+    """
+    from datetime import datetime, timezone
 
-    with open(config_path) as f:
-        all_configs = _json.load(f)
+    # Get all configs from Postgres
+    all_configs = await _load_saved_configs()
+    if not all_configs:
+        raise HTTPException(status_code=404, detail="No automation configs found")
 
     results = {}
-    tasks_to_await = []
+    control = _get_automation_control()
 
     for instance_name, cfg in all_configs.items():
-        existing = _get_automation_instance(instance_name)
-        if existing and existing._running:
-            results[instance_name] = {"status": "already_running"}
-            continue
+        # Check if already running
+        try:
+            remote_status = await control.get_status(instance_name)
+            if remote_status and remote_status.get("status") == "running":
+                updated_at = remote_status.get("updated_at")
+                if updated_at:
+                    last_update = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
+                    now = datetime.now(timezone.utc)
+                    if (now - last_update).total_seconds() <= 60:
+                        results[instance_name] = {"status": "already_running"}
+                        continue
+        except Exception as e:
+            logger.warning(f"Failed to check status for {instance_name}: {e}")
 
         try:
-            from tradingagents.automation.quant_automation import (
-                QuantAutomation,
-                QuantAutomationConfig,
-                PipelineType,
-            )
-
-            pipeline_name = cfg.get("pipeline", "smc_quant")
-            if pipeline_name == "quant":
-                pipeline_name = "smc_quant_basic"
-
-            instance_state_file = cfg.get("state_file", f"quant_automation_state_{instance_name}.json")
-
-            auto_config = QuantAutomationConfig(
+            # Send start command
+            command_id = await control.send_command(
                 instance_name=instance_name,
-                pipeline=PipelineType(pipeline_name),
-                symbols=cfg.get("symbols", []),
-                timeframe=cfg.get("timeframe", "D1"),
-                analysis_interval_seconds=cfg.get("analysis_interval_seconds", 3600),
-                position_check_interval_seconds=cfg.get("position_check_interval_seconds", 60),
-                auto_execute=cfg.get("auto_execute", False),
-                min_confidence=cfg.get("min_confidence", 0.65),
-                max_positions_per_symbol=cfg.get("max_positions_per_symbol", 1),
-                enable_trailing_stop=cfg.get("enable_trailing_stop", True),
-                trailing_stop_atr_multiplier=cfg.get("trailing_stop_atr_multiplier", 1.5),
-                enable_breakeven_stop=cfg.get("enable_breakeven_stop", True),
-                move_to_breakeven_atr_mult=cfg.get("move_to_breakeven_atr_mult", 1.5),
-                enable_reversal_close=cfg.get("enable_reversal_close", True),
-                max_risk_per_trade_pct=cfg.get("max_risk_per_trade_pct", 1.0),
-                default_lot_size=cfg.get("default_lot_size", 0.01),
-                daily_loss_limit_pct=cfg.get("daily_loss_limit_pct", 3.0),
-                max_consecutive_losses=cfg.get("max_consecutive_losses", 3),
-                assumption_review_interval_seconds=cfg.get("assumption_review_interval_seconds", 3600),
-                assumption_review_auto_apply=cfg.get("assumption_review_auto_apply", False),
-                enable_trade_queue=cfg.get("enable_trade_queue", True),
-                trade_queue_poll_seconds=cfg.get("trade_queue_poll_seconds", 5),
-                enable_remote_control=cfg.get("enable_remote_control", True),
-                control_poll_seconds=cfg.get("control_poll_seconds", 3),
-                state_file=instance_state_file,
-                logs_dir=cfg.get("logs_dir", "logs/quant_automation"),
+                action="start",
+                payload=cfg,
             )
-
-            automation = QuantAutomation(auto_config)
-            _automation_instances[instance_name] = automation
-            _save_config(instance_name, auto_config.to_dict())
-
-            task = asyncio.create_task(automation.start())
-            _automation_tasks[instance_name] = task
-            tasks_to_await.append((instance_name, task))
-            results[instance_name] = {"status": "starting"}
-
+            # Update status to pending
+            await control.update_status(
+                instance_name=instance_name,
+                status="pending_start",
+                pipeline=cfg.get("pipeline"),
+                symbols=cfg.get("symbols"),
+                auto_execute=cfg.get("auto_execute", False),
+                config=cfg,
+            )
+            results[instance_name] = {"status": "start_requested", "command_id": command_id}
         except Exception as e:
             results[instance_name] = {"status": "error", "error": str(e)}
-
-    # Brief wait for immediate crashes
-    if tasks_to_await:
-        await asyncio.sleep(0.3)
-        for name, task in tasks_to_await:
-            if task.done():
-                exc = task.exception()
-                if exc:
-                    results[name] = {"status": "error", "error": str(exc)}
-                    _automation_instances.pop(name, None)
-                    _automation_tasks.pop(name, None)
-                else:
-                    results[name] = {"status": "started"}
-            else:
-                results[name] = {"status": "started"}
 
     return {"results": results}
 
 
 @app.post("/api/automation/quant/stop-all")
 async def stop_all_quant_automations():
-    """Stop all running automation instances."""
+    """Stop all running automation instances.
+
+    Sends stop commands via Postgres for remote worker to pick up.
+    """
     results = {}
-    for name, automation in list(_automation_instances.items()):
-        if automation._running:
+    control = _get_automation_control()
+
+    # Get all statuses from Postgres
+    try:
+        statuses = await control.get_all_statuses()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get statuses: {e}")
+
+    for status in statuses:
+        name = status.get("instance_name")
+        if not name:
+            continue
+
+        if status.get("status") in ("running", "pending_start"):
             try:
-                await automation.stop()
-                results[name] = {"status": "stopped"}
+                command_id = await control.send_command(
+                    instance_name=name,
+                    action="stop",
+                )
+                results[name] = {"status": "stop_requested", "command_id": command_id}
             except Exception as e:
                 results[name] = {"status": "error", "error": str(e)}
         else:
             results[name] = {"status": "already_stopped"}
+
+    # Also stop any local instances
+    for name, automation in list(_automation_instances.items()):
+        if automation._running:
+            try:
+                automation.stop()
+                results[name] = {"status": "stopped_locally"}
+            except Exception as e:
+                if name not in results:
+                    results[name] = {"status": "error", "error": str(e)}
+        _automation_instances.pop(name, None)
+        _automation_tasks.pop(name, None)
+
     return {"results": results}
 
 
 @app.post("/api/automation/quant/stop")
 async def stop_quant_automation(instance: str = Query(default="quant")):
-    """Stop a quant automation instance."""
-    automation = _get_automation_instance(instance)
+    """Stop a quant automation instance.
 
-    if automation is None:
-        raise HTTPException(status_code=400, detail=f"Instance '{instance}' not found")
-
-    # Save config before stopping so it persists across restarts
-    _save_config(instance, automation.config.to_dict())
-
-    automation.stop()
-
-    task = _automation_tasks.get(instance)
-    if task:
-        try:
-            await asyncio.wait_for(task, timeout=5.0)
-        except asyncio.TimeoutError:
-            task.cancel()
-        except Exception:
-            pass
-        _automation_tasks.pop(instance, None)
-
-    _automation_instances.pop(instance, None)
-    return {"status": "stopped", "instance_name": instance}
+    Sends a stop command via Postgres for remote worker to pick up.
+    """
+    # Send stop command via Postgres
+    try:
+        control = _get_automation_control()
+        command_id = await control.send_command(
+            instance_name=instance,
+            action="stop",
+        )
+        return {
+            "status": "stop_requested",
+            "instance_name": instance,
+            "command_id": command_id,
+            "message": "Stop command sent. Worker will pick it up shortly.",
+        }
+    except Exception as e:
+        logger.error(f"Failed to send stop command: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/api/automation/quant/pause")
 async def pause_quant_automation(instance: str = Query(default="quant")):
-    """Pause automation (disable auto-execute but continue monitoring)."""
-    automation = _get_automation_instance(instance)
+    """Pause automation (disable auto-execute but continue monitoring).
 
-    if automation is None or not automation._running:
-        raise HTTPException(status_code=400, detail=f"Instance '{instance}' not running")
-
-    automation.pause()
-    return {"status": "paused", "instance_name": instance}
+    Sends a pause command via Postgres for remote worker to pick up.
+    """
+    try:
+        control = _get_automation_control()
+        command_id = await control.send_command(
+            instance_name=instance,
+            action="pause",
+        )
+        return {
+            "status": "pause_requested",
+            "instance_name": instance,
+            "command_id": command_id,
+            "message": "Pause command sent. Worker will pick it up shortly.",
+        }
+    except Exception as e:
+        logger.error(f"Failed to send pause command: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/api/automation/quant/resume")
 async def resume_quant_automation(instance: str = Query(default="quant")):
-    """Resume automation with auto-execute enabled."""
-    automation = _get_automation_instance(instance)
+    """Resume automation with auto-execute enabled.
 
-    if automation is None or not automation._running:
-        raise HTTPException(status_code=400, detail=f"Instance '{instance}' not running")
-
-    automation.resume()
-    return {"status": "running", "instance_name": instance}
+    Sends a resume command via Postgres for remote worker to pick up.
+    """
+    try:
+        control = _get_automation_control()
+        command_id = await control.send_command(
+            instance_name=instance,
+            action="resume",
+        )
+        return {
+            "status": "resume_requested",
+            "instance_name": instance,
+            "command_id": command_id,
+            "message": "Resume command sent. Worker will pick it up shortly.",
+        }
+    except Exception as e:
+        logger.error(f"Failed to send resume command: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/api/automation/quant/config")
 async def update_quant_automation_config(updates: Dict[str, Any], instance: str = Query(default="quant")):
-    """Update automation configuration dynamically. Works for running or stopped instances."""
-    automation = _get_automation_instance(instance)
+    """Update automation configuration dynamically. Works for running or stopped instances.
 
-    if automation is not None:
-        # Running instance: update live config
-        await automation.update_config(updates)
-        config_dict = automation.config.to_dict()
-    else:
-        # No running instance: merge updates into saved config
-        saved_configs = _load_saved_configs()
-        config_dict = saved_configs.get(instance, {})
-        config_dict.update(updates)
+    Sends config update to Postgres. If running remotely, sends an update_config command.
+    """
+    control = _get_automation_control()
 
+    # Get current config from Postgres
+    saved_configs = await _load_saved_configs()
+    config_dict = saved_configs.get(instance, {})
+    config_dict.update(updates)
+
+    # Save to Postgres
     try:
-        _save_config(instance, config_dict)
+        await control.update_status(
+            instance_name=instance,
+            status=None,  # Don't change status
+            pipeline=config_dict.get("pipeline"),
+            symbols=config_dict.get("symbols"),
+            auto_execute=config_dict.get("auto_execute"),
+            config=config_dict,
+        )
     except Exception as e:
         logger.error(f"Failed to save config for '{instance}': {e}")
         raise HTTPException(status_code=500, detail=f"Failed to save config: {e}")
+
+    # If instance is running, send update_config command
+    try:
+        remote_status = await control.get_status(instance)
+        if remote_status and remote_status.get("status") == "running":
+            await control.send_command(
+                instance_name=instance,
+                action="update_config",
+                payload=updates,
+            )
+    except Exception as e:
+        logger.warning(f"Failed to send update_config command: {e}")
+
     return {
         "status": "updated",
         "instance_name": instance,
