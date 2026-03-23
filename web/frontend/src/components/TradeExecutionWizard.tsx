@@ -57,6 +57,7 @@ interface TradeExecutionWizardProps {
   smcLevels?: SmcLevel[]
   currentPrice?: number
   analysisContext?: any  // Full analysis state for reflection/learning
+  confidence?: number  // Signal confidence 0-1
   failureReason?: string  // If retrying a failed trade, shows why it failed
   failedDecisionId?: string  // Decision ID of the failed trade being retried
 }
@@ -73,6 +74,7 @@ export function TradeExecutionWizard({
   smcLevels = [],
   currentPrice: propCurrentPrice,
   analysisContext,
+  confidence,
   failureReason,
   failedDecisionId,
 }: TradeExecutionWizardProps) {
@@ -337,6 +339,7 @@ export function TradeExecutionWizard({
         mt5_ticket: data.order_ticket,
         rationale: rationale,
         risk_percent: parseFloat(riskPercent) || undefined,
+        confidence: confidence,
         analysis_context: analysisContext,  // Full state for reflection/learning
       })
 
@@ -383,6 +386,7 @@ export function TradeExecutionWizard({
         mt5_ticket: data.order_ticket,
         rationale: rationale,
         risk_percent: parseFloat(riskPercent) || undefined,
+        confidence: confidence,
         analysis_context: analysisContext,  // Full state for reflection/learning
       })
 

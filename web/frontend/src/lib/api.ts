@@ -697,6 +697,7 @@ export interface SaveDecisionParams {
   mt5_ticket?: number
   rationale?: string
   risk_percent?: number
+  confidence?: number
   analysis_context?: any
 }
 
@@ -730,7 +731,7 @@ export interface QuantAutomationConfig {
 }
 
 export interface QuantAutomationStatus {
-  status: 'stopped' | 'running' | 'paused' | 'error'
+  status: 'stopped' | 'running' | 'paused' | 'error' | 'pending_start' | 'stopping'
   running: boolean
   error: string | null
   config: QuantAutomationConfig | null

@@ -1891,10 +1891,20 @@ class QuantAutomation:
         results = []
         self.logger.debug("--- Position management cycle start ---")
 
-        # Skip if market was recently detected as closed
+        # Skip if market was recently detected as closed (but verify it's still closed)
         if self._market_closed_until and datetime.now() < self._market_closed_until:
-            self.logger.debug(f"Market closed — skipping position management until {self._market_closed_until.strftime('%H:%M')}")
-            return results
+            import MetaTrader5 as _mt5
+            if _mt5.terminal_info():
+                # Check if any of our symbols have an active session now
+                for sym in self.config.symbols:
+                    info = _mt5.symbol_info(sym)
+                    if info and info.trade_mode == _mt5.SYMBOL_TRADE_MODE_FULL:
+                        self.logger.info(f"Market reopened for {sym} — clearing cooldown")
+                        self._market_closed_until = None
+                        break
+            if self._market_closed_until:
+                self.logger.debug(f"Market closed — skipping position management until {self._market_closed_until.strftime('%H:%M')}")
+                return results
 
         try:
             # Verify MT5 is connected before proceeding
@@ -2050,6 +2060,7 @@ class QuantAutomation:
                                 result.action = "adjusted_sl"
                                 result.new_sl = candidate_sl
                                 trail_status = f"MOVED {current_sl:.2f}->{candidate_sl:.2f} ({trail_mult}x)"
+                                self._market_closed_until = None  # Market is open — clear cooldown
                                 dec = find_decision_by_ticket(ticket)
                                 if dec:
                                     add_trade_event(dec["decision_id"], "trailing_stop", {

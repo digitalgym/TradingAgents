@@ -155,3 +155,26 @@ export function usePositionUpdates(onUpdate?: (data: any) => void) {
 
   return { isConnected, positions }
 }
+
+// Hook for subscribing to automation status updates (start/stop/pause/resume)
+export interface AutomationStatusEvent {
+  type: "automation_status"
+  instance: string
+  status: string // running, stopped, paused, pending_start, stopping, error
+  error?: string
+}
+
+export function useAutomationStatus(onUpdate?: (event: AutomationStatusEvent) => void) {
+  const onUpdateRef = useRef(onUpdate)
+  onUpdateRef.current = onUpdate
+
+  const { isConnected } = useWebSocket({
+    onMessage: useCallback((message: WebSocketMessage) => {
+      if (message.type === "automation_status") {
+        onUpdateRef.current?.(message as AutomationStatusEvent)
+      }
+    }, []),
+  })
+
+  return { isConnected }
+}

@@ -1646,6 +1646,7 @@ export default function AnalysisPage() {
         rationale={result?.rationale || result?.full_response}
         smcLevels={result?.smc_levels || result?.analysis_context?.smc_levels}
         analysisContext={result?.analysis_context}  // Full state for reflection/learning
+        confidence={result?.confidence}
       />
     </div>
   )

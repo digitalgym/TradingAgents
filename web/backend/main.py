@@ -394,6 +394,7 @@ class SaveDecisionRequest(BaseModel):
     mt5_ticket: Optional[int] = None
     rationale: Optional[str] = None
     risk_percent: Optional[float] = None
+    confidence: Optional[float] = None
     analysis_context: Optional[dict] = None
 
 
@@ -412,6 +413,24 @@ async def broadcast_message(message: dict):
         try:
             await ws.send_json(message)
         except:
+            pass
+
+
+async def broadcast_automation_status(instance_name: str, status: str, **extra):
+    """Broadcast automation status change to all connected WebSocket clients.
+
+    This notifies all open browser tabs so loading spinners resolve in real-time.
+    """
+    message = {
+        "type": "automation_status",
+        "instance": instance_name,
+        "status": status,  # running, stopped, paused, pending_start, error
+        **extra,
+    }
+    for ws in websocket_connections[:]:
+        try:
+            await ws.send_json(message)
+        except Exception:
             pass
 
 
@@ -2569,6 +2588,7 @@ async def save_trade_decision(request: SaveDecisionRequest):
             take_profit=request.take_profit,
             volume=request.volume,
             mt5_ticket=request.mt5_ticket,
+            confidence=request.confidence,
             analysis_context=request.analysis_context,
             position_sizing={
                 "risk_percent": request.risk_percent,
@@ -8450,7 +8470,23 @@ async def websocket_endpoint(websocket: WebSocket):
                 pass
 
     except WebSocketDisconnect:
-        websocket_connections.remove(websocket)
+        if websocket in websocket_connections:
+            websocket_connections.remove(websocket)
+
+
+@app.post("/api/automation/quant/broadcast-status")
+async def broadcast_quant_status(payload: Dict[str, Any]):
+    """Internal endpoint for the MT5 worker to broadcast status changes via WebSocket.
+
+    Called by the worker whenever an automation instance changes state (started, stopped, etc).
+    """
+    instance = payload.get("instance_name")
+    status = payload.get("status")
+    if instance and status:
+        await broadcast_automation_status(instance, status, **{
+            k: v for k, v in payload.items() if k not in ("instance_name", "status")
+        })
+    return {"ok": True}
 
 
 # ----- Schemas -----
@@ -9374,6 +9410,9 @@ async def start_quant_automation(config: QuantAutomationConfigRequest):
             config=config_dict,
         )
 
+        # Broadcast pending_start to all clients
+        await broadcast_automation_status(instance_name, "pending_start")
+
         # Send start command for the remote worker to pick up
         command_id = await control.send_command(
             instance_name=instance_name,
@@ -9444,6 +9483,7 @@ async def start_all_quant_automations():
                 auto_execute=cfg.get("auto_execute", False),
                 config=cfg,
             )
+            await broadcast_automation_status(instance_name, "pending_start")
             results[instance_name] = {"status": "start_requested", "command_id": command_id}
         except Exception as e:
             results[instance_name] = {"status": "error", "error": str(e)}
@@ -9477,6 +9517,7 @@ async def stop_all_quant_automations():
                     instance_name=name,
                     action="stop",
                 )
+                await broadcast_automation_status(name, "stopping")
                 results[name] = {"status": "stop_requested", "command_id": command_id}
             except Exception as e:
                 results[name] = {"status": "error", "error": str(e)}
@@ -9511,6 +9552,8 @@ async def stop_quant_automation(instance: str = Query(default="quant")):
             instance_name=instance,
             action="stop",
         )
+        # Broadcast stopping state to all clients (spinner stays until worker confirms stopped)
+        await broadcast_automation_status(instance, "stopping")
         return {
             "status": "stop_requested",
             "instance_name": instance,
@@ -9534,6 +9577,7 @@ async def pause_quant_automation(instance: str = Query(default="quant")):
             instance_name=instance,
             action="pause",
         )
+        await broadcast_automation_status(instance, "pausing")
         return {
             "status": "pause_requested",
             "instance_name": instance,
@@ -9557,6 +9601,7 @@ async def resume_quant_automation(instance: str = Query(default="quant")):
             instance_name=instance,
             action="resume",
         )
+        await broadcast_automation_status(instance, "resuming")
         return {
             "status": "resume_requested",
             "instance_name": instance,

@@ -23,6 +23,10 @@ DATABASE_URL = os.environ.get("POSTGRES_URL")
 
 import uuid
 import socket
+import aiohttp
+
+# Backend API URL for broadcasting status via WebSocket
+BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8000")
 
 class MT5Worker:
     def __init__(self):
@@ -54,6 +58,9 @@ class MT5Worker:
 
         self.running = True
 
+        # Recover stale instances (pending_start/running with no active worker)
+        await self._recover_stale_instances()
+
         # Run both loops concurrently
         await asyncio.gather(
             self._trade_queue_loop(),
@@ -64,17 +71,109 @@ class MT5Worker:
     async def stop(self):
         self.running = False
 
+        # Capture instance names before stopping (stop removes them from dict)
+        instance_names = list(self._automation_instances.keys())
+
         # Stop all running automations
-        for name in list(self._automation_instances.keys()):
+        for name in instance_names:
             try:
                 await self._stop_automation(name)
             except Exception as e:
                 print(f"[MT5 Worker] Error stopping {name}: {e}")
 
+        # Update DB status to "stopped" for all managed instances
+        if self.pool:
+            try:
+                async with self.pool.acquire() as conn:
+                    for name in instance_names:
+                        try:
+                            await conn.execute("""
+                                UPDATE automation_status
+                                SET status = 'stopped', updated_at = NOW()
+                                WHERE instance_name = $1
+                            """, name)
+                        except Exception as e:
+                            print(f"[MT5 Worker] Failed to update DB status for {name}: {e}")
+
+                    # Also mark mt5_worker as stopped
+                    await conn.execute("""
+                        UPDATE automation_status
+                        SET status = 'stopped', updated_at = NOW()
+                        WHERE instance_name = 'mt5_worker'
+                    """)
+            except Exception as e:
+                print(f"[MT5 Worker] Failed to update DB statuses on shutdown: {e}")
+
         if self.pool:
             await self.pool.close()
         mt5.shutdown()
         print("[MT5 Worker] Stopped")
+
+    async def _broadcast_status(self, instance_name: str, status: str, **extra):
+        """Notify the backend API to broadcast status change via WebSocket."""
+        try:
+            async with aiohttp.ClientSession() as session:
+                payload = {"instance_name": instance_name, "status": status, **extra}
+                async with session.post(
+                    f"{BACKEND_URL}/api/automation/quant/broadcast-status",
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=5),
+                ) as resp:
+                    if resp.status != 200:
+                        print(f"[MT5 Worker] Broadcast failed: {resp.status}")
+        except Exception as e:
+            print(f"[MT5 Worker] Broadcast error: {e}")
+
+    async def _recover_stale_instances(self):
+        """On startup, find instances stuck in pending_start/running and re-start them."""
+        try:
+            async with self.pool.acquire() as conn:
+                # Find instances that were pending_start or running (from a previous worker)
+                rows = await conn.fetch("""
+                    SELECT instance_name, status, config
+                    FROM automation_status
+                    WHERE status IN ('pending_start', 'running')
+                      AND instance_name != 'mt5_worker'
+                """)
+
+                if not rows:
+                    print("[MT5 Worker] No stale instances to recover")
+                    return
+
+                print(f"[MT5 Worker] Recovering {len(rows)} stale instance(s)...")
+
+                for row in rows:
+                    name = row["instance_name"]
+                    raw_config = row["config"]
+                    if isinstance(raw_config, str):
+                        config = json.loads(raw_config)
+                    elif isinstance(raw_config, dict):
+                        config = raw_config
+                    else:
+                        config = {}
+
+                    if not config:
+                        print(f"[MT5 Worker] Skipping {name}: no config saved")
+                        await conn.execute("""
+                            UPDATE automation_status
+                            SET status = 'stopped', updated_at = NOW()
+                            WHERE instance_name = $1
+                        """, name)
+                        continue
+
+                    try:
+                        print(f"[MT5 Worker] Recovering {name} (was {row['status']})...")
+                        await self._start_automation(name, config)
+                    except Exception as e:
+                        print(f"[MT5 Worker] Failed to recover {name}: {e}")
+                        await conn.execute("""
+                            UPDATE automation_status
+                            SET status = 'stopped', error_message = $2, updated_at = NOW()
+                            WHERE instance_name = $1
+                        """, name, f"Recovery failed: {e}")
+
+        except Exception as e:
+            print(f"[MT5 Worker] Recovery check failed: {e}")
 
     async def _trade_queue_loop(self):
         """Poll trade_queue for pending commands."""
@@ -456,6 +555,8 @@ class MT5Worker:
             print(f"[MT5 Worker] QuantAutomation created")
 
             # Start in background with error callback
+            worker_ref = self
+
             def task_done_callback(task):
                 try:
                     exc = task.exception()
@@ -463,8 +564,20 @@ class MT5Worker:
                         print(f"[MT5 Worker] ERROR: {instance_name} task failed: {exc}")
                         import traceback
                         traceback.print_exception(type(exc), exc, exc.__traceback__)
+                        # Broadcast error status
+                        asyncio.ensure_future(worker_ref._broadcast_status(
+                            instance_name, "error", error=str(exc)
+                        ))
+                    else:
+                        # Task completed normally (automation stopped)
+                        asyncio.ensure_future(worker_ref._broadcast_status(
+                            instance_name, "stopped"
+                        ))
                 except asyncio.CancelledError:
                     print(f"[MT5 Worker] {instance_name} task was cancelled")
+                    asyncio.ensure_future(worker_ref._broadcast_status(
+                        instance_name, "stopped"
+                    ))
                 except asyncio.InvalidStateError:
                     pass  # Task not done yet
 
@@ -473,19 +586,33 @@ class MT5Worker:
             task.add_done_callback(task_done_callback)
             self._automation_tasks[instance_name] = task
 
+            # Broadcast that it's now running
+            await self._broadcast_status(instance_name, "running")
             print(f"[MT5 Worker] Started automation: {instance_name}")
 
         except Exception as e:
             print(f"[MT5 Worker] ERROR starting {instance_name}: {e}")
             import traceback
             traceback.print_exc()
+            await self._broadcast_status(instance_name, "error", error=str(e))
             raise
 
     async def _stop_automation(self, instance_name: str):
         """Stop an automation instance."""
         automation = self._automation_instances.get(instance_name)
         if automation is None:
-            print(f"[MT5 Worker] {instance_name} not found")
+            print(f"[MT5 Worker] {instance_name} not found in memory, updating DB status to stopped")
+            # Instance not in memory (worker restarted, or never started) — still update DB + broadcast
+            try:
+                async with self.pool.acquire() as conn:
+                    await conn.execute("""
+                        UPDATE automation_status
+                        SET status = 'stopped', updated_at = NOW()
+                        WHERE instance_name = $1
+                    """, instance_name)
+            except Exception as e:
+                print(f"[MT5 Worker] Failed to update DB for {instance_name}: {e}")
+            await self._broadcast_status(instance_name, "stopped")
             return
 
         automation.stop()
@@ -501,6 +628,7 @@ class MT5Worker:
             self._automation_tasks.pop(instance_name, None)
 
         self._automation_instances.pop(instance_name, None)
+        await self._broadcast_status(instance_name, "stopped")
         print(f"[MT5 Worker] Stopped automation: {instance_name}")
 
     async def _pause_automation(self, instance_name: str):
@@ -511,6 +639,7 @@ class MT5Worker:
             return
 
         automation.pause()
+        await self._broadcast_status(instance_name, "paused")
         print(f"[MT5 Worker] Paused automation: {instance_name}")
 
     async def _resume_automation(self, instance_name: str):
@@ -521,6 +650,7 @@ class MT5Worker:
             return
 
         automation.resume()
+        await self._broadcast_status(instance_name, "running")
         print(f"[MT5 Worker] Resumed automation: {instance_name}")
 
     async def _update_automation_config(self, instance_name: str, updates: dict):
@@ -611,10 +741,13 @@ async def main():
 
     try:
         await worker.start()
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, asyncio.CancelledError):
         print("\n[MT5 Worker] Shutting down...")
     finally:
-        await worker.stop()
+        try:
+            await worker.stop()
+        except Exception as e:
+            print(f"[MT5 Worker] Error during shutdown: {e}")
 
 
 async def stop_worker():

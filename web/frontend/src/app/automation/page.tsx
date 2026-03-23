@@ -23,6 +23,7 @@ import {
   PendingPrediction,
   // Quant Automation
   listAutomationInstances,
+  getQuantAutomationStatus,
   startQuantAutomation,
   stopQuantAutomation,
   startAllQuantAutomations,
@@ -88,6 +89,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { HelpTooltip } from "@/components/ui/help-tooltip"
 import { TradeExecutionWizard } from "@/components/TradeExecutionWizard"
+import { useAutomationStatus, AutomationStatusEvent } from "@/lib/websocket"
 
 interface MarketWatchSymbol {
   symbol: string
@@ -251,6 +253,31 @@ export default function AutomationPage() {
   // Ref to track if we've done initial selection (survives re-renders, not HMR)
   const hasInitialized = useRef(false)
 
+  // WebSocket: cross-client status sync (updates status badge on other tabs)
+  useAutomationStatus(useCallback((event: AutomationStatusEvent) => {
+    const { instance, status: newStatus } = event
+    const finalStatuses = ["running", "stopped", "paused", "error"] as const
+    if (!(finalStatuses as readonly string[]).includes(newStatus)) return
+
+    setInstances(prev => {
+      const inst = prev[instance]
+      if (!inst?.status) return prev
+      // Only update status badge — don't touch actionLoading or config
+      if (inst.status.status === newStatus) return prev
+      return {
+        ...prev,
+        [instance]: {
+          ...inst,
+          status: {
+            ...inst.status,
+            status: newStatus as QuantAutomationStatus["status"],
+            running: newStatus === "running",
+          },
+        },
+      }
+    })
+  }, []))
+
   // Polling function - updates data but NEVER touches selectedSymbols
   const fetchData = useCallback(async (showLoading = false) => {
     if (showLoading) setLoading(true)
@@ -292,7 +319,8 @@ export default function AutomationPage() {
           updated[name] = {
             status: serverStatus,
             history: historyResults[idx]?.data || prevInstance?.history || null,
-            config: serverStatus.config || prevInstance?.config || { instance_name: name },
+            // Local config is source of truth for the form — only use server on first load
+            config: prevInstance?.config || serverStatus.config || { instance_name: name },
             actionLoading: prevInstance?.actionLoading || null,
             error: prevInstance?.error || null,
             expanded: prevInstance?.expanded ?? false,
@@ -602,6 +630,23 @@ export default function AutomationPage() {
     }))
   }
 
+  // Poll instance status until it reaches expected state (or timeout)
+  const pollUntilStatus = async (name: string, expected: string[], maxSeconds = 30) => {
+    const interval = 2000
+    const maxAttempts = Math.ceil((maxSeconds * 1000) / interval)
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise(r => setTimeout(r, interval))
+      const res = await getQuantAutomationStatus(name)
+      if (res.data && expected.includes(res.data.status)) {
+        updateInstance(name, { status: res.data, actionLoading: null, error: null })
+        return
+      }
+    }
+    // Timeout — clear spinner, refresh
+    await fetchData()
+    updateInstance(name, { actionLoading: null })
+  }
+
   // Instance action handlers
   const handleInstanceStart = async (name: string) => {
     const inst = instances[name]
@@ -609,31 +654,40 @@ export default function AutomationPage() {
     updateInstance(name, { actionLoading: "start", error: null })
     const result = await startQuantAutomation({ ...inst.config, instance_name: name })
     if (result.error) {
-      updateInstance(name, { error: result.error })
+      updateInstance(name, { error: result.error, actionLoading: null })
+      return
     }
-    updateInstance(name, { actionLoading: null })
-    fetchData() // non-blocking refresh
+    await pollUntilStatus(name, ["running", "error"])
   }
 
   const handleInstanceStop = async (name: string) => {
     updateInstance(name, { actionLoading: "stop" })
-    await stopQuantAutomation(name)
-    updateInstance(name, { actionLoading: null })
-    fetchData() // non-blocking refresh
+    const result = await stopQuantAutomation(name)
+    if (result.error) {
+      updateInstance(name, { error: result.error, actionLoading: null })
+      return
+    }
+    await pollUntilStatus(name, ["stopped"])
   }
 
   const handleInstancePause = async (name: string) => {
     updateInstance(name, { actionLoading: "pause" })
-    await pauseQuantAutomation(name)
-    updateInstance(name, { actionLoading: null })
-    fetchData() // non-blocking refresh
+    const result = await pauseQuantAutomation(name)
+    if (result.error) {
+      updateInstance(name, { error: result.error, actionLoading: null })
+      return
+    }
+    await pollUntilStatus(name, ["paused"])
   }
 
   const handleInstanceResume = async (name: string) => {
     updateInstance(name, { actionLoading: "resume" })
-    await resumeQuantAutomation(name)
-    updateInstance(name, { actionLoading: null })
-    fetchData() // non-blocking refresh
+    const result = await resumeQuantAutomation(name)
+    if (result.error) {
+      updateInstance(name, { error: result.error, actionLoading: null })
+      return
+    }
+    await pollUntilStatus(name, ["running"])
   }
 
   const handleStartAll = async () => {
@@ -642,21 +696,22 @@ export default function AutomationPage() {
       .map(([name]) => name)
     if (stoppedNames.length === 0) return
 
-    // Set all to loading
+    // Set all to loading — WebSocket will clear each when worker confirms
     stoppedNames.forEach(name => updateInstance(name, { actionLoading: "start", error: null }))
 
-    // Single bulk request — backend starts all from automation_configs.json
     const result = await startAllQuantAutomations()
+    if (result.error) {
+      stoppedNames.forEach(name => updateInstance(name, { actionLoading: null, error: result.error || "Start failed" }))
+      return
+    }
+    // Check for per-instance errors
     if (result.data?.results) {
       for (const [name, res] of Object.entries(result.data.results)) {
-        if (res.error) updateInstance(name, { error: res.error })
-        updateInstance(name, { actionLoading: null })
+        if (res.error) updateInstance(name, { error: res.error, actionLoading: null })
       }
-    } else {
-      stoppedNames.forEach(name => updateInstance(name, { actionLoading: null }))
     }
-
-    fetchData()
+    // Poll all until they reach running (or timeout)
+    await Promise.all(stoppedNames.map(name => pollUntilStatus(name, ["running", "error"])))
   }
 
   const handleStopAll = async () => {
@@ -668,15 +723,12 @@ export default function AutomationPage() {
     runningNames.forEach(name => updateInstance(name, { actionLoading: "stop" }))
 
     const result = await stopAllQuantAutomations()
-    if (result.data?.results) {
-      for (const [name] of Object.entries(result.data.results)) {
-        updateInstance(name, { actionLoading: null })
-      }
-    } else {
-      runningNames.forEach(name => updateInstance(name, { actionLoading: null }))
+    if (result.error) {
+      runningNames.forEach(name => updateInstance(name, { actionLoading: null, error: result.error || "Stop failed" }))
+      return
     }
-
-    fetchData()
+    // Poll all until they reach stopped (or timeout)
+    await Promise.all(runningNames.map(name => pollUntilStatus(name, ["stopped"])))
   }
 
   const handleInstanceTest = async (name: string) => {
@@ -756,7 +808,9 @@ export default function AutomationPage() {
   }
 
   const handleInstanceConfigUpdate = (name: string, key: keyof QuantAutomationConfig, value: any) => {
+    // Update local state immediately (local config is source of truth for the form)
     updateInstance(name, { config: { ...instances[name]?.config, [key]: value } })
+    // Persist to server (fire-and-forget is fine — local state won't be overwritten by polling)
     updateQuantAutomationConfig({ [key]: value }, name)
   }
 
