@@ -21,6 +21,9 @@ import MetaTrader5 as mt5
 
 DATABASE_URL = os.environ.get("POSTGRES_URL")
 
+import uuid
+import socket
+
 class MT5Worker:
     def __init__(self):
         self.pool = None
@@ -29,9 +32,13 @@ class MT5Worker:
         # Track running automation instances
         self._automation_instances: dict = {}
         self._automation_tasks: dict = {}
+        # Unique worker ID for this instance
+        self.worker_id = f"{socket.gethostname()}_{os.getpid()}_{uuid.uuid4().hex[:6]}"
 
     async def start(self):
         """Initialize connections and start polling."""
+        print(f"[MT5 Worker] Starting worker ID: {self.worker_id}")
+
         # Connect to Postgres
         self.pool = await asyncpg.create_pool(
             DATABASE_URL, min_size=1, max_size=5,
@@ -385,62 +392,94 @@ class MT5Worker:
 
     async def _start_automation(self, instance_name: str, config: dict):
         """Start an automation instance."""
+        print(f"[MT5 Worker] _start_automation called for {instance_name}")
+        print(f"[MT5 Worker] Config: {json.dumps(config, indent=2)}")
+
         if instance_name in self._automation_instances:
             automation = self._automation_instances[instance_name]
+            print(f"[MT5 Worker] Found existing instance, _running={getattr(automation, '_running', 'N/A')}")
             if automation._running:
-                print(f"[MT5 Worker] {instance_name} is already running")
+                print(f"[MT5 Worker] {instance_name} is already running, skipping")
                 return
 
-        from tradingagents.automation.quant_automation import (
-            QuantAutomation,
-            QuantAutomationConfig,
-            PipelineType,
-        )
+        try:
+            print(f"[MT5 Worker] Importing QuantAutomation...")
+            from tradingagents.automation.quant_automation import (
+                QuantAutomation,
+                QuantAutomationConfig,
+                PipelineType,
+            )
+            print(f"[MT5 Worker] Import successful")
 
-        # Build config
-        pipeline_name = config.get("pipeline", "smc_quant_basic")
-        if pipeline_name == "quant":
-            pipeline_name = "smc_quant_basic"
+            # Build config
+            pipeline_name = config.get("pipeline", "smc_quant_basic")
+            if pipeline_name == "quant":
+                pipeline_name = "smc_quant_basic"
+            print(f"[MT5 Worker] Pipeline: {pipeline_name}")
 
-        instance_state_file = config.get("state_file", f"quant_automation_state_{instance_name}.json")
+            instance_state_file = config.get("state_file", f"quant_automation_state_{instance_name}.json")
 
-        auto_config = QuantAutomationConfig(
-            instance_name=instance_name,
-            pipeline=PipelineType(pipeline_name),
-            symbols=config.get("symbols", []),
-            timeframe=config.get("timeframe", "H1"),
-            analysis_interval_seconds=config.get("analysis_interval_seconds", 180),
-            position_check_interval_seconds=config.get("position_check_interval_seconds", 60),
-            auto_execute=config.get("auto_execute", False),
-            min_confidence=config.get("min_confidence", 0.65),
-            max_positions_per_symbol=config.get("max_positions_per_symbol", 1),
-            enable_trailing_stop=config.get("enable_trailing_stop", True),
-            trailing_stop_atr_multiplier=config.get("trailing_stop_atr_multiplier", 1.5),
-            enable_breakeven_stop=config.get("enable_breakeven_stop", True),
-            move_to_breakeven_atr_mult=config.get("move_to_breakeven_atr_mult", 1.5),
-            enable_reversal_close=config.get("enable_reversal_close", True),
-            max_risk_per_trade_pct=config.get("max_risk_per_trade_pct", 1.0),
-            default_lot_size=config.get("default_lot_size", 0.01),
-            daily_loss_limit_pct=config.get("daily_loss_limit_pct", 3.0),
-            max_consecutive_losses=config.get("max_consecutive_losses", 3),
-            assumption_review_interval_seconds=config.get("assumption_review_interval_seconds", 3600),
-            assumption_review_auto_apply=config.get("assumption_review_auto_apply", False),
-            enable_trade_queue=config.get("enable_trade_queue", True),
-            trade_queue_poll_seconds=config.get("trade_queue_poll_seconds", 5),
-            enable_remote_control=config.get("enable_remote_control", True),
-            control_poll_seconds=config.get("control_poll_seconds", 3),
-            state_file=instance_state_file,
-            logs_dir=config.get("logs_dir", "logs/quant_automation"),
-        )
+            print(f"[MT5 Worker] Building QuantAutomationConfig...")
+            auto_config = QuantAutomationConfig(
+                instance_name=instance_name,
+                pipeline=PipelineType(pipeline_name),
+                symbols=config.get("symbols", []),
+                timeframe=config.get("timeframe", "H1"),
+                analysis_interval_seconds=config.get("analysis_interval_seconds", 180),
+                position_check_interval_seconds=config.get("position_check_interval_seconds", 60),
+                auto_execute=config.get("auto_execute", False),
+                min_confidence=config.get("min_confidence", 0.65),
+                max_positions_per_symbol=config.get("max_positions_per_symbol", 1),
+                enable_trailing_stop=config.get("enable_trailing_stop", True),
+                trailing_stop_atr_multiplier=config.get("trailing_stop_atr_multiplier", 1.5),
+                enable_breakeven_stop=config.get("enable_breakeven_stop", True),
+                move_to_breakeven_atr_mult=config.get("move_to_breakeven_atr_mult", 1.5),
+                enable_reversal_close=config.get("enable_reversal_close", True),
+                max_risk_per_trade_pct=config.get("max_risk_per_trade_pct", 1.0),
+                default_lot_size=config.get("default_lot_size", 0.01),
+                daily_loss_limit_pct=config.get("daily_loss_limit_pct", 3.0),
+                max_consecutive_losses=config.get("max_consecutive_losses", 3),
+                assumption_review_interval_seconds=config.get("assumption_review_interval_seconds", 3600),
+                assumption_review_auto_apply=config.get("assumption_review_auto_apply", False),
+                enable_trade_queue=config.get("enable_trade_queue", True),
+                trade_queue_poll_seconds=config.get("trade_queue_poll_seconds", 5),
+                enable_remote_control=config.get("enable_remote_control", True),
+                control_poll_seconds=config.get("control_poll_seconds", 3),
+                state_file=instance_state_file,
+                logs_dir=config.get("logs_dir", "logs/quant_automation"),
+            )
+            print(f"[MT5 Worker] Config built: symbols={auto_config.symbols}, pipeline={auto_config.pipeline}")
 
-        automation = QuantAutomation(auto_config)
-        self._automation_instances[instance_name] = automation
+            print(f"[MT5 Worker] Creating QuantAutomation instance...")
+            automation = QuantAutomation(auto_config)
+            self._automation_instances[instance_name] = automation
+            print(f"[MT5 Worker] QuantAutomation created")
 
-        # Start in background
-        task = asyncio.create_task(automation.start())
-        self._automation_tasks[instance_name] = task
+            # Start in background with error callback
+            def task_done_callback(task):
+                try:
+                    exc = task.exception()
+                    if exc:
+                        print(f"[MT5 Worker] ERROR: {instance_name} task failed: {exc}")
+                        import traceback
+                        traceback.print_exception(type(exc), exc, exc.__traceback__)
+                except asyncio.CancelledError:
+                    print(f"[MT5 Worker] {instance_name} task was cancelled")
+                except asyncio.InvalidStateError:
+                    pass  # Task not done yet
 
-        print(f"[MT5 Worker] Started automation: {instance_name}")
+            print(f"[MT5 Worker] Creating background task for {instance_name}...")
+            task = asyncio.create_task(automation.start())
+            task.add_done_callback(task_done_callback)
+            self._automation_tasks[instance_name] = task
+
+            print(f"[MT5 Worker] Started automation: {instance_name}")
+
+        except Exception as e:
+            print(f"[MT5 Worker] ERROR starting {instance_name}: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
 
     async def _stop_automation(self, instance_name: str):
         """Stop an automation instance."""
@@ -505,10 +544,12 @@ class MT5Worker:
                 if account:
                     positions = mt5.positions_get() or []
                     metadata = {
+                        "worker_id": self.worker_id,
                         "balance": account.balance,
                         "equity": account.equity,
                         "margin_free": account.margin_free,
                         "positions": len(positions),
+                        "running_automations": list(self._automation_instances.keys()),
                     }
                     async with self.pool.acquire() as conn:
                         # Check for stop request for the worker itself
