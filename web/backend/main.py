@@ -10246,6 +10246,229 @@ async def health_check():
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
 
 
+# ----- Command Queue API -----
+# Multi-worker command queue for distributed processing
+
+class PublishCommandRequest(BaseModel):
+    command_type: str
+    payload: Dict[str, Any] = {}
+    priority: int = 1
+    target_worker: Optional[str] = None
+    expires_in_seconds: Optional[int] = None
+
+
+def _get_command_queue():
+    """Get command queue singleton."""
+    from tradingagents.storage.command_queue import get_command_queue
+    return get_command_queue()
+
+
+@app.post("/api/queue/publish")
+async def publish_command(request: PublishCommandRequest):
+    """Publish a command to the queue for workers to process."""
+    try:
+        queue = _get_command_queue()
+        command_id = await queue.publish(
+            command_type=request.command_type,
+            payload=request.payload,
+            priority=request.priority,
+            source="api",
+            target_worker=request.target_worker,
+            expires_in_seconds=request.expires_in_seconds,
+        )
+        return {"command_id": command_id, "status": "published"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/queue/command/{command_id}")
+async def get_command(command_id: str):
+    """Get status of a specific command."""
+    try:
+        queue = _get_command_queue()
+        command = await queue.get_command(command_id)
+        if not command:
+            raise HTTPException(status_code=404, detail="Command not found")
+        return {
+            "id": command.id,
+            "command_type": command.command_type,
+            "payload": command.payload,
+            "status": command.status,
+            "priority": command.priority,
+            "claimed_by": command.claimed_by,
+            "claimed_at": command.claimed_at.isoformat() if command.claimed_at else None,
+            "completed_at": command.completed_at.isoformat() if command.completed_at else None,
+            "result": command.result,
+            "error": command.error,
+            "created_at": command.created_at.isoformat() if command.created_at else None,
+            "retry_count": command.retry_count,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/queue/commands")
+async def list_commands(
+    status: Optional[str] = None,
+    command_type: Optional[str] = None,
+    limit: int = 50,
+):
+    """List commands with optional filters."""
+    try:
+        queue = _get_command_queue()
+        commands = await queue.list_commands(status=status, command_type=command_type, limit=limit)
+        return {
+            "commands": [
+                {
+                    "id": c.id,
+                    "command_type": c.command_type,
+                    "status": c.status,
+                    "priority": c.priority,
+                    "claimed_by": c.claimed_by,
+                    "error": c.error,
+                    "created_at": c.created_at.isoformat() if c.created_at else None,
+                }
+                for c in commands
+            ],
+            "count": len(commands),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/queue/stats")
+async def queue_stats():
+    """Get queue statistics."""
+    try:
+        queue = _get_command_queue()
+        stats = await queue.get_queue_stats()
+        return stats
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/queue/workers")
+async def list_workers(active_only: bool = True):
+    """List registered workers."""
+    try:
+        queue = _get_command_queue()
+        workers = await queue.list_workers(active_only=active_only)
+        return {
+            "workers": [
+                {
+                    "worker_id": w.worker_id,
+                    "hostname": w.hostname,
+                    "status": w.status,
+                    "capabilities": w.capabilities,
+                    "last_heartbeat": w.last_heartbeat.isoformat() if w.last_heartbeat else None,
+                    "current_command": w.current_command,
+                    "commands_processed": w.commands_processed,
+                    "started_at": w.started_at.isoformat() if w.started_at else None,
+                }
+                for w in workers
+            ],
+            "count": len(workers),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/queue/cleanup")
+async def cleanup_queue(days: int = 7):
+    """Clean up old completed/failed commands."""
+    try:
+        queue = _get_command_queue()
+        deleted = await queue.cleanup_old_commands(days=days)
+        return {"deleted": deleted, "message": f"Deleted {deleted} old commands"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Convenience endpoints for common commands
+
+@app.post("/api/queue/start-automation")
+async def queue_start_automation(
+    instance_name: str,
+    config: Dict[str, Any] = {},
+):
+    """Queue a start automation command."""
+    try:
+        queue = _get_command_queue()
+        command_id = await queue.publish(
+            command_type="start_automation",
+            payload={"instance_name": instance_name, "config": config},
+            priority=2,  # High priority
+            source="api",
+        )
+        return {"command_id": command_id, "status": "queued", "instance_name": instance_name}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/queue/stop-automation")
+async def queue_stop_automation(instance_name: str):
+    """Queue a stop automation command."""
+    try:
+        queue = _get_command_queue()
+        command_id = await queue.publish(
+            command_type="stop_automation",
+            payload={"instance_name": instance_name},
+            priority=3,  # Urgent
+            source="api",
+        )
+        return {"command_id": command_id, "status": "queued", "instance_name": instance_name}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/queue/execute-trade")
+async def queue_execute_trade(
+    symbol: str,
+    direction: str,
+    volume: float,
+    stop_loss: Optional[float] = None,
+    take_profit: Optional[float] = None,
+    entry_price: Optional[float] = None,
+):
+    """Queue a trade execution command."""
+    try:
+        queue = _get_command_queue()
+        command_id = await queue.publish(
+            command_type="execute_trade",
+            payload={
+                "symbol": symbol,
+                "direction": direction.upper(),
+                "volume": volume,
+                "stop_loss": stop_loss,
+                "take_profit": take_profit,
+                "entry_price": entry_price,
+            },
+            priority=3,  # Urgent
+            source="api",
+        )
+        return {"command_id": command_id, "status": "queued", "symbol": symbol, "direction": direction}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/queue/close-position")
+async def queue_close_position(ticket: int, volume: Optional[float] = None):
+    """Queue a position close command."""
+    try:
+        queue = _get_command_queue()
+        command_id = await queue.publish(
+            command_type="close_position",
+            payload={"ticket": ticket, "volume": volume},
+            priority=3,  # Urgent
+            source="api",
+        )
+        return {"command_id": command_id, "status": "queued", "ticket": ticket}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
