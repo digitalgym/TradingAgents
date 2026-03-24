@@ -585,10 +585,28 @@ async def get_status():
     active_decisions = trade_decisions.list_active_decisions()
     closed_decisions = trade_decisions.list_closed_decisions(limit=100)
 
+    # Get guardrails status for header alert
+    guardrails_status = None
+    try:
+        from tradingagents.risk.guardrails import RiskGuardrails
+        guardrails = RiskGuardrails()
+        g_status = guardrails.get_status()
+        guardrails_status = {
+            "can_trade": g_status.get("can_trade", True),
+            "blocked": g_status.get("blocked", False),
+            "in_cooldown": g_status.get("in_cooldown", False),
+            "cooldown_enabled": g_status.get("cooldown_enabled", True),
+            "cooldown_until": g_status.get("cooldown_until"),
+            "reason": g_status.get("reason"),
+        }
+    except Exception:
+        pass
+
     return {
         "mt5": mt5_status,
         "automation": automation_status,
         "daily_cycle": daily_cycle_status,
+        "guardrails": guardrails_status,
         "decisions": {
             "total": len(active_decisions) + len(closed_decisions),
             "open": len(active_decisions)
@@ -2640,7 +2658,7 @@ async def list_decisions(
             "id": d.get("decision_id"),
             "symbol": d.get("symbol"),
             "signal": d.get("action"),
-            "confidence": d.get("confluence_score", 5) / 10 if d.get("confluence_score") else 0.7,
+            "confidence": d.get("confidence") if d.get("confidence") is not None else (d.get("confluence_score", 5) / 10 if d.get("confluence_score") else None),
             "timestamp": d.get("created_at"),
             "entry_price": d.get("entry_price"),
             "stop_loss": d.get("stop_loss"),
@@ -2876,7 +2894,7 @@ async def get_decision(decision_id: str):
         "id": decision.get("decision_id"),
         "symbol": decision.get("symbol"),
         "signal": decision.get("action"),
-        "confidence": decision.get("confluence_score", 5) / 10 if decision.get("confluence_score") else 0.7,
+        "confidence": decision.get("confidence") if decision.get("confidence") is not None else (decision.get("confluence_score", 5) / 10 if decision.get("confluence_score") else None),
         "timestamp": decision.get("created_at"),
         "entry_price": decision.get("entry_price"),
         "stop_loss": decision.get("stop_loss"),
@@ -3545,13 +3563,14 @@ async def get_circuit_breaker():
 
         return {
             "active": status.get("blocked", False) or status.get("in_cooldown", False),
-            "reason": status.get("block_reason", None),
-            "daily_loss_used": status.get("daily_loss_used", 0),
+            "reason": status.get("block_reason", None) or status.get("reason", None),
+            "daily_loss_used": status.get("daily_loss_used", 0) or status.get("daily_loss_pct", 0),
             "daily_loss_limit": status.get("daily_loss_limit", 5),
             "consecutive_losses": status.get("consecutive_losses", 0),
             "max_consecutive_losses": status.get("max_consecutive_losses", 3),
             "in_cooldown": status.get("in_cooldown", False),
             "cooldown_until": status.get("cooldown_until"),
+            "cooldown_enabled": status.get("cooldown_enabled", True),
             "blocked": status.get("blocked", False)
         }
     except Exception as e:
@@ -3580,18 +3599,38 @@ async def get_breach_history(limit: int = 20):
 
 @app.post("/api/risk/circuit-breaker/reset")
 async def reset_circuit_breaker():
-    """Reset circuit breaker (use with caution)"""
+    """Reset circuit breaker — clears cooldown, daily loss, and consecutive loss counters"""
     try:
         from tradingagents.risk.guardrails import RiskGuardrails
 
         guardrails = RiskGuardrails()
 
-        if hasattr(guardrails, 'reset'):
+        if hasattr(guardrails, 'reset_all'):
+            guardrails.reset_all()
+        elif hasattr(guardrails, 'reset'):
             guardrails.reset()
         elif hasattr(guardrails, 'reset_cooldown'):
             guardrails.reset_cooldown()
 
-        return {"success": True, "message": "Circuit breaker reset"}
+        return {"success": True, "message": "Circuit breaker fully reset"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/risk/cooldown/toggle")
+async def toggle_cooldown(enabled: bool = True):
+    """Enable or disable cooldown periods"""
+    try:
+        from tradingagents.risk.guardrails import RiskGuardrails
+
+        guardrails = RiskGuardrails()
+        guardrails.set_cooldown_enabled(enabled)
+
+        return {
+            "success": True,
+            "cooldown_enabled": enabled,
+            "message": f"Cooldown {'enabled' if enabled else 'disabled'}"
+        }
     except Exception as e:
         return {"error": str(e)}
 
@@ -10176,29 +10215,46 @@ async def get_quant_automation_history(instance: str = Query(default="quant")):
         analysis_results = automation._analysis_results
         position_results = automation._position_results
     else:
-        # Instance not running — load persisted history from state file
+        # Instance not running — load persisted history from DB first, then file fallback
         analysis_results = []
         position_results = []
         from tradingagents.automation.quant_automation import AnalysisCycleResult, PositionManagementResult
-        state_file = PROJECT_ROOT / f"quant_automation_state_{instance}.json"
-        if state_file.exists():
-            try:
-                with open(state_file, "r") as f:
-                    state = json.load(f)
-                for item in state.get("analysis_results", []):
-                    try:
-                        item["timestamp"] = datetime.fromisoformat(item["timestamp"])
-                        analysis_results.append(AnalysisCycleResult(**item))
-                    except Exception:
-                        continue
-                for item in state.get("position_results", []):
-                    try:
-                        item["timestamp"] = datetime.fromisoformat(item["timestamp"])
-                        position_results.append(PositionManagementResult(**item))
-                    except Exception:
-                        continue
-            except Exception as e:
-                logger.warning(f"Failed to load state file for '{instance}': {e}")
+
+        state = None
+
+        # Try DB first
+        try:
+            control = _get_automation_control()
+            saved = await control.get_status(instance)
+            if saved and saved.get("state"):
+                raw_state = saved["state"]
+                state = json.loads(raw_state) if isinstance(raw_state, str) else raw_state
+        except Exception as e:
+            logger.debug(f"Could not load state from DB for '{instance}': {e}")
+
+        # Fallback to file
+        if state is None:
+            state_file = PROJECT_ROOT / f"quant_automation_state_{instance}.json"
+            if state_file.exists():
+                try:
+                    with open(state_file, "r") as f:
+                        state = json.load(f)
+                except Exception as e:
+                    logger.warning(f"Failed to load state file for '{instance}': {e}")
+
+        if state:
+            for item in state.get("analysis_results", []):
+                try:
+                    item["timestamp"] = datetime.fromisoformat(item["timestamp"])
+                    analysis_results.append(AnalysisCycleResult(**item))
+                except Exception:
+                    continue
+            for item in state.get("position_results", []):
+                try:
+                    item["timestamp"] = datetime.fromisoformat(item["timestamp"])
+                    position_results.append(PositionManagementResult(**item))
+                except Exception:
+                    continue
 
     return {
         "instance_name": instance,
@@ -10236,6 +10292,235 @@ async def get_quant_automation_history(instance: str = Query(default="quant")):
             for r in position_results
         ],
     }
+
+
+# ----- Trade Management Agent API -----
+
+
+def _get_management_store():
+    """Get management store singleton."""
+    from tradingagents.storage.postgres_store import get_management_store
+    return get_management_store()
+
+
+@app.post("/api/trade-manager/start")
+async def start_trade_manager(config: Dict[str, Any] = {}):
+    """Start the Trade Management Agent.
+
+    Sends a start command via Postgres for the home machine worker.
+    """
+    instance_name = config.get("instance_name", "trade_manager")
+
+    try:
+        control = _get_automation_control()
+        remote_status = await control.get_status(instance_name)
+        if remote_status and remote_status.get("status") == "running":
+            from datetime import timezone
+            updated_at = remote_status.get("updated_at")
+            if updated_at:
+                last_update = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
+                now = datetime.now(timezone.utc)
+                if (now - last_update).total_seconds() <= 60:
+                    raise HTTPException(status_code=400, detail="Trade Manager is already running")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.warning(f"Failed to check TMA remote status: {e}")
+
+    try:
+        await control.update_status(
+            instance_name=instance_name,
+            status="pending_start",
+            pipeline="trade_management",
+            symbols=[],
+            auto_execute=True,
+            config=config,
+        )
+        await broadcast_automation_status(instance_name, "pending_start")
+
+        command_id = await control.send_command(
+            instance_name=instance_name,
+            action="start",
+            payload=config,
+        )
+
+        return {
+            "status": "start_requested",
+            "instance_name": instance_name,
+            "command_id": command_id,
+            "message": "Start command sent. Worker will pick it up shortly.",
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/trade-manager/stop")
+async def stop_trade_manager(instance: str = Query(default="trade_manager")):
+    """Stop the Trade Management Agent."""
+    try:
+        control = _get_automation_control()
+        command_id = await control.send_command(
+            instance_name=instance,
+            action="stop",
+        )
+        await broadcast_automation_status(instance, "stopping")
+        return {
+            "status": "stop_requested",
+            "instance_name": instance,
+            "command_id": command_id,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/trade-manager/status")
+async def get_trade_manager_status(instance: str = Query(default="trade_manager")):
+    """Get Trade Management Agent status."""
+    try:
+        control = _get_automation_control()
+        remote_status = await control.get_status(instance)
+        if remote_status:
+            updated_at = remote_status.get("updated_at")
+            if updated_at:
+                from datetime import timezone
+                last_update = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
+                now = datetime.now(timezone.utc)
+                if (now - last_update).total_seconds() > 60:
+                    remote_status["status"] = "stopped"
+                    remote_status["running"] = False
+                    remote_status["stale"] = True
+                else:
+                    remote_status["running"] = remote_status.get("status") == "running"
+            return remote_status
+        return {"status": "not_found", "instance_name": instance, "running": False}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/trade-manager/actions")
+async def get_trade_manager_actions(
+    ticket: Optional[int] = Query(default=None),
+    limit: int = Query(default=50, le=200),
+):
+    """Get management action history."""
+    try:
+        store = _get_management_store()
+        actions = store.get_management_actions(ticket=ticket, limit=limit)
+        return {"actions": actions}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/trade-manager/config")
+async def get_trade_manager_config(instance: str = Query(default="trade_manager")):
+    """Get current TMA configuration."""
+    try:
+        control = _get_automation_control()
+        status = await control.get_status(instance)
+        if status and status.get("config"):
+            return {"config": status["config"]}
+        return {"config": {}}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/trade-manager/config")
+async def update_trade_manager_config(
+    updates: Dict[str, Any],
+    instance: str = Query(default="trade_manager"),
+):
+    """Update TMA configuration."""
+    try:
+        control = _get_automation_control()
+        command_id = await control.send_command(
+            instance_name=instance,
+            action="update_config",
+            payload=updates,
+        )
+        return {"status": "update_requested", "command_id": command_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/trade-manager/policies")
+async def get_trade_manager_policies():
+    """Get all position management policies."""
+    try:
+        store = _get_management_store()
+        policies = store.load_all_management_policies()
+        return {"policies": {str(k): v for k, v in policies.items()}}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/trade-manager/policies/{ticket}")
+async def get_trade_manager_policy(ticket: int):
+    """Get policy for a specific position."""
+    try:
+        store = _get_management_store()
+        policy = store.load_management_policy(ticket)
+        if policy is None:
+            raise HTTPException(status_code=404, detail=f"No policy for ticket {ticket}")
+        return {"ticket": ticket, "policy": policy}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/trade-manager/policies/{ticket}")
+async def update_trade_manager_policy(ticket: int, policy: Dict[str, Any]):
+    """Create or update a position management policy."""
+    try:
+        symbol = policy.get("symbol", "")
+        if not symbol:
+            raise HTTPException(status_code=400, detail="symbol is required in policy")
+
+        store = _get_management_store()
+        store.save_management_policy(ticket, symbol, policy)
+        return {"status": "saved", "ticket": ticket}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/trade-manager/policies/{ticket}")
+async def delete_trade_manager_policy(ticket: int):
+    """Delete a position management policy."""
+    try:
+        store = _get_management_store()
+        store.delete_management_policy(ticket)
+        return {"status": "deleted", "ticket": ticket}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/trade-manager/alerts")
+async def get_trade_manager_alerts(
+    limit: int = Query(default=20, le=100),
+    unacknowledged: bool = Query(default=False),
+):
+    """Get risk alerts."""
+    try:
+        store = _get_management_store()
+        alerts = store.get_risk_alerts(limit=limit, unacknowledged_only=unacknowledged)
+        return {"alerts": alerts}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/trade-manager/alerts/{alert_id}/acknowledge")
+async def acknowledge_trade_manager_alert(alert_id: int):
+    """Acknowledge a risk alert."""
+    try:
+        store = _get_management_store()
+        store.acknowledge_risk_alert(alert_id)
+        return {"status": "acknowledged", "alert_id": alert_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ----- Health Check -----

@@ -119,8 +119,14 @@ class AutomationControlStore:
                     active_positions INT DEFAULT 0,
                     error_message TEXT,
                     config JSONB,
+                    state JSONB,
                     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 );
+            """)
+
+            # Add state column if it doesn't exist (migration for existing tables)
+            await conn.execute("""
+                ALTER TABLE automation_status ADD COLUMN IF NOT EXISTS state JSONB;
             """)
 
             # Control commands table
@@ -210,6 +216,7 @@ class AutomationControlStore:
         if not row:
             return None
 
+        state_raw = row.get("state") if "state" in row.keys() else None
         return {
             "instance_name": row["instance_name"],
             "status": row["status"],
@@ -221,6 +228,7 @@ class AutomationControlStore:
             "active_positions": row["active_positions"],
             "error_message": row["error_message"],
             "config": json.loads(row["config"]) if row["config"] else {},
+            "state": json.loads(state_raw) if isinstance(state_raw, str) else state_raw,
             "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
         }
 
@@ -236,6 +244,7 @@ class AutomationControlStore:
 
         statuses = []
         for row in rows:
+            s_raw = row.get("state") if "state" in row.keys() else None
             statuses.append({
                 "instance_name": row["instance_name"],
                 "status": row["status"],
@@ -247,6 +256,7 @@ class AutomationControlStore:
                 "active_positions": row["active_positions"],
                 "error_message": row["error_message"],
                 "config": json.loads(row["config"]) if row["config"] else {},
+                "state": json.loads(s_raw) if isinstance(s_raw, str) else s_raw,
                 "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
             })
 

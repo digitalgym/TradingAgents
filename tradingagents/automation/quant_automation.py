@@ -214,6 +214,7 @@ class QuantAutomationConfig:
     default_lot_size: float = 0.01
     daily_loss_limit_pct: float = 3.0
     max_consecutive_losses: int = 3
+    cooldown_enabled: bool = True
 
     # Position assumption review settings
     assumption_review_interval_seconds: int = 3600  # 1 hour default
@@ -222,6 +223,9 @@ class QuantAutomationConfig:
     # Remote trade queue settings
     enable_trade_queue: bool = True  # Process remote trade commands from web UI
     trade_queue_poll_seconds: int = 5  # Check queue every 5 seconds
+
+    # Position management delegation
+    delegate_position_management: bool = False  # When True, skip position management (TMA handles it)
 
     # Remote control settings
     enable_remote_control: bool = True  # Allow start/stop/config from web UI
@@ -277,6 +281,10 @@ class AnalysisCycleResult:
     key_factors: Optional[List[str]] = None  # Factors that contributed to signal
     smc_analysis: Optional[Dict[str, Any]] = None  # SMC analysis details
     decision_id: Optional[str] = None  # Linked decision ID if executed
+    # Metadata for learning pipeline
+    setup_type: Optional[str] = None  # fvg_bounce, ob_bounce, liquidity_sweep, etc.
+    volatility_regime: Optional[str] = None  # low, normal, high, extreme
+    market_regime: Optional[str] = None  # trending-up, trending-down, ranging, expansion
 
 
 @dataclass
@@ -325,6 +333,8 @@ class QuantAutomation:
         self._error_message: Optional[str] = None
         self._missing_ticket_counts: Dict[int, int] = {}  # ticket -> consecutive missing count
         self._market_closed_until: Optional[datetime] = None  # suppress modifications when market is closed
+        self._last_trail_modify: Dict[int, datetime] = {}  # ticket -> last trailing stop modify time
+        self._trail_min_interval = 30  # minimum seconds between trailing stop modifications per ticket
 
         # Lock for state file writes (multiple async loops share this)
         self._state_lock = asyncio.Lock()
@@ -340,6 +350,7 @@ class QuantAutomation:
         self.guardrails = RiskGuardrails(
             daily_loss_limit_pct=self.config.daily_loss_limit_pct,
             max_consecutive_losses=self.config.max_consecutive_losses,
+            cooldown_enabled=self.config.cooldown_enabled,
         )
         self.stop_loss_manager = DynamicStopLoss(
             atr_multiplier=2.0,
@@ -642,6 +653,7 @@ class QuantAutomation:
             signal = normalize_signal(decision.get("signal"))
             self.logger.info(f"Mapped signal for {symbol}: {signal}")
 
+            regime = result.get("regime", {})
             return AnalysisCycleResult(
                 timestamp=datetime.now(),
                 symbol=symbol,
@@ -653,6 +665,8 @@ class QuantAutomation:
                 take_profit=decision.get("take_profit"),
                 rationale=decision.get("rationale", ""),
                 duration_seconds=time.time() - start_time,
+                market_regime=regime.get("market_regime") if isinstance(regime, dict) else None,
+                volatility_regime=regime.get("volatility_regime") or regime.get("volatility") if isinstance(regime, dict) else None,
             )
 
         except Exception as e:
@@ -753,6 +767,7 @@ class QuantAutomation:
 
             signal = normalize_signal(decision.get("signal"))
 
+            regime = result.get("regime", {})
             return AnalysisCycleResult(
                 timestamp=datetime.now(),
                 symbol=symbol,
@@ -768,6 +783,8 @@ class QuantAutomation:
                 htf_bias_details=htf_bias_details,
                 htf_timeframe=htf_timeframe,
                 duration_seconds=time.time() - start_time,
+                market_regime=regime.get("market_regime") if isinstance(regime, dict) else None,
+                volatility_regime=regime.get("volatility_regime") or regime.get("volatility") if isinstance(regime, dict) else None,
             )
 
         except asyncio.TimeoutError:
@@ -885,6 +902,7 @@ class QuantAutomation:
 
             signal = normalize_signal(decision.get("signal"))
 
+            regime = result.get("regime", {})
             return AnalysisCycleResult(
                 timestamp=datetime.now(),
                 symbol=symbol,
@@ -897,6 +915,8 @@ class QuantAutomation:
                 rationale=decision.get("rationale", ""),
                 trailing_stop_atr_multiplier=decision.get("trailing_stop_atr_multiplier"),
                 duration_seconds=time.time() - start_time,
+                market_regime=regime.get("market_regime") if isinstance(regime, dict) else None,
+                volatility_regime=regime.get("volatility_regime") or regime.get("volatility") if isinstance(regime, dict) else None,
             )
 
         except asyncio.TimeoutError:
@@ -1012,6 +1032,9 @@ class QuantAutomation:
 
             signal = normalize_signal(decision.get("signal"))
 
+            # Extract regime metadata from API response
+            regime = result.get("regime", {})
+
             return AnalysisCycleResult(
                 timestamp=datetime.now(),
                 symbol=symbol,
@@ -1024,6 +1047,8 @@ class QuantAutomation:
                 rationale=decision.get("rationale", ""),
                 trailing_stop_atr_multiplier=decision.get("trailing_stop_atr_multiplier"),
                 duration_seconds=time.time() - start_time,
+                market_regime=regime.get("market_regime"),
+                volatility_regime=regime.get("volatility_regime") or regime.get("volatility"),
             )
 
         except asyncio.TimeoutError:
@@ -1123,6 +1148,7 @@ class QuantAutomation:
             invalidation = result.get("invalidation", "")
             rationale = f"{justification}\n\n**Invalidation**: {invalidation}" if invalidation else justification
 
+            regime = result.get("regime", {})
             return AnalysisCycleResult(
                 timestamp=datetime.now(),
                 symbol=symbol,
@@ -1134,6 +1160,8 @@ class QuantAutomation:
                 take_profit=result.get("take_profit"),
                 rationale=rationale,
                 duration_seconds=time.time() - start_time,
+                market_regime=regime.get("market_regime") if isinstance(regime, dict) else None,
+                volatility_regime=regime.get("volatility_regime") or regime.get("volatility") if isinstance(regime, dict) else None,
             )
 
         except asyncio.TimeoutError:
@@ -1231,6 +1259,7 @@ class QuantAutomation:
                 f"htf_bias={htf_bias} ({htf_timeframe})"
             )
 
+            regime = result.get("regime", {})
             return AnalysisCycleResult(
                 timestamp=datetime.now(),
                 symbol=symbol,
@@ -1245,6 +1274,8 @@ class QuantAutomation:
                 htf_bias_details=htf_bias_details,
                 htf_timeframe=htf_timeframe,
                 duration_seconds=api_duration,
+                market_regime=regime.get("market_regime") if isinstance(regime, dict) else None,
+                volatility_regime=regime.get("volatility_regime") or regime.get("volatility") if isinstance(regime, dict) else None,
             )
 
         except asyncio.TimeoutError:
@@ -1349,6 +1380,7 @@ class QuantAutomation:
                 f"htf_bias={htf_bias} ({htf_timeframe})"
             )
 
+            regime = result.get("regime", {})
             return AnalysisCycleResult(
                 timestamp=datetime.now(),
                 symbol=symbol,
@@ -1362,6 +1394,8 @@ class QuantAutomation:
                 htf_bias=htf_bias,
                 htf_timeframe=htf_timeframe,
                 duration_seconds=api_duration,
+                market_regime=regime.get("market_regime") if isinstance(regime, dict) else None,
+                volatility_regime=regime.get("volatility_regime") or regime.get("volatility") if isinstance(regime, dict) else None,
             )
 
         except asyncio.TimeoutError:
@@ -1671,6 +1705,24 @@ class QuantAutomation:
                 result.stop_loss = stop_loss
                 result.take_profit = take_profit
 
+                # Infer setup_type from rationale if not already set
+                if not result.setup_type and result.rationale:
+                    rat_lower = result.rationale.lower()
+                    if "fvg" in rat_lower or "fair value" in rat_lower:
+                        result.setup_type = "fvg_entry"
+                    elif "order block" in rat_lower or " ob " in rat_lower:
+                        result.setup_type = "ob_entry"
+                    elif "liquidity" in rat_lower and "sweep" in rat_lower:
+                        result.setup_type = "liquidity_sweep"
+                    elif "breakout" in rat_lower or "bos" in rat_lower:
+                        result.setup_type = "bos"
+                    elif "choch" in rat_lower or "change of character" in rat_lower:
+                        result.setup_type = "choch"
+                    elif "mean reversion" in rat_lower or "mean_reversion" in rat_lower:
+                        result.setup_type = "mean_reversion"
+                    elif "volume" in rat_lower and ("poc" in rat_lower or "val" in rat_lower or "vah" in rat_lower):
+                        result.setup_type = "volume_profile"
+
                 # Store decision for tracking
                 decision_id = store_decision(
                     symbol=result.symbol,
@@ -1686,6 +1738,10 @@ class QuantAutomation:
                     confidence=result.confidence,
                     pipeline=result.pipeline,
                     trailing_stop_atr_multiplier=result.trailing_stop_atr_multiplier,
+                    setup_type=result.setup_type,
+                    higher_tf_bias=result.htf_bias,
+                    volatility_regime=result.volatility_regime,
+                    market_regime=result.market_regime,
                 )
                 # Set on result for signal tracking
                 result.decision_id = decision_id
@@ -1981,6 +2037,11 @@ class QuantAutomation:
     async def _manage_positions(self) -> List[PositionManagementResult]:
         """Manage existing positions - trailing stops, breakeven, close signals."""
         results = []
+
+        # When TMA is active, skip position management in this automation
+        if self.config.delegate_position_management:
+            return results
+
         self.logger.debug("--- Position management cycle start ---")
 
         # Skip if market was recently detected as closed (but verify it's still closed)
@@ -2147,25 +2208,31 @@ class QuantAutomation:
                             should_trail = candidate_sl < current_sl
 
                         if should_trail and self.config.auto_execute:
-                            modify_result = modify_position(ticket, sl=candidate_sl)
-                            if modify_result.get("success"):
-                                result.action = "adjusted_sl"
-                                result.new_sl = candidate_sl
-                                trail_status = f"MOVED {current_sl:.2f}->{candidate_sl:.2f} ({trail_mult}x)"
-                                self._market_closed_until = None  # Market is open — clear cooldown
-                                dec = find_decision_by_ticket(ticket)
-                                if dec:
-                                    add_trade_event(dec["decision_id"], "trailing_stop", {
-                                        "old_sl": current_sl, "new_sl": candidate_sl,
-                                        "price": current_price, "pnl_pct": round(pnl_pct, 3),
-                                        "atr_mult": trail_mult,
-                                    }, source=self._source)
+                            # Throttle: skip if we modified this ticket too recently
+                            last_mod = self._last_trail_modify.get(ticket)
+                            if last_mod and (datetime.now() - last_mod).total_seconds() < self._trail_min_interval:
+                                trail_status = f"throttled({self._trail_min_interval}s)"
                             else:
-                                error_msg = modify_result.get("error", "unknown")
-                                trail_status = f"FAILED: {error_msg}"
-                                if modify_result.get("market_closed") or "Market closed" in error_msg:
-                                    self._market_closed_until = datetime.now() + timedelta(minutes=30)
-                                    self.logger.info(f"Market closed — suppressing modifications until {self._market_closed_until.strftime('%H:%M')}")
+                                modify_result = modify_position(ticket, sl=candidate_sl)
+                                if modify_result.get("success"):
+                                    result.action = "adjusted_sl"
+                                    result.new_sl = candidate_sl
+                                    trail_status = f"MOVED {current_sl:.2f}->{candidate_sl:.2f} ({trail_mult}x)"
+                                    self._market_closed_until = None  # Market is open — clear cooldown
+                                    self._last_trail_modify[ticket] = datetime.now()
+                                    dec = find_decision_by_ticket(ticket)
+                                    if dec:
+                                        add_trade_event(dec["decision_id"], "trailing_stop", {
+                                            "old_sl": current_sl, "new_sl": candidate_sl,
+                                            "price": current_price, "pnl_pct": round(pnl_pct, 3),
+                                            "atr_mult": trail_mult,
+                                        }, source=self._source)
+                                else:
+                                    error_msg = modify_result.get("error", "unknown")
+                                    trail_status = f"FAILED: {error_msg}"
+                                    if modify_result.get("market_closed") or "Market closed" in error_msg:
+                                        self._market_closed_until = datetime.now() + timedelta(minutes=30)
+                                        self.logger.info(f"Market closed — suppressing modifications until {self._market_closed_until.strftime('%H:%M')}")
                         elif should_trail and not self.config.auto_execute:
                             trail_status = "eligible:auto_execute=off"
                         else:

@@ -393,6 +393,7 @@ export const getBreachHistory = (limit?: number) => {
   return fetchApi<any>(`/risk/breach-history?${params}`)
 }
 export const resetCircuitBreaker = () => fetchApi<any>('/risk/circuit-breaker/reset', { method: 'POST' })
+export const toggleCooldown = (enabled: boolean) => fetchApi<any>(`/risk/cooldown/toggle?enabled=${enabled}`, { method: 'POST' })
 export const calculatePositionSize = (symbol: string, entryPrice: number, stopLoss: number, riskPercent?: number) => {
   const params = new URLSearchParams({
     symbol,
@@ -1169,6 +1170,53 @@ export const reconcileDecisions = () =>
   fetchApi<{ reconciled_count: number; reconciled: Array<{ decision_id: string; symbol: string; pnl: number; exit_reason: string }> }>(
     '/decisions/reconcile', { method: 'POST' }
   )
+
+// Trade Management Agent
+export const startTradeManager = (config?: Record<string, any>) =>
+  fetchApi<any>('/trade-manager/start', { method: 'POST', body: JSON.stringify(config || {}), headers: { 'Content-Type': 'application/json' } })
+
+export const stopTradeManager = () =>
+  fetchApi<any>('/trade-manager/stop', { method: 'POST' })
+
+export const getTradeManagerStatus = () =>
+  fetchApi<any>('/trade-manager/status')
+
+export const getTradeManagerConfig = () =>
+  fetchApi<any>('/trade-manager/config')
+
+export const updateTradeManagerConfig = (updates: Record<string, any>) =>
+  fetchApi<any>('/trade-manager/config', { method: 'PUT', body: JSON.stringify(updates), headers: { 'Content-Type': 'application/json' } })
+
+export const getTradeManagerActions = (ticket?: number, limit?: number) => {
+  const params = new URLSearchParams()
+  if (ticket) params.set('ticket', ticket.toString())
+  if (limit) params.set('limit', limit.toString())
+  const qs = params.toString()
+  return fetchApi<any>(`/trade-manager/actions${qs ? `?${qs}` : ''}`)
+}
+
+export const getTradeManagerPolicies = () =>
+  fetchApi<any>('/trade-manager/policies')
+
+export const getTradeManagerPolicy = (ticket: number) =>
+  fetchApi<any>(`/trade-manager/policies/${ticket}`)
+
+export const setTradeManagerPolicy = (ticket: number, policy: Record<string, any>) =>
+  fetchApi<any>(`/trade-manager/policies/${ticket}`, { method: 'PUT', body: JSON.stringify(policy), headers: { 'Content-Type': 'application/json' } })
+
+export const deleteTradeManagerPolicy = (ticket: number) =>
+  fetchApi<any>(`/trade-manager/policies/${ticket}`, { method: 'DELETE' })
+
+export const getTradeManagerAlerts = (limit?: number, unacknowledged?: boolean) => {
+  const params = new URLSearchParams()
+  if (limit) params.set('limit', limit.toString())
+  if (unacknowledged) params.set('unacknowledged', 'true')
+  const qs = params.toString()
+  return fetchApi<any>(`/trade-manager/alerts${qs ? `?${qs}` : ''}`)
+}
+
+export const acknowledgeTradeManagerAlert = (alertId: number) =>
+  fetchApi<any>(`/trade-manager/alerts/${alertId}/acknowledge`, { method: 'POST' })
 
 // Health
 export const healthCheck = () => fetchApi<any>('/health')

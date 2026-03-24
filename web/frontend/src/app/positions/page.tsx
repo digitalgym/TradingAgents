@@ -63,6 +63,7 @@ import {
   Zap,
 } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { HelpTooltip } from "@/components/ui/help-tooltip"
 
 export default function PositionsPage() {
@@ -91,6 +92,10 @@ export default function PositionsPage() {
   // Quick action state
   const [quickActionTicket, setQuickActionTicket] = useState<number | null>(null)
   const [quickActionType, setQuickActionType] = useState<string | null>(null)
+
+  // Trailing stop config
+  const [trailMultiplier, setTrailMultiplier] = useState("1.5")
+  const [trailPopoverOpen, setTrailPopoverOpen] = useState<number | null>(null)
 
   const fetchData = async () => {
     setLoading(true)
@@ -145,7 +150,7 @@ export default function PositionsPage() {
     fetchData()
   }
 
-  const handleTrailingStop = async (ticket: number, isCurrentlyActive: boolean) => {
+  const handleTrailingStop = async (ticket: number, isCurrentlyActive: boolean, multiplier?: number) => {
     setQuickActionTicket(ticket)
     setQuickActionType("trailing")
 
@@ -158,8 +163,9 @@ export default function PositionsPage() {
         alert(data?.message || "Success")
       }
     } else {
-      // Enable trailing
-      const { data, error } = await setPositionTrailing(ticket, 1.5)
+      // Enable trailing with specified multiplier
+      const mult = multiplier ?? (parseFloat(trailMultiplier) || 1.5)
+      const { data, error } = await setPositionTrailing(ticket, mult)
       if (error) {
         alert(`Error: ${error}`)
       } else {
@@ -167,6 +173,7 @@ export default function PositionsPage() {
       }
     }
 
+    setTrailPopoverOpen(null)
     setQuickActionTicket(null)
     setQuickActionType(null)
     fetchData()
@@ -526,26 +533,88 @@ export default function PositionsPage() {
                               </Button>
 
                               {/* Trailing Stop Button */}
-                              <Button
-                                variant={pos.trailing_active ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => handleTrailingStop(pos.ticket, pos.trailing_active)}
-                                disabled={quickActionTicket === pos.ticket && quickActionType === "trailing"}
-                                title={pos.trailing_active
-                                  ? `Trailing active (${pos.trailing_distance?.toFixed(2)}) - Click to disable`
-                                  : "Enable trailing stop (1.5x ATR)"
-                                }
-                                className={pos.trailing_active
-                                  ? "bg-yellow-500 hover:bg-yellow-600 text-white"
-                                  : "text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
-                                }
-                              >
-                                {quickActionTicket === pos.ticket && quickActionType === "trailing" ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Target className="h-4 w-4" />
-                                )}
-                              </Button>
+                              {pos.trailing_active ? (
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => handleTrailingStop(pos.ticket, true)}
+                                  disabled={quickActionTicket === pos.ticket && quickActionType === "trailing"}
+                                  title={`Trailing active (${pos.trailing_distance?.toFixed(2)}) - Click to disable`}
+                                  className="bg-yellow-500 hover:bg-yellow-600 text-white"
+                                >
+                                  {quickActionTicket === pos.ticket && quickActionType === "trailing" ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Target className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              ) : (
+                                <Popover open={trailPopoverOpen === pos.ticket} onOpenChange={(open) => {
+                                  setTrailPopoverOpen(open ? pos.ticket : null)
+                                  if (open) setTrailMultiplier("1.5")
+                                }}>
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      title="Enable trailing stop"
+                                      className="text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
+                                    >
+                                      <Target className="h-4 w-4" />
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-56" side="left" align="center">
+                                    <div className="space-y-3">
+                                      <div className="space-y-1">
+                                        <div className="flex items-center gap-1">
+                                          <Label className="text-sm font-medium">Trailing Stop</Label>
+                                          <HelpTooltip content="ATR multiplier controls how far the trailing stop sits from price. Lower = tighter (locks profit faster but may get stopped by noise). Higher = wider (more room to breathe). For XAUUSD: 1.0-1.5x tight, 2.0-3.0x normal, 3.0-5.0x wide." />
+                                        </div>
+                                      </div>
+                                      <div className="space-y-2">
+                                        <div className="flex items-center gap-2">
+                                          <Input
+                                            type="number"
+                                            step="0.1"
+                                            min="0.5"
+                                            max="10"
+                                            value={trailMultiplier}
+                                            onChange={(e) => setTrailMultiplier(e.target.value)}
+                                            className="h-8"
+                                          />
+                                          <span className="text-sm text-muted-foreground whitespace-nowrap">x ATR</span>
+                                        </div>
+                                        <div className="flex gap-1">
+                                          {[0.5, 1.0, 1.5, 2.0, 3.0].map((v) => (
+                                            <Button
+                                              key={v}
+                                              variant={trailMultiplier === v.toString() ? "default" : "outline"}
+                                              size="sm"
+                                              className="flex-1 h-7 text-xs px-1"
+                                              onClick={() => setTrailMultiplier(v.toString())}
+                                            >
+                                              {v}x
+                                            </Button>
+                                          ))}
+                                        </div>
+                                      </div>
+                                      <Button
+                                        size="sm"
+                                        className="w-full bg-yellow-500 hover:bg-yellow-600 text-white"
+                                        disabled={quickActionTicket === pos.ticket && quickActionType === "trailing"}
+                                        onClick={() => handleTrailingStop(pos.ticket, false, parseFloat(trailMultiplier))}
+                                      >
+                                        {quickActionTicket === pos.ticket && quickActionType === "trailing" ? (
+                                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        ) : (
+                                          <Target className="mr-2 h-4 w-4" />
+                                        )}
+                                        Enable {trailMultiplier}x ATR
+                                      </Button>
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+                              )}
 
                               {/* Modify Button */}
                               <Dialog>
@@ -592,23 +661,66 @@ export default function PositionsPage() {
                                           )}
                                           Breakeven (SL → {pos.open_price})
                                         </Button>
-                                        <Button
-                                          variant={pos.trailing_active ? "default" : "outline"}
-                                          size="sm"
-                                          onClick={() => handleTrailingStop(pos.ticket, pos.trailing_active)}
-                                          disabled={quickActionTicket === pos.ticket}
-                                          className={`flex-1 ${pos.trailing_active
-                                            ? "bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500"
-                                            : "text-yellow-600 border-yellow-200 hover:bg-yellow-50"
-                                          }`}
-                                        >
-                                          {quickActionTicket === pos.ticket && quickActionType === "trailing" ? (
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                          ) : (
-                                            <Target className="mr-2 h-4 w-4" />
-                                          )}
-                                          {pos.trailing_active ? "Trailing Active" : "Trail (1.5x ATR)"}
-                                        </Button>
+                                        {pos.trailing_active ? (
+                                          <Button
+                                            variant="default"
+                                            size="sm"
+                                            onClick={() => handleTrailingStop(pos.ticket, true)}
+                                            disabled={quickActionTicket === pos.ticket}
+                                            className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500"
+                                          >
+                                            {quickActionTicket === pos.ticket && quickActionType === "trailing" ? (
+                                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            ) : (
+                                              <Target className="mr-2 h-4 w-4" />
+                                            )}
+                                            Trailing Active ({pos.trailing_distance?.toFixed(1)}) - Disable
+                                          </Button>
+                                        ) : (
+                                          <div className="flex-1 space-y-2">
+                                            <div className="flex gap-2">
+                                              <div className="flex items-center gap-1 flex-1">
+                                                <Input
+                                                  type="number"
+                                                  step="0.1"
+                                                  min="0.5"
+                                                  max="10"
+                                                  value={trailMultiplier}
+                                                  onChange={(e) => setTrailMultiplier(e.target.value)}
+                                                  className="h-8"
+                                                />
+                                                <span className="text-xs text-muted-foreground whitespace-nowrap">x ATR</span>
+                                              </div>
+                                              <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleTrailingStop(pos.ticket, false, parseFloat(trailMultiplier))}
+                                                disabled={quickActionTicket === pos.ticket}
+                                                className="text-yellow-600 border-yellow-200 hover:bg-yellow-50"
+                                              >
+                                                {quickActionTicket === pos.ticket && quickActionType === "trailing" ? (
+                                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                ) : (
+                                                  <Target className="mr-2 h-4 w-4" />
+                                                )}
+                                                Trail
+                                              </Button>
+                                            </div>
+                                            <div className="flex gap-1">
+                                              {[0.5, 1.0, 1.5, 2.0, 3.0].map((v) => (
+                                                <Button
+                                                  key={v}
+                                                  variant={trailMultiplier === v.toString() ? "default" : "outline"}
+                                                  size="sm"
+                                                  className="flex-1 h-6 text-xs px-1"
+                                                  onClick={() => setTrailMultiplier(v.toString())}
+                                                >
+                                                  {v}x
+                                                </Button>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
 

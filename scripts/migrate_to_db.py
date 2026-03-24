@@ -8,6 +8,7 @@ Run from project root:
 Options:
     --dry-run    Show what would be migrated without making changes
     --force      Re-migrate all data, even if already in DB
+    --schema     Only create/update schema (no data migration)
 """
 
 import sys
@@ -24,6 +25,195 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from dotenv import load_dotenv
 load_dotenv()
+
+
+async def ensure_schema():
+    """Create all tables and indexes if they don't exist."""
+    import asyncpg
+
+    url = os.environ.get("POSTGRES_URL") or os.environ.get("DATABASE_URL")
+    if not url:
+        raise ValueError("POSTGRES_URL or DATABASE_URL environment variable not set")
+
+    conn = await asyncpg.connect(url)
+    try:
+        # --- decisions (core) ---
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS decisions (
+                decision_id TEXT PRIMARY KEY,
+                symbol TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'active',
+                mt5_ticket BIGINT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                exit_date TIMESTAMPTZ,
+                data JSONB NOT NULL,
+                CONSTRAINT valid_status CHECK (status IN (
+                    'active', 'closed', 'failed', 'cancelled', 'retried', 'order_unfilled'
+                ))
+            );
+            CREATE INDEX IF NOT EXISTS idx_decisions_symbol ON decisions(symbol);
+            CREATE INDEX IF NOT EXISTS idx_decisions_status ON decisions(status);
+            CREATE INDEX IF NOT EXISTS idx_decisions_ticket ON decisions(mt5_ticket) WHERE mt5_ticket IS NOT NULL;
+            CREATE INDEX IF NOT EXISTS idx_decisions_created ON decisions(created_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_decisions_exit ON decisions(exit_date DESC) WHERE exit_date IS NOT NULL;
+        """)
+
+        # --- decision_contexts ---
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS decision_contexts (
+                decision_id TEXT PRIMARY KEY REFERENCES decisions(decision_id) ON DELETE CASCADE,
+                context BYTEA NOT NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+        """)
+
+        # --- decision_events ---
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS decision_events (
+                id SERIAL PRIMARY KEY,
+                decision_id TEXT NOT NULL REFERENCES decisions(decision_id) ON DELETE CASCADE,
+                event_type TEXT NOT NULL,
+                source TEXT,
+                details JSONB,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_events_decision ON decision_events(decision_id);
+        """)
+
+        # --- automation_state ---
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS automation_state (
+                instance_name TEXT PRIMARY KEY,
+                state JSONB NOT NULL,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+        """)
+
+        # --- automation_guardrails ---
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS automation_guardrails (
+                instance_name TEXT PRIMARY KEY,
+                guardrails JSONB NOT NULL,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+        """)
+
+        # --- automation_status ---
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS automation_status (
+                instance_name TEXT PRIMARY KEY,
+                status TEXT NOT NULL DEFAULT 'stopped',
+                pipeline TEXT,
+                symbols JSONB,
+                auto_execute BOOLEAN DEFAULT FALSE,
+                last_analysis TIMESTAMPTZ,
+                last_trade TIMESTAMPTZ,
+                active_positions INT DEFAULT 0,
+                error_message TEXT,
+                config JSONB,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+        """)
+
+        # --- automation_control ---
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS automation_control (
+                command_id TEXT PRIMARY KEY,
+                instance_name TEXT NOT NULL,
+                action TEXT NOT NULL,
+                payload JSONB,
+                status TEXT NOT NULL DEFAULT 'pending',
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                applied_at TIMESTAMPTZ,
+                error TEXT,
+                source TEXT DEFAULT 'web_ui'
+            );
+            CREATE INDEX IF NOT EXISTS idx_control_instance ON automation_control(instance_name, status);
+            CREATE INDEX IF NOT EXISTS idx_control_pending ON automation_control(instance_name, created_at)
+                WHERE status = 'pending';
+        """)
+
+        # --- trade_queue ---
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS trade_queue (
+                command_id TEXT PRIMARY KEY,
+                command_type TEXT NOT NULL,
+                symbol TEXT NOT NULL,
+                payload JSONB NOT NULL,
+                status TEXT NOT NULL DEFAULT 'pending',
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                processed_at TIMESTAMPTZ,
+                result JSONB,
+                error TEXT,
+                source TEXT DEFAULT 'web_ui'
+            );
+            CREATE INDEX IF NOT EXISTS idx_queue_status ON trade_queue(status);
+            CREATE INDEX IF NOT EXISTS idx_queue_created ON trade_queue(created_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_queue_pending ON trade_queue(status, created_at)
+                WHERE status = 'pending';
+        """)
+
+        # --- agent_weights ---
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS agent_weights (
+                id TEXT PRIMARY KEY DEFAULT 'default',
+                weights JSONB NOT NULL,
+                weight_history JSONB DEFAULT '[]',
+                learning_rate FLOAT DEFAULT 0.1,
+                momentum FLOAT DEFAULT 0.9,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+        """)
+
+        # --- configs ---
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS configs (
+                key TEXT PRIMARY KEY,
+                value JSONB NOT NULL,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+        """)
+
+        # --- tuning_history ---
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS tuning_history (
+                id SERIAL PRIMARY KEY,
+                symbol TEXT NOT NULL,
+                pipeline TEXT NOT NULL,
+                result JSONB NOT NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_tuning_symbol ON tuning_history(symbol);
+        """)
+
+        # --- portfolio_state ---
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS portfolio_state (
+                id TEXT PRIMARY KEY DEFAULT 'default',
+                state JSONB NOT NULL,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+        """)
+
+        # --- signals ---
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS signals (
+                id SERIAL PRIMARY KEY,
+                signal_id TEXT UNIQUE NOT NULL,
+                symbol TEXT NOT NULL,
+                signal TEXT NOT NULL,
+                confidence FLOAT NOT NULL,
+                data JSONB,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_signals_symbol ON signals(symbol);
+            CREATE INDEX IF NOT EXISTS idx_signals_created ON signals(created_at DESC);
+        """)
+
+        print("Schema: all 13 tables ensured")
+
+    finally:
+        await conn.close()
 
 
 async def migrate_decisions(dry_run: bool = False, force: bool = False):
@@ -271,12 +461,22 @@ async def main():
     parser = argparse.ArgumentParser(description="Migrate file-based storage to PostgreSQL")
     parser.add_argument("--dry-run", action="store_true", help="Show what would be migrated")
     parser.add_argument("--force", action="store_true", help="Re-migrate all data")
+    parser.add_argument("--schema", action="store_true", help="Only create/update schema, no data migration")
     args = parser.parse_args()
 
     if args.dry_run:
         print("=== DRY RUN MODE ===\n")
 
     print("Starting migration...\n")
+
+    # Always ensure schema first
+    print("--- Schema ---")
+    await ensure_schema()
+    print()
+
+    if args.schema:
+        print("=== Schema-only mode, skipping data migration ===")
+        return
 
     total = 0
 

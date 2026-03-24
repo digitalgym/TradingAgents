@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Switch } from "@/components/ui/switch"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +21,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { getRiskMetrics, getRiskGuardrails, getCircuitBreaker, getBreachHistory, resetCircuitBreaker, calculatePositionSize } from "@/lib/api"
+import { getRiskMetrics, getRiskGuardrails, getCircuitBreaker, getBreachHistory, resetCircuitBreaker, toggleCooldown, calculatePositionSize } from "@/lib/api"
 import { formatCurrency, formatPercent, formatDate } from "@/lib/utils"
 import {
   RefreshCw,
@@ -77,6 +78,15 @@ export default function RiskPage() {
       fetchData()
     }
     setResetting(false)
+  }
+
+  const handleToggleCooldown = async (enabled: boolean) => {
+    const { data, error } = await toggleCooldown(enabled)
+    if (error) {
+      alert(`Error: ${error}`)
+    } else {
+      fetchData()
+    }
   }
 
   useEffect(() => {
@@ -434,12 +444,28 @@ export default function RiskPage() {
                   </div>
                 </div>
 
-                {circuitBreaker.in_cooldown && circuitBreaker.cooldown_until && (
+                {circuitBreaker.in_cooldown && circuitBreaker.cooldown_until && circuitBreaker.cooldown_enabled !== false && (
                   <div className="flex items-center gap-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
                     <AlertTriangle className="h-5 w-5 text-yellow-500" />
                     <span className="text-sm">Cooldown until: {formatDate(circuitBreaker.cooldown_until)}</span>
                   </div>
                 )}
+
+                <div className="flex items-center justify-between p-3 rounded-lg border">
+                  <div>
+                    <p className="text-sm font-medium">Cooldown Periods</p>
+                    <p className="text-xs text-muted-foreground">
+                      {circuitBreaker.cooldown_enabled !== false
+                        ? "Pauses trading after risk breaches"
+                        : "Disabled — trading continues after breaches (use with caution)"
+                      }
+                    </p>
+                  </div>
+                  <Switch
+                    checked={circuitBreaker.cooldown_enabled !== false}
+                    onCheckedChange={handleToggleCooldown}
+                  />
+                </div>
 
                 {circuitBreaker.active && (
                   <AlertDialog>

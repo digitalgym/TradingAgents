@@ -45,6 +45,7 @@ class RiskGuardrails:
         max_consecutive_losses: int = 2,
         max_position_size_pct: float = 2.0,
         cooldown_hours: int = 24,
+        cooldown_enabled: bool = True,
         instance_name: Optional[str] = None,
     ):
         """
@@ -56,6 +57,7 @@ class RiskGuardrails:
             max_consecutive_losses: Max consecutive losses before cooldown (default 2)
             max_position_size_pct: Max position size as % of account (default 2%)
             cooldown_hours: Hours to wait after breach (default 24)
+            cooldown_enabled: Whether cooldown periods are active (default True)
             instance_name: Name for DB-based state storage (per-instance guardrails)
         """
         self.instance_name = instance_name or "default"
@@ -73,6 +75,14 @@ class RiskGuardrails:
 
         # Load or initialize state
         self.state = self._load_state()
+
+        # Apply cooldown_enabled from state if persisted, otherwise use param
+        if "cooldown_enabled" in self.state:
+            self.cooldown_enabled = self.state["cooldown_enabled"]
+        else:
+            self.cooldown_enabled = cooldown_enabled
+            self.state["cooldown_enabled"] = cooldown_enabled
+            self._save_state()
     
     def _load_state(self) -> Dict[str, Any]:
         """Load state from DB first, then file, or return defaults."""
@@ -135,8 +145,8 @@ class RiskGuardrails:
         Returns:
             (can_trade, reason)
         """
-        # Check cooldown
-        if self.state["cooldown_until"]:
+        # Check cooldown (only if cooldown is enabled)
+        if self.cooldown_enabled and self.state["cooldown_until"]:
             cooldown_end = datetime.fromisoformat(self.state["cooldown_until"])
             if datetime.now() < cooldown_end:
                 remaining = cooldown_end - datetime.now()
@@ -222,13 +232,15 @@ class RiskGuardrails:
         if self.state["daily_loss_pct"] >= self.daily_loss_limit_pct:
             breach_triggered = True
             breach_type = "daily_loss_limit"
-            self._trigger_cooldown(breach_type)
-        
+            if self.cooldown_enabled:
+                self._trigger_cooldown(breach_type)
+
         # Consecutive loss breach
         elif self.state["consecutive_losses"] >= self.max_consecutive_losses:
             breach_triggered = True
             breach_type = "consecutive_losses"
-            self._trigger_cooldown(breach_type)
+            if self.cooldown_enabled:
+                self._trigger_cooldown(breach_type)
         
         # Save state
         self._save_state()
@@ -265,7 +277,9 @@ class RiskGuardrails:
         lines = []
         
         # Cooldown status
-        if self.state["cooldown_until"]:
+        if not self.cooldown_enabled:
+            lines.append("⚠️ COOLDOWN DISABLED")
+        elif self.state["cooldown_until"]:
             cooldown_end = datetime.fromisoformat(self.state["cooldown_until"])
             if datetime.now() < cooldown_end:
                 remaining = cooldown_end - datetime.now()
@@ -291,28 +305,58 @@ class RiskGuardrails:
     def get_status(self) -> Dict[str, Any]:
         """Get detailed status."""
         can_trade, reason = self.check_can_trade(0)  # Balance not needed for status
-        
+
+        # Check if cooldown is active (even if disabled)
+        in_cooldown = False
+        if self.state.get("cooldown_until"):
+            cooldown_end = datetime.fromisoformat(self.state["cooldown_until"])
+            in_cooldown = datetime.now() < cooldown_end
+
         return {
             "can_trade": can_trade,
             "reason": reason,
             "consecutive_losses": self.state["consecutive_losses"],
             "daily_loss_pct": self.state["daily_loss_pct"],
+            "daily_loss_limit": self.daily_loss_limit_pct,
+            "max_consecutive_losses": self.max_consecutive_losses,
             "cooldown_until": self.state.get("cooldown_until"),
+            "cooldown_enabled": self.cooldown_enabled,
+            "in_cooldown": in_cooldown,
+            "blocked": not can_trade,
             "total_breaches": self.state["total_breaches"],
             "status_summary": self._get_status_summary()
         }
     
+    def set_cooldown_enabled(self, enabled: bool):
+        """Enable or disable cooldown periods."""
+        self.cooldown_enabled = enabled
+        self.state["cooldown_enabled"] = enabled
+        if not enabled:
+            # Clear any active cooldown when disabling
+            self.state["cooldown_until"] = None
+        self._save_state()
+        logger.info(f"Cooldown {'enabled' if enabled else 'disabled'} for {self.instance_name}")
+
+    def reset_all(self):
+        """Full reset: cooldown, daily loss, and consecutive loss counters."""
+        self.state["cooldown_until"] = None
+        self.state["daily_loss_pct"] = 0.0
+        self.state["consecutive_losses"] = 0
+        self.state["last_trade_date"] = datetime.now().date().isoformat()
+        self._save_state()
+        logger.info(f"Full guardrails reset for {self.instance_name}")
+
     def reset_cooldown(self):
         """Manually reset cooldown (use with caution)."""
         self.state["cooldown_until"] = None
         self._save_state()
-    
+
     def reset_daily_loss(self):
         """Manually reset daily loss counter."""
         self.state["daily_loss_pct"] = 0.0
         self.state["last_trade_date"] = datetime.now().date().isoformat()
         self._save_state()
-    
+
     def reset_consecutive_losses(self):
         """Manually reset consecutive loss counter."""
         self.state["consecutive_losses"] = 0

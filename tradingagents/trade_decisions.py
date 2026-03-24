@@ -394,6 +394,10 @@ def store_decision(
     confidence: Optional[float] = None,  # Signal confidence 0.0-1.0
     pipeline: Optional[str] = None,  # Pipeline that generated the signal
     trailing_stop_atr_multiplier: Optional[float] = None,  # LLM-suggested trailing
+    setup_type: Optional[str] = None,  # fvg_bounce, ob_bounce, liquidity_sweep, etc.
+    higher_tf_bias: Optional[str] = None,  # bullish, bearish, neutral
+    volatility_regime: Optional[str] = None,  # low, normal, high, extreme
+    market_regime: Optional[str] = None,  # trending-up, trending-down, ranging, expansion
 ) -> str:
     """
     Store a trade decision for later outcome tracking.
@@ -437,8 +441,8 @@ def store_decision(
         "execution_error": execution_error,
         
         # Setup classification
-        "setup_type": None,  # "fvg_bounce", "ob_bounce", "liquidity_sweep", "choch", "bos", "trend_continuation"
-        "higher_tf_bias": None,  # "bullish", "bearish", "neutral" from H4/D1
+        "setup_type": setup_type,  # "fvg_bounce", "ob_bounce", "liquidity_sweep", "choch", "bos", "trend_continuation"
+        "higher_tf_bias": higher_tf_bias,  # "bullish", "bearish", "neutral" from H4/D1
         "confluence_score": None,  # 0-10 based on number of confirming factors
         "confluence_factors": [],  # ["ob_fvg_overlap", "pdh_pdl", "session_high", "with_trend"]
 
@@ -454,8 +458,8 @@ def store_decision(
         },
         
         # Market context
-        "volatility_regime": None,  # "low", "normal", "high", "extreme"
-        "market_regime": None,  # "trending-up", "trending-down", "ranging", "expansion"
+        "volatility_regime": volatility_regime,  # "low", "normal", "high", "extreme"
+        "market_regime": market_regime,  # "trending-up", "trending-down", "ranging", "expansion"
         "session": None,  # "asian", "london", "ny", "overlap"
         
         # Outcome fields (filled when closed)
