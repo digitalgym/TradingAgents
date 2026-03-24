@@ -1,29 +1,10 @@
 {
   "last_analysis_time": {
-    "XAUUSD": "2026-03-24T07:26:47.344242"
+    "XAUUSD": "2026-03-24T11:26:54.490607"
   },
-  "last_updated": "2026-03-24T08:13:03.280120",
+  "last_updated": "2026-03-24T14:04:17.282526",
   "status": "running",
   "analysis_results": [
-    {
-      "timestamp": "2026-03-12T09:37:10.295102",
-      "symbol": "XAUUSD",
-      "pipeline": "breakout_quant",
-      "signal": "HOLD",
-      "confidence": 0.85,
-      "entry_price": null,
-      "stop_loss": null,
-      "take_profit": null,
-      "rationale": "Tight BB squeeze consolidation with bearish structure bias expects downside breakout, but current price near range low (not high for sell anticipation) and no breakdown below 5129.77 yet; conflicting bullish SMC bias warrants waiting for clearer confirmation.\n\n**Invalidation**: Price breaks decisively above range high at 5220.43 with momentum (e.g., close above EMA20 5175.45 and bullish MACD crossover)",
-      "trailing_stop_atr_multiplier": null,
-      "htf_bias": null,
-      "htf_bias_details": null,
-      "htf_timeframe": null,
-      "executed": false,
-      "execution_ticket": null,
-      "execution_error": null,
-      "duration_seconds": 20.69675040245056
-    },
     {
       "timestamp": "2026-03-12T09:52:25.989758",
       "symbol": "XAUUSD",
@@ -41,7 +22,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 13.514240264892578
+      "duration_seconds": 13.514240264892578,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-12T10:07:52.104254",
@@ -60,7 +45,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 21.816274881362915
+      "duration_seconds": 21.816274881362915,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-12T10:25:21.412585",
@@ -79,7 +68,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 12.126999378204346
+      "duration_seconds": 12.126999378204346,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-12T11:06:31.450025",
@@ -98,7 +91,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 37.459372758865356
+      "duration_seconds": 37.459372758865356,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-12T14:55:22.192344",
@@ -117,7 +114,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 40.01672387123108
+      "duration_seconds": 40.01672387123108,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-12T15:11:17.364884",
@@ -136,7 +137,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 49.3337504863739
+      "duration_seconds": 49.3337504863739,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-12T15:25:57.751648",
@@ -155,7 +160,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 14.762730360031128
+      "duration_seconds": 14.762730360031128,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-12T15:42:07.994233",
@@ -174,7 +183,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 26.77489924430847
+      "duration_seconds": 26.77489924430847,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-12T15:57:32.426782",
@@ -193,7 +206,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 12.908475875854492
+      "duration_seconds": 12.908475875854492,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-12T16:14:21.124130",
@@ -212,7 +229,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 42.493974447250366
+      "duration_seconds": 42.493974447250366,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-12T16:29:27.789730",
@@ -231,7 +252,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 25.899999380111694
+      "duration_seconds": 25.899999380111694,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-12T16:44:21.657330",
@@ -250,7 +275,11 @@
       "executed": true,
       "execution_ticket": 1592647,
       "execution_error": null,
-      "duration_seconds": 18.356196641921997
+      "duration_seconds": 18.356196641921997,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-12T17:00:02.078780",
@@ -269,7 +298,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 12.983269453048706
+      "duration_seconds": 12.983269453048706,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-12T21:12:10.020984",
@@ -288,7 +321,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 107.7288544178009
+      "duration_seconds": 107.7288544178009,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T00:29:12.851984",
@@ -307,7 +344,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 92.69100737571716
+      "duration_seconds": 92.69100737571716,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T00:43:41.538985",
@@ -326,7 +367,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 51.21670317649841
+      "duration_seconds": 51.21670317649841,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T00:59:47.250801",
@@ -345,7 +390,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 47.3476927280426
+      "duration_seconds": 47.3476927280426,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T01:15:28.542021",
@@ -364,7 +413,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 40.02518129348755
+      "duration_seconds": 40.02518129348755,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T01:31:10.224164",
@@ -383,7 +436,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 28.858778715133667
+      "duration_seconds": 28.858778715133667,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T01:46:44.758205",
@@ -402,7 +459,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 14.218830347061157
+      "duration_seconds": 14.218830347061157,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T02:02:19.383708",
@@ -421,7 +482,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 11.63269329071045
+      "duration_seconds": 11.63269329071045,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T02:17:45.457159",
@@ -440,7 +505,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 12.634840965270996
+      "duration_seconds": 12.634840965270996,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T02:33:03.757534",
@@ -459,7 +528,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 13.746676683425903
+      "duration_seconds": 13.746676683425903,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T02:48:52.071107",
@@ -478,7 +551,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 10.79499101638794
+      "duration_seconds": 10.79499101638794,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T03:04:33.440732",
@@ -497,7 +574,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 14.065177917480469
+      "duration_seconds": 14.065177917480469,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T03:20:28.331442",
@@ -516,7 +597,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 14.663253545761108
+      "duration_seconds": 14.663253545761108,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T03:35:51.815903",
@@ -535,7 +620,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 11.46136212348938
+      "duration_seconds": 11.46136212348938,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T03:51:51.279331",
@@ -554,7 +643,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 17.90689444541931
+      "duration_seconds": 17.90689444541931,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T04:07:14.975061",
@@ -573,7 +666,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 12.659924745559692
+      "duration_seconds": 12.659924745559692,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T04:22:25.489830",
@@ -592,7 +689,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 9.86181378364563
+      "duration_seconds": 9.86181378364563,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T04:37:36.042052",
@@ -611,7 +712,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 9.398190975189209
+      "duration_seconds": 9.398190975189209,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T04:52:46.629828",
@@ -630,7 +735,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 9.537440299987793
+      "duration_seconds": 9.537440299987793,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T05:08:01.113962",
@@ -649,7 +758,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 7.760203123092651
+      "duration_seconds": 7.760203123092651,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T05:23:27.545698",
@@ -668,7 +781,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 10.43624472618103
+      "duration_seconds": 10.43624472618103,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T05:38:43.811344",
@@ -687,7 +804,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 11.16694951057434
+      "duration_seconds": 11.16694951057434,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T05:53:59.699404",
@@ -706,7 +827,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 12.210258483886719
+      "duration_seconds": 12.210258483886719,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T06:09:12.829358",
@@ -725,7 +850,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 9.482683658599854
+      "duration_seconds": 9.482683658599854,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T06:24:35.546150",
@@ -744,7 +873,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 13.410627365112305
+      "duration_seconds": 13.410627365112305,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T06:39:54.776542",
@@ -763,7 +896,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 13.226118326187134
+      "duration_seconds": 13.226118326187134,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T07:58:09.740121",
@@ -782,7 +919,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 13.753305435180664
+      "duration_seconds": 13.753305435180664,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T08:13:36.601233",
@@ -801,7 +942,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 14.822144269943237
+      "duration_seconds": 14.822144269943237,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T09:49:05.256614",
@@ -820,7 +965,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 13.460787534713745
+      "duration_seconds": 13.460787534713745,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T10:04:19.918884",
@@ -839,7 +988,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 9.995692014694214
+      "duration_seconds": 9.995692014694214,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T10:20:08.884639",
@@ -858,7 +1011,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 22.548645734786987
+      "duration_seconds": 22.548645734786987,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T10:35:33.149868",
@@ -877,7 +1034,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 20.29573345184326
+      "duration_seconds": 20.29573345184326,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T10:51:02.212463",
@@ -896,7 +1057,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 24.090332508087158
+      "duration_seconds": 24.090332508087158,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T11:07:10.392661",
@@ -915,7 +1080,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 66.96679902076721
+      "duration_seconds": 66.96679902076721,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T11:21:56.895243",
@@ -934,7 +1103,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 33.69794297218323
+      "duration_seconds": 33.69794297218323,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T11:37:42.494424",
@@ -953,7 +1126,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 67.6668450832367
+      "duration_seconds": 67.6668450832367,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T11:51:56.124059",
@@ -972,7 +1149,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 8.343422651290894
+      "duration_seconds": 8.343422651290894,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T12:08:47.330524",
@@ -991,7 +1172,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 51.122194051742554
+      "duration_seconds": 51.122194051742554,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T13:00:19.093704",
@@ -1010,7 +1195,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 11.047247886657715
+      "duration_seconds": 11.047247886657715,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T13:15:50.871570",
@@ -1029,7 +1218,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 9.384371280670166
+      "duration_seconds": 9.384371280670166,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T13:31:38.175918",
@@ -1048,7 +1241,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 11.082937717437744
+      "duration_seconds": 11.082937717437744,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T13:47:09.095569",
@@ -1067,7 +1264,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 8.678996086120605
+      "duration_seconds": 8.678996086120605,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T14:02:56.322123",
@@ -1086,7 +1287,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 9.15745496749878
+      "duration_seconds": 9.15745496749878,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T14:18:41.449724",
@@ -1105,7 +1310,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 8.030381679534912
+      "duration_seconds": 8.030381679534912,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T14:34:20.379248",
@@ -1124,7 +1333,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 12.024160385131836
+      "duration_seconds": 12.024160385131836,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T14:49:46.077998",
@@ -1143,7 +1356,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 8.7464919090271
+      "duration_seconds": 8.7464919090271,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T15:05:25.368382",
@@ -1162,7 +1379,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 6.122100591659546
+      "duration_seconds": 6.122100591659546,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T15:21:00.432391",
@@ -1181,7 +1402,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 8.474320411682129
+      "duration_seconds": 8.474320411682129,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T19:01:57.207548",
@@ -1200,7 +1425,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 19.249101877212524
+      "duration_seconds": 19.249101877212524,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T19:17:46.208826",
@@ -1219,7 +1448,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 15.9249906539917
+      "duration_seconds": 15.9249906539917,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T19:33:06.643775",
@@ -1238,7 +1471,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 13.078493595123291
+      "duration_seconds": 13.078493595123291,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T19:48:22.245791",
@@ -1257,7 +1494,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 11.334230899810791
+      "duration_seconds": 11.334230899810791,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T20:04:09.672123",
@@ -1276,7 +1517,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 34.469276905059814
+      "duration_seconds": 34.469276905059814,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T20:19:21.505089",
@@ -1295,7 +1540,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 10.314354181289673
+      "duration_seconds": 10.314354181289673,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T20:35:10.800771",
@@ -1314,7 +1563,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 39.58618235588074
+      "duration_seconds": 39.58618235588074,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T20:50:26.814376",
@@ -1333,7 +1586,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 13.982197999954224
+      "duration_seconds": 13.982197999954224,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T21:05:55.003571",
@@ -1352,7 +1609,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 10.30045223236084
+      "duration_seconds": 10.30045223236084,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T21:21:05.143762",
@@ -1371,7 +1632,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 9.062721729278564
+      "duration_seconds": 9.062721729278564,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T21:36:39.321421",
@@ -1390,7 +1655,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 9.11476469039917
+      "duration_seconds": 9.11476469039917,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T21:51:39.759206",
@@ -1409,7 +1678,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 7.588653564453125
+      "duration_seconds": 7.588653564453125,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T22:07:24.806348",
@@ -1428,7 +1701,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 8.398501873016357
+      "duration_seconds": 8.398501873016357,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T22:22:48.265938",
@@ -1447,7 +1724,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 9.24602723121643
+      "duration_seconds": 9.24602723121643,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T22:38:17.345279",
@@ -1466,7 +1747,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 11.925324201583862
+      "duration_seconds": 11.925324201583862,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T22:53:34.138639",
@@ -1485,7 +1770,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 7.955046892166138
+      "duration_seconds": 7.955046892166138,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-13T23:09:18.670072",
@@ -1504,7 +1793,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 13.750045776367188
+      "duration_seconds": 13.750045776367188,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-18T19:30:34.623699",
@@ -1523,7 +1816,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 22.20596742630005
+      "duration_seconds": 22.20596742630005,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-18T23:30:43.324200",
@@ -1542,7 +1839,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 7.72812557220459
+      "duration_seconds": 7.72812557220459,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-19T03:31:19.184587",
@@ -1561,7 +1862,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 8.511233568191528
+      "duration_seconds": 8.511233568191528,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-19T07:31:54.112506",
@@ -1580,7 +1885,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 10.26723051071167
+      "duration_seconds": 10.26723051071167,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-19T11:32:05.619836",
@@ -1599,7 +1908,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 9.911259889602661
+      "duration_seconds": 9.911259889602661,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-19T15:32:19.458670",
@@ -1618,7 +1931,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 6.654106616973877
+      "duration_seconds": 6.654106616973877,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-19T19:33:06.598207",
@@ -1637,7 +1954,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 12.173656702041626
+      "duration_seconds": 12.173656702041626,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-19T23:33:44.107982",
@@ -1656,7 +1977,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 7.430727243423462
+      "duration_seconds": 7.430727243423462,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-20T03:34:00.946924",
@@ -1675,7 +2000,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 7.236599445343018
+      "duration_seconds": 7.236599445343018,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-20T07:34:25.050315",
@@ -1694,7 +2023,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 9.974979639053345
+      "duration_seconds": 9.974979639053345,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-20T11:34:59.502949",
@@ -1713,7 +2046,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 7.311806678771973
+      "duration_seconds": 7.311806678771973,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-20T15:35:11.627485",
@@ -1732,7 +2069,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 7.222377777099609
+      "duration_seconds": 7.222377777099609,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-20T19:35:30.155687",
@@ -1751,7 +2092,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 6.1917564868927
+      "duration_seconds": 6.1917564868927,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-20T23:36:27.050342",
@@ -1770,7 +2115,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 7.502678632736206
+      "duration_seconds": 7.502678632736206,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-21T03:37:23.960937",
@@ -1789,7 +2138,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 8.022066116333008
+      "duration_seconds": 8.022066116333008,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-21T07:37:59.414369",
@@ -1808,7 +2161,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 7.096446990966797
+      "duration_seconds": 7.096446990966797,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-23T07:31:42.446418",
@@ -1827,7 +2184,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 0.6967108249664307
+      "duration_seconds": 0.6967108249664307,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-23T19:27:06.697375",
@@ -1846,7 +2207,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 93.74958348274231
+      "duration_seconds": 93.74958348274231,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-23T23:26:02.878289",
@@ -1865,7 +2230,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 6.342571258544922
+      "duration_seconds": 6.342571258544922,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-24T03:26:08.798235",
@@ -1884,7 +2253,11 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 6.672692775726318
+      "duration_seconds": 6.672692775726318,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     },
     {
       "timestamp": "2026-03-24T07:26:55.701044",
@@ -1903,190 +2276,37 @@
       "executed": false,
       "execution_ticket": null,
       "execution_error": null,
-      "duration_seconds": 8.354807615280151
+      "duration_seconds": 8.354807615280151,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
+    },
+    {
+      "timestamp": "2026-03-24T11:27:02.398060",
+      "symbol": "XAUUSD",
+      "pipeline": "breakout_quant",
+      "signal": "HOLD",
+      "confidence": 0.2,
+      "entry_price": null,
+      "stop_loss": null,
+      "take_profit": null,
+      "rationale": "No consolidation present (expansion regime, no BB squeeze, wide 27.74% range, no volume contraction); breakout not confirmed; extreme volatility suggests waiting for range formation despite bearish structure and oversold conditions\n\n**Invalidation**: Price breaks and closes above range high 5419.24 with volume surge >1.5x average, confirming bullish breakout",
+      "trailing_stop_atr_multiplier": null,
+      "htf_bias": null,
+      "htf_bias_details": null,
+      "htf_timeframe": null,
+      "executed": false,
+      "execution_ticket": null,
+      "execution_error": null,
+      "duration_seconds": 7.905449867248535,
+      "volume": null,
+      "key_factors": null,
+      "smc_analysis": null,
+      "decision_id": null
     }
   ],
   "position_results": [
-    {
-      "timestamp": "2026-03-13T01:55:44.901308",
-      "ticket": 1596069,
-      "symbol": "XAUUSD",
-      "action": "no_change",
-      "old_sl": 5105.2,
-      "new_sl": null,
-      "old_tp": 5220.0,
-      "new_tp": null,
-      "close_reason": null,
-      "pnl": null
-    },
-    {
-      "timestamp": "2026-03-13T01:56:55.200493",
-      "ticket": 1596069,
-      "symbol": "XAUUSD",
-      "action": "no_change",
-      "old_sl": 5105.2,
-      "new_sl": null,
-      "old_tp": 5220.0,
-      "new_tp": null,
-      "close_reason": null,
-      "pnl": null
-    },
-    {
-      "timestamp": "2026-03-13T01:58:07.774814",
-      "ticket": 1596069,
-      "symbol": "XAUUSD",
-      "action": "no_change",
-      "old_sl": 5105.2,
-      "new_sl": null,
-      "old_tp": 5220.0,
-      "new_tp": null,
-      "close_reason": null,
-      "pnl": null
-    },
-    {
-      "timestamp": "2026-03-13T01:59:22.599746",
-      "ticket": 1596069,
-      "symbol": "XAUUSD",
-      "action": "no_change",
-      "old_sl": 5105.2,
-      "new_sl": null,
-      "old_tp": 5220.0,
-      "new_tp": null,
-      "close_reason": null,
-      "pnl": null
-    },
-    {
-      "timestamp": "2026-03-13T02:00:35.683203",
-      "ticket": 1596069,
-      "symbol": "XAUUSD",
-      "action": "no_change",
-      "old_sl": 5105.2,
-      "new_sl": null,
-      "old_tp": 5220.0,
-      "new_tp": null,
-      "close_reason": null,
-      "pnl": null
-    },
-    {
-      "timestamp": "2026-03-13T02:01:48.136798",
-      "ticket": 1596069,
-      "symbol": "XAUUSD",
-      "action": "no_change",
-      "old_sl": 5105.2,
-      "new_sl": null,
-      "old_tp": 5220.0,
-      "new_tp": null,
-      "close_reason": null,
-      "pnl": null
-    },
-    {
-      "timestamp": "2026-03-13T02:02:58.278745",
-      "ticket": 1596069,
-      "symbol": "XAUUSD",
-      "action": "no_change",
-      "old_sl": 5105.2,
-      "new_sl": null,
-      "old_tp": 5220.0,
-      "new_tp": null,
-      "close_reason": null,
-      "pnl": null
-    },
-    {
-      "timestamp": "2026-03-13T02:04:09.811028",
-      "ticket": 1596069,
-      "symbol": "XAUUSD",
-      "action": "no_change",
-      "old_sl": 5105.2,
-      "new_sl": null,
-      "old_tp": 5220.0,
-      "new_tp": null,
-      "close_reason": null,
-      "pnl": null
-    },
-    {
-      "timestamp": "2026-03-13T02:05:21.639374",
-      "ticket": 1596069,
-      "symbol": "XAUUSD",
-      "action": "no_change",
-      "old_sl": 5105.2,
-      "new_sl": null,
-      "old_tp": 5220.0,
-      "new_tp": null,
-      "close_reason": null,
-      "pnl": null
-    },
-    {
-      "timestamp": "2026-03-13T02:06:34.288278",
-      "ticket": 1596069,
-      "symbol": "XAUUSD",
-      "action": "no_change",
-      "old_sl": 5105.2,
-      "new_sl": null,
-      "old_tp": 5220.0,
-      "new_tp": null,
-      "close_reason": null,
-      "pnl": null
-    },
-    {
-      "timestamp": "2026-03-13T02:07:44.469424",
-      "ticket": 1596069,
-      "symbol": "XAUUSD",
-      "action": "no_change",
-      "old_sl": 5105.2,
-      "new_sl": null,
-      "old_tp": 5220.0,
-      "new_tp": null,
-      "close_reason": null,
-      "pnl": null
-    },
-    {
-      "timestamp": "2026-03-13T02:08:55.687204",
-      "ticket": 1596069,
-      "symbol": "XAUUSD",
-      "action": "no_change",
-      "old_sl": 5105.2,
-      "new_sl": null,
-      "old_tp": 5220.0,
-      "new_tp": null,
-      "close_reason": null,
-      "pnl": null
-    },
-    {
-      "timestamp": "2026-03-13T02:10:12.257455",
-      "ticket": 1596069,
-      "symbol": "XAUUSD",
-      "action": "no_change",
-      "old_sl": 5105.2,
-      "new_sl": null,
-      "old_tp": 5220.0,
-      "new_tp": null,
-      "close_reason": null,
-      "pnl": null
-    },
-    {
-      "timestamp": "2026-03-13T02:11:24.596804",
-      "ticket": 1596069,
-      "symbol": "XAUUSD",
-      "action": "no_change",
-      "old_sl": 5105.2,
-      "new_sl": null,
-      "old_tp": 5220.0,
-      "new_tp": null,
-      "close_reason": null,
-      "pnl": null
-    },
-    {
-      "timestamp": "2026-03-13T02:12:37.515533",
-      "ticket": 1596069,
-      "symbol": "XAUUSD",
-      "action": "no_change",
-      "old_sl": 5105.2,
-      "new_sl": null,
-      "old_tp": 5220.0,
-      "new_tp": null,
-      "close_reason": null,
-      "pnl": null
-    },
     {
       "timestamp": "2026-03-13T02:13:47.440342",
       "ticket": 1596069,
@@ -3106,8 +3326,188 @@
       "new_tp": null,
       "close_reason": "sl_hit",
       "pnl": -64.37
+    },
+    {
+      "timestamp": "2026-03-24T13:26:15.425221",
+      "ticket": 999999,
+      "symbol": "XAUUSD",
+      "action": "closed",
+      "old_sl": null,
+      "new_sl": null,
+      "old_tp": null,
+      "new_tp": null,
+      "close_reason": "order_unfilled",
+      "pnl": 0.0
+    },
+    {
+      "timestamp": "2026-03-24T13:28:34.556954",
+      "ticket": 999999,
+      "symbol": "XAUUSD",
+      "action": "closed",
+      "old_sl": null,
+      "new_sl": null,
+      "old_tp": null,
+      "new_tp": null,
+      "close_reason": "order_unfilled",
+      "pnl": 0.0
+    },
+    {
+      "timestamp": "2026-03-24T13:31:42.383090",
+      "ticket": 999999,
+      "symbol": "XAUUSD",
+      "action": "closed",
+      "old_sl": null,
+      "new_sl": null,
+      "old_tp": null,
+      "new_tp": null,
+      "close_reason": "order_unfilled",
+      "pnl": 0.0
+    },
+    {
+      "timestamp": "2026-03-24T13:33:58.366422",
+      "ticket": 999999,
+      "symbol": "XAUUSD",
+      "action": "closed",
+      "old_sl": null,
+      "new_sl": null,
+      "old_tp": null,
+      "new_tp": null,
+      "close_reason": "order_unfilled",
+      "pnl": 0.0
+    },
+    {
+      "timestamp": "2026-03-24T13:37:06.373853",
+      "ticket": 999999,
+      "symbol": "XAUUSD",
+      "action": "closed",
+      "old_sl": null,
+      "new_sl": null,
+      "old_tp": null,
+      "new_tp": null,
+      "close_reason": "order_unfilled",
+      "pnl": 0.0
+    },
+    {
+      "timestamp": "2026-03-24T13:39:24.180745",
+      "ticket": 999999,
+      "symbol": "XAUUSD",
+      "action": "closed",
+      "old_sl": null,
+      "new_sl": null,
+      "old_tp": null,
+      "new_tp": null,
+      "close_reason": "order_unfilled",
+      "pnl": 0.0
+    },
+    {
+      "timestamp": "2026-03-24T13:42:32.217167",
+      "ticket": 999999,
+      "symbol": "XAUUSD",
+      "action": "closed",
+      "old_sl": null,
+      "new_sl": null,
+      "old_tp": null,
+      "new_tp": null,
+      "close_reason": "order_unfilled",
+      "pnl": 0.0
+    },
+    {
+      "timestamp": "2026-03-24T13:44:47.597624",
+      "ticket": 999999,
+      "symbol": "XAUUSD",
+      "action": "closed",
+      "old_sl": null,
+      "new_sl": null,
+      "old_tp": null,
+      "new_tp": null,
+      "close_reason": "order_unfilled",
+      "pnl": 0.0
+    },
+    {
+      "timestamp": "2026-03-24T13:47:56.374583",
+      "ticket": 999999,
+      "symbol": "XAUUSD",
+      "action": "closed",
+      "old_sl": null,
+      "new_sl": null,
+      "old_tp": null,
+      "new_tp": null,
+      "close_reason": "order_unfilled",
+      "pnl": 0.0
+    },
+    {
+      "timestamp": "2026-03-24T13:50:11.902741",
+      "ticket": 999999,
+      "symbol": "XAUUSD",
+      "action": "closed",
+      "old_sl": null,
+      "new_sl": null,
+      "old_tp": null,
+      "new_tp": null,
+      "close_reason": "order_unfilled",
+      "pnl": 0.0
+    },
+    {
+      "timestamp": "2026-03-24T13:53:20.628520",
+      "ticket": 999999,
+      "symbol": "XAUUSD",
+      "action": "closed",
+      "old_sl": null,
+      "new_sl": null,
+      "old_tp": null,
+      "new_tp": null,
+      "close_reason": "order_unfilled",
+      "pnl": 0.0
+    },
+    {
+      "timestamp": "2026-03-24T13:55:36.462936",
+      "ticket": 999999,
+      "symbol": "XAUUSD",
+      "action": "closed",
+      "old_sl": null,
+      "new_sl": null,
+      "old_tp": null,
+      "new_tp": null,
+      "close_reason": "order_unfilled",
+      "pnl": 0.0
+    },
+    {
+      "timestamp": "2026-03-24T13:58:45.260171",
+      "ticket": 999999,
+      "symbol": "XAUUSD",
+      "action": "closed",
+      "old_sl": null,
+      "new_sl": null,
+      "old_tp": null,
+      "new_tp": null,
+      "close_reason": "order_unfilled",
+      "pnl": 0.0
+    },
+    {
+      "timestamp": "2026-03-24T14:01:00.399236",
+      "ticket": 999999,
+      "symbol": "XAUUSD",
+      "action": "closed",
+      "old_sl": null,
+      "new_sl": null,
+      "old_tp": null,
+      "new_tp": null,
+      "close_reason": "order_unfilled",
+      "pnl": 0.0
+    },
+    {
+      "timestamp": "2026-03-24T14:04:08.626804",
+      "ticket": 999999,
+      "symbol": "XAUUSD",
+      "action": "closed",
+      "old_sl": null,
+      "new_sl": null,
+      "old_tp": null,
+      "new_tp": null,
+      "close_reason": "order_unfilled",
+      "pnl": 0.0
     }
   ],
-  "last_assumption_review": "2026-03-24T07:25:37.444045",
+  "last_assumption_review": "2026-03-24T13:29:07.501390",
   "assumption_review_results": []
 }

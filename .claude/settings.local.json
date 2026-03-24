@@ -83,7 +83,11 @@
       "Bash(iconv -f UTF-16LE -t UTF-8 '/c/Users/User/AppData/Roaming/MetaQuotes/Terminal/9B207513987DDC3C65E0F2AC7EE65D70/logs/$\\(date +%Y%m%d\\).log')",
       "Bash(git checkout:*)",
       "Bash(npx tsc:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(find /c/Repos/TradingAgents2 -type f \\\\\\(-name *.db -o -name *.sqlite -o -name *.sqlite3 \\\\\\))",
+      "Bash(mkdir -p archive/migrated_to_db)",
+      "Bash(mv automation_configs.json automation_symbol_limits.json scheduler_state.json archive/migrated_to_db/)",
+      "Bash(mv examples/risk_state.pkl examples/agent_weights.pkl examples/portfolio_state.pkl archive/migrated_to_db/)"
     ]
   }
 }

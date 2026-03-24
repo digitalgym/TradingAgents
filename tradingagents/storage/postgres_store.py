@@ -323,6 +323,10 @@ class PostgresDecisionStore(DecisionStore):
         mt5_ticket = decision.get("mt5_ticket")
         exit_date = decision.get("exit_date")
 
+        # Parse exit_date string to datetime if needed
+        if isinstance(exit_date, str):
+            exit_date = datetime.fromisoformat(exit_date.replace("Z", "+00:00"))
+
         async with pool.acquire() as conn:
             await conn.execute(
                 """

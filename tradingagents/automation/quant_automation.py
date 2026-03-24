@@ -525,36 +525,33 @@ class QuantAutomation:
                 if "closed" in str(e).lower() or "release" in str(e).lower():
                     self._pg_pool = None
 
-        # Fallback: write to JSON file (always, for local tooling / backend reads)
-        state_file = _PROJECT_ROOT / self.config.state_file
-        state_file.parent.mkdir(parents=True, exist_ok=True)
-        tmp_file = state_file.with_suffix(f".{os.getpid()}.tmp")
-        try:
-            with open(tmp_file, "w") as f:
-                json.dump(state, f, indent=2)
-            last_err = None
-            for attempt in range(4):
-                try:
-                    os.replace(str(tmp_file), str(state_file))
-                    last_err = None
-                    break
-                except PermissionError as e:
-                    last_err = e
-                    if attempt < 3:
-                        await asyncio.sleep(0.1 * (attempt + 1))
-            if last_err:
-                if saved_to_db:
-                    self.logger.debug(f"File save failed but state saved to Postgres: {last_err}")
-                else:
-                    self.logger.warning(f"Failed to save state (file + DB both failed): {last_err}")
-        except Exception as e:
-            if not saved_to_db:
-                self.logger.warning(f"Failed to save state: {e}")
-        finally:
+        # Fallback: write to JSON file only if DB save failed
+        if not saved_to_db:
+            state_file = _PROJECT_ROOT / self.config.state_file
+            state_file.parent.mkdir(parents=True, exist_ok=True)
+            tmp_file = state_file.with_suffix(f".{os.getpid()}.tmp")
             try:
-                tmp_file.unlink(missing_ok=True)
-            except Exception:
-                pass
+                with open(tmp_file, "w") as f:
+                    json.dump(state, f, indent=2)
+                last_err = None
+                for attempt in range(4):
+                    try:
+                        os.replace(str(tmp_file), str(state_file))
+                        last_err = None
+                        break
+                    except PermissionError as e:
+                        last_err = e
+                        if attempt < 3:
+                            await asyncio.sleep(0.1 * (attempt + 1))
+                if last_err:
+                    self.logger.warning(f"Failed to save state to file: {last_err}")
+            except Exception as e:
+                self.logger.warning(f"Failed to save state to file: {e}")
+            finally:
+                try:
+                    tmp_file.unlink(missing_ok=True)
+                except Exception:
+                    pass
 
     def _get_account_balance(self) -> float:
         """Get current account balance from MT5."""
