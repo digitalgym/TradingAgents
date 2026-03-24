@@ -8,10 +8,29 @@ Updates occur periodically (every 30 trades) to adapt to changing market conditi
 import os
 import json
 import pickle
+import logging
 import numpy as np
 from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime, timedelta
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
+
+# Database storage toggle
+_USE_DB = bool(os.environ.get("POSTGRES_URL") or os.environ.get("DATABASE_URL"))
+_weights_store = None
+
+
+def _get_weights_store():
+    """Get or create weights store singleton."""
+    global _weights_store
+    if _weights_store is None and _USE_DB:
+        try:
+            from tradingagents.storage.postgres_store import get_weights_store
+            _weights_store = get_weights_store()
+        except Exception as e:
+            logger.warning(f"Failed to initialize DB weights store: {e}")
+    return _weights_store
 
 
 class OnlineRLUpdater:
@@ -52,31 +71,63 @@ class OnlineRLUpdater:
         self.velocity = {agent: 0.0 for agent in self.DEFAULT_WEIGHTS.keys()}
     
     def _load_weights(self) -> Dict[str, float]:
-        """Load weights from file or return defaults."""
+        """Load weights from DB first, then file, or return defaults."""
+        # Try DB first
+        store = _get_weights_store()
+        if store:
+            try:
+                data = store.load()
+                if data and "weights" in data:
+                    self.weight_history = data.get("weight_history", [])
+                    logger.info("Loaded agent weights from DB")
+                    return data["weights"]
+            except Exception as e:
+                logger.warning(f"Failed to load weights from DB: {e}")
+
+        # Fall back to file
         if self.weights_file.exists():
             try:
-                with open(self.weights_file, 'rb') as f:
+                with open(self.weights_file, "rb") as f:
                     data = pickle.load(f)
+                    self.weight_history = data.get("weight_history", [])
                     return data.get("weights", self.DEFAULT_WEIGHTS.copy())
             except Exception:
                 pass
-        
+
         return self.DEFAULT_WEIGHTS.copy()
-    
+
     def _save_weights(self):
-        """Save weights to file."""
-        self.weights_file.parent.mkdir(parents=True, exist_ok=True)
-        
-        data = {
-            "weights": self.weights,
-            "weight_history": self.weight_history[-50:],  # Keep last 50
-            "last_update": datetime.now().isoformat(),
-            "learning_rate": self.learning_rate,
-            "momentum": self.momentum
-        }
-        
-        with open(self.weights_file, 'wb') as f:
-            pickle.dump(data, f)
+        """Save weights to DB first, then file as backup."""
+        # Try DB first
+        store = _get_weights_store()
+        if store:
+            try:
+                store.save(
+                    weights=self.weights,
+                    weight_history=self.weight_history[-50:],
+                    learning_rate=self.learning_rate,
+                    momentum=self.momentum,
+                )
+                logger.debug("Saved agent weights to DB")
+            except Exception as e:
+                logger.warning(f"Failed to save weights to DB: {e}")
+
+        # Save to file as backup
+        try:
+            self.weights_file.parent.mkdir(parents=True, exist_ok=True)
+
+            data = {
+                "weights": self.weights,
+                "weight_history": self.weight_history[-50:],
+                "last_update": datetime.now().isoformat(),
+                "learning_rate": self.learning_rate,
+                "momentum": self.momentum,
+            }
+
+            with open(self.weights_file, "wb") as f:
+                pickle.dump(data, f)
+        except Exception as e:
+            logger.warning(f"Failed to save weights to file: {e}")
     
     def update_weights(
         self,

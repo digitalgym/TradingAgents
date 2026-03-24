@@ -136,6 +136,30 @@ cp .env.example .env
 - **xAI API key** for Grok LLM, news (web search), and X sentiment analysis
 - `pip install MetaTrader5`
 
+### Database (PostgreSQL)
+
+For distributed operation (running the MT5 worker on one machine and the web UI elsewhere), set up PostgreSQL:
+
+```bash
+export POSTGRES_URL=postgresql://user:password@host:5432/database?sslmode=require
+```
+
+The system uses PostgreSQL to store:
+- **Trade decisions** - All trade analysis and outcomes
+- **Automation state** - Per-instance automation state
+- **Guardrails** - Risk management state (circuit breakers, daily loss limits)
+- **Agent weights** - Online RL weight adjustments
+- **Portfolio state** - Equity curve, returns, drawdowns
+- **Configs** - Symbol limits, scheduler state
+
+**Migration from files to database:**
+```bash
+python scripts/migrate_to_db.py        # Migrate existing data
+python scripts/migrate_to_db.py --dry-run  # Preview without changes
+```
+
+If `POSTGRES_URL` is not set, the system falls back to local file storage.
+
 ### CLI Usage
 
 You can also try out the CLI directly by running:
@@ -475,6 +499,51 @@ close_position(ticket=123456)
 # View positions
 positions = get_open_positions()
 ```
+
+---
+
+## Distributed Worker Architecture
+
+For running the system across multiple machines (e.g., MT5 on a home machine, web UI in the cloud):
+
+### Architecture
+
+```
+┌─────────────────┐         ┌─────────────────┐         ┌─────────────────┐
+│   Web Frontend  │────────▶│   PostgreSQL    │◀────────│   MT5 Worker    │
+│   (anywhere)    │         │   (Neon/Vercel) │         │  (MT5 machine)  │
+└─────────────────┘         └─────────────────┘         └─────────────────┘
+        │                           │                           │
+        │  Sends commands           │  Stores state             │  Executes trades
+        │  (start/stop)             │  Decisions, configs       │  Updates positions
+        └───────────────────────────┴───────────────────────────┘
+```
+
+### Running the Worker
+
+On the machine with MetaTrader 5 installed:
+
+```bash
+cd web/backend
+python mt5_worker.py
+```
+
+The worker:
+- Polls PostgreSQL for automation commands (start/stop/pause)
+- Executes trades in MT5
+- Updates automation status and trade decisions in the database
+- Reports heartbeat with account info (balance, equity, positions)
+
+### Web UI
+
+The web UI can run anywhere with database access:
+
+```bash
+cd web/backend
+uvicorn main:app --reload
+```
+
+Or deploy to Vercel/Railway with `POSTGRES_URL` configured.
 
 ---
 

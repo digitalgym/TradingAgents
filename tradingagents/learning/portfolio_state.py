@@ -7,10 +7,30 @@ Tracks equity curve, returns, peak equity, and drawdowns.
 
 import os
 import pickle
+import logging
 import numpy as np
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
+
+logger = logging.getLogger(__name__)
+
+# Database portfolio store singleton
+_portfolio_store = None
+
+
+def _get_portfolio_store():
+    """Get portfolio store singleton for DB-based state."""
+    global _portfolio_store
+    if _portfolio_store is None:
+        postgres_url = os.environ.get("POSTGRES_URL") or os.environ.get("DATABASE_URL")
+        if postgres_url:
+            try:
+                from tradingagents.storage.postgres_store import get_portfolio_store
+                _portfolio_store = get_portfolio_store()
+            except Exception:
+                pass
+    return _portfolio_store
 
 
 class PortfolioStateTracker:
@@ -201,41 +221,102 @@ class PortfolioStateTracker:
             "last_updated": self.last_updated.isoformat(),
         }
     
-    def save_state(self, path: Optional[str] = None):
+    def save_state(self, path: Optional[str] = None, portfolio_id: str = "default"):
         """
-        Persist portfolio state to disk.
-        
+        Persist portfolio state to DB first, then disk.
+
         Args:
             path: Optional custom path (default: examples/portfolio_state.pkl)
+            portfolio_id: ID for DB storage (default: "default")
         """
+        # Try DB first
+        store = _get_portfolio_store()
+        if store:
+            try:
+                state_dict = {
+                    "initial_capital": self.initial_capital,
+                    "current_equity": self.current_equity,
+                    "equity_curve": self.equity_curve[-1000:],  # Keep last 1000 points
+                    "returns": self.returns[-1000:],
+                    "peak_equity": self.peak_equity,
+                    "trade_count": self.trade_count,
+                    "win_count": self.win_count,
+                    "loss_count": self.loss_count,
+                    "total_pnl": self.total_pnl,
+                    "created_at": self.created_at.isoformat(),
+                    "last_updated": self.last_updated.isoformat(),
+                }
+                store.save(state_dict, portfolio_id)
+                logger.debug(f"Saved portfolio state to DB: {portfolio_id}")
+            except Exception as e:
+                logger.warning(f"Failed to save portfolio state to DB: {e}")
+
+        # Also save to file as backup
         if path is None:
             path = self.DEFAULT_STATE_PATH
-        
-        # Ensure directory exists
-        Path(path).parent.mkdir(parents=True, exist_ok=True)
-        
-        with open(path, 'wb') as f:
-            pickle.dump(self, f)
-    
+
+        try:
+            Path(path).parent.mkdir(parents=True, exist_ok=True)
+            with open(path, "wb") as f:
+                pickle.dump(self, f)
+        except Exception as e:
+            logger.warning(f"Failed to save portfolio state to file: {e}")
+
     @classmethod
-    def load_state(cls, path: Optional[str] = None) -> 'PortfolioStateTracker':
+    def load_state(cls, path: Optional[str] = None, portfolio_id: str = "default") -> 'PortfolioStateTracker':
         """
-        Load portfolio state from disk.
-        
+        Load portfolio state from DB first, then disk.
+
         Args:
             path: Optional custom path (default: examples/portfolio_state.pkl)
-        
+            portfolio_id: ID for DB storage (default: "default")
+
         Returns:
             PortfolioStateTracker instance
         """
+        # Try DB first
+        store = _get_portfolio_store()
+        if store:
+            try:
+                state_dict = store.load(portfolio_id)
+                if state_dict:
+                    tracker = cls(initial_capital=state_dict.get("initial_capital", 100000))
+                    tracker.current_equity = state_dict.get("current_equity", tracker.initial_capital)
+                    tracker.equity_curve = state_dict.get("equity_curve", [tracker.initial_capital])
+                    tracker.returns = state_dict.get("returns", [])
+                    tracker.peak_equity = state_dict.get("peak_equity", tracker.initial_capital)
+                    tracker.trade_count = state_dict.get("trade_count", 0)
+                    tracker.win_count = state_dict.get("win_count", 0)
+                    tracker.loss_count = state_dict.get("loss_count", 0)
+                    tracker.total_pnl = state_dict.get("total_pnl", 0.0)
+                    if state_dict.get("created_at"):
+                        tracker.created_at = datetime.fromisoformat(state_dict["created_at"])
+                    if state_dict.get("last_updated"):
+                        tracker.last_updated = datetime.fromisoformat(state_dict["last_updated"])
+                    logger.info(f"Loaded portfolio state from DB: {portfolio_id}")
+                    return tracker
+            except Exception as e:
+                logger.warning(f"Failed to load portfolio state from DB: {e}")
+
+        # Fall back to file
         if path is None:
             path = cls.DEFAULT_STATE_PATH
-        
+
         if not os.path.exists(path):
             return cls()
-        
-        with open(path, 'rb') as f:
-            return pickle.load(f)
+
+        try:
+            with open(path, "rb") as f:
+                tracker = pickle.load(f)
+                # Migrate to DB
+                if store:
+                    try:
+                        tracker.save_state(path, portfolio_id)
+                    except Exception:
+                        pass
+                return tracker
+        except Exception:
+            return cls()
     
     def reset(self, initial_capital: Optional[float] = None):
         """

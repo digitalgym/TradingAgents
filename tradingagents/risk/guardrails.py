@@ -11,9 +11,28 @@ Hard risk limits to prevent catastrophic losses:
 import os
 import json
 import pickle
+import logging
 from typing import Dict, Any, Optional, Tuple
 from datetime import datetime, timedelta
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
+
+# Database storage toggle
+_USE_DB = bool(os.environ.get("POSTGRES_URL") or os.environ.get("DATABASE_URL"))
+_state_store = None
+
+
+def _get_state_store():
+    """Get or create state store singleton."""
+    global _state_store
+    if _state_store is None and _USE_DB:
+        try:
+            from tradingagents.storage.postgres_store import get_state_store
+            _state_store = get_state_store()
+        except Exception as e:
+            logger.warning(f"Failed to initialize DB state store: {e}")
+    return _state_store
 
 
 class RiskGuardrails:
@@ -25,42 +44,39 @@ class RiskGuardrails:
         daily_loss_limit_pct: float = 3.0,
         max_consecutive_losses: int = 2,
         max_position_size_pct: float = 2.0,
-        cooldown_hours: int = 24
+        cooldown_hours: int = 24,
+        instance_name: Optional[str] = None,
     ):
         """
         Initialize risk guardrails.
-        
+
         Args:
             state_file: Path to save/load state (default: tradingagents/examples/risk_state.pkl)
             daily_loss_limit_pct: Maximum daily loss as % of account (default 3%)
             max_consecutive_losses: Max consecutive losses before cooldown (default 2)
             max_position_size_pct: Max position size as % of account (default 2%)
             cooldown_hours: Hours to wait after breach (default 24)
+            instance_name: Name for DB-based state storage (per-instance guardrails)
         """
+        self.instance_name = instance_name or "default"
+
         if state_file is None:
             base_dir = Path(__file__).parent.parent.parent
             self.state_file = base_dir / "examples" / "risk_state.pkl"
         else:
             self.state_file = Path(state_file)
-        
+
         self.daily_loss_limit_pct = daily_loss_limit_pct
         self.max_consecutive_losses = max_consecutive_losses
         self.max_position_size_pct = max_position_size_pct
         self.cooldown_hours = cooldown_hours
-        
+
         # Load or initialize state
         self.state = self._load_state()
     
     def _load_state(self) -> Dict[str, Any]:
-        """Load state from file or return defaults."""
-        if self.state_file.exists():
-            try:
-                with open(self.state_file, 'rb') as f:
-                    return pickle.load(f)
-            except Exception:
-                pass
-        
-        return {
+        """Load state from DB first, then file, or return defaults."""
+        default_state = {
             "consecutive_losses": 0,
             "daily_loss_pct": 0.0,
             "last_trade_date": None,
@@ -68,13 +84,46 @@ class RiskGuardrails:
             "breach_history": [],
             "total_breaches": 0
         }
-    
+
+        # Try DB first
+        store = _get_state_store()
+        if store:
+            try:
+                state = store.load_guardrails(self.instance_name)
+                if state:
+                    logger.info(f"Loaded guardrails state from DB for {self.instance_name}")
+                    return state
+            except Exception as e:
+                logger.warning(f"Failed to load guardrails from DB: {e}")
+
+        # Fall back to file
+        if self.state_file.exists():
+            try:
+                with open(self.state_file, "rb") as f:
+                    return pickle.load(f)
+            except Exception:
+                pass
+
+        return default_state
+
     def _save_state(self):
-        """Save state to file."""
-        self.state_file.parent.mkdir(parents=True, exist_ok=True)
-        
-        with open(self.state_file, 'wb') as f:
-            pickle.dump(self.state, f)
+        """Save state to DB first, then file as backup."""
+        # Try DB first
+        store = _get_state_store()
+        if store:
+            try:
+                store.save_guardrails(self.instance_name, self.state)
+                logger.debug(f"Saved guardrails state to DB for {self.instance_name}")
+            except Exception as e:
+                logger.warning(f"Failed to save guardrails to DB: {e}")
+
+        # Save to file as backup
+        try:
+            self.state_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(self.state_file, "wb") as f:
+                pickle.dump(self.state, f)
+        except Exception as e:
+            logger.warning(f"Failed to save guardrails to file: {e}")
     
     def check_can_trade(self, account_balance: float) -> Tuple[bool, str]:
         """

@@ -27,10 +27,29 @@ The system analyzes WHY trades won or lost, not just the P&L:
 import os
 import json
 import pickle
+import logging
 from datetime import datetime
 from typing import Dict, Any, Optional, List, Literal
 from pathlib import Path
 import numpy as np
+
+logger = logging.getLogger(__name__)
+
+# Database storage toggle - use DB if POSTGRES_URL is set
+_USE_DB = bool(os.environ.get("POSTGRES_URL") or os.environ.get("DATABASE_URL"))
+_db_store = None
+
+
+def _get_db_store():
+    """Get or create database store singleton."""
+    global _db_store
+    if _db_store is None and _USE_DB:
+        try:
+            from .storage.postgres_store import get_decision_store
+            _db_store = get_decision_store()
+        except Exception as e:
+            logger.warning(f"Failed to initialize DB store: {e}")
+    return _db_store
 
 
 # Structured outcome types
@@ -477,10 +496,26 @@ def store_decision(
     if position_sizing:
         decision["position_sizing"] = position_sizing
     
-    # Save decision as JSON for easy viewing
-    decision_file = os.path.join(DECISIONS_DIR, f"{decision_id}.json")
-    with open(decision_file, "w") as f:
-        json.dump(decision, f, indent=2, default=str)
+    # Save to database first (primary storage)
+    db_store = _get_db_store()
+    if db_store:
+        try:
+            db_store.store(decision)
+            if analysis_context:
+                db_store.store_context(decision_id, analysis_context)
+            logger.info(f"Decision stored in DB: {decision_id}")
+        except Exception as e:
+            logger.error(f"Failed to store decision in DB: {e}")
+            # Continue to file storage as fallback
+
+    # Save decision as JSON for easy viewing (backup/local access)
+    try:
+        decision_file = os.path.join(DECISIONS_DIR, f"{decision_id}.json")
+        with open(decision_file, "w") as f:
+            json.dump(decision, f, indent=2, default=str)
+    except Exception as e:
+        logger.warning(f"Failed to write decision file: {e}")
+        # If DB write succeeded, this is OK
 
     # Update ticket index for fast lookup
     if mt5_ticket:
@@ -498,23 +533,45 @@ def store_decision(
 
 
 def load_decision(decision_id: str) -> Dict[str, Any]:
-    """Load a stored decision."""
+    """Load a stored decision. Reads from DB first, falls back to file."""
+    # Try DB first
+    db_store = _get_db_store()
+    if db_store:
+        try:
+            return db_store.load(decision_id)
+        except KeyError:
+            pass  # Not in DB, try file
+        except Exception as e:
+            logger.warning(f"DB load failed, trying file: {e}")
+
+    # Fall back to file
     decision_file = os.path.join(DECISIONS_DIR, f"{decision_id}.json")
-    
+
     if not os.path.exists(decision_file):
         raise FileNotFoundError(f"Decision not found: {decision_id}")
-    
+
     with open(decision_file, "r") as f:
         return json.load(f)
 
 
 def load_decision_context(decision_id: str) -> Optional[Dict[str, Any]]:
     """Load the full analysis context for a decision."""
+    # Try DB first
+    db_store = _get_db_store()
+    if db_store:
+        try:
+            result = db_store.load_context(decision_id)
+            if result:
+                return result
+        except Exception as e:
+            logger.warning(f"DB load_context failed: {e}")
+
+    # Fall back to file
     context_file = os.path.join(DECISIONS_DIR, f"{decision_id}_context.pkl")
-    
+
     if not os.path.exists(context_file):
         return None
-    
+
     with open(context_file, "rb") as f:
         return pickle.load(f)
 
@@ -540,6 +597,16 @@ def add_trade_event(
         modify_tp       - TP modified
         error           - Something went wrong
     """
+    # Try DB first
+    db_store = _get_db_store()
+    if db_store:
+        try:
+            db_store.add_event(decision_id, event_type, details, source)
+            return  # DB handles both event table and decision JSON update
+        except Exception as e:
+            logger.warning(f"DB add_event failed: {e}")
+
+    # Fall back to file
     decision_file = os.path.join(DECISIONS_DIR, f"{decision_id}.json")
     if not os.path.exists(decision_file):
         return
@@ -734,10 +801,22 @@ def close_decision(
         decision["entry_quality"] = structured_outcome.get("entry_quality")
         decision["outcome_lessons"] = structured_outcome.get("lessons", [])
 
-    # Save updated decision
-    decision_file = os.path.join(DECISIONS_DIR, f"{decision_id}.json")
-    with open(decision_file, "w") as f:
-        json.dump(decision, f, indent=2, default=str)
+    # Save to database first (primary storage)
+    db_store = _get_db_store()
+    if db_store:
+        try:
+            db_store.update(decision_id, decision)
+            logger.info(f"Decision closed in DB: {decision_id}")
+        except Exception as e:
+            logger.error(f"Failed to update decision in DB: {e}")
+
+    # Save updated decision to file (backup)
+    try:
+        decision_file = os.path.join(DECISIONS_DIR, f"{decision_id}.json")
+        with open(decision_file, "w") as f:
+            json.dump(decision, f, indent=2, default=str)
+    except Exception as e:
+        logger.warning(f"Failed to write decision file: {e}")
 
     # Remove from active index
     _remove_from_active_index(decision_id)
@@ -762,13 +841,22 @@ def close_decision(
 
 
 def list_decisions(symbol: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
-    """List all decisions regardless of status."""
+    """List all decisions regardless of status. Reads from DB first."""
+    # Try DB first
+    db_store = _get_db_store()
+    if db_store:
+        try:
+            return db_store.list_all(symbol=symbol, limit=limit)
+        except Exception as e:
+            logger.warning(f"DB list failed, falling back to files: {e}")
+
+    # Fall back to files
     if not os.path.exists(DECISIONS_DIR):
         return []
 
     decisions = []
     for f in os.listdir(DECISIONS_DIR):
-        if f.endswith(".json"):
+        if f.endswith(".json") and not f.startswith("_"):
             decision_id = f.replace(".json", "")
             try:
                 decision = load_decision(decision_id)
@@ -783,9 +871,17 @@ def list_decisions(symbol: Optional[str] = None, limit: int = 100) -> List[Dict[
 def list_active_decisions(symbol: Optional[str] = None) -> List[Dict[str, Any]]:
     """List all active (unclosed) decisions.
 
-    Uses an active index for faster lookup. Falls back to full scan if
+    Uses DB first, then index for faster lookup. Falls back to full scan if
     index is missing or inconsistent (handles legacy data).
     """
+    # Try DB first
+    db_store = _get_db_store()
+    if db_store:
+        try:
+            return db_store.list_active(symbol=symbol)
+        except Exception as e:
+            logger.warning(f"DB list_active failed, falling back to files: {e}")
+
     if not os.path.exists(DECISIONS_DIR):
         return []
 
@@ -983,12 +1079,25 @@ def get_decision_stats(symbol: Optional[str] = None) -> Dict[str, Any]:
 
 def link_decision_to_ticket(decision_id: str, mt5_ticket: int):
     """Link a decision to an MT5 ticket after execution."""
-    decision = load_decision(decision_id)
-    decision["mt5_ticket"] = mt5_ticket
+    # Update in DB first
+    db_store = _get_db_store()
+    if db_store:
+        try:
+            db_store.link_ticket(decision_id, mt5_ticket)
+            logger.info(f"Decision {decision_id} linked to ticket {mt5_ticket} in DB")
+        except Exception as e:
+            logger.error(f"Failed to link ticket in DB: {e}")
 
-    decision_file = os.path.join(DECISIONS_DIR, f"{decision_id}.json")
-    with open(decision_file, "w") as f:
-        json.dump(decision, f, indent=2, default=str)
+    # Update file (backup)
+    try:
+        decision = load_decision(decision_id)
+        decision["mt5_ticket"] = mt5_ticket
+
+        decision_file = os.path.join(DECISIONS_DIR, f"{decision_id}.json")
+        with open(decision_file, "w") as f:
+            json.dump(decision, f, indent=2, default=str)
+    except Exception as e:
+        logger.warning(f"Failed to update decision file: {e}")
 
     # Update ticket index for fast lookup
     _update_ticket_index(mt5_ticket, decision_id)
@@ -999,9 +1108,19 @@ def link_decision_to_ticket(decision_id: str, mt5_ticket: int):
 def find_decision_by_ticket(mt5_ticket: int) -> Optional[Dict[str, Any]]:
     """Find a decision by its MT5 ticket.
 
-    Uses a ticket index for O(1) lookup instead of scanning all files.
+    Uses DB first, then ticket index for O(1) lookup.
     Falls back to full scan if index miss (handles legacy data).
     """
+    # Try DB first
+    db_store = _get_db_store()
+    if db_store:
+        try:
+            result = db_store.find_by_ticket(mt5_ticket)
+            if result:
+                return result
+        except Exception as e:
+            logger.warning(f"DB find_by_ticket failed: {e}")
+
     if not os.path.exists(DECISIONS_DIR):
         return None
 

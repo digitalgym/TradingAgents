@@ -26,6 +26,23 @@ from .portfolio_config import ScheduleConfig
 from .portfolio_automation import PortfolioAutomation
 from .reporting import DailyAnalysisReport, PositionReviewReport, ReflectionReport
 
+# Database config store singleton
+_config_store = None
+
+
+def _get_config_store():
+    """Get config store singleton for DB-based state."""
+    global _config_store
+    if _config_store is None:
+        postgres_url = os.environ.get("POSTGRES_URL") or os.environ.get("DATABASE_URL")
+        if postgres_url:
+            try:
+                from tradingagents.storage.postgres_store import get_config_store
+                _config_store = get_config_store()
+            except Exception:
+                pass
+    return _config_store
+
 
 class DailyScheduler:
     """
@@ -259,27 +276,57 @@ class DailyScheduler:
             self.logger.warning(f"Could not remove PID file: {e}")
 
     def _save_last_run(self):
-        """Save last run times."""
+        """Save last run times to DB first, then file."""
+        # Try DB first
+        store = _get_config_store()
+        if store:
+            try:
+                store.set("scheduler_state", self._last_run)
+                self.logger.debug(f"Saved scheduler state to DB: {self._last_run}")
+            except Exception as e:
+                self.logger.warning(f"Failed to save scheduler state to DB: {e}")
+
+        # Also save to file as backup
         state_file = Path("scheduler_state.json")
         try:
             with open(state_file, "w") as f:
                 json.dump(self._last_run, f)
-            self.logger.debug(f"Saved scheduler state: {self._last_run}")
+            self.logger.debug(f"Saved scheduler state to file: {self._last_run}")
         except Exception as e:
-            self.logger.warning(f"Failed to save scheduler state: {e}")
+            self.logger.warning(f"Failed to save scheduler state to file: {e}")
 
     def _load_last_run(self):
-        """Load last run times."""
+        """Load last run times from DB first, then file."""
+        # Try DB first
+        store = _get_config_store()
+        if store:
+            try:
+                state = store.get("scheduler_state")
+                if state:
+                    self._last_run = state
+                    self.logger.debug(f"Loaded scheduler state from DB: {self._last_run}")
+                    return
+            except Exception as e:
+                self.logger.warning(f"Failed to load scheduler state from DB: {e}")
+
+        # Fall back to file
         state_file = Path("scheduler_state.json")
         try:
             if state_file.exists():
                 with open(state_file, "r") as f:
                     self._last_run = json.load(f)
-                self.logger.debug(f"Loaded scheduler state: {self._last_run}")
+                self.logger.debug(f"Loaded scheduler state from file: {self._last_run}")
+
+                # Migrate to DB
+                if store:
+                    try:
+                        store.set("scheduler_state", self._last_run)
+                    except Exception:
+                        pass
             else:
-                self.logger.debug("No scheduler state file found, starting fresh")
+                self.logger.debug("No scheduler state found, starting fresh")
         except Exception as e:
-            self.logger.warning(f"Failed to load scheduler state: {e}")
+            self.logger.warning(f"Failed to load scheduler state from file: {e}")
 
     async def trigger_manual(self, cycle: str) -> Any:
         """

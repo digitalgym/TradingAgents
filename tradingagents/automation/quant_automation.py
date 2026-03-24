@@ -84,20 +84,77 @@ def normalize_signal(signal) -> str:
 # Global symbol limits file (shared across all automations)
 _SYMBOL_LIMITS_FILE = _PROJECT_ROOT / "automation_symbol_limits.json"
 
+# Database config store singleton
+_config_store = None
+_signal_store = None
+
+
+def _get_config_store():
+    """Get config store singleton for DB-based config."""
+    global _config_store
+    if _config_store is None:
+        postgres_url = os.environ.get("POSTGRES_URL") or os.environ.get("DATABASE_URL")
+        if postgres_url:
+            try:
+                from tradingagents.storage.postgres_store import get_config_store
+                _config_store = get_config_store()
+            except Exception:
+                pass
+    return _config_store
+
+
+def _get_signal_store():
+    """Get signal store singleton for DB-based signal tracking."""
+    global _signal_store
+    if _signal_store is None:
+        postgres_url = os.environ.get("POSTGRES_URL") or os.environ.get("DATABASE_URL")
+        if postgres_url:
+            try:
+                from tradingagents.storage.postgres_store import get_signal_store
+                _signal_store = get_signal_store()
+            except Exception:
+                pass
+    return _signal_store
+
 
 def _get_global_position_limits() -> Dict[str, int]:
-    """Load per-symbol max positions from automation_symbol_limits.json.
+    """Load per-symbol max positions from DB or automation_symbol_limits.json.
 
     Returns dict like {"XAUUSD": 3, "XAGUSD": 1}.
     Symbols not in the file default to 3.
     """
     limits: Dict[str, int] = {}
+
+    # Try DB first
+    store = _get_config_store()
+    if store:
+        try:
+            data = store.get("symbol_limits")
+            if data:
+                for sym, cfg in data.items():
+                    if isinstance(cfg, dict) and "max_positions" in cfg:
+                        limits[sym] = cfg["max_positions"]
+                    elif isinstance(cfg, int):
+                        limits[sym] = cfg
+                if limits:
+                    return limits
+        except Exception:
+            pass
+
+    # Fall back to file
     try:
         with open(_SYMBOL_LIMITS_FILE) as f:
             data = json.load(f)
         for sym, cfg in data.items():
             if isinstance(cfg, dict) and "max_positions" in cfg:
                 limits[sym] = cfg["max_positions"]
+
+        # Migrate to DB if we loaded from file
+        if limits and store:
+            try:
+                store.set("symbol_limits", data)
+            except Exception:
+                pass
     except Exception:
         pass
     return limits
@@ -215,6 +272,11 @@ class AnalysisCycleResult:
     execution_ticket: Optional[int] = None
     execution_error: Optional[str] = None
     duration_seconds: float = 0
+    # Fields for signal tracking
+    volume: Optional[float] = None  # Recommended position size
+    key_factors: Optional[List[str]] = None  # Factors that contributed to signal
+    smc_analysis: Optional[Dict[str, Any]] = None  # SMC analysis details
+    decision_id: Optional[str] = None  # Linked decision ID if executed
 
 
 @dataclass
@@ -1628,6 +1690,9 @@ class QuantAutomation:
                     pipeline=result.pipeline,
                     trailing_stop_atr_multiplier=result.trailing_stop_atr_multiplier,
                 )
+                # Set on result for signal tracking
+                result.decision_id = decision_id
+                result.volume = lot_size
 
                 # Populate SMC context (HTF bias) on the decision
                 if decision_id and result.htf_bias:
@@ -1744,6 +1809,36 @@ class QuantAutomation:
             return "breakeven_stop"
 
         return "manual_close"
+
+    def _store_signal_to_db(self, result: "AnalysisCycleResult") -> None:
+        """Store analysis result as a signal in the database for tracking."""
+        store = _get_signal_store()
+        if not store:
+            return
+
+        try:
+            signal_data = {
+                "symbol": result.symbol,
+                "signal": result.signal,
+                "confidence": result.confidence,
+                "trade_date": result.timestamp.strftime("%Y-%m-%d"),
+                "entry_price": result.entry_price,
+                "stop_loss": result.stop_loss,
+                "take_profit": result.take_profit,
+                "recommended_size": result.volume,
+                "rationale": result.rationale,
+                "key_factors": result.key_factors or [],
+                "smc_analysis": result.smc_analysis,
+                "pipeline": result.pipeline,
+                "source": self._source,
+                "executed": result.executed,
+                "decision_id": result.decision_id,
+                "analysis_duration_seconds": result.duration_seconds,
+            }
+            store.store(signal_data)
+            self.logger.debug(f"Stored signal to DB: {result.symbol} {result.signal}")
+        except Exception as e:
+            self.logger.warning(f"Failed to store signal to DB: {e}")
 
     def _close_decision_for_ticket(self, ticket: int, exit_price: float, profit: float,
                                      exit_reason: str, notes: str) -> None:
@@ -2372,6 +2467,9 @@ class QuantAutomation:
                     self._analysis_results.append(result)
                     if len(self._analysis_results) > 100:
                         self._analysis_results = self._analysis_results[-100:]
+
+                    # Store signal to DB for tracking all generated signals
+                    self._store_signal_to_db(result)
 
                     # Update last analysis time
                     self._last_analysis_time[symbol] = now

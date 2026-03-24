@@ -168,6 +168,83 @@ class PostgresDecisionStore(DecisionStore):
                 );
             """)
 
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS agent_weights (
+                    id TEXT PRIMARY KEY DEFAULT 'default',
+                    weights JSONB NOT NULL,
+                    weight_history JSONB DEFAULT '[]',
+                    learning_rate FLOAT DEFAULT 0.1,
+                    momentum FLOAT DEFAULT 0.9,
+                    last_update TIMESTAMPTZ,
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+            """)
+
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS configs (
+                    key TEXT PRIMARY KEY,
+                    value JSONB NOT NULL,
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+            """)
+
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS tuning_history (
+                    id SERIAL PRIMARY KEY,
+                    symbol TEXT NOT NULL,
+                    pipeline TEXT NOT NULL,
+                    result JSONB NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+            """)
+
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_tuning_symbol_pipeline
+                ON tuning_history(symbol, pipeline);
+            """)
+
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS portfolio_state (
+                    id TEXT PRIMARY KEY DEFAULT 'default',
+                    state JSONB NOT NULL,
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+            """)
+
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS signals (
+                    id SERIAL PRIMARY KEY,
+                    signal_id TEXT UNIQUE NOT NULL,
+                    symbol TEXT NOT NULL,
+                    signal TEXT NOT NULL,
+                    confidence FLOAT NOT NULL,
+                    trade_date TEXT,
+                    entry_price FLOAT,
+                    stop_loss FLOAT,
+                    take_profit FLOAT,
+                    recommended_size FLOAT,
+                    rationale TEXT,
+                    key_factors JSONB DEFAULT '[]',
+                    smc_analysis JSONB,
+                    pipeline TEXT,
+                    source TEXT,
+                    executed BOOLEAN DEFAULT FALSE,
+                    decision_id TEXT,
+                    analysis_duration_seconds FLOAT,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+            """)
+
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_signals_symbol ON signals(symbol);
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_signals_created ON signals(created_at DESC);
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_signals_executed ON signals(executed);
+            """)
+
         self._initialized = True
 
     def _sync_ensure_tables(self):
@@ -187,7 +264,12 @@ class PostgresDecisionStore(DecisionStore):
         symbol = decision["symbol"]
         status = decision.get("status", "active")
         mt5_ticket = decision.get("mt5_ticket")
-        created_at = decision.get("created_at", datetime.now().isoformat())
+        created_at = decision.get("created_at")
+        # Parse string to datetime if needed
+        if isinstance(created_at, str):
+            created_at = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+        elif created_at is None:
+            created_at = datetime.now()
 
         async with pool.acquire() as conn:
             await conn.execute(
@@ -339,6 +421,213 @@ class PostgresDecisionStore(DecisionStore):
             return None
 
         return json.loads(row["data"])
+
+    def list_all(
+        self,
+        symbol: Optional[str] = None,
+        status: Optional[str] = None,
+        source: Optional[str] = None,
+        limit: int = 100,
+    ) -> List[Dict[str, Any]]:
+        return _run_async(self._list_all_async(symbol, status, source, limit))
+
+    async def _list_all_async(
+        self,
+        symbol: Optional[str] = None,
+        status: Optional[str] = None,
+        source: Optional[str] = None,
+        limit: int = 100,
+    ) -> List[Dict[str, Any]]:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+
+        # Build query with filters
+        conditions = []
+        params = []
+        param_idx = 1
+
+        if symbol:
+            conditions.append(f"symbol = ${param_idx}")
+            params.append(symbol)
+            param_idx += 1
+        if status:
+            conditions.append(f"status = ${param_idx}")
+            params.append(status)
+            param_idx += 1
+        if source:
+            conditions.append(f"data->>'source' = ${param_idx}")
+            params.append(source)
+            param_idx += 1
+
+        where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
+        params.append(limit)
+
+        query = f"""
+            SELECT data FROM decisions
+            {where_clause}
+            ORDER BY created_at DESC
+            LIMIT ${param_idx}
+        """
+
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(query, *params)
+
+        return [json.loads(row["data"]) for row in rows]
+
+    def list_failed(
+        self, symbol: Optional[str] = None, limit: int = 50
+    ) -> List[Dict[str, Any]]:
+        return _run_async(self._list_failed_async(symbol, limit))
+
+    async def _list_failed_async(
+        self, symbol: Optional[str] = None, limit: int = 50
+    ) -> List[Dict[str, Any]]:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+
+        async with pool.acquire() as conn:
+            if symbol:
+                rows = await conn.fetch(
+                    """
+                    SELECT data FROM decisions
+                    WHERE status = 'failed' AND symbol = $1
+                    ORDER BY created_at DESC
+                    LIMIT $2
+                    """,
+                    symbol,
+                    limit,
+                )
+            else:
+                rows = await conn.fetch(
+                    """
+                    SELECT data FROM decisions
+                    WHERE status = 'failed'
+                    ORDER BY created_at DESC
+                    LIMIT $1
+                    """,
+                    limit,
+                )
+
+        return [json.loads(row["data"]) for row in rows]
+
+    def get_stats(self, symbol: Optional[str] = None) -> Dict[str, Any]:
+        return _run_async(self._get_stats_async(symbol))
+
+    async def _get_stats_async(self, symbol: Optional[str] = None) -> Dict[str, Any]:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+
+        async with pool.acquire() as conn:
+            if symbol:
+                row = await conn.fetchrow(
+                    """
+                    SELECT
+                        COUNT(*) as total,
+                        COUNT(*) FILTER (WHERE status = 'active') as active,
+                        COUNT(*) FILTER (WHERE status = 'closed') as closed,
+                        COUNT(*) FILTER (WHERE status = 'failed') as failed,
+                        COUNT(*) FILTER (WHERE status = 'cancelled') as cancelled,
+                        COUNT(*) FILTER (WHERE data->>'was_correct' = 'true') as wins,
+                        COUNT(*) FILTER (WHERE data->>'was_correct' = 'false') as losses,
+                        AVG((data->>'pnl')::float) FILTER (WHERE status = 'closed') as avg_pnl,
+                        SUM((data->>'pnl')::float) FILTER (WHERE status = 'closed') as total_pnl
+                    FROM decisions
+                    WHERE symbol = $1
+                    """,
+                    symbol,
+                )
+            else:
+                row = await conn.fetchrow(
+                    """
+                    SELECT
+                        COUNT(*) as total,
+                        COUNT(*) FILTER (WHERE status = 'active') as active,
+                        COUNT(*) FILTER (WHERE status = 'closed') as closed,
+                        COUNT(*) FILTER (WHERE status = 'failed') as failed,
+                        COUNT(*) FILTER (WHERE status = 'cancelled') as cancelled,
+                        COUNT(*) FILTER (WHERE data->>'was_correct' = 'true') as wins,
+                        COUNT(*) FILTER (WHERE data->>'was_correct' = 'false') as losses,
+                        AVG((data->>'pnl')::float) FILTER (WHERE status = 'closed') as avg_pnl,
+                        SUM((data->>'pnl')::float) FILTER (WHERE status = 'closed') as total_pnl
+                    FROM decisions
+                    """
+                )
+
+        return {
+            "total": row["total"] or 0,
+            "active": row["active"] or 0,
+            "closed": row["closed"] or 0,
+            "failed": row["failed"] or 0,
+            "cancelled": row["cancelled"] or 0,
+            "wins": row["wins"] or 0,
+            "losses": row["losses"] or 0,
+            "avg_pnl": float(row["avg_pnl"]) if row["avg_pnl"] else 0.0,
+            "total_pnl": float(row["total_pnl"]) if row["total_pnl"] else 0.0,
+            "win_rate": (
+                row["wins"] / (row["wins"] + row["losses"])
+                if (row["wins"] or 0) + (row["losses"] or 0) > 0
+                else 0.0
+            ),
+        }
+
+    def link_ticket(self, decision_id: str, mt5_ticket: int) -> None:
+        _run_async(self._link_ticket_async(decision_id, mt5_ticket))
+
+    async def _link_ticket_async(self, decision_id: str, mt5_ticket: int) -> None:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """
+                UPDATE decisions
+                SET mt5_ticket = $2,
+                    data = jsonb_set(data, '{mt5_ticket}', $2::text::jsonb)
+                WHERE decision_id = $1
+                """,
+                decision_id,
+                mt5_ticket,
+            )
+
+    def mark_reviewed(self, decision_id: str) -> None:
+        _run_async(self._mark_reviewed_async(decision_id))
+
+    async def _mark_reviewed_async(self, decision_id: str) -> None:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """
+                UPDATE decisions
+                SET data = jsonb_set(data, '{reviewed_at}', to_jsonb(NOW()::text))
+                WHERE decision_id = $1
+                """,
+                decision_id,
+            )
+
+    def cancel(self, decision_id: str, reason: str = "") -> None:
+        _run_async(self._cancel_async(decision_id, reason))
+
+    async def _cancel_async(self, decision_id: str, reason: str = "") -> None:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """
+                UPDATE decisions
+                SET status = 'cancelled',
+                    data = jsonb_set(
+                        jsonb_set(data, '{status}', '"cancelled"'),
+                        '{cancel_reason}',
+                        $2::jsonb
+                    )
+                WHERE decision_id = $1
+                """,
+                decision_id,
+                json.dumps(reason),
+            )
 
     def store_context(self, decision_id: str, context: Dict[str, Any]) -> None:
         _run_async(self._store_context_async(decision_id, context))
@@ -576,3 +865,734 @@ class PostgresAutomationStateStore(AutomationStateStore):
             return None
 
         return json.loads(row["guardrails"])
+
+
+class PostgresConfigStore:
+    """PostgreSQL-backed configuration storage."""
+
+    def __init__(self):
+        self._pool = None
+        self._initialized = False
+
+    async def _get_pool(self):
+        if self._pool is None:
+            import asyncpg
+
+            self._pool = await asyncpg.create_pool(
+                _get_connection_string(),
+                min_size=1,
+                max_size=3,
+                command_timeout=30,
+                statement_cache_size=0,
+            )
+        return self._pool
+
+    async def _ensure_tables(self):
+        if self._initialized:
+            return
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS configs (
+                    key TEXT PRIMARY KEY,
+                    value JSONB NOT NULL,
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+            """)
+        self._initialized = True
+
+    def get(self, key: str) -> Optional[Any]:
+        return _run_async(self._get_async(key))
+
+    async def _get_async(self, key: str) -> Optional[Any]:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                "SELECT value FROM configs WHERE key = $1", key
+            )
+        if not row:
+            return None
+        return json.loads(row["value"])
+
+    def set(self, key: str, value: Any) -> None:
+        _run_async(self._set_async(key, value))
+
+    async def _set_async(self, key: str, value: Any) -> None:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO configs (key, value, updated_at)
+                VALUES ($1, $2, NOW())
+                ON CONFLICT (key) DO UPDATE SET
+                    value = EXCLUDED.value,
+                    updated_at = NOW()
+                """,
+                key,
+                json.dumps(value, default=str),
+            )
+
+    def delete(self, key: str) -> None:
+        _run_async(self._delete_async(key))
+
+    async def _delete_async(self, key: str) -> None:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            await conn.execute("DELETE FROM configs WHERE key = $1", key)
+
+    def get_all(self, prefix: str = "") -> Dict[str, Any]:
+        return _run_async(self._get_all_async(prefix))
+
+    async def _get_all_async(self, prefix: str = "") -> Dict[str, Any]:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            if prefix:
+                rows = await conn.fetch(
+                    "SELECT key, value FROM configs WHERE key LIKE $1",
+                    f"{prefix}%",
+                )
+            else:
+                rows = await conn.fetch("SELECT key, value FROM configs")
+        return {row["key"]: json.loads(row["value"]) for row in rows}
+
+
+class PostgresAgentWeightsStore:
+    """PostgreSQL-backed agent weights storage for online RL."""
+
+    def __init__(self):
+        self._pool = None
+        self._initialized = False
+
+    async def _get_pool(self):
+        if self._pool is None:
+            import asyncpg
+
+            self._pool = await asyncpg.create_pool(
+                _get_connection_string(),
+                min_size=1,
+                max_size=3,
+                command_timeout=30,
+                statement_cache_size=0,
+            )
+        return self._pool
+
+    async def _ensure_tables(self):
+        if self._initialized:
+            return
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS agent_weights (
+                    id TEXT PRIMARY KEY DEFAULT 'default',
+                    weights JSONB NOT NULL,
+                    weight_history JSONB DEFAULT '[]',
+                    learning_rate FLOAT DEFAULT 0.1,
+                    momentum FLOAT DEFAULT 0.9,
+                    last_update TIMESTAMPTZ,
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+            """)
+        self._initialized = True
+
+    def load(self, weights_id: str = "default") -> Optional[Dict[str, Any]]:
+        return _run_async(self._load_async(weights_id))
+
+    async def _load_async(self, weights_id: str = "default") -> Optional[Dict[str, Any]]:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                SELECT weights, weight_history, learning_rate, momentum, last_update
+                FROM agent_weights WHERE id = $1
+                """,
+                weights_id,
+            )
+        if not row:
+            return None
+        return {
+            "weights": json.loads(row["weights"]),
+            "weight_history": json.loads(row["weight_history"]) if row["weight_history"] else [],
+            "learning_rate": row["learning_rate"],
+            "momentum": row["momentum"],
+            "last_update": row["last_update"].isoformat() if row["last_update"] else None,
+        }
+
+    def save(
+        self,
+        weights: Dict[str, float],
+        weight_history: List[Dict] = None,
+        learning_rate: float = 0.1,
+        momentum: float = 0.9,
+        weights_id: str = "default",
+    ) -> None:
+        _run_async(
+            self._save_async(weights, weight_history, learning_rate, momentum, weights_id)
+        )
+
+    async def _save_async(
+        self,
+        weights: Dict[str, float],
+        weight_history: List[Dict] = None,
+        learning_rate: float = 0.1,
+        momentum: float = 0.9,
+        weights_id: str = "default",
+    ) -> None:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO agent_weights (id, weights, weight_history, learning_rate, momentum, last_update, updated_at)
+                VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+                ON CONFLICT (id) DO UPDATE SET
+                    weights = EXCLUDED.weights,
+                    weight_history = EXCLUDED.weight_history,
+                    learning_rate = EXCLUDED.learning_rate,
+                    momentum = EXCLUDED.momentum,
+                    last_update = NOW(),
+                    updated_at = NOW()
+                """,
+                weights_id,
+                json.dumps(weights),
+                json.dumps(weight_history or []),
+                learning_rate,
+                momentum,
+            )
+
+
+class PostgresPortfolioStateStore:
+    """PostgreSQL-backed portfolio state storage."""
+
+    def __init__(self):
+        self._pool = None
+        self._initialized = False
+
+    async def _get_pool(self):
+        if self._pool is None:
+            import asyncpg
+
+            self._pool = await asyncpg.create_pool(
+                _get_connection_string(),
+                min_size=1,
+                max_size=3,
+                command_timeout=30,
+                statement_cache_size=0,
+            )
+        return self._pool
+
+    async def _ensure_tables(self):
+        if self._initialized:
+            return
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS portfolio_state (
+                    id TEXT PRIMARY KEY DEFAULT 'default',
+                    state JSONB NOT NULL,
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+            """)
+        self._initialized = True
+
+    def load(self, portfolio_id: str = "default") -> Optional[Dict[str, Any]]:
+        return _run_async(self._load_async(portfolio_id))
+
+    async def _load_async(self, portfolio_id: str = "default") -> Optional[Dict[str, Any]]:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                "SELECT state FROM portfolio_state WHERE id = $1",
+                portfolio_id,
+            )
+        if not row:
+            return None
+        return json.loads(row["state"])
+
+    def save(self, state: Dict[str, Any], portfolio_id: str = "default") -> None:
+        _run_async(self._save_async(state, portfolio_id))
+
+    async def _save_async(self, state: Dict[str, Any], portfolio_id: str = "default") -> None:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO portfolio_state (id, state, updated_at)
+                VALUES ($1, $2, NOW())
+                ON CONFLICT (id) DO UPDATE SET
+                    state = EXCLUDED.state,
+                    updated_at = NOW()
+                """,
+                portfolio_id,
+                json.dumps(state, default=str),
+            )
+
+
+class PostgresTuningHistoryStore:
+    """PostgreSQL-backed tuning history storage."""
+
+    def __init__(self):
+        self._pool = None
+        self._initialized = False
+
+    async def _get_pool(self):
+        if self._pool is None:
+            import asyncpg
+
+            self._pool = await asyncpg.create_pool(
+                _get_connection_string(),
+                min_size=1,
+                max_size=3,
+                command_timeout=30,
+                statement_cache_size=0,
+            )
+        return self._pool
+
+    async def _ensure_tables(self):
+        if self._initialized:
+            return
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS tuning_history (
+                    id SERIAL PRIMARY KEY,
+                    symbol TEXT NOT NULL,
+                    pipeline TEXT NOT NULL,
+                    result JSONB NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_tuning_symbol_pipeline
+                ON tuning_history(symbol, pipeline);
+            """)
+        self._initialized = True
+
+    def add(self, symbol: str, pipeline: str, result: Dict[str, Any]) -> int:
+        return _run_async(self._add_async(symbol, pipeline, result))
+
+    async def _add_async(self, symbol: str, pipeline: str, result: Dict[str, Any]) -> int:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                INSERT INTO tuning_history (symbol, pipeline, result)
+                VALUES ($1, $2, $3)
+                RETURNING id
+                """,
+                symbol,
+                pipeline,
+                json.dumps(result, default=str),
+            )
+        return row["id"]
+
+    def get_history(
+        self, symbol: str = None, pipeline: str = None, limit: int = 50
+    ) -> List[Dict[str, Any]]:
+        return _run_async(self._get_history_async(symbol, pipeline, limit))
+
+    async def _get_history_async(
+        self, symbol: str = None, pipeline: str = None, limit: int = 50
+    ) -> List[Dict[str, Any]]:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            if symbol and pipeline:
+                rows = await conn.fetch(
+                    """
+                    SELECT id, symbol, pipeline, result, created_at
+                    FROM tuning_history
+                    WHERE symbol = $1 AND pipeline = $2
+                    ORDER BY created_at DESC
+                    LIMIT $3
+                    """,
+                    symbol,
+                    pipeline,
+                    limit,
+                )
+            elif symbol:
+                rows = await conn.fetch(
+                    """
+                    SELECT id, symbol, pipeline, result, created_at
+                    FROM tuning_history
+                    WHERE symbol = $1
+                    ORDER BY created_at DESC
+                    LIMIT $2
+                    """,
+                    symbol,
+                    limit,
+                )
+            elif pipeline:
+                rows = await conn.fetch(
+                    """
+                    SELECT id, symbol, pipeline, result, created_at
+                    FROM tuning_history
+                    WHERE pipeline = $1
+                    ORDER BY created_at DESC
+                    LIMIT $2
+                    """,
+                    pipeline,
+                    limit,
+                )
+            else:
+                rows = await conn.fetch(
+                    """
+                    SELECT id, symbol, pipeline, result, created_at
+                    FROM tuning_history
+                    ORDER BY created_at DESC
+                    LIMIT $1
+                    """,
+                    limit,
+                )
+        return [
+            {
+                "id": row["id"],
+                "symbol": row["symbol"],
+                "pipeline": row["pipeline"],
+                "result": json.loads(row["result"]),
+                "created_at": row["created_at"].isoformat(),
+            }
+            for row in rows
+        ]
+
+    def get_latest(self, symbol: str, pipeline: str) -> Optional[Dict[str, Any]]:
+        return _run_async(self._get_latest_async(symbol, pipeline))
+
+    async def _get_latest_async(
+        self, symbol: str, pipeline: str
+    ) -> Optional[Dict[str, Any]]:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                SELECT id, symbol, pipeline, result, created_at
+                FROM tuning_history
+                WHERE symbol = $1 AND pipeline = $2
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                symbol,
+                pipeline,
+            )
+        if not row:
+            return None
+        return {
+            "id": row["id"],
+            "symbol": row["symbol"],
+            "pipeline": row["pipeline"],
+            "result": json.loads(row["result"]),
+            "created_at": row["created_at"].isoformat(),
+        }
+
+
+class PostgresSignalStore:
+    """PostgreSQL-backed signal storage for tracking all generated signals."""
+
+    def __init__(self):
+        self._pool = None
+        self._initialized = False
+
+    async def _get_pool(self):
+        if self._pool is None:
+            import asyncpg
+
+            self._pool = await asyncpg.create_pool(
+                _get_connection_string(),
+                min_size=1,
+                max_size=5,
+                command_timeout=30,
+                statement_cache_size=0,
+            )
+        return self._pool
+
+    async def _ensure_tables(self):
+        if self._initialized:
+            return
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS signals (
+                    id SERIAL PRIMARY KEY,
+                    signal_id TEXT UNIQUE NOT NULL,
+                    symbol TEXT NOT NULL,
+                    signal TEXT NOT NULL,
+                    confidence FLOAT NOT NULL,
+                    trade_date TEXT,
+                    entry_price FLOAT,
+                    stop_loss FLOAT,
+                    take_profit FLOAT,
+                    recommended_size FLOAT,
+                    rationale TEXT,
+                    key_factors JSONB DEFAULT '[]',
+                    smc_analysis JSONB,
+                    pipeline TEXT,
+                    source TEXT,
+                    executed BOOLEAN DEFAULT FALSE,
+                    decision_id TEXT,
+                    analysis_duration_seconds FLOAT,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_signals_symbol ON signals(symbol);
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_signals_created ON signals(created_at DESC);
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_signals_executed ON signals(executed);
+            """)
+        self._initialized = True
+
+    def store(self, signal: Dict[str, Any]) -> str:
+        return _run_async(self._store_async(signal))
+
+    async def _store_async(self, signal: Dict[str, Any]) -> str:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+
+        # Generate signal_id if not provided
+        signal_id = signal.get("signal_id")
+        if not signal_id:
+            from datetime import datetime
+            symbol = signal.get("symbol", "UNKNOWN")
+            signal_id = f"{symbol}_{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}"
+
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO signals (
+                    signal_id, symbol, signal, confidence, trade_date,
+                    entry_price, stop_loss, take_profit, recommended_size,
+                    rationale, key_factors, smc_analysis, pipeline, source,
+                    executed, decision_id, analysis_duration_seconds
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+                ON CONFLICT (signal_id) DO UPDATE SET
+                    executed = EXCLUDED.executed,
+                    decision_id = EXCLUDED.decision_id
+                """,
+                signal_id,
+                signal.get("symbol"),
+                signal.get("signal"),
+                signal.get("confidence", 0.0),
+                signal.get("trade_date"),
+                signal.get("entry_price"),
+                signal.get("stop_loss"),
+                signal.get("take_profit"),
+                signal.get("recommended_size"),
+                signal.get("rationale"),
+                json.dumps(signal.get("key_factors", [])),
+                json.dumps(signal.get("smc_analysis")) if signal.get("smc_analysis") else None,
+                signal.get("pipeline"),
+                signal.get("source"),
+                signal.get("executed", False),
+                signal.get("decision_id"),
+                signal.get("analysis_duration_seconds"),
+            )
+
+        return signal_id
+
+    def mark_executed(self, signal_id: str, decision_id: str) -> None:
+        _run_async(self._mark_executed_async(signal_id, decision_id))
+
+    async def _mark_executed_async(self, signal_id: str, decision_id: str) -> None:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """
+                UPDATE signals
+                SET executed = TRUE, decision_id = $2
+                WHERE signal_id = $1
+                """,
+                signal_id,
+                decision_id,
+            )
+
+    def list_signals(
+        self,
+        symbol: Optional[str] = None,
+        executed: Optional[bool] = None,
+        limit: int = 100,
+    ) -> List[Dict[str, Any]]:
+        return _run_async(self._list_signals_async(symbol, executed, limit))
+
+    async def _list_signals_async(
+        self,
+        symbol: Optional[str] = None,
+        executed: Optional[bool] = None,
+        limit: int = 100,
+    ) -> List[Dict[str, Any]]:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+
+        conditions = []
+        params = []
+        param_idx = 1
+
+        if symbol:
+            conditions.append(f"symbol = ${param_idx}")
+            params.append(symbol)
+            param_idx += 1
+        if executed is not None:
+            conditions.append(f"executed = ${param_idx}")
+            params.append(executed)
+            param_idx += 1
+
+        where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
+        params.append(limit)
+
+        query = f"""
+            SELECT * FROM signals
+            {where_clause}
+            ORDER BY created_at DESC
+            LIMIT ${param_idx}
+        """
+
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(query, *params)
+
+        return [
+            {
+                "id": row["id"],
+                "signal_id": row["signal_id"],
+                "symbol": row["symbol"],
+                "signal": row["signal"],
+                "confidence": row["confidence"],
+                "trade_date": row["trade_date"],
+                "entry_price": row["entry_price"],
+                "stop_loss": row["stop_loss"],
+                "take_profit": row["take_profit"],
+                "recommended_size": row["recommended_size"],
+                "rationale": row["rationale"],
+                "key_factors": json.loads(row["key_factors"]) if row["key_factors"] else [],
+                "smc_analysis": json.loads(row["smc_analysis"]) if row["smc_analysis"] else None,
+                "pipeline": row["pipeline"],
+                "source": row["source"],
+                "executed": row["executed"],
+                "decision_id": row["decision_id"],
+                "analysis_duration_seconds": row["analysis_duration_seconds"],
+                "created_at": row["created_at"].isoformat(),
+            }
+            for row in rows
+        ]
+
+    def get_stats(self, symbol: Optional[str] = None) -> Dict[str, Any]:
+        return _run_async(self._get_stats_async(symbol))
+
+    async def _get_stats_async(self, symbol: Optional[str] = None) -> Dict[str, Any]:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+
+        async with pool.acquire() as conn:
+            if symbol:
+                row = await conn.fetchrow(
+                    """
+                    SELECT
+                        COUNT(*) as total,
+                        COUNT(*) FILTER (WHERE signal = 'BUY') as buy_signals,
+                        COUNT(*) FILTER (WHERE signal = 'SELL') as sell_signals,
+                        COUNT(*) FILTER (WHERE signal = 'HOLD') as hold_signals,
+                        COUNT(*) FILTER (WHERE executed = TRUE) as executed,
+                        COUNT(*) FILTER (WHERE executed = FALSE) as not_executed,
+                        AVG(confidence) as avg_confidence
+                    FROM signals
+                    WHERE symbol = $1
+                    """,
+                    symbol,
+                )
+            else:
+                row = await conn.fetchrow(
+                    """
+                    SELECT
+                        COUNT(*) as total,
+                        COUNT(*) FILTER (WHERE signal = 'BUY') as buy_signals,
+                        COUNT(*) FILTER (WHERE signal = 'SELL') as sell_signals,
+                        COUNT(*) FILTER (WHERE signal = 'HOLD') as hold_signals,
+                        COUNT(*) FILTER (WHERE executed = TRUE) as executed,
+                        COUNT(*) FILTER (WHERE executed = FALSE) as not_executed,
+                        AVG(confidence) as avg_confidence
+                    FROM signals
+                    """
+                )
+
+        return {
+            "total": row["total"] or 0,
+            "buy_signals": row["buy_signals"] or 0,
+            "sell_signals": row["sell_signals"] or 0,
+            "hold_signals": row["hold_signals"] or 0,
+            "executed": row["executed"] or 0,
+            "not_executed": row["not_executed"] or 0,
+            "execution_rate": (
+                row["executed"] / row["total"] if row["total"] > 0 else 0.0
+            ),
+            "avg_confidence": float(row["avg_confidence"]) if row["avg_confidence"] else 0.0,
+        }
+
+
+# Singleton instances
+_decision_store: Optional[PostgresDecisionStore] = None
+_state_store: Optional[PostgresAutomationStateStore] = None
+_config_store: Optional[PostgresConfigStore] = None
+_signal_store: Optional[PostgresSignalStore] = None
+_weights_store: Optional[PostgresAgentWeightsStore] = None
+_portfolio_store: Optional[PostgresPortfolioStateStore] = None
+_tuning_store: Optional[PostgresTuningHistoryStore] = None
+
+
+def get_decision_store() -> PostgresDecisionStore:
+    global _decision_store
+    if _decision_store is None:
+        _decision_store = PostgresDecisionStore()
+    return _decision_store
+
+
+def get_state_store() -> PostgresAutomationStateStore:
+    global _state_store
+    if _state_store is None:
+        _state_store = PostgresAutomationStateStore()
+    return _state_store
+
+
+def get_config_store() -> PostgresConfigStore:
+    global _config_store
+    if _config_store is None:
+        _config_store = PostgresConfigStore()
+    return _config_store
+
+
+def get_weights_store() -> PostgresAgentWeightsStore:
+    global _weights_store
+    if _weights_store is None:
+        _weights_store = PostgresAgentWeightsStore()
+    return _weights_store
+
+
+def get_portfolio_store() -> PostgresPortfolioStateStore:
+    global _portfolio_store
+    if _portfolio_store is None:
+        _portfolio_store = PostgresPortfolioStateStore()
+    return _portfolio_store
+
+
+def get_tuning_store() -> PostgresTuningHistoryStore:
+    global _tuning_store
+    if _tuning_store is None:
+        _tuning_store = PostgresTuningHistoryStore()
+    return _tuning_store
+
+
+def get_signal_store() -> PostgresSignalStore:
+    global _signal_store
+    if _signal_store is None:
+        _signal_store = PostgresSignalStore()
+    return _signal_store
