@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { getStatus } from "@/lib/api"
-import { RefreshCw, Wifi, WifiOff, Brain, AlertTriangle } from "lucide-react"
+import { RefreshCw, Wifi, WifiOff, Brain, AlertTriangle, ShieldAlert } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import { HelpTooltip } from "@/components/ui/help-tooltip"
 
@@ -25,7 +25,10 @@ export function Header() {
     return () => clearInterval(interval)
   }, [])
 
+  const guardrails = status?.guardrails
+
   return (
+    <div>
     <header className="flex h-16 items-center justify-between border-b bg-card px-6">
       <div className="flex items-center gap-4">
         <Badge variant={status?.mt5?.connected ? "success" : "destructive"} className="gap-1">
@@ -130,5 +133,18 @@ export function Header() {
         </Button>
       </div>
     </header>
+    {guardrails?.blocked && (
+      <div className="flex items-center gap-3 border-b border-red-500/30 bg-red-500/10 px-6 py-2">
+        <ShieldAlert className="h-4 w-4 text-red-500 shrink-0" />
+        <span className="text-sm text-red-400">
+          <span className="font-medium">Trading Blocked</span>
+          {guardrails.reason ? ` — ${guardrails.reason}` : ""}
+        </span>
+        <a href="/risk" className="ml-auto text-xs text-red-400 underline hover:text-red-300">
+          View Risk Settings
+        </a>
+      </div>
+    )}
+    </div>
   )
 }

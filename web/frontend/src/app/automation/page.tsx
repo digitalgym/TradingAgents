@@ -89,6 +89,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { HelpTooltip } from "@/components/ui/help-tooltip"
 import { TradeExecutionWizard } from "@/components/TradeExecutionWizard"
+import { TradeManagementSection } from "@/components/automation/trade-management-section"
 import { useAutomationStatus, AutomationStatusEvent } from "@/lib/websocket"
 
 interface MarketWatchSymbol {
@@ -1572,6 +1573,10 @@ export default function AutomationPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Trade Management Agent */}
+      <Separator className="my-8" />
+      <TradeManagementSection />
 
       {/* Quant Automation Instances */}
       <Separator className="my-8" />

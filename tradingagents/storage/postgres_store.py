@@ -121,7 +121,7 @@ class PostgresDecisionStore(DecisionStore):
                     data JSONB NOT NULL,
 
                     -- Indexes for common queries
-                    CONSTRAINT valid_status CHECK (status IN ('active', 'closed', 'failed', 'cancelled', 'retried'))
+                    CONSTRAINT valid_status CHECK (status IN ('active', 'closed', 'failed', 'cancelled', 'retried', 'order_unfilled'))
                 );
 
                 CREATE INDEX IF NOT EXISTS idx_decisions_symbol ON decisions(symbol);
@@ -245,6 +245,50 @@ class PostgresDecisionStore(DecisionStore):
                 CREATE INDEX IF NOT EXISTS idx_signals_executed ON signals(executed);
             """)
 
+            # --- Trade Management Agent tables ---
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS position_management_policies (
+                    ticket BIGINT PRIMARY KEY,
+                    symbol TEXT NOT NULL,
+                    policy JSONB NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+            """)
+
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS management_actions (
+                    id SERIAL PRIMARY KEY,
+                    ticket BIGINT NOT NULL,
+                    symbol TEXT NOT NULL,
+                    action_type TEXT NOT NULL,
+                    old_value DOUBLE PRECISION,
+                    new_value DOUBLE PRECISION,
+                    reason TEXT,
+                    success BOOLEAN NOT NULL,
+                    error TEXT,
+                    decision_id TEXT,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_mgmt_actions_ticket ON management_actions(ticket);
+                CREATE INDEX IF NOT EXISTS idx_mgmt_actions_created ON management_actions(created_at DESC);
+            """)
+
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS risk_alerts (
+                    id SERIAL PRIMARY KEY,
+                    alert_type TEXT NOT NULL,
+                    severity TEXT NOT NULL,
+                    message TEXT NOT NULL,
+                    details JSONB,
+                    acknowledged BOOLEAN DEFAULT FALSE,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_risk_alerts_created ON risk_alerts(created_at DESC);
+            """)
+
         self._initialized = True
 
     def _sync_ensure_tables(self):
@@ -264,11 +308,12 @@ class PostgresDecisionStore(DecisionStore):
         symbol = decision["symbol"]
         status = decision.get("status", "active")
         mt5_ticket = decision.get("mt5_ticket")
-        created_at = decision.get("created_at")
-        # Parse string to datetime if needed
-        if isinstance(created_at, str):
-            created_at = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
-        elif created_at is None:
+        created_at_raw = decision.get("created_at")
+        if isinstance(created_at_raw, str):
+            created_at = datetime.fromisoformat(created_at_raw.replace("Z", "+00:00"))
+        elif isinstance(created_at_raw, datetime):
+            created_at = created_at_raw
+        else:
             created_at = datetime.now()
 
         async with pool.acquire() as conn:
@@ -321,7 +366,13 @@ class PostgresDecisionStore(DecisionStore):
 
         status = decision.get("status", "active")
         mt5_ticket = decision.get("mt5_ticket")
-        exit_date = decision.get("exit_date")
+        exit_date_raw = decision.get("exit_date")
+        if isinstance(exit_date_raw, str):
+            exit_date = datetime.fromisoformat(exit_date_raw.replace("Z", "+00:00"))
+        elif isinstance(exit_date_raw, datetime):
+            exit_date = exit_date_raw
+        else:
+            exit_date = None
 
         # Parse exit_date string to datetime if needed
         if isinstance(exit_date, str):
@@ -782,6 +833,50 @@ class PostgresAutomationStateStore(AutomationStateStore):
                     guardrails JSONB NOT NULL,
                     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 );
+            """)
+
+            # --- Trade Management Agent tables ---
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS position_management_policies (
+                    ticket BIGINT PRIMARY KEY,
+                    symbol TEXT NOT NULL,
+                    policy JSONB NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+            """)
+
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS management_actions (
+                    id SERIAL PRIMARY KEY,
+                    ticket BIGINT NOT NULL,
+                    symbol TEXT NOT NULL,
+                    action_type TEXT NOT NULL,
+                    old_value DOUBLE PRECISION,
+                    new_value DOUBLE PRECISION,
+                    reason TEXT,
+                    success BOOLEAN NOT NULL,
+                    error TEXT,
+                    decision_id TEXT,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_mgmt_actions_ticket ON management_actions(ticket);
+                CREATE INDEX IF NOT EXISTS idx_mgmt_actions_created ON management_actions(created_at DESC);
+            """)
+
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS risk_alerts (
+                    id SERIAL PRIMARY KEY,
+                    alert_type TEXT NOT NULL,
+                    severity TEXT NOT NULL,
+                    message TEXT NOT NULL,
+                    details JSONB,
+                    acknowledged BOOLEAN DEFAULT FALSE,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_risk_alerts_created ON risk_alerts(created_at DESC);
             """)
 
         self._initialized = True
@@ -1543,6 +1638,280 @@ class PostgresSignalStore:
         }
 
 
+class PostgresManagementStore:
+    """PostgreSQL-backed storage for Trade Management Agent data."""
+
+    def __init__(self):
+        self._pool = None
+        self._initialized = False
+
+    async def _get_pool(self):
+        if self._pool is None:
+            import asyncpg
+
+            self._pool = await asyncpg.create_pool(
+                _get_connection_string(),
+                min_size=1,
+                max_size=5,
+                command_timeout=30,
+                statement_cache_size=0,
+            )
+        return self._pool
+
+    async def _ensure_tables(self):
+        if self._initialized:
+            return
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS position_management_policies (
+                    ticket BIGINT PRIMARY KEY,
+                    symbol TEXT NOT NULL,
+                    policy JSONB NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+            """)
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS management_actions (
+                    id SERIAL PRIMARY KEY,
+                    ticket BIGINT NOT NULL,
+                    symbol TEXT NOT NULL,
+                    action_type TEXT NOT NULL,
+                    old_value DOUBLE PRECISION,
+                    new_value DOUBLE PRECISION,
+                    reason TEXT,
+                    success BOOLEAN NOT NULL,
+                    error TEXT,
+                    decision_id TEXT,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                CREATE INDEX IF NOT EXISTS idx_mgmt_actions_ticket ON management_actions(ticket);
+                CREATE INDEX IF NOT EXISTS idx_mgmt_actions_created ON management_actions(created_at DESC);
+            """)
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS risk_alerts (
+                    id SERIAL PRIMARY KEY,
+                    alert_type TEXT NOT NULL,
+                    severity TEXT NOT NULL,
+                    message TEXT NOT NULL,
+                    details JSONB,
+                    acknowledged BOOLEAN DEFAULT FALSE,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                CREATE INDEX IF NOT EXISTS idx_risk_alerts_created ON risk_alerts(created_at DESC);
+            """)
+        self._initialized = True
+
+    # --- Policy methods ---
+
+    def save_management_policy(self, ticket: int, symbol: str, policy_dict: dict) -> None:
+        _run_async(self._save_management_policy_async(ticket, symbol, policy_dict))
+
+    async def _save_management_policy_async(self, ticket: int, symbol: str, policy_dict: dict) -> None:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO position_management_policies (ticket, symbol, policy, created_at, updated_at)
+                VALUES ($1, $2, $3, NOW(), NOW())
+                ON CONFLICT (ticket) DO UPDATE SET
+                    symbol = EXCLUDED.symbol,
+                    policy = EXCLUDED.policy,
+                    updated_at = NOW()
+                """,
+                ticket,
+                symbol,
+                json.dumps(policy_dict, default=str),
+            )
+
+    def load_management_policy(self, ticket: int) -> Optional[dict]:
+        return _run_async(self._load_management_policy_async(ticket))
+
+    async def _load_management_policy_async(self, ticket: int) -> Optional[dict]:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                "SELECT policy FROM position_management_policies WHERE ticket = $1",
+                ticket,
+            )
+        if not row:
+            return None
+        return json.loads(row["policy"])
+
+    def load_all_management_policies(self) -> Dict[int, dict]:
+        return _run_async(self._load_all_management_policies_async())
+
+    async def _load_all_management_policies_async(self) -> Dict[int, dict]:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT ticket, policy FROM position_management_policies"
+            )
+        result = {}
+        for row in rows:
+            policy = json.loads(row["policy"])
+            policy["ticket"] = row["ticket"]
+            result[row["ticket"]] = policy
+        return result
+
+    def delete_management_policy(self, ticket: int) -> None:
+        _run_async(self._delete_management_policy_async(ticket))
+
+    async def _delete_management_policy_async(self, ticket: int) -> None:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            await conn.execute(
+                "DELETE FROM position_management_policies WHERE ticket = $1",
+                ticket,
+            )
+
+    # --- Action methods ---
+
+    def save_management_action(self, action_dict: dict) -> None:
+        _run_async(self._save_management_action_async(action_dict))
+
+    async def _save_management_action_async(self, action_dict: dict) -> None:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO management_actions
+                    (ticket, symbol, action_type, old_value, new_value, reason, success, error, decision_id)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                """,
+                action_dict.get("ticket"),
+                action_dict.get("symbol", ""),
+                action_dict.get("action_type", ""),
+                action_dict.get("old_value"),
+                action_dict.get("new_value"),
+                action_dict.get("reason", ""),
+                action_dict.get("success", True),
+                action_dict.get("error"),
+                action_dict.get("decision_id"),
+            )
+
+    def get_management_actions(self, ticket: int = None, limit: int = 50) -> list:
+        return _run_async(self._get_management_actions_async(ticket, limit))
+
+    async def _get_management_actions_async(self, ticket: int = None, limit: int = 50) -> list:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+
+        if ticket:
+            query = """
+                SELECT * FROM management_actions
+                WHERE ticket = $1
+                ORDER BY created_at DESC
+                LIMIT $2
+            """
+            params = [ticket, limit]
+        else:
+            query = """
+                SELECT * FROM management_actions
+                ORDER BY created_at DESC
+                LIMIT $1
+            """
+            params = [limit]
+
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(query, *params)
+
+        return [
+            {
+                "id": row["id"],
+                "ticket": row["ticket"],
+                "symbol": row["symbol"],
+                "action_type": row["action_type"],
+                "old_value": row["old_value"],
+                "new_value": row["new_value"],
+                "reason": row["reason"],
+                "success": row["success"],
+                "error": row["error"],
+                "decision_id": row["decision_id"],
+                "created_at": row["created_at"].isoformat(),
+            }
+            for row in rows
+        ]
+
+    # --- Risk alert methods ---
+
+    def save_risk_alert(self, alert_type: str, severity: str, message: str,
+                        details: Optional[dict] = None) -> None:
+        _run_async(self._save_risk_alert_async(alert_type, severity, message, details))
+
+    async def _save_risk_alert_async(self, alert_type: str, severity: str,
+                                      message: str, details: Optional[dict] = None) -> None:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO risk_alerts (alert_type, severity, message, details)
+                VALUES ($1, $2, $3, $4)
+                """,
+                alert_type,
+                severity,
+                message,
+                json.dumps(details, default=str) if details else None,
+            )
+
+    def get_risk_alerts(self, limit: int = 20, unacknowledged_only: bool = False) -> list:
+        return _run_async(self._get_risk_alerts_async(limit, unacknowledged_only))
+
+    async def _get_risk_alerts_async(self, limit: int = 20,
+                                      unacknowledged_only: bool = False) -> list:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+
+        if unacknowledged_only:
+            query = """
+                SELECT * FROM risk_alerts
+                WHERE acknowledged = FALSE
+                ORDER BY created_at DESC
+                LIMIT $1
+            """
+        else:
+            query = """
+                SELECT * FROM risk_alerts
+                ORDER BY created_at DESC
+                LIMIT $1
+            """
+
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(query, limit)
+
+        return [
+            {
+                "id": row["id"],
+                "alert_type": row["alert_type"],
+                "severity": row["severity"],
+                "message": row["message"],
+                "details": json.loads(row["details"]) if row["details"] else None,
+                "acknowledged": row["acknowledged"],
+                "created_at": row["created_at"].isoformat(),
+            }
+            for row in rows
+        ]
+
+    def acknowledge_risk_alert(self, alert_id: int) -> None:
+        _run_async(self._acknowledge_risk_alert_async(alert_id))
+
+    async def _acknowledge_risk_alert_async(self, alert_id: int) -> None:
+        await self._ensure_tables()
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            await conn.execute(
+                "UPDATE risk_alerts SET acknowledged = TRUE WHERE id = $1",
+                alert_id,
+            )
+
+
 # Singleton instances
 _decision_store: Optional[PostgresDecisionStore] = None
 _state_store: Optional[PostgresAutomationStateStore] = None
@@ -1551,6 +1920,7 @@ _signal_store: Optional[PostgresSignalStore] = None
 _weights_store: Optional[PostgresAgentWeightsStore] = None
 _portfolio_store: Optional[PostgresPortfolioStateStore] = None
 _tuning_store: Optional[PostgresTuningHistoryStore] = None
+_management_store: Optional[PostgresManagementStore] = None
 
 
 def get_decision_store() -> PostgresDecisionStore:
@@ -1600,3 +1970,10 @@ def get_signal_store() -> PostgresSignalStore:
     if _signal_store is None:
         _signal_store = PostgresSignalStore()
     return _signal_store
+
+
+def get_management_store() -> PostgresManagementStore:
+    global _management_store
+    if _management_store is None:
+        _management_store = PostgresManagementStore()
+    return _management_store

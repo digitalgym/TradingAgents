@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(POSTGRES_URL=\"postgresql://tradingagents:tradingagents@localhost:5432/tradingagents\" python -c \":*)"
     ]
   }
 }

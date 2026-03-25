@@ -19,6 +19,9 @@ import sys
 from pathlib import Path
 from typing import Dict, Any, List
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from .file_store import FileDecisionStore, DECISIONS_DIR
 
 

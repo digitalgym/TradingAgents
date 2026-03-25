@@ -9,6 +9,8 @@ eval_results/
 eval_data/
 *.egg-info/
 .env
+.env.*
+.env.production
 
 # ChromaDB and Memory Database
 memory_db/
