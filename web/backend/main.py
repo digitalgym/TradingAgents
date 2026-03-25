@@ -2926,6 +2926,66 @@ async def get_decision_stats():
         return {"error": str(e)}
 
 
+@app.get("/api/decisions/mtf-analysis-status")
+async def get_mtf_analysis_status():
+    """
+    Check status of MTF data collection for partial close analysis.
+
+    We're collecting data to answer: "Do H1 levels cause pullbacks on D1 trades?"
+    Review when ~50 trades have closed with MTF data.
+    """
+    try:
+        all_decisions = trade_decisions.list_decisions(limit=1000)
+
+        # Count trades with MTF data
+        with_timeframe = [d for d in all_decisions if d.get("timeframe")]
+        with_mtf_context = [d for d in all_decisions if d.get("mtf_context")]
+
+        closed_with_mtf = [
+            d for d in with_timeframe
+            if d.get("status") == "closed"
+        ]
+
+        # Count MTF conflict events
+        mtf_conflicts = 0
+        opposing_events = 0
+        for d in all_decisions:
+            events = d.get("events", [])
+            for e in events:
+                if e.get("type") == "mtf_conflict":
+                    mtf_conflicts += 1
+                elif e.get("type") == "opposing_position_opened":
+                    opposing_events += 1
+
+        # Count trades with excursion data
+        with_excursion = [
+            d for d in closed_with_mtf
+            if d.get("structured_outcome", {}).get("max_favorable_pips") is not None
+        ]
+
+        ready_for_analysis = len(closed_with_mtf) >= 50
+
+        return {
+            "status": "ready_for_analysis" if ready_for_analysis else "collecting_data",
+            "trades_with_timeframe": len(with_timeframe),
+            "trades_with_mtf_context": len(with_mtf_context),
+            "closed_with_mtf_data": len(closed_with_mtf),
+            "with_excursion_data": len(with_excursion),
+            "mtf_conflict_events": mtf_conflicts,
+            "opposing_position_events": opposing_events,
+            "target_for_analysis": 50,
+            "progress_pct": min(100, round(len(closed_with_mtf) / 50 * 100, 1)),
+            "message": (
+                f"Ready for analysis! {len(closed_with_mtf)} trades with MTF data."
+                if ready_for_analysis else
+                f"Collecting data: {len(closed_with_mtf)}/50 closed trades with MTF data. "
+                f"{mtf_conflicts} MTF conflicts logged, {opposing_events} opposing position events."
+            ),
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
 @app.post("/api/decisions/reconcile")
 async def reconcile_decisions_endpoint():
     """Reconcile active decisions against MT5 closed positions."""

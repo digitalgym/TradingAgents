@@ -215,6 +215,9 @@ class TradeManagementAgent:
         # ATR cache: symbol -> (atr_value, timestamp)
         self._atr_cache: Dict[str, Tuple[float, float]] = {}
 
+        # Price extremes tracking for excursion analysis: ticket -> {high, low, direction}
+        self._price_extremes: Dict[int, Dict[str, Any]] = {}
+
         # Policy cache: ticket -> (policy, timestamp)
         self._policy_cache: Dict[int, Tuple[PositionManagementPolicy, float]] = {}
         self._policies_loaded_at: float = 0.0
@@ -438,11 +441,28 @@ class TradeManagementAgent:
                         decision["entry_price"] = p.get("price_open")
                         break
 
+            # Get tracked price extremes for excursion analysis
+            max_favorable_price = None
+            max_adverse_price = None
+            if ticket in self._price_extremes:
+                extremes = self._price_extremes[ticket]
+                direction = extremes.get("direction", decision.get("action", "BUY"))
+                if direction == "BUY":
+                    max_favorable_price = extremes["high"]
+                    max_adverse_price = extremes["low"]
+                else:
+                    max_favorable_price = extremes["low"]
+                    max_adverse_price = extremes["high"]
+                # Clean up tracked extremes
+                del self._price_extremes[ticket]
+
             closed = close_decision(
                 decision_id,
                 exit_price=exit_price,
                 outcome_notes=f"{notes}. MT5 profit: {profit:.2f}",
                 exit_reason=exit_reason,
+                max_favorable_price=max_favorable_price,
+                max_adverse_price=max_adverse_price,
             )
             self.logger.info(f"  Decision {decision_id} closed: {exit_reason}, pnl={profit:.2f}")
 
@@ -628,6 +648,22 @@ class TradeManagementAgent:
                 if current_price <= 0:
                     continue
 
+                # Track price extremes for excursion analysis (max favorable/adverse)
+                if ticket not in self._price_extremes:
+                    self._price_extremes[ticket] = {
+                        "high": current_price,
+                        "low": current_price,
+                        "direction": direction,
+                        "entry": entry_price,
+                    }
+                else:
+                    self._price_extremes[ticket]["high"] = max(
+                        self._price_extremes[ticket]["high"], current_price
+                    )
+                    self._price_extremes[ticket]["low"] = min(
+                        self._price_extremes[ticket]["low"], current_price
+                    )
+
                 # Calculate P&L percentage
                 if entry_price > 0:
                     if direction == "BUY":
@@ -802,6 +838,17 @@ class TradeManagementAgent:
                             )
                             self._log_action(action)
                             partial_status = "TAKEN" if action.success else f"FAILED: {action.error}"
+
+                            # Log partial close event for MTF analysis
+                            if action.success and decision:
+                                add_trade_event(decision["decision_id"], "partial_close", {
+                                    "volume_closed": partial_volume,
+                                    "volume_remaining": volume - partial_volume,
+                                    "close_price": current_price,
+                                    "pnl_pct_at_partial": round(pnl_pct, 4),
+                                    "reason": f"rr_target_{ptp_rr}R",
+                                    "managed_by": "trade_management_agent",
+                                }, source=self.config.instance_name)
                         else:
                             partial_status = "vol_too_small"
                     else:

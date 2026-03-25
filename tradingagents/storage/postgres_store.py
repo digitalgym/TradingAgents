@@ -374,6 +374,10 @@ class PostgresDecisionStore(DecisionStore):
         else:
             exit_date = None
 
+        # Parse exit_date string to datetime if needed
+        if isinstance(exit_date, str):
+            exit_date = datetime.fromisoformat(exit_date.replace("Z", "+00:00"))
+
         async with pool.acquire() as conn:
             await conn.execute(
                 """

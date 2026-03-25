@@ -376,6 +376,107 @@ def _remove_from_active_index(decision_id: str) -> None:
         _save_active_index(index)
 
 
+def capture_mtf_context(
+    symbol: str,
+    entry_price: float,
+    direction: str,
+    entry_timeframe: str = "D1",
+) -> Dict[str, Any]:
+    """
+    Capture multi-timeframe SMC levels at entry time for later analysis.
+
+    This data helps answer: "Did H1 levels cause pullbacks on D1 trades?"
+
+    Args:
+        symbol: Trading symbol (e.g., XAUUSD)
+        entry_price: Entry price for distance calculations
+        direction: "BUY" or "SELL"
+        entry_timeframe: The timeframe the trade was entered on
+
+    Returns:
+        MTF context dict with levels from H1 and H4
+    """
+    mtf_context = {
+        "entry_timeframe": entry_timeframe,
+        "h1_resistance_levels": [],
+        "h1_support_levels": [],
+        "h4_resistance_levels": [],
+        "h4_support_levels": [],
+        "distance_to_h1_resistance_pct": None,
+        "distance_to_h1_support_pct": None,
+        "nearest_h1_resistance": None,
+        "nearest_h1_support": None,
+        "captured_at": datetime.now().isoformat(),
+    }
+
+    try:
+        from tradingagents.dataflows.smc_utils import analyze_smc_all_timeframes, get_key_smc_levels
+
+        # Get SMC analysis for H1 and H4
+        smc_data = analyze_smc_all_timeframes(symbol, timeframes=["1H", "4H"])
+
+        # Extract H1 levels
+        if "1H" in smc_data:
+            h1_levels = get_key_smc_levels(smc_data["1H"], "both")
+            for level in h1_levels:
+                level_info = {
+                    "price": level["price"],
+                    "strength": level.get("strength", 0),
+                    "source": level.get("source", "unknown"),
+                }
+                if level["type"] == "resistance":
+                    mtf_context["h1_resistance_levels"].append(level_info)
+                else:
+                    mtf_context["h1_support_levels"].append(level_info)
+
+            # Sort and find nearest levels
+            if mtf_context["h1_resistance_levels"]:
+                mtf_context["h1_resistance_levels"].sort(key=lambda x: x["price"])
+                # For BUY, find resistance above entry
+                above_entry = [l for l in mtf_context["h1_resistance_levels"] if l["price"] > entry_price]
+                if above_entry:
+                    nearest = above_entry[0]
+                    mtf_context["nearest_h1_resistance"] = nearest["price"]
+                    mtf_context["distance_to_h1_resistance_pct"] = round(
+                        ((nearest["price"] - entry_price) / entry_price) * 100, 4
+                    )
+
+            if mtf_context["h1_support_levels"]:
+                mtf_context["h1_support_levels"].sort(key=lambda x: x["price"], reverse=True)
+                # Find support below entry
+                below_entry = [l for l in mtf_context["h1_support_levels"] if l["price"] < entry_price]
+                if below_entry:
+                    nearest = below_entry[0]
+                    mtf_context["nearest_h1_support"] = nearest["price"]
+                    mtf_context["distance_to_h1_support_pct"] = round(
+                        ((entry_price - nearest["price"]) / entry_price) * 100, 4
+                    )
+
+        # Extract H4 levels
+        if "4H" in smc_data:
+            h4_levels = get_key_smc_levels(smc_data["4H"], "both")
+            for level in h4_levels:
+                level_info = {
+                    "price": level["price"],
+                    "strength": level.get("strength", 0),
+                    "source": level.get("source", "unknown"),
+                }
+                if level["type"] == "resistance":
+                    mtf_context["h4_resistance_levels"].append(level_info)
+                else:
+                    mtf_context["h4_support_levels"].append(level_info)
+
+        # Limit to top 5 strongest levels per category to avoid bloat
+        for key in ["h1_resistance_levels", "h1_support_levels", "h4_resistance_levels", "h4_support_levels"]:
+            mtf_context[key] = sorted(mtf_context[key], key=lambda x: x.get("strength", 0), reverse=True)[:5]
+
+    except Exception as e:
+        logger.warning(f"Failed to capture MTF context: {e}")
+        mtf_context["error"] = str(e)
+
+    return mtf_context
+
+
 def store_decision(
     symbol: str,
     decision_type: str,  # OPEN, ADJUST, CLOSE, HOLD
@@ -398,6 +499,8 @@ def store_decision(
     higher_tf_bias: Optional[str] = None,  # bullish, bearish, neutral
     volatility_regime: Optional[str] = None,  # low, normal, high, extreme
     market_regime: Optional[str] = None,  # trending-up, trending-down, ranging, expansion
+    timeframe: Optional[str] = None,  # Entry timeframe: M15, H1, H4, D1
+    mtf_context: Optional[Dict[str, Any]] = None,  # Multi-timeframe levels at entry
 ) -> str:
     """
     Store a trade decision for later outcome tracking.
@@ -461,6 +564,18 @@ def store_decision(
         "volatility_regime": volatility_regime,  # "low", "normal", "high", "extreme"
         "market_regime": market_regime,  # "trending-up", "trending-down", "ranging", "expansion"
         "session": None,  # "asian", "london", "ny", "overlap"
+
+        # Multi-timeframe context (for MTF conflict analysis)
+        "timeframe": timeframe,  # Entry timeframe: "M15", "H1", "H4", "D1"
+        "mtf_context": mtf_context or {
+            "entry_timeframe": timeframe,
+            "h1_resistance_levels": [],  # Nearest H1 resistance at entry
+            "h1_support_levels": [],  # Nearest H1 support at entry
+            "h4_resistance_levels": [],  # Nearest H4 resistance at entry
+            "h4_support_levels": [],  # Nearest H4 support at entry
+            "distance_to_h1_resistance_pct": None,  # % distance from entry to nearest H1 resistance
+            "distance_to_h1_support_pct": None,  # % distance from entry to nearest H1 support
+        },
         
         # Outcome fields (filled when closed)
         "exit_price": None,
@@ -600,6 +715,13 @@ def add_trade_event(
         modify_sl       - SL modified
         modify_tp       - TP modified
         error           - Something went wrong
+
+        # MTF Analysis Events (for data capture)
+        opposing_position_opened - Another position opened in opposite direction on same symbol
+        mtf_conflict    - Price hit a level from different timeframe (H1 resistance on D1 trade)
+        partial_close   - Partial position closed
+        price_snapshot  - Periodic price/P&L snapshot for excursion tracking
+        h1_level_test   - Price tested an H1 level
     """
     # Try DB first
     db_store = _get_db_store()
