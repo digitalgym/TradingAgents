@@ -49,6 +49,7 @@ from tradingagents.trade_decisions import (
     close_decision,
     find_decision_by_ticket,
     add_trade_event,
+    capture_mtf_context,
     DECISIONS_DIR,
 )
 
@@ -335,6 +336,7 @@ class QuantAutomation:
         self._market_closed_until: Optional[datetime] = None  # suppress modifications when market is closed
         self._last_trail_modify: Dict[int, datetime] = {}  # ticket -> last trailing stop modify time
         self._trail_min_interval = 30  # minimum seconds between trailing stop modifications per ticket
+        self._price_extremes: Dict[int, Dict[str, Any]] = {}  # ticket -> {high, low, direction} for excursion analysis
 
         # Lock for state file writes (multiple async loops share this)
         self._state_lock = asyncio.Lock()
@@ -1723,6 +1725,19 @@ class QuantAutomation:
                     elif "volume" in rat_lower and ("poc" in rat_lower or "val" in rat_lower or "vah" in rat_lower):
                         result.setup_type = "volume_profile"
 
+                # Capture MTF context at entry for later analysis
+                # (H1/H4 levels that may cause pullbacks on this trade)
+                mtf_context = None
+                try:
+                    mtf_context = capture_mtf_context(
+                        symbol=result.symbol,
+                        entry_price=result.entry_price,
+                        direction=result.signal,
+                        entry_timeframe=self.config.timeframe,
+                    )
+                except Exception as e:
+                    self.logger.warning(f"MTF context capture failed: {e}")
+
                 # Store decision for tracking
                 decision_id = store_decision(
                     symbol=result.symbol,
@@ -1742,6 +1757,8 @@ class QuantAutomation:
                     higher_tf_bias=result.htf_bias,
                     volatility_regime=result.volatility_regime,
                     market_regime=result.market_regime,
+                    timeframe=self.config.timeframe,
+                    mtf_context=mtf_context,
                 )
                 # Set on result for signal tracking
                 result.decision_id = decision_id
@@ -1793,7 +1810,17 @@ class QuantAutomation:
                         "sl": stop_loss,
                         "tp": take_profit,
                         "volume": lot_size,
+                        "timeframe": self.config.timeframe,
                     }, source=self._source)
+
+                    # Check for opposing positions and log for MTF analysis
+                    self._log_opposing_positions(
+                        symbol=result.symbol,
+                        new_direction=result.signal,
+                        new_ticket=result.execution_ticket,
+                        new_entry=result.entry_price,
+                        new_timeframe=self.config.timeframe,
+                    )
             else:
                 result.execution_error = trade_result.get("error", "Unknown error")
                 self.logger.error(
@@ -1829,6 +1856,79 @@ class QuantAutomation:
             self.logger.error(f"TRADE EXECUTION ERROR: {e}\n{traceback.format_exc()}")
 
         return result
+
+    def _log_opposing_positions(
+        self,
+        symbol: str,
+        new_direction: str,
+        new_ticket: int,
+        new_entry: float,
+        new_timeframe: str,
+    ) -> None:
+        """
+        Check for and log opposing positions on the same symbol.
+
+        When we open a BUY on H1 while a SELL exists on D1 (or vice versa),
+        log an event on the opposing position for later MTF analysis.
+        """
+        try:
+            opposite_direction = "SELL" if new_direction == "BUY" else "BUY"
+
+            # Get all active decisions for this symbol with opposite direction
+            active_decisions = list_active_decisions()
+            opposing = [
+                d for d in active_decisions
+                if d.get("symbol") == symbol
+                and d.get("action") == opposite_direction
+                and d.get("mt5_ticket") != new_ticket
+                and d.get("status") == "active"
+            ]
+
+            if not opposing:
+                return
+
+            # Get current price for P&L calculation
+            try:
+                from tradingagents.dataflows.mt5_data import get_mt5_current_price
+                current_price = get_mt5_current_price(symbol)
+            except Exception:
+                current_price = new_entry
+
+            for opp_decision in opposing:
+                opp_ticket = opp_decision.get("mt5_ticket")
+                opp_entry = opp_decision.get("entry_price", 0)
+                opp_timeframe = opp_decision.get("timeframe", "unknown")
+                opp_direction = opp_decision.get("action")
+
+                # Calculate P&L on opposing position at this moment
+                if opp_entry and opp_entry > 0 and current_price:
+                    if opp_direction == "BUY":
+                        opp_pnl_pct = ((current_price - opp_entry) / opp_entry) * 100
+                    else:
+                        opp_pnl_pct = ((opp_entry - current_price) / opp_entry) * 100
+                else:
+                    opp_pnl_pct = 0
+
+                # Log event on the opposing position
+                add_trade_event(opp_decision["decision_id"], "opposing_position_opened", {
+                    "opposing_ticket": new_ticket,
+                    "opposing_direction": new_direction,
+                    "opposing_timeframe": new_timeframe,
+                    "opposing_entry": new_entry,
+                    "this_position_pnl_pct": round(opp_pnl_pct, 4),
+                    "this_position_entry": opp_entry,
+                    "this_position_timeframe": opp_timeframe,
+                    "current_price": current_price,
+                }, source=self._source)
+
+                self.logger.info(
+                    f"MTF CONFLICT: New {new_direction} #{new_ticket} on {new_timeframe} "
+                    f"vs existing {opp_direction} #{opp_ticket} on {opp_timeframe}. "
+                    f"Opposing P&L: {opp_pnl_pct:+.2f}%"
+                )
+
+        except Exception as e:
+            self.logger.warning(f"Failed to log opposing positions: {e}")
 
     def _infer_exit_reason(self, exit_price: float, entry: float, sl: float, tp: float,
                            direction: str, deal_comment: str = "") -> str:
@@ -1924,11 +2024,28 @@ class QuantAutomation:
                             json.dump(data, f, indent=2, default=str)
                     self.logger.info(f"  Backfilled entry_price={pos_entry} for decision {decision_id}")
 
+            # Get tracked price extremes for excursion analysis
+            max_favorable_price = None
+            max_adverse_price = None
+            if ticket in self._price_extremes:
+                extremes = self._price_extremes[ticket]
+                direction = extremes.get("direction", decision.get("action", "BUY"))
+                if direction == "BUY":
+                    max_favorable_price = extremes["high"]
+                    max_adverse_price = extremes["low"]
+                else:
+                    max_favorable_price = extremes["low"]
+                    max_adverse_price = extremes["high"]
+                # Clean up tracked extremes
+                del self._price_extremes[ticket]
+
             closed = close_decision(
                 decision_id,
                 exit_price=exit_price,
                 outcome_notes=f"{notes}. MT5 profit: {profit:.2f}",
                 exit_reason=exit_reason,
+                max_favorable_price=max_favorable_price,
+                max_adverse_price=max_adverse_price,
             )
             self.logger.info(f"  Decision {decision_id} closed: {exit_reason}, pnl={profit:.2f}")
 
@@ -2116,6 +2233,23 @@ class QuantAutomation:
                 current_tp = position.get("tp", 0)
                 profit = position.get("profit", 0)
 
+                # Track price extremes for excursion analysis (max favorable/adverse)
+                if current_price > 0:
+                    if ticket not in self._price_extremes:
+                        self._price_extremes[ticket] = {
+                            "high": current_price,
+                            "low": current_price,
+                            "direction": direction,
+                            "entry": entry_price,
+                        }
+                    else:
+                        self._price_extremes[ticket]["high"] = max(
+                            self._price_extremes[ticket]["high"], current_price
+                        )
+                        self._price_extremes[ticket]["low"] = min(
+                            self._price_extremes[ticket]["low"], current_price
+                        )
+
                 # Calculate P&L percentage
                 if entry_price > 0 and current_price > 0:
                     if direction == "BUY":
@@ -2195,6 +2329,64 @@ class QuantAutomation:
                                 be_status = "not_eligible"
                         else:
                             be_status = f"not_reached({profit_distance:.2f}/{breakeven_threshold_distance:.2f})"
+
+                    # --- MTF Conflict Detection (H1 level tests on D1+ trades) ---
+                    # Check if this position hit an H1 level - log for analysis
+                    dec = find_decision_by_ticket(ticket)
+                    if dec and dec.get("timeframe") in ("H4", "D1", "W1"):
+                        mtf_ctx = dec.get("mtf_context", {})
+                        nearest_h1_res = mtf_ctx.get("nearest_h1_resistance")
+                        nearest_h1_sup = mtf_ctx.get("nearest_h1_support")
+
+                        # Check if price is within 0.15% of H1 level
+                        if nearest_h1_res and direction == "BUY":
+                            dist_pct = abs(current_price - nearest_h1_res) / nearest_h1_res * 100
+                            if dist_pct < 0.15:
+                                # Price at H1 resistance - log conflict event (once)
+                                events = dec.get("events", [])
+                                already_logged = any(
+                                    e.get("type") == "mtf_conflict" and
+                                    abs(e.get("level", 0) - nearest_h1_res) < 0.01
+                                    for e in events
+                                )
+                                if not already_logged:
+                                    add_trade_event(dec["decision_id"], "mtf_conflict", {
+                                        "conflict_type": "h1_resistance_hit",
+                                        "level": nearest_h1_res,
+                                        "price_at_detection": current_price,
+                                        "pnl_pct_at_detection": round(pnl_pct, 4),
+                                        "entry_timeframe": dec.get("timeframe"),
+                                        "suggested_action": "partial_close",
+                                        "action_taken": "logged_only",
+                                    }, source=self._source)
+                                    self.logger.info(
+                                        f"MTF CONFLICT: #{ticket} hit H1 resistance {nearest_h1_res:.2f}, "
+                                        f"pnl={pnl_pct:+.2f}%"
+                                    )
+
+                        if nearest_h1_sup and direction == "SELL":
+                            dist_pct = abs(current_price - nearest_h1_sup) / nearest_h1_sup * 100
+                            if dist_pct < 0.15:
+                                events = dec.get("events", [])
+                                already_logged = any(
+                                    e.get("type") == "mtf_conflict" and
+                                    abs(e.get("level", 0) - nearest_h1_sup) < 0.01
+                                    for e in events
+                                )
+                                if not already_logged:
+                                    add_trade_event(dec["decision_id"], "mtf_conflict", {
+                                        "conflict_type": "h1_support_hit",
+                                        "level": nearest_h1_sup,
+                                        "price_at_detection": current_price,
+                                        "pnl_pct_at_detection": round(pnl_pct, 4),
+                                        "entry_timeframe": dec.get("timeframe"),
+                                        "suggested_action": "partial_close",
+                                        "action_taken": "logged_only",
+                                    }, source=self._source)
+                                    self.logger.info(
+                                        f"MTF CONFLICT: #{ticket} hit H1 support {nearest_h1_sup:.2f}, "
+                                        f"pnl={pnl_pct:+.2f}%"
+                                    )
 
                     # --- Trailing Stop ---
                     if self.config.enable_trailing_stop and pnl_pct > 0:
