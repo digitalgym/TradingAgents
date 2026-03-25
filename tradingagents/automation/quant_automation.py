@@ -471,26 +471,11 @@ class QuantAutomation:
             k: datetime.fromisoformat(v)
             for k, v in state.get("last_analysis_time", {}).items()
         }
-        # Restore persisted results history
-        self._analysis_results.clear()
-        for item in state.get("analysis_results", []):
-            try:
-                item["timestamp"] = datetime.fromisoformat(item["timestamp"])
-                self._analysis_results.append(AnalysisCycleResult(**item))
-            except Exception:
-                continue
-        self._position_results.clear()
-        for item in state.get("position_results", []):
-            try:
-                item["timestamp"] = datetime.fromisoformat(item["timestamp"])
-                self._position_results.append(PositionManagementResult(**item))
-            except Exception:
-                continue
+        # Signals and position results now live in the signals table — not restored from state
         # Restore assumption review state
         last_review = state.get("last_assumption_review")
         if last_review:
             self._last_assumption_review = datetime.fromisoformat(last_review)
-        self._assumption_review_results = state.get("assumption_review_results", [])
 
     async def _save_state(self):
         """Save automation state to Postgres (primary) and JSON file (fallback).
@@ -509,10 +494,8 @@ class QuantAutomation:
             },
             "last_updated": datetime.now().isoformat(),
             "status": self._status.value,
-            "analysis_results": [_serialize_result(r) for r in self._analysis_results[-100:]],
-            "position_results": [_serialize_result(r) for r in self._position_results[-100:]],
+            # Signals now stored in dedicated signals table — no longer duplicated here
             "last_assumption_review": self._last_assumption_review.isoformat() if self._last_assumption_review else None,
-            "assumption_review_results": self._assumption_review_results,
         }
 
         saved_to_db = False
@@ -1615,6 +1598,22 @@ class QuantAutomation:
             entry_price = price_info.get("ask") if result.signal == "BUY" else price_info.get("bid")
             self.logger.info(f"Current price for {result.symbol}: bid={price_info.get('bid')}, ask={price_info.get('ask')}, using={entry_price}")
 
+            # Validate LLM-suggested entry against actual market price
+            if result.entry_price is not None and entry_price:
+                deviation = abs(result.entry_price - entry_price) / entry_price
+                MAX_ENTRY_DEVIATION = 0.02  # 2% max deviation from market
+                if deviation > MAX_ENTRY_DEVIATION:
+                    self.logger.warning(
+                        f"REJECTED: Suggested entry {result.entry_price} is {deviation*100:.1f}% "
+                        f"from market {entry_price} (max {MAX_ENTRY_DEVIATION*100:.0f}%)"
+                    )
+                    result.executed = False
+                    result.rationale += (
+                        f" | REJECTED: Suggested entry {result.entry_price:.2f} is "
+                        f"{deviation*100:.1f}% from market {entry_price:.2f}"
+                    )
+                    return result
+
             # Use provided SL/TP or calculate defaults
             stop_loss = result.stop_loss
             take_profit = result.take_profit
@@ -1695,6 +1694,7 @@ class QuantAutomation:
                 take_profit=take_profit,
                 volume=lot_size,
                 comment=f"QuantAuto {result.pipeline}",
+                use_limit_order=False,  # Market order for immediate fill
             )
             self.logger.info(f"MT5 trade result: {trade_result}")
 

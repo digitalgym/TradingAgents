@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { getDashboard, getRiskMetrics, getPortfolioStatus, listAutomationInstances, getQuantAutomationHistory, QuantAutomationHistory } from "@/lib/api"
+import { getDashboard, getRiskMetrics, getPortfolioStatus, getSignals } from "@/lib/api"
 import { formatCurrency, formatPercent, getProfitColor, formatDate } from "@/lib/utils"
 import {
   TrendingUp,
@@ -64,34 +64,23 @@ export default function Dashboard() {
 
   const fetchData = async () => {
     setLoading(true)
-    const [dashRes, riskRes, portRes, instancesRes] = await Promise.all([
+    const [dashRes, riskRes, portRes, signalsRes] = await Promise.all([
       getDashboard(),
       getRiskMetrics(),
       getPortfolioStatus(),
-      listAutomationInstances(),
+      getSignals({ limit: 500 }),
     ])
     if (dashRes.data) setDashboard(dashRes.data)
     if (riskRes.data) setRiskMetrics(riskRes.data)
     if (portRes.data) setPortfolioStatus(portRes.data)
 
-    // Fetch histories for all instances
-    if (instancesRes.data?.instances) {
-      const instanceNames = Object.keys(instancesRes.data.instances)
-      const historyResults = await Promise.all(
-        instanceNames.map(name => getQuantAutomationHistory(name))
-      )
-      const signals: Array<any> = []
-      historyResults.forEach((res, i) => {
-        const name = instanceNames[i]
-        const pipeline = instancesRes.data!.instances[name]?.config?.pipeline || "quant"
-        if (res.data?.analysis_results) {
-          res.data.analysis_results.forEach((r: any) => {
-            signals.push({ ...r, pipeline, instance: name })
-          })
-        }
-      })
-      // Sort by timestamp descending
-      signals.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    // Signals come from the DB table — already sorted by created_at DESC
+    if (signalsRes.data?.signals) {
+      const signals = signalsRes.data.signals.map((s: any) => ({
+        ...s,
+        timestamp: s.created_at,
+        instance: s.source,
+      }))
       setAllSignals(signals)
     }
 
@@ -440,8 +429,11 @@ export default function Dashboard() {
                             <span className="text-xs text-muted-foreground">
                               {(result.confidence * 100).toFixed(0)}%
                             </span>
-                            {result.executed && (
+                            {result.executed && result.execution_ticket && (
                               <Badge variant="success" className="text-[10px] h-4 px-1">Executed</Badge>
+                            )}
+                            {result.executed && !result.execution_ticket && (
+                              <Badge variant="outline" className="text-[10px] h-4 px-1 border-yellow-500 text-yellow-500">Pending</Badge>
                             )}
                             {!result.executed && result.execution_error && (
                               <Badge variant="destructive" className="text-[10px] h-4 px-1">Failed</Badge>

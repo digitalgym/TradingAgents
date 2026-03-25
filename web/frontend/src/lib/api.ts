@@ -725,6 +725,7 @@ export interface QuantAutomationConfig {
   enable_breakeven_stop: boolean
   move_to_breakeven_atr_mult: number
   enable_reversal_close: boolean
+  delegate_position_management: boolean
   max_risk_per_trade_pct: number
   default_lot_size: number
   daily_loss_limit_pct: number
@@ -1172,6 +1173,26 @@ export const reconcileDecisions = () =>
   )
 
 // Trade Management Agent
+export const getPositionsAtr = () => fetchApi<{ atr: Record<string, number | null> }>('/positions/atr')
+
+// Signals (from DB)
+export const getSignals = (params?: { symbol?: string; pipeline?: string; signal?: string; source?: string; executed?: boolean; limit?: number }) => {
+  const qs = new URLSearchParams()
+  if (params?.symbol) qs.set('symbol', params.symbol)
+  if (params?.pipeline) qs.set('pipeline', params.pipeline)
+  if (params?.signal) qs.set('signal', params.signal)
+  if (params?.source) qs.set('source', params.source)
+  if (params?.executed !== undefined) qs.set('executed', String(params.executed))
+  if (params?.limit) qs.set('limit', String(params.limit))
+  const q = qs.toString()
+  return fetchApi<{ signals: any[]; count: number }>(`/signals${q ? `?${q}` : ''}`)
+}
+
+export const getSignalStats = (symbol?: string) => {
+  const qs = symbol ? `?symbol=${symbol}` : ''
+  return fetchApi<any>(`/signals/stats${qs}`)
+}
+
 export const startTradeManager = (config?: Record<string, any>) =>
   fetchApi<any>('/trade-manager/start', { method: 'POST', body: JSON.stringify(config || {}), headers: { 'Content-Type': 'application/json' } })
 

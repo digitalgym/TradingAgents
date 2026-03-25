@@ -20,6 +20,7 @@ import {
   getTradeManagerAlerts,
   acknowledgeTradeManagerAlert,
   deleteTradeManagerPolicy,
+  getPositionsAtr,
 } from "@/lib/api"
 import { formatDate } from "@/lib/utils"
 import { HelpTooltip, LabelWithHelp } from "@/components/ui/help-tooltip"
@@ -53,19 +54,22 @@ export function TradeManagementSection() {
   const [expanded, setExpanded] = useState(false)
   const [actionsExpanded, setActionsExpanded] = useState(false)
   const [alertsExpanded, setAlertsExpanded] = useState(false)
+  const [atrBySymbol, setAtrBySymbol] = useState<Record<string, number | null>>({})
 
   // Local config edits
   const [localConfig, setLocalConfig] = useState<Record<string, any>>({})
   const [configDirty, setConfigDirty] = useState(false)
 
   const fetchData = useCallback(async () => {
-    const [statusRes, configRes, actionsRes, policiesRes, alertsRes] = await Promise.all([
+    const [statusRes, configRes, actionsRes, policiesRes, alertsRes, atrRes] = await Promise.all([
       getTradeManagerStatus(),
       getTradeManagerConfig(),
       getTradeManagerActions(undefined, 20),
       getTradeManagerPolicies(),
       getTradeManagerAlerts(10, false),
+      getPositionsAtr(),
     ])
+    if (atrRes.data?.atr) setAtrBySymbol(atrRes.data.atr)
     if (statusRes.data) setStatus(statusRes.data)
     if (configRes.data?.config) {
       setConfig(configRes.data.config)
@@ -222,19 +226,112 @@ export function TradeManagementSection() {
                 Configuration
               </h3>
 
+              {/* Per-Symbol Settings */}
+              {Object.keys(atrBySymbol).length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1">
+                    <Label className="text-xs font-medium">Per-Symbol Settings</Label>
+                    <HelpTooltip content="Override trailing stop and breakeven multipliers per symbol. Leave blank to use the global defaults above. ATR(14) shown for reference so you can see what each multiplier means in price distance." />
+                  </div>
+                  <div className="rounded-lg border overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b bg-muted/30">
+                          <th className="p-2 text-left text-xs font-medium text-muted-foreground">Symbol</th>
+                          <th className="p-2 text-left text-xs font-medium text-muted-foreground">ATR(14)</th>
+                          <th className="p-2 text-left text-xs font-medium text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              Trail Mult
+                              <HelpTooltip content="Trailing stop distance = this value x ATR. The actual price distance is shown in the ATR column." iconClassName="h-3 w-3" />
+                            </div>
+                          </th>
+                          <th className="p-2 text-left text-xs font-medium text-muted-foreground">Trail Distance</th>
+                          <th className="p-2 text-left text-xs font-medium text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              BE Mult
+                              <HelpTooltip content="Move SL to breakeven when profit reaches this many ATR." iconClassName="h-3 w-3" />
+                            </div>
+                          </th>
+                          <th className="p-2 text-left text-xs font-medium text-muted-foreground">BE Threshold</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(atrBySymbol).map(([sym, atr]) => {
+                          const symSettings = (localConfig.symbol_settings || {})[sym] || {}
+                          const effectiveTrail = symSettings.trailing_stop_atr_multiplier ?? localConfig.trailing_stop_atr_multiplier ?? 1.5
+                          const effectiveBe = symSettings.breakeven_atr_multiplier ?? localConfig.breakeven_atr_multiplier ?? 1.5
+
+                          const updateSymSetting = (key: string, value: string) => {
+                            const numVal = parseFloat(value)
+                            const current = { ...(localConfig.symbol_settings || {}) }
+                            if (!value || isNaN(numVal)) {
+                              // Clear override
+                              if (current[sym]) {
+                                delete current[sym][key]
+                                if (Object.keys(current[sym]).length === 0) delete current[sym]
+                              }
+                            } else {
+                              current[sym] = { ...(current[sym] || {}), [key]: numVal }
+                            }
+                            updateLocal("symbol_settings", current)
+                          }
+
+                          return (
+                            <tr key={sym} className="border-b last:border-0">
+                              <td className="p-2 font-medium">{sym}</td>
+                              <td className="p-2 text-muted-foreground">{atr ? atr.toFixed(2) : "N/A"}</td>
+                              <td className="p-2">
+                                <Input
+                                  type="number"
+                                  step="0.1"
+                                  min="0.5"
+                                  max="10"
+                                  placeholder={String(localConfig.trailing_stop_atr_multiplier ?? 1.5)}
+                                  value={symSettings.trailing_stop_atr_multiplier ?? ""}
+                                  onChange={(e) => updateSymSetting("trailing_stop_atr_multiplier", e.target.value)}
+                                  className="h-7 w-20 text-xs"
+                                />
+                              </td>
+                              <td className="p-2 text-muted-foreground text-xs">
+                                {atr ? (effectiveTrail * atr).toFixed(2) : "—"}
+                              </td>
+                              <td className="p-2">
+                                <Input
+                                  type="number"
+                                  step="0.1"
+                                  min="0.5"
+                                  max="10"
+                                  placeholder={String(localConfig.breakeven_atr_multiplier ?? 1.5)}
+                                  value={symSettings.breakeven_atr_multiplier ?? ""}
+                                  onChange={(e) => updateSymSetting("breakeven_atr_multiplier", e.target.value)}
+                                  className="h-7 w-20 text-xs"
+                                />
+                              </td>
+                              <td className="p-2 text-muted-foreground text-xs">
+                                {atr ? (effectiveBe * atr).toFixed(2) : "—"}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {/* Management interval */}
                 <div className="space-y-1">
-                  <LabelWithHelp help="How often to check positions. Lower = more responsive but more MT5 calls. 5s is recommended." htmlFor="tma-interval">
+                  <LabelWithHelp help="How often to check positions in seconds. 900 (15 min) is recommended for normal use. Lower values like 60 or 30 for tighter management." htmlFor="tma-interval">
                     Check Interval (s)
                   </LabelWithHelp>
                   <Input
                     id="tma-interval"
                     type="number"
                     step="1"
-                    min="1"
-                    max="60"
-                    value={localConfig.management_interval_seconds ?? 5}
+                    min="5"
+                    max="3600"
+                    value={localConfig.management_interval_seconds ?? 900}
                     onChange={(e) => updateLocal("management_interval_seconds", parseFloat(e.target.value))}
                   />
                 </div>

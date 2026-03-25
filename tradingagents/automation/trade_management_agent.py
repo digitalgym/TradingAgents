@@ -69,7 +69,7 @@ class TradeManagementConfig:
     instance_name: str = "trade_manager"
 
     # Position management intervals
-    management_interval_seconds: float = 5.0   # How often to check positions
+    management_interval_seconds: float = 900.0  # How often to check positions (15 min)
     risk_check_interval_seconds: float = 30.0  # Account-level risk checks
     control_poll_seconds: float = 3.0          # Postgres command polling
 
@@ -80,6 +80,10 @@ class TradeManagementConfig:
     # Breakeven stop defaults
     enable_breakeven_stop: bool = True
     breakeven_atr_multiplier: float = 1.5  # Move SL to breakeven after profit >= N * ATR
+
+    # Per-symbol overrides (symbol -> settings dict)
+    # Keys: trailing_stop_atr_multiplier, breakeven_atr_multiplier, enable_trailing_stop, etc.
+    symbol_settings: Dict[str, Dict[str, Any]] = field(default_factory=dict)
 
     # Partial take-profit defaults
     enable_partial_tp: bool = False
@@ -326,13 +330,22 @@ class TradeManagementAgent:
 
         return {t: p for t, (p, _) in self._policy_cache.items()}
 
+    def _get_symbol_setting(self, symbol: str, key: str, default: Any) -> Any:
+        """Get per-symbol setting, falling back to default."""
+        sym_settings = self.config.symbol_settings.get(symbol, {})
+        return sym_settings.get(key, default)
+
     def _get_effective_setting(self, policy: Optional[PositionManagementPolicy],
-                                attr: str) -> Any:
-        """Get effective setting: policy override or config default."""
+                                attr: str, symbol: str = "") -> Any:
+        """Get effective setting: policy override > symbol override > config default."""
         if policy is not None:
             val = getattr(policy, attr, None)
             if val is not None:
                 return val
+        if symbol:
+            sym_val = self.config.symbol_settings.get(symbol, {}).get(attr)
+            if sym_val is not None:
+                return sym_val
         return getattr(self.config, attr)
 
     # ------------------------------------------------------------------
@@ -649,8 +662,8 @@ class TradeManagementAgent:
                 time_status = "disabled"
 
                 # --- Breakeven Stop ---
-                enable_be = self._get_effective_setting(policy, "enable_breakeven_stop")
-                be_mult = self._get_effective_setting(policy, "breakeven_atr_multiplier")
+                enable_be = self._get_effective_setting(policy, "enable_breakeven_stop", symbol)
+                be_mult = self._get_effective_setting(policy, "breakeven_atr_multiplier", symbol)
                 if enable_be:
                     breakeven_threshold = be_mult * atr
                     if direction == "BUY":
@@ -704,14 +717,14 @@ class TradeManagementAgent:
                         be_status = f"not_reached({profit_distance:.2f}/{breakeven_threshold:.2f})"
 
                 # --- Trailing Stop ---
-                enable_trail = self._get_effective_setting(policy, "enable_trailing_stop")
+                enable_trail = self._get_effective_setting(policy, "enable_trailing_stop", symbol)
                 if enable_trail and pnl_pct > 0:
                     if trail_mult_override:
                         trail_mult = trail_mult_override
                     elif policy and policy.trailing_stop_atr_multiplier is not None:
                         trail_mult = policy.trailing_stop_atr_multiplier
                     else:
-                        trail_mult = self.config.trailing_stop_atr_multiplier
+                        trail_mult = self._get_symbol_setting(symbol, "trailing_stop_atr_multiplier", self.config.trailing_stop_atr_multiplier)
 
                     trail_distance = trail_mult * atr
                     if direction == "BUY":

@@ -13,7 +13,7 @@ import json
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 import traceback
 
 # Add parent directory to path for imports
@@ -681,7 +681,11 @@ async def list_positions():
     except Exception:
         pass
 
-    # Add trailing stop status and automation source to each position
+    # Get ATR per symbol (cached across positions sharing a symbol)
+    from tradingagents.risk.stop_loss import get_atr_for_symbol
+    atr_cache: dict[str, float | None] = {}
+
+    # Add trailing stop status, ATR, and automation source to each position
     trailing_stops = TrailingStopState.get_all()
     for pos in positions:
         trailing_config = trailing_stops.get(pos["ticket"])
@@ -695,7 +699,70 @@ async def list_positions():
         # Automation source tag
         pos["source"] = ticket_source.get(pos["ticket"])
 
+        # ATR for this symbol
+        sym = pos.get("symbol")
+        if sym and sym not in atr_cache:
+            try:
+                atr_cache[sym] = get_atr_for_symbol(sym, period=14)
+            except Exception:
+                atr_cache[sym] = None
+        pos["atr"] = atr_cache.get(sym)
+
     return {"positions": positions, "count": len(positions)}
+
+
+@app.get("/api/positions/atr")
+async def get_positions_atr():
+    """Get current ATR for all symbols with open positions"""
+    from tradingagents.risk.stop_loss import get_atr_for_symbol
+    positions = get_open_positions()
+    symbols = list({p["symbol"] for p in positions})
+    result = {}
+    for sym in symbols:
+        try:
+            atr = get_atr_for_symbol(sym, period=14)
+            result[sym] = round(atr, 5) if atr else None
+        except Exception:
+            result[sym] = None
+    return {"atr": result}
+
+
+@app.get("/api/signals")
+async def list_signals(
+    symbol: Optional[str] = None,
+    pipeline: Optional[str] = None,
+    signal: Optional[str] = None,
+    source: Optional[str] = None,
+    executed: Optional[bool] = None,
+    limit: int = 200,
+):
+    """Get signals from the signals table with optional filters."""
+    try:
+        from tradingagents.storage.postgres_store import get_signal_store
+        store = get_signal_store()
+        signals = store.list_signals(
+            symbol=symbol,
+            executed=executed,
+            pipeline=pipeline,
+            signal=signal,
+            source=source,
+            limit=min(limit, 1000),
+        )
+        return {"signals": signals, "count": len(signals)}
+    except Exception as e:
+        return {"signals": [], "count": 0, "error": str(e)}
+
+
+@app.get("/api/signals/stats")
+async def get_signal_stats(symbol: Optional[str] = None):
+    """Get signal statistics."""
+    try:
+        from tradingagents.storage.postgres_store import get_signal_store
+        store = get_signal_store()
+        stats = store.get_stats(symbol=symbol)
+        return stats
+    except Exception as e:
+        return {"error": str(e)}
 
 
 @app.get("/api/orders")
@@ -9072,19 +9139,30 @@ def _save_symbol_limits(limits: Dict[str, dict]):
 
 
 class QuantAutomationConfigRequest(BaseModel):
-    """Request model for quant automation configuration."""
-    instance_name: str = "smc_quant_basic"  # Unique identifier for this automation instance
-    pipeline: str = "smc_quant_basic"  # "smc_quant_basic", "smc_quant", "breakout_quant", "volume_profile", "rule_based", or "multi_agent"
+    """Request model for quant automation configuration.
+
+    Accepts extra fields via model_config so new config options
+    (e.g. delegate_position_management, cooldown_enabled) pass through
+    to Postgres and the worker without needing to be added here.
+    """
+    model_config = ConfigDict(extra="allow")
+
+    instance_name: str = "smc_quant_basic"
+    pipeline: str = "smc_quant_basic"
     symbols: List[str] = ["XAUUSD"]
     timeframe: str = "H1"
     analysis_interval_seconds: int = 180
     position_check_interval_seconds: int = 60
     auto_execute: bool = False
     min_confidence: float = 0.65
-    max_positions_per_symbol: int = 1  # Per-automation limit per symbol
+    max_positions_per_symbol: int = 1
     enable_trailing_stop: bool = True
     trailing_stop_atr_multiplier: float = 1.5
-    move_to_breakeven_atr_mult: float = 1.5  # Move SL to breakeven after profit >= 1.5x ATR
+    enable_breakeven_stop: bool = True
+    move_to_breakeven_atr_mult: float = 1.5
+    enable_reversal_close: bool = True
+    delegate_position_management: bool = False
+    cooldown_enabled: bool = True
     max_risk_per_trade_pct: float = 1.0
     default_lot_size: float = 0.01
     daily_loss_limit_pct: float = 3.0
@@ -9414,29 +9492,13 @@ async def start_quant_automation(config: QuantAutomationConfigRequest):
         if pipeline_name == "quant":
             pipeline_name = "smc_quant_basic"
 
-        # Build config dict
-        instance_state_file = f"quant_automation_state_{instance_name}.json"
-        config_dict = {
-            "instance_name": instance_name,
-            "pipeline": pipeline_name,
-            "symbols": config.symbols,
-            "timeframe": config.timeframe,
-            "analysis_interval_seconds": config.analysis_interval_seconds,
-            "position_check_interval_seconds": config.position_check_interval_seconds,
-            "auto_execute": config.auto_execute,
-            "min_confidence": config.min_confidence,
-            "max_positions_per_symbol": config.max_positions_per_symbol,
-            "enable_trailing_stop": config.enable_trailing_stop,
-            "trailing_stop_atr_multiplier": config.trailing_stop_atr_multiplier,
-            "move_to_breakeven_atr_mult": config.move_to_breakeven_atr_mult,
-            "max_risk_per_trade_pct": config.max_risk_per_trade_pct,
-            "default_lot_size": config.default_lot_size,
-            "daily_loss_limit_pct": config.daily_loss_limit_pct,
-            "max_consecutive_losses": config.max_consecutive_losses,
-            "state_file": instance_state_file,
-            "enable_remote_control": True,
-            "control_poll_seconds": 3,
-        }
+        # Build config dict from all request fields (typed + extra)
+        config_dict = config.model_dump()
+        config_dict["instance_name"] = instance_name
+        config_dict["pipeline"] = pipeline_name
+        config_dict["state_file"] = f"quant_automation_state_{instance_name}.json"
+        config_dict["enable_remote_control"] = True
+        config_dict["control_poll_seconds"] = 3
 
         # Save config to Postgres
         control = _get_automation_control()
@@ -10207,91 +10269,37 @@ async def _broadcast_tune_complete(instance_name: str, task_state: dict):
 
 @app.get("/api/automation/quant/history")
 async def get_quant_automation_history(instance: str = Query(default="quant")):
-    """Get recent analysis and position management history for an instance."""
-    automation = _get_automation_instance(instance)
+    """Get recent analysis history for an instance from the signals table."""
+    try:
+        from tradingagents.storage.postgres_store import get_signal_store
+        store = get_signal_store()
+        signals = store.list_signals(source=instance, limit=100)
 
-    if automation is not None:
-        # Instance is running — use in-memory results
-        analysis_results = automation._analysis_results
-        position_results = automation._position_results
-    else:
-        # Instance not running — load persisted history from DB first, then file fallback
-        analysis_results = []
-        position_results = []
-        from tradingagents.automation.quant_automation import AnalysisCycleResult, PositionManagementResult
-
-        state = None
-
-        # Try DB first
-        try:
-            control = _get_automation_control()
-            saved = await control.get_status(instance)
-            if saved and saved.get("state"):
-                raw_state = saved["state"]
-                state = json.loads(raw_state) if isinstance(raw_state, str) else raw_state
-        except Exception as e:
-            logger.debug(f"Could not load state from DB for '{instance}': {e}")
-
-        # Fallback to file
-        if state is None:
-            state_file = PROJECT_ROOT / f"quant_automation_state_{instance}.json"
-            if state_file.exists():
-                try:
-                    with open(state_file, "r") as f:
-                        state = json.load(f)
-                except Exception as e:
-                    logger.warning(f"Failed to load state file for '{instance}': {e}")
-
-        if state:
-            for item in state.get("analysis_results", []):
-                try:
-                    item["timestamp"] = datetime.fromisoformat(item["timestamp"])
-                    analysis_results.append(AnalysisCycleResult(**item))
-                except Exception:
-                    continue
-            for item in state.get("position_results", []):
-                try:
-                    item["timestamp"] = datetime.fromisoformat(item["timestamp"])
-                    position_results.append(PositionManagementResult(**item))
-                except Exception:
-                    continue
-
-    return {
-        "instance_name": instance,
-        "analysis_results": [
-            {
-                "timestamp": r.timestamp.isoformat(),
-                "symbol": r.symbol,
-                "pipeline": r.pipeline,
-                "signal": r.signal,
-                "confidence": r.confidence,
-                "entry_price": r.entry_price,
-                "stop_loss": r.stop_loss,
-                "take_profit": r.take_profit,
-                "rationale": r.rationale,
-                "executed": r.executed,
-                "execution_ticket": r.execution_ticket,
-                "execution_error": r.execution_error,
-                "duration_seconds": r.duration_seconds,
-            }
-            for r in analysis_results
-        ],
-        "position_results": [
-            {
-                "timestamp": r.timestamp.isoformat(),
-                "ticket": r.ticket,
-                "symbol": r.symbol,
-                "action": r.action,
-                "old_sl": r.old_sl,
-                "new_sl": r.new_sl,
-                "old_tp": r.old_tp,
-                "new_tp": r.new_tp,
-                "close_reason": r.close_reason,
-                "pnl": r.pnl,
-            }
-            for r in position_results
-        ],
-    }
+        return {
+            "instance_name": instance,
+            "analysis_results": [
+                {
+                    "timestamp": s["created_at"],
+                    "symbol": s["symbol"],
+                    "pipeline": s["pipeline"],
+                    "signal": s["signal"],
+                    "confidence": s["confidence"],
+                    "entry_price": s["entry_price"],
+                    "stop_loss": s["stop_loss"],
+                    "take_profit": s["take_profit"],
+                    "rationale": s["rationale"],
+                    "executed": s["executed"],
+                    "execution_ticket": s.get("execution_ticket") or s.get("decision_id"),
+                    "execution_error": None,
+                    "duration_seconds": s["analysis_duration_seconds"],
+                }
+                for s in signals
+            ],
+            "position_results": [],
+        }
+    except Exception as e:
+        logger.warning(f"Failed to load signals for '{instance}': {e}")
+        return {"instance_name": instance, "analysis_results": [], "position_results": []}
 
 
 # ----- Trade Management Agent API -----
@@ -10337,6 +10345,10 @@ async def start_trade_manager(config: Dict[str, Any] = {}):
             config=config,
         )
         await broadcast_automation_status(instance_name, "pending_start")
+
+        # Ensure pipeline is always set so the worker routes to TMA, not quant
+        config["pipeline"] = "trade_management"
+        config["instance_name"] = instance_name
 
         command_id = await control.send_command(
             instance_name=instance_name,
@@ -10431,15 +10443,35 @@ async def update_trade_manager_config(
     updates: Dict[str, Any],
     instance: str = Query(default="trade_manager"),
 ):
-    """Update TMA configuration."""
+    """Update TMA configuration. Persists to DB and sends update command to running instance."""
     try:
         control = _get_automation_control()
-        command_id = await control.send_command(
+
+        # Persist: merge updates into stored config
+        current = await control.get_status(instance)
+        config = current.get("config", {}) if current else {}
+        if isinstance(config, str):
+            config = json.loads(config)
+        config.update(updates)
+
+        await control.update_status(
             instance_name=instance,
-            action="update_config",
-            payload=updates,
+            status=current.get("status", "stopped") if current else "stopped",
+            config=config,
         )
-        return {"status": "update_requested", "command_id": command_id}
+
+        # Also send command so running instance picks it up
+        command_id = None
+        try:
+            command_id = await control.send_command(
+                instance_name=instance,
+                action="update_config",
+                payload=updates,
+            )
+        except Exception:
+            pass
+
+        return {"status": "config_saved", "command_id": command_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

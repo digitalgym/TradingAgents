@@ -502,52 +502,58 @@ class MT5Worker:
                 return
 
         try:
-            print(f"[MT5 Worker] Importing QuantAutomation...")
+            pipeline_name = config.get("pipeline", "smc_quant_basic")
+
+            # Trade Management Agent — separate path
+            if pipeline_name == "trade_management":
+                print(f"[MT5 Worker] Starting Trade Management Agent...")
+                from tradingagents.automation.trade_management_agent import (
+                    TradeManagementAgent,
+                    TradeManagementConfig,
+                )
+                config["instance_name"] = instance_name
+                tma_config = TradeManagementConfig.from_dict(config)
+                agent = TradeManagementAgent(tma_config)
+                self._automation_instances[instance_name] = agent
+
+                worker_ref = self
+
+                def tma_done_callback(task):
+                    try:
+                        exc = task.exception()
+                        if exc:
+                            print(f"[MT5 Worker] ERROR: TMA failed: {exc}")
+                            import traceback
+                            traceback.print_exception(type(exc), exc, exc.__traceback__)
+                            asyncio.ensure_future(worker_ref._broadcast_status(
+                                instance_name, "error", error=str(exc)
+                            ))
+                    except asyncio.CancelledError:
+                        pass
+
+                task = asyncio.create_task(agent.start())
+                task.add_done_callback(tma_done_callback)
+                self._automation_tasks[instance_name] = task
+                print(f"[MT5 Worker] Trade Management Agent started")
+                await self._broadcast_status(instance_name, "running")
+                return
+
             from tradingagents.automation.quant_automation import (
                 QuantAutomation,
                 QuantAutomationConfig,
-                PipelineType,
             )
-            print(f"[MT5 Worker] Import successful")
 
-            # Build config
-            pipeline_name = config.get("pipeline", "smc_quant_basic")
+            # Ensure instance_name and state_file are set
+            config["instance_name"] = instance_name
+            config.setdefault("state_file", f"quant_automation_state_{instance_name}.json")
+
+            # Backward compat
             if pipeline_name == "quant":
-                pipeline_name = "smc_quant_basic"
-            print(f"[MT5 Worker] Pipeline: {pipeline_name}")
+                config["pipeline"] = "smc_quant_basic"
 
-            instance_state_file = config.get("state_file", f"quant_automation_state_{instance_name}.json")
-
-            print(f"[MT5 Worker] Building QuantAutomationConfig...")
-            auto_config = QuantAutomationConfig(
-                instance_name=instance_name,
-                pipeline=PipelineType(pipeline_name),
-                symbols=config.get("symbols", []),
-                timeframe=config.get("timeframe", "H1"),
-                analysis_interval_seconds=config.get("analysis_interval_seconds", 180),
-                position_check_interval_seconds=config.get("position_check_interval_seconds", 60),
-                auto_execute=config.get("auto_execute", False),
-                min_confidence=config.get("min_confidence", 0.65),
-                max_positions_per_symbol=config.get("max_positions_per_symbol", 1),
-                enable_trailing_stop=config.get("enable_trailing_stop", True),
-                trailing_stop_atr_multiplier=config.get("trailing_stop_atr_multiplier", 1.5),
-                enable_breakeven_stop=config.get("enable_breakeven_stop", True),
-                move_to_breakeven_atr_mult=config.get("move_to_breakeven_atr_mult", 1.5),
-                enable_reversal_close=config.get("enable_reversal_close", True),
-                max_risk_per_trade_pct=config.get("max_risk_per_trade_pct", 1.0),
-                default_lot_size=config.get("default_lot_size", 0.01),
-                daily_loss_limit_pct=config.get("daily_loss_limit_pct", 3.0),
-                max_consecutive_losses=config.get("max_consecutive_losses", 3),
-                assumption_review_interval_seconds=config.get("assumption_review_interval_seconds", 3600),
-                assumption_review_auto_apply=config.get("assumption_review_auto_apply", False),
-                enable_trade_queue=config.get("enable_trade_queue", True),
-                trade_queue_poll_seconds=config.get("trade_queue_poll_seconds", 5),
-                enable_remote_control=config.get("enable_remote_control", True),
-                control_poll_seconds=config.get("control_poll_seconds", 3),
-                state_file=instance_state_file,
-                logs_dir=config.get("logs_dir", "logs/quant_automation"),
-            )
-            print(f"[MT5 Worker] Config built: symbols={auto_config.symbols}, pipeline={auto_config.pipeline}")
+            print(f"[MT5 Worker] Building QuantAutomationConfig via from_dict()...")
+            auto_config = QuantAutomationConfig.from_dict(config)
+            print(f"[MT5 Worker] Config built: symbols={auto_config.symbols}, pipeline={auto_config.pipeline}, delegate={auto_config.delegate_position_management}")
 
             print(f"[MT5 Worker] Creating QuantAutomation instance...")
             automation = QuantAutomation(auto_config)

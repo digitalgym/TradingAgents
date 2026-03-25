@@ -452,6 +452,7 @@ export default function PositionsPage() {
                       <th className="p-4 font-medium">Volume</th>
                       <th className="p-4 font-medium">Open Price</th>
                       <th className="p-4 font-medium">Current</th>
+                      <th className="p-4 font-medium">ATR</th>
                       <th className="p-4 font-medium">SL</th>
                       <th className="p-4 font-medium">TP</th>
                       <th className="p-4 font-medium">Profit</th>
@@ -499,6 +500,13 @@ export default function PositionsPage() {
                           <td className="p-4">{pos.volume}</td>
                           <td className="p-4">{pos.open_price}</td>
                           <td className="p-4">{pos.current_price}</td>
+                          <td className="p-4">
+                            {pos.atr ? (
+                              <span className="text-muted-foreground text-xs" title={`ATR(14) = ${pos.atr.toFixed(2)}`}>
+                                {pos.atr.toFixed(2)}
+                              </span>
+                            ) : "—"}
+                          </td>
                           <td className="p-4 text-red-500">{pos.sl || "—"}</td>
                           <td className="p-4 text-green-500">{pos.tp || "—"}</td>
                           <td className={`p-4 font-medium ${getProfitColor(pos.profit)}`}>

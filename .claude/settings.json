@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(xargs:*)",
-      "Bash(POSTGRES_URL=\"postgresql://tradingagents:tradingagents@localhost:5432/tradingagents\" python -c \":*)"
+      "Bash(POSTGRES_URL=\"postgresql://tradingagents:tradingagents@localhost:5432/tradingagents\" python -c \":*)",
+      "Bash(git rm:*)",
+      "Bash(tail -30 d:/Documents/TradingAgents/logs/trade_management/*.log)"
     ]
   }
 }

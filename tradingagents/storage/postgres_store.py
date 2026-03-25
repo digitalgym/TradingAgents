@@ -1517,14 +1517,20 @@ class PostgresSignalStore:
         self,
         symbol: Optional[str] = None,
         executed: Optional[bool] = None,
+        pipeline: Optional[str] = None,
+        signal: Optional[str] = None,
+        source: Optional[str] = None,
         limit: int = 100,
     ) -> List[Dict[str, Any]]:
-        return _run_async(self._list_signals_async(symbol, executed, limit))
+        return _run_async(self._list_signals_async(symbol, executed, pipeline, signal, source, limit))
 
     async def _list_signals_async(
         self,
         symbol: Optional[str] = None,
         executed: Optional[bool] = None,
+        pipeline: Optional[str] = None,
+        signal: Optional[str] = None,
+        source: Optional[str] = None,
         limit: int = 100,
     ) -> List[Dict[str, Any]]:
         await self._ensure_tables()
@@ -1541,6 +1547,18 @@ class PostgresSignalStore:
         if executed is not None:
             conditions.append(f"executed = ${param_idx}")
             params.append(executed)
+            param_idx += 1
+        if pipeline:
+            conditions.append(f"pipeline = ${param_idx}")
+            params.append(pipeline)
+            param_idx += 1
+        if signal:
+            conditions.append(f"UPPER(signal) = ${param_idx}")
+            params.append(signal.upper())
+            param_idx += 1
+        if source:
+            conditions.append(f"source = ${param_idx}")
+            params.append(source)
             param_idx += 1
 
         where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""

@@ -1923,6 +1923,23 @@ export default function AutomationPage() {
                             </div>
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
+                                <Label htmlFor={`delegate-${name}`} className="text-xs">Delegate to Trade Manager</Label>
+                                <HelpTooltip content="Hand off position management (trailing stops, breakeven, reversal close) to the centralized Trade Management Agent. When enabled, this instance stops managing its own positions. Make sure the Trade Manager is running before enabling." />
+                              </div>
+                              <Switch
+                                id={`delegate-${name}`}
+                                checked={inst.config.delegate_position_management ?? false}
+                                onCheckedChange={(v) => handleInstanceConfigUpdate(name, 'delegate_position_management', v)}
+                                disabled={isRunning}
+                              />
+                            </div>
+                            {inst.config.delegate_position_management && (
+                              <div className="p-2 rounded-md bg-blue-500/10 border border-blue-500/20 text-xs text-blue-500">
+                                Position management delegated to Trade Manager. Trailing, breakeven, and reversal settings below are ignored.
+                              </div>
+                            )}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
                                 <Label htmlFor={`trail-${name}`} className="text-xs">Trailing Stop</Label>
                                 <HelpTooltip content="Automatically trail stop loss as price moves in your favor using ATR-based distance." />
                               </div>
@@ -1930,7 +1947,7 @@ export default function AutomationPage() {
                                 id={`trail-${name}`}
                                 checked={inst.config.enable_trailing_stop}
                                 onCheckedChange={(v) => handleInstanceConfigUpdate(name, 'enable_trailing_stop', v)}
-                                disabled={isRunning}
+                                disabled={isRunning || inst.config.delegate_position_management}
                               />
                             </div>
                             {inst.config.enable_trailing_stop && (
@@ -1961,7 +1978,7 @@ export default function AutomationPage() {
                                 id={`be-${name}`}
                                 checked={inst.config.enable_breakeven_stop ?? true}
                                 onCheckedChange={(v) => handleInstanceConfigUpdate(name, 'enable_breakeven_stop', v)}
-                                disabled={isRunning}
+                                disabled={isRunning || inst.config.delegate_position_management}
                               />
                             </div>
                             {inst.config.enable_breakeven_stop && (
@@ -1992,7 +2009,7 @@ export default function AutomationPage() {
                                 id={`rev-${name}`}
                                 checked={inst.config.enable_reversal_close ?? true}
                                 onCheckedChange={(v) => handleInstanceConfigUpdate(name, 'enable_reversal_close', v)}
-                                disabled={isRunning}
+                                disabled={isRunning || inst.config.delegate_position_management}
                               />
                             </div>
                           </div>
@@ -2386,8 +2403,10 @@ export default function AutomationPage() {
                                     </div>
                                     <div className="text-right flex flex-col items-end gap-1">
                                       <div className="flex items-center gap-1">
-                                        {result.executed ? (
+                                        {result.executed && result.execution_ticket ? (
                                           <Badge variant="success" className="text-xs">Executed</Badge>
+                                        ) : result.executed && !result.execution_ticket ? (
+                                          <Badge variant="outline" className="text-xs border-yellow-500 text-yellow-500">Pending</Badge>
                                         ) : result.execution_error ? (
                                           <>
                                             <Badge variant="destructive" className="text-xs">Failed</Badge>
@@ -2642,8 +2661,10 @@ export default function AutomationPage() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Status</span>
                   <span>
-                    {detailResult.executed ? (
-                      <Badge variant="success" className="text-xs">Executed{detailResult.execution_ticket ? ` #${detailResult.execution_ticket}` : ""}</Badge>
+                    {detailResult.executed && detailResult.execution_ticket ? (
+                      <Badge variant="success" className="text-xs">Executed #{detailResult.execution_ticket}</Badge>
+                    ) : detailResult.executed && !detailResult.execution_ticket ? (
+                      <Badge variant="outline" className="text-xs border-yellow-500 text-yellow-500">Pending (unfilled)</Badge>
                     ) : detailResult.execution_error ? (
                       <Badge variant="destructive" className="text-xs">Failed</Badge>
                     ) : (
