@@ -42,6 +42,9 @@ class ParameterTuner:
         timeframe: str,
         n_trials: int = 50,
         timeout: Optional[int] = 600,
+        search_mode: str = "full",
+        fixed_xgb_params: Optional[Dict[str, Any]] = None,
+        fixed_risk: Optional[RiskDefaults] = None,
     ) -> TuneResult:
         """
         Tune strategy hyperparameters using Optuna.
@@ -53,6 +56,10 @@ class ParameterTuner:
             timeframe: Timeframe
             n_trials: Number of Optuna trials
             timeout: Max seconds for tuning (default 10 min)
+            search_mode: "full" (all 12 params), "risk_only" (4 risk params),
+                         or "xgb_only" (8 XGB params)
+            fixed_xgb_params: When search_mode="risk_only", use these XGB params
+            fixed_risk: When search_mode="xgb_only", use these risk params
 
         Returns:
             TuneResult with best parameters and performance
@@ -64,28 +71,35 @@ class ParameterTuner:
 
         def objective(trial):
             # XGBoost hyperparameters
-            xgb_params = {
-                "max_depth": trial.suggest_int("max_depth", 2, 7),
-                "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.15, log=True),
-                "n_estimators": trial.suggest_int("n_estimators", 100, 500, step=50),
-                "subsample": trial.suggest_float("subsample", 0.6, 1.0),
-                "min_child_weight": trial.suggest_int("min_child_weight", 1, 15),
-                "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
-                "reg_alpha": trial.suggest_float("reg_alpha", 0.01, 1.0, log=True),
-                "reg_lambda": trial.suggest_float("reg_lambda", 0.5, 5.0),
-                "objective": "binary:logistic",
-                "eval_metric": "logloss",
-            }
+            if search_mode == "risk_only" and fixed_xgb_params:
+                xgb_params = dict(fixed_xgb_params)
+            else:
+                xgb_params = {
+                    "max_depth": trial.suggest_int("max_depth", 2, 7),
+                    "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.15, log=True),
+                    "n_estimators": trial.suggest_int("n_estimators", 100, 500, step=50),
+                    "subsample": trial.suggest_float("subsample", 0.6, 1.0),
+                    "min_child_weight": trial.suggest_int("min_child_weight", 1, 15),
+                    "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
+                    "reg_alpha": trial.suggest_float("reg_alpha", 0.01, 1.0, log=True),
+                    "reg_lambda": trial.suggest_float("reg_lambda", 0.5, 5.0),
+                    "objective": "binary:logistic",
+                    "eval_metric": "logloss",
+                }
 
             # Risk parameters
-            risk = RiskDefaults(
-                sl_atr_mult=trial.suggest_float("sl_atr_mult", 1.0, 3.0),
-                tp_atr_mult=trial.suggest_float("tp_atr_mult", 1.5, 4.0),
-                signal_threshold=trial.suggest_float("signal_threshold", 0.55, 0.75),
-                max_hold_bars=trial.suggest_int("max_hold_bars", 10, 30, step=5),
-            )
+            if search_mode == "xgb_only" and fixed_risk:
+                risk = fixed_risk
+            else:
+                risk = RiskDefaults(
+                    sl_atr_mult=trial.suggest_float("sl_atr_mult", 1.0, 3.0),
+                    tp_atr_mult=trial.suggest_float("tp_atr_mult", 1.5, 4.0),
+                    signal_threshold=trial.suggest_float("signal_threshold", 0.55, 0.75),
+                    max_hold_bars=trial.suggest_int("max_hold_bars", 10, 30, step=5),
+                    trailing_atr_mult=trial.suggest_float("trailing_atr_mult", 0.0, 3.0),
+                )
 
-            # Create strategy copy with trial params
+            # Apply params to strategy
             strategy.xgb_params = xgb_params
             strategy.risk = risk
 
@@ -112,7 +126,7 @@ class ParameterTuner:
         study.optimize(objective, n_trials=n_trials, timeout=timeout)
 
         logger.info(
-            f"Tuning complete for {strategy.name} on {symbol}: "
+            f"Tuning ({search_mode}) for {strategy.name} on {symbol}: "
             f"best Sharpe={study.best_value:.3f} in {len(study.trials)} trials"
         )
 

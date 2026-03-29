@@ -111,6 +111,39 @@ STRATEGY_XGB_DEFAULTS: Dict[str, Dict[str, Any]] = {
         "objective": "binary:logistic",
         "eval_metric": "logloss",
     },
+    "donchian_breakout": {
+        "max_depth": 4,
+        "learning_rate": 0.05,
+        "n_estimators": 200,
+        "subsample": 0.8,
+        "min_child_weight": 5,
+        "colsample_bytree": 0.8,
+        "reg_alpha": 0.1,
+        "reg_lambda": 1.0,
+        "objective": "binary:logistic",
+        "eval_metric": "logloss",
+    },
+}
+
+
+# ---------------------------------------------------------------------------
+# Donchian Breakout strategy defaults (mechanical + XGBoost hybrid)
+# ---------------------------------------------------------------------------
+
+DONCHIAN_BREAKOUT_DEFAULTS: Dict[str, Any] = {
+    "timeframe": "D1",
+    "donchian_length": 20,
+    "adx_threshold": 25,
+    "bb_width_squeeze_threshold": 0.018,
+    "atr_period": 14,
+    "sl_atr_mult": 2.0,
+    "rr_target": 3.0,
+    "use_trailing": True,
+    "silver_lead_bars": 3,
+    "trend_bias_fast_ma": 50,
+    "trend_bias_slow_ma": 200,
+    "risk_per_trade": 0.01,
+    "partial_exit_pct": 0.5,
 }
 
 
@@ -125,6 +158,7 @@ class RiskDefaults:
     tp_atr_mult: float = 2.5
     signal_threshold: float = 0.60
     max_hold_bars: int = 20
+    trailing_atr_mult: float = 0.0  # 0 = no trailing stop, >0 = trail distance in ATR multiples
 
 
 # ---------------------------------------------------------------------------
@@ -134,11 +168,13 @@ class RiskDefaults:
 @dataclass
 class TrainingConfig:
     """Walk-forward training configuration."""
-    train_window: int = 500
-    test_window: int = 100
-    min_train_bars: int = 200     # Minimum bars after indicator warmup
+    train_window: int = 1000
+    test_window: int = 250
+    min_train_bars: int = 400     # Minimum bars after indicator warmup
     warmup_bars: int = 60         # Bars needed for indicator warmup (longest EMA)
-    total_bars: int = 2000        # How many bars to fetch from MT5
+    total_bars: int = 3000        # How many bars to fetch from MT5
+    purge_bars: int = 10          # Embargo gap between train/test to prevent leakage
+    n_splits: int = 5             # Number of purged K-fold splits (0 = walk-forward only)
 
 
 # ---------------------------------------------------------------------------
@@ -176,6 +212,9 @@ REGIME_SUITABILITY: Dict[str, Dict[str, float]] = {
     "volume_profile_strat": {
         "trending-up": 0.5, "trending-down": 0.5, "ranging": 0.8,
     },
+    "donchian_breakout": {
+        "trending-up": 0.9, "trending-down": 0.9, "ranging": 0.1,
+    },
 }
 
 
@@ -199,8 +238,50 @@ DEFAULT_WATCHLIST: List[str] = [
 # Cold start pair-strategy defaults (before backtest data exists)
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Feature window profiles for optimization Phase 3
+# ---------------------------------------------------------------------------
+
+WINDOW_PROFILES: Dict[str, "FeatureWindows"] = {
+    "fast": FeatureWindows(short=5, mid=10, long=30, ema_short=10, ema_long=30),
+    "default": FeatureWindows(),
+    "slow": FeatureWindows(short=20, mid=40, long=100, ema_short=30, ema_long=80),
+}
+
+
+# ---------------------------------------------------------------------------
+# Per-pair optimization config
+# ---------------------------------------------------------------------------
+
+@dataclass
+class OptimizationConfig:
+    """Thresholds and budgets for pair optimization loop."""
+    holdout_frac: float = 0.20
+    min_holdout_bars: int = 200
+    # Tier A: already good
+    tier_a_sharpe: float = 0.3
+    tier_a_win_rate: float = 45.0
+    tier_a_pf: float = 1.0
+    tier_a_min_trades: int = 20
+    # Tier B: improvable
+    tier_b_sharpe: float = -0.5
+    tier_b_win_rate: float = 30.0
+    tier_b_pf: float = 0.5
+    tier_b_min_trades: int = 10
+    # Phase budgets
+    phase1_trials: int = 30
+    phase1_timeout: int = 120
+    phase2_trials: int = 40
+    phase2_timeout: int = 300
+    # Convergence
+    plateau_threshold: float = 0.05
+    min_trades_valid: int = 15
+    overfit_sharpe_ratio: float = 0.50
+
+
 PAIR_STRATEGY_DEFAULTS: Dict[str, str] = {
     "XAUUSD": "trend_following",
+    "XAGUSD": "trend_following",
     "GBPJPY": "trend_following",
     "EURJPY": "trend_following",
     "BTCUSD": "volume_profile_strat",

@@ -6,6 +6,7 @@ from tradingagents.xgb_quant.strategies.mean_reversion import MeanReversionStrat
 from tradingagents.xgb_quant.strategies.breakout import BreakoutStrategy
 from tradingagents.xgb_quant.strategies.smc_zones import SMCZonesStrategy
 from tradingagents.xgb_quant.strategies.volume_profile_strat import VolumeProfileStrategy
+from tradingagents.xgb_quant.strategies.donchian_breakout import DonchianBreakoutStrategy
 
 __all__ = [
     "BaseStrategy",
@@ -14,4 +15,5 @@ __all__ = [
     "BreakoutStrategy",
     "SMCZonesStrategy",
     "VolumeProfileStrategy",
+    "DonchianBreakoutStrategy",
 ]

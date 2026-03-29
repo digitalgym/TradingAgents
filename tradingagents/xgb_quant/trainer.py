@@ -112,39 +112,56 @@ class WalkForwardTrainer:
         valid_labels = labels.notna().sum()
         logger.info(f"  Labels: {valid_labels} valid out of {len(labels)}")
 
-        # Walk-forward folds
-        all_trades = []
+        # Generate fold splits
         n = len(df)
+        purge = cfg.purge_bars
+
+        if cfg.n_splits > 0:
+            # Purged K-fold: splits data into n_splits sequential folds,
+            # with a purge gap between train and test to prevent leakage
+            # from labels that look ahead (e.g. next-bar direction).
+            folds = self._purged_kfold_splits(n, cfg.n_splits, purge)
+            fold_mode = f"purged {cfg.n_splits}-fold"
+        else:
+            # Classic walk-forward with purge gap
+            folds = []
+            for fold_start in range(0, n - cfg.train_window - cfg.test_window, cfg.test_window):
+                train_end = fold_start + cfg.train_window
+                test_start = train_end + purge
+                test_end = min(test_start + cfg.test_window, n - 1)
+                if test_start >= test_end:
+                    continue
+                folds.append((fold_start, train_end, test_start, test_end))
+            fold_mode = "walk-forward"
+
+        logger.info(
+            f"  {fold_mode}: {len(folds)} folds "
+            f"(train={cfg.train_window}, test={cfg.test_window}, "
+            f"purge={purge}, min_train={cfg.min_train_bars})"
+        )
+
+        all_trades = []
         fold_count = 0
         skipped_folds = 0
         last_trained_model = None
 
-        total_folds = max(1, (n - cfg.train_window - cfg.test_window) // cfg.test_window + 1)
-        logger.info(
-            f"  Walk-forward: {total_folds} potential folds "
-            f"(train={cfg.train_window}, test={cfg.test_window}, min_train={cfg.min_train_bars})"
-        )
-
-        for fold_start in range(0, n - cfg.train_window - cfg.test_window, cfg.test_window):
-            train_end = fold_start + cfg.train_window
-            test_end = min(train_end + cfg.test_window, n - 1)
-
-            X_train = features.iloc[fold_start:train_end].copy()
-            y_train = labels.iloc[fold_start:train_end].copy()
-            X_test = features.iloc[train_end:test_end].copy()
-            y_test = labels.iloc[train_end:test_end].copy()
+        for train_start, train_end, test_start, test_end in folds:
+            X_train = features.iloc[train_start:train_end].copy()
+            y_train = labels.iloc[train_start:train_end].copy()
+            X_test = features.iloc[test_start:test_end].copy()
+            y_test = labels.iloc[test_start:test_end].copy()
 
             # Drop NaN rows — but use XGBoost's native NaN handling for features
             # Only drop rows where ALL feature columns are NaN (completely empty)
             # or where the label is NaN
             train_label_valid = y_train.notna()
-            train_has_data = features.iloc[fold_start:train_end].notna().any(axis=1)
+            train_has_data = features.iloc[train_start:train_end].notna().any(axis=1)
             train_mask = train_label_valid & train_has_data
             X_train = X_train[train_mask]
             y_train = y_train[train_mask]
 
             test_label_valid = y_test.notna()
-            test_has_data = features.iloc[train_end:test_end].notna().any(axis=1)
+            test_has_data = features.iloc[test_start:test_end].notna().any(axis=1)
             test_mask = test_label_valid & test_has_data
             X_test = X_test[test_mask]
             y_test = y_test[test_mask]
@@ -219,6 +236,37 @@ class WalkForwardTrainer:
 
         return result
 
+    @staticmethod
+    def _purged_kfold_splits(
+        n: int, n_splits: int, purge: int,
+    ) -> list:
+        """
+        Generate purged K-fold splits for time series data.
+
+        Each split uses all data before the test fold as training,
+        with a purge gap between train end and test start to prevent
+        label leakage (e.g. when labels look 1+ bars ahead).
+
+        Returns list of (train_start, train_end, test_start, test_end) tuples.
+        """
+        fold_size = n // n_splits
+        splits = []
+
+        for i in range(n_splits):
+            test_start = i * fold_size
+            test_end = min(test_start + fold_size, n)
+
+            # Train on everything BEFORE the test fold (with purge gap)
+            train_end = max(0, test_start - purge)
+
+            if train_end < 100:
+                # Not enough training data for early folds — skip
+                continue
+
+            splits.append((0, train_end, test_start, test_end))
+
+        return splits
+
     def _simulate_trades_from_predictions(
         self,
         probs: np.ndarray,
@@ -257,8 +305,12 @@ class WalkForwardTrainer:
             else:
                 continue  # No signal
 
-            # Simulate exit
-            result = _simulate_exit(direction, entry, sl, tp, high, low, close, i, max_hold)
+            # Simulate exit (with trailing stop if configured)
+            result = _simulate_exit(
+                direction, entry, sl, tp, high, low, close, i, max_hold,
+                trailing_atr_mult=strategy.risk.trailing_atr_mult,
+                atr=atr,
+            )
 
             trades.append({
                 "bar": i,

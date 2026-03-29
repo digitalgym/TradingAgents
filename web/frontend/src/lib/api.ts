@@ -712,7 +712,7 @@ export const saveTradeDecision = (params: SaveDecisionParams) =>
 
 export interface QuantAutomationConfig {
   instance_name: string
-  pipeline: 'smc_quant_basic' | 'smc_quant' | 'breakout_quant' | 'range_quant' | 'volume_profile' | 'rule_based' | 'multi_agent'
+  pipeline: 'smc_quant_basic' | 'smc_quant' | 'smc_mtf' | 'breakout_quant' | 'range_quant' | 'volume_profile' | 'rule_based' | 'multi_agent' | 'xgboost' | 'xgboost_ensemble' | 'scanner_auto'
   symbols: string[]
   timeframe: string
   analysis_interval_seconds: number
@@ -730,6 +730,12 @@ export interface QuantAutomationConfig {
   default_lot_size: number
   daily_loss_limit_pct: number
   max_consecutive_losses: number
+  // Scanner settings
+  enable_scanner?: boolean
+  scanner_interval_seconds?: number
+  scanner_min_score?: number
+  scanner_max_candidates?: number
+  scanner_timeframe?: string
 }
 
 export interface QuantAutomationStatus {
@@ -1238,6 +1244,193 @@ export const getTradeManagerAlerts = (limit?: number, unacknowledged?: boolean) 
 
 export const acknowledgeTradeManagerAlert = (alertId: number) =>
   fetchApi<any>(`/trade-manager/alerts/${alertId}/acknowledge`, { method: 'POST' })
+
+// ===== XGBoost Scanner =====
+
+export interface PairScoreResult {
+  symbol: string
+  direction: string
+  momentum_score: number
+  atr_expansion: number
+  adx_strength: number
+  directional_move_pct: number
+  structure_break: boolean
+  ema_alignment: boolean
+  volume_confirmation: boolean
+  spread_cost_ratio: number
+  is_choppy: boolean
+  spread_too_wide: boolean
+  already_has_position: boolean
+  regime: string
+  recommended_pipeline: string
+  recommended_timeframe: string
+  disqualified: boolean
+  disqualify_reason: string
+}
+
+export interface ScanResultResponse {
+  status: string
+  timestamp: string
+  watchlist_size: number
+  shortlist: PairScoreResult[]
+  disqualified: PairScoreResult[]
+  disqualified_count: number
+  best_candidate: PairScoreResult | null
+  error?: string
+}
+
+export interface ScannerStatusResponse {
+  status: string
+  instance?: string
+  scanner: {
+    enabled: boolean
+    timestamp: string
+    watchlist_size: number
+    shortlist: PairScoreResult[]
+    disqualified_count: number
+    best_candidate: PairScoreResult | null
+    duration_seconds: number
+    active_symbols: string[]
+    last_scan_time: string | null
+  } | null
+  message?: string
+}
+
+export const runPairScan = (minScore: number = 40, maxCandidates: number = 10, timeframe: string = "H4") =>
+  fetchApi<ScanResultResponse>('/xgboost/scan', {
+    method: 'POST',
+    body: JSON.stringify({ min_score: minScore, max_candidates: maxCandidates, timeframe }),
+  })
+
+export const getScannerStatus = (instance: string = "") =>
+  fetchApi<ScannerStatusResponse>(`/xgboost/scanner-status${instance ? `?instance=${instance}` : ''}`)
+
+// ===== XGBoost Batch Training =====
+
+export interface BatchTrainStatus {
+  status: 'idle' | 'running' | 'done' | 'error' | 'cancelling' | 'started'
+  started_at?: string
+  current?: number
+  total?: number
+  message?: string
+  error?: string
+  result?: {
+    started_at: string
+    finished_at: string
+    duration_seconds: number
+    total_tasks: number
+    completed: number
+    skipped: number
+    failed: number
+    best_per_symbol: Record<string, { strategy: string; timeframe: string; sharpe: number; win_rate: number; profit_factor: number }>
+  }
+}
+
+export const startBatchTraining = (skipFreshDays: number = 7) =>
+  fetchApi<BatchTrainStatus>('/xgboost/batch-train', {
+    method: 'POST',
+    body: JSON.stringify({ skip_fresh_days: skipFreshDays }),
+  })
+
+export const getBatchTrainingStatus = () =>
+  fetchApi<BatchTrainStatus>('/xgboost/batch-train/status')
+
+export const cancelBatchTraining = () =>
+  fetchApi<{ status: string }>('/xgboost/batch-train/cancel', { method: 'POST' })
+
+// ===== XGBoost Per-Pair Optimization =====
+
+export interface OptimizeStatus {
+  status: 'idle' | 'running' | 'done' | 'error' | 'cancelling' | 'started'
+  started_at?: string
+  current?: number
+  total?: number
+  message?: string
+  error?: string
+  result?: {
+    started_at: string
+    finished_at: string
+    duration_seconds: number
+    total_pairs: number
+    total_combos: number
+    tier_a_count: number
+    tier_b_improved: number
+    tier_c_count: number
+    overfit_count: number
+  }
+}
+
+export const startOptimization = (maxHours: number = 6) =>
+  fetchApi<OptimizeStatus>('/xgboost/optimize', {
+    method: 'POST',
+    body: JSON.stringify({ max_hours: maxHours }),
+  })
+
+export const getOptimizationStatus = () =>
+  fetchApi<OptimizeStatus>('/xgboost/optimize/status')
+
+export const cancelOptimization = () =>
+  fetchApi<{ status: string }>('/xgboost/optimize/cancel', { method: 'POST' })
+
+// Gold/Silver Pullback Backtest
+export interface GoldSilverBacktestStatus {
+  status: 'idle' | 'running' | 'done' | 'error' | 'already_running' | 'started'
+  started_at?: string
+  progress?: {
+    phase: string
+    current: number
+    total: number
+    message: string
+    steps?: { name: string; status: string }[]
+  }
+  result?: {
+    best: {
+      strategy: string
+      timeframe: string
+      params: Record<string, any>
+      total_trades: number
+      winners: number
+      losers: number
+      win_rate: number
+      avg_pnl: number
+      total_pnl: number
+      sharpe: number
+      profit_factor: number
+      buy_trades: number
+      sell_trades: number
+      buy_win_rate: number
+      sell_win_rate: number
+    } | null
+    top_5: Array<{
+      strategy: string
+      timeframe: string
+      params: Record<string, any>
+      total_trades: number
+      win_rate: number
+      sharpe: number
+      profit_factor: number
+      total_pnl: number
+    }>
+    all_count: number
+    symbol: string
+    pipeline: string
+    timeframes_tested: string[]
+    bars_per_tf: Record<string, number>
+    duration_seconds: number
+    config_updates: Record<string, any>
+    error?: string
+  } | null
+  error?: string | null
+}
+
+export const startGoldSilverBacktest = (bars: number = 800, minTrades: number = 3, timeframes: string[] = ['D1', 'H4']) =>
+  fetchApi<{ status: string }>('/backtest/gold-silver-pullback', {
+    method: 'POST',
+    body: JSON.stringify({ bars, min_trades: minTrades, timeframes }),
+  })
+
+export const getGoldSilverBacktestStatus = () =>
+  fetchApi<GoldSilverBacktestStatus>('/backtest/gold-silver-pullback/status')
 
 // Health
 export const healthCheck = () => fetchApi<any>('/health')

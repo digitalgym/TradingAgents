@@ -13,6 +13,21 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
+
+
+class SafeFileHandler(logging.FileHandler):
+    """FileHandler that recovers from stale file handles on Windows (sleep/wake cycles)."""
+
+    def emit(self, record):
+        try:
+            super().emit(record)
+        except OSError:
+            try:
+                self.close()
+                self.stream = self._open()
+                super().emit(record)
+            except Exception:
+                pass
 import json
 
 from .portfolio_config import PortfolioConfig, SymbolConfig, ExecutionMode, get_default_config
@@ -298,7 +313,7 @@ class PortfolioAutomation:
 
         # File handler
         log_file = logs_dir / f"portfolio_{datetime.now().strftime('%Y%m%d')}.log"
-        file_handler = logging.FileHandler(log_file)
+        file_handler = SafeFileHandler(log_file)
         file_handler.setFormatter(
             logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
         )

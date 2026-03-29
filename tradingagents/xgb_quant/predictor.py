@@ -31,6 +31,7 @@ def _ensure_registry():
     from tradingagents.xgb_quant.strategies.breakout import BreakoutStrategy
     from tradingagents.xgb_quant.strategies.smc_zones import SMCZonesStrategy
     from tradingagents.xgb_quant.strategies.volume_profile_strat import VolumeProfileStrategy
+    from tradingagents.xgb_quant.strategies.donchian_breakout import DonchianBreakoutStrategy
 
     STRATEGY_CLASSES.update({
         "trend_following": TrendFollowingStrategy,
@@ -38,6 +39,7 @@ def _ensure_registry():
         "breakout": BreakoutStrategy,
         "smc_zones": SMCZonesStrategy,
         "volume_profile_strat": VolumeProfileStrategy,
+        "donchian_breakout": DonchianBreakoutStrategy,
     })
 
 
@@ -105,6 +107,17 @@ class LivePredictor:
 
         feature_set = strategy.get_feature_set()
         features = feature_set.compute(df)
+
+        # Pass price arrays for strategies with regime gates (e.g. mean_reversion)
+        if hasattr(strategy, "check_regime_gate"):
+            high = df["high"].values.astype(float)
+            low = df["low"].values.astype(float)
+            close = df["close"].values.astype(float)
+            return strategy.predict_signal(
+                features, atr, current_price,
+                high=high, low=low, close=close, symbol=symbol,
+            )
+
         return strategy.predict_signal(features, atr, current_price)
 
     def predict_ensemble(

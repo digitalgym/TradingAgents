@@ -26,6 +26,21 @@ from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field, fields, asdict
 
 
+class SafeFileHandler(logging.FileHandler):
+    """FileHandler that recovers from stale file handles on Windows (sleep/wake cycles)."""
+
+    def emit(self, record):
+        try:
+            super().emit(record)
+        except OSError:
+            try:
+                self.close()
+                self.stream = self._open()
+                super().emit(record)
+            except Exception:
+                pass
+
+
 # MT5 imports
 from tradingagents.dataflows.mt5_data import (
     get_mt5_current_price,
@@ -70,7 +85,7 @@ class TradeManagementConfig:
 
     # Position management intervals
     management_interval_seconds: float = 900.0  # How often to check positions (15 min)
-    risk_check_interval_seconds: float = 30.0  # Account-level risk checks
+    risk_check_interval_seconds: float = 900.0  # Account-level risk checks (same as management)
     control_poll_seconds: float = 3.0          # Postgres command polling
 
     # Trailing stop defaults
@@ -89,6 +104,11 @@ class TradeManagementConfig:
     enable_partial_tp: bool = False
     partial_tp_percent: float = 50.0     # Close this % of volume at partial TP
     partial_tp_rr_ratio: float = 1.0     # Trigger at 1:1 risk-reward
+
+    # Assumption review (SMC structure check on open positions)
+    enable_assumption_review: bool = True
+    assumption_review_use_llm: bool = False  # LLM assessment adds nuance but costs tokens
+    assumption_review_auto_apply: bool = False  # Auto-apply SL/TP adjustments
 
     # Time-based limits
     enable_time_limit: bool = False
@@ -254,7 +274,7 @@ class TradeManagementAgent:
         self.logger.handlers = []
 
         log_file = logs_dir / f"tma_{datetime.now().strftime('%Y%m%d')}.log"
-        file_handler = logging.FileHandler(log_file)
+        file_handler = SafeFileHandler(log_file)
         file_handler.setFormatter(
             logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
         )
@@ -1079,12 +1099,133 @@ class TradeManagementAgent:
     # Loops
     # ------------------------------------------------------------------
 
+    async def _run_assumption_review(self) -> None:
+        """Run SMC assumption review on all open positions with linked decisions."""
+        if not self.config.enable_assumption_review:
+            return
+
+        try:
+            from tradingagents.automation.position_assumption_review import (
+                review_all_positions,
+            )
+        except ImportError:
+            self.logger.warning("position_assumption_review not available, skipping")
+            return
+
+        self.logger.info("Running assumption review on open positions...")
+
+        try:
+            reports = await asyncio.get_event_loop().run_in_executor(
+                None,
+                lambda: review_all_positions(
+                    source_filter=None,  # Review ALL positions, not just one source
+                    symbols=None,
+                    timeframe="H1",
+                    auto_apply=self.config.assumption_review_auto_apply,
+                    use_llm=self.config.assumption_review_use_llm,
+                ),
+            )
+
+            for r in reports:
+                if r.error:
+                    self.logger.warning(f"  Review #{r.ticket} {r.symbol}: ERROR - {r.error}")
+                    continue
+
+                findings_str = ", ".join(
+                    f"[{f.severity}] {f.category}" for f in r.findings
+                ) if r.findings else "no issues"
+
+                self.logger.info(
+                    f"  Review #{r.ticket} {r.symbol} {r.direction}: "
+                    f"pnl={r.pnl_pct:+.2f}% action={r.recommended_action} "
+                    f"| {findings_str}"
+                )
+
+                # Log critical/warning findings as management actions
+                if r.has_critical or r.has_warnings:
+                    action = ManagementAction(
+                        ticket=r.ticket,
+                        symbol=r.symbol,
+                        action_type="assumption_review",
+                        old_value=r.current_sl if r.suggested_sl else None,
+                        new_value=r.suggested_sl or r.suggested_tp,
+                        reason=f"{r.recommended_action}: {findings_str}",
+                        success=True,
+                        decision_id=r.decision_id,
+                    )
+                    self._log_action(action)
+
+                # Auto-apply SL/TP adjustments if enabled
+                if self.config.assumption_review_auto_apply and r.recommended_action != "hold":
+                    entry = getattr(r, 'entry_price', None) or 0
+                    current = getattr(r, 'current_price', None) or 0
+                    direction = getattr(r, 'direction', 'BUY')
+
+                    if r.recommended_action == "adjust_sl" and r.suggested_sl:
+                        # SAFETY: SL must be on correct side of CURRENT PRICE
+                        # (not entry — a profitable SELL can have SL below entry)
+                        sl_valid = (
+                            (direction == "BUY" and r.suggested_sl < current) or
+                            (direction == "SELL" and r.suggested_sl > current) or
+                            current == 0  # Can't validate without price
+                        )
+                        if not sl_valid:
+                            self.logger.warning(
+                                f"  BLOCKED SL adjust #{r.ticket}: {r.suggested_sl:.5f} is on WRONG SIDE "
+                                f"of current price {current:.5f} for {direction}"
+                            )
+                        # Skip if no actual change or change is too small (< 0.05%)
+                        elif r.current_sl and abs(r.suggested_sl - r.current_sl) / (r.suggested_sl + 1e-10) * 100 < 0.05:
+                            pass  # Silent skip — no-op
+                        else:
+                            result = modify_position(r.ticket, sl=r.suggested_sl)
+                            applied = result.get("success", False)
+                            self.logger.info(
+                                f"  Auto-applied SL adjustment #{r.ticket}: "
+                                f"{r.current_sl:.5f} -> {r.suggested_sl:.5f} "
+                                f"({'OK' if applied else 'FAILED'})"
+                            )
+                    elif r.recommended_action == "adjust_tp" and r.suggested_tp:
+                        # SAFETY: TP must be on correct side of entry
+                        tp_valid = (
+                            (direction == "BUY" and r.suggested_tp > entry) or
+                            (direction == "SELL" and r.suggested_tp < entry) or
+                            entry == 0  # Can't validate without entry
+                        )
+                        if not tp_valid:
+                            self.logger.warning(
+                                f"  BLOCKED TP adjust #{r.ticket}: {r.suggested_tp:.5f} is on WRONG SIDE "
+                                f"of entry {entry:.5f} for {direction} — would cause instant loss"
+                            )
+                        # Skip if no actual change or change is too small (< 0.05%)
+                        elif r.current_tp and abs(r.suggested_tp - r.current_tp) / (r.suggested_tp + 1e-10) * 100 < 0.05:
+                            pass  # Silent skip — no-op
+                        else:
+                            result = modify_position(r.ticket, tp=r.suggested_tp)
+                            applied = result.get("success", False)
+                            self.logger.info(
+                                f"  Auto-applied TP adjustment #{r.ticket}: "
+                                f"{r.current_tp:.5f} -> {r.suggested_tp:.5f} "
+                                f"({'OK' if applied else 'FAILED'})"
+                            )
+                    elif r.recommended_action == "close":
+                        self.logger.warning(
+                            f"  CLOSE recommended for #{r.ticket} {r.symbol} — "
+                            f"not auto-closing (requires manual confirmation)"
+                        )
+
+            self.logger.info(f"Assumption review complete: {len(reports)} positions reviewed")
+
+        except Exception as e:
+            self.logger.error(f"Assumption review failed: {e}")
+
     async def _management_loop(self):
         """Position management loop - runs every management_interval_seconds."""
         self.logger.info("Management loop started")
         while self._running:
             try:
                 await self._manage_positions()
+                await self._run_assumption_review()
             except Exception as e:
                 self.logger.error(f"Management loop error: {e}")
 
@@ -1233,6 +1374,7 @@ class TradeManagementAgent:
         self.logger.info(f"Trailing stop: {'enabled' if self.config.enable_trailing_stop else 'disabled'} ({self.config.trailing_stop_atr_multiplier}x ATR)")
         self.logger.info(f"Breakeven: {'enabled' if self.config.enable_breakeven_stop else 'disabled'} ({self.config.breakeven_atr_multiplier}x ATR)")
         self.logger.info(f"Partial TP: {'enabled' if self.config.enable_partial_tp else 'disabled'}")
+        self.logger.info(f"Assumption review: {'enabled' if self.config.enable_assumption_review else 'disabled'} (auto_apply={self.config.assumption_review_auto_apply}, llm={self.config.assumption_review_use_llm})")
         self.logger.info(f"Time limit: {'enabled' if self.config.enable_time_limit else 'disabled'} ({self.config.max_position_hours}h)")
         self.logger.info("=" * 50)
 

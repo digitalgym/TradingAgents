@@ -58,7 +58,18 @@ class StrategySelector:
         candidates = []
         strategy_names = list(REGIME_SUITABILITY.keys())
 
+        # Respect per-strategy exclusion lists
+        from tradingagents.xgb_quant.strategies.mean_reversion import MR_EXCLUDED_PAIRS
+        excluded_map = {
+            "mean_reversion": MR_EXCLUDED_PAIRS,
+        }
+
         for strategy_name in strategy_names:
+            # Skip strategies that exclude this symbol
+            if symbol in excluded_map.get(strategy_name, set()):
+                logger.debug(f"Skipping {strategy_name} for {symbol} (excluded pair)")
+                continue
+
             bt = self._get_backtest_result(strategy_name, symbol)
 
             # 1. Backtest performance score (0-1)

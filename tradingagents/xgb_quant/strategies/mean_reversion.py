@@ -4,16 +4,27 @@ Mean Reversion Strategy
 Fades overextended price moves back to the mean using
 Bollinger Band position, Z-score, RSI extremes, and Stochastic.
 Best suited for range-bound, low-volatility pairs (EURGBP, AUDNZD, USDCHF).
+
+IMPORTANT: This strategy has a hard regime gate — it will only fire signals
+when the market is confirmed ranging (is_ranging=True, MR score >45, ADX <20).
+Without this gate, the model fires ~750+ trades with ~40% WR and catastrophic
+drawdowns on trending pairs.
 """
 
+import logging
 import pandas as pd
 import numpy as np
 from typing import Optional
 
-from tradingagents.xgb_quant.strategies.base import BaseStrategy
+from tradingagents.xgb_quant.strategies.base import BaseStrategy, Signal
 from tradingagents.xgb_quant.features.base import BaseFeatureSet
 from tradingagents.xgb_quant.features.technical import TechnicalFeatures
 from tradingagents.xgb_quant.config import FeatureWindows, RiskDefaults
+
+logger = logging.getLogger(__name__)
+
+# Pairs that should NEVER use mean reversion — too volatile / trending
+MR_EXCLUDED_PAIRS = frozenset({"XAUUSD", "XAGUSD", "BTCUSD", "ETHUSD", "GBPJPY"})
 
 
 class MeanReversionFeatures(TechnicalFeatures):
@@ -78,3 +89,71 @@ class MeanReversionStrategy(BaseStrategy):
 
     def get_feature_set(self) -> BaseFeatureSet:
         return MeanReversionFeatures(windows=self.windows)
+
+    def check_regime_gate(
+        self,
+        high: np.ndarray,
+        low: np.ndarray,
+        close: np.ndarray,
+        symbol: str = "",
+    ) -> dict:
+        """
+        Hard regime gate — returns range analysis dict.
+        Signal is blocked unless is_ranging=True.
+
+        Uses the same analyze_range() from range_quant.py so both
+        the XGBoost and LLM paths share identical range detection.
+        """
+        from tradingagents.agents.analysts.range_quant import analyze_range
+
+        if symbol in MR_EXCLUDED_PAIRS:
+            return {
+                "is_ranging": False,
+                "blocked_reason": f"{symbol} excluded from mean reversion (too volatile)",
+                "mean_reversion_score": 0.0,
+            }
+
+        analysis = analyze_range(high, low, close)
+
+        if not analysis["is_ranging"]:
+            reasons = []
+            if analysis.get("trend_strength", 0) >= 0.35:
+                reasons.append(f"trend_strength={analysis['trend_strength']:.2f} (>=0.35)")
+            if analysis.get("adx_proxy", 0) >= 20:
+                reasons.append(f"adx_proxy={analysis['adx_proxy']:.1f} (>=20)")
+            if analysis.get("mean_reversion_score", 0) <= 45:
+                reasons.append(f"mr_score={analysis['mean_reversion_score']:.0f} (<=45)")
+            analysis["blocked_reason"] = "Not ranging: " + ", ".join(reasons) if reasons else "Not ranging"
+
+        return analysis
+
+    def predict_signal(
+        self,
+        features: pd.DataFrame,
+        atr: float,
+        current_price: float,
+        high: Optional[np.ndarray] = None,
+        low: Optional[np.ndarray] = None,
+        close: Optional[np.ndarray] = None,
+        symbol: str = "",
+    ) -> Signal:
+        """
+        Generate signal with regime gate.
+
+        If high/low/close arrays are provided, the regime gate is checked
+        first — signal is blocked unless market is confirmed ranging.
+        Falls back to base predict_signal if no price arrays provided
+        (e.g. during walk-forward training where gating isn't wanted).
+        """
+        if high is not None and low is not None and close is not None:
+            gate = self.check_regime_gate(high, low, close, symbol)
+            if not gate.get("is_ranging", False):
+                reason = gate.get("blocked_reason", "Market not ranging")
+                logger.info(f"MR regime gate BLOCKED for {symbol}: {reason}")
+                return Signal(
+                    direction="HOLD",
+                    confidence=0.0,
+                    rationale=f"mean_reversion: regime gate blocked — {reason}",
+                )
+
+        return super().predict_signal(features, atr, current_price)

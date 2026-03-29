@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 
 from tradingagents.agents.analysts.range_quant import analyze_range
+from tradingagents.agents.analysts.gold_silver_pullback_quant import analyze_gold_silver_pullback, analyze_gold_silver_pullback_mtf
 from tradingagents.indicators.smart_money import SmartMoneyAnalyzer
 from tradingagents.indicators.volume_profile import VolumeProfileAnalyzer
 
@@ -145,6 +146,31 @@ def get_parameter_grid(pipeline: str) -> Dict[str, List[Any]]:
             "hold": [5, 10, 15, 20],
             **exit_params,
         }
+    elif pipeline == "gold_silver_pullback":
+        return {
+            "sma_fast": [20, 50],
+            "sma_slow": [100, 200],
+            "pullback_atr_mult": [0.5, 1.0, 1.5],
+            "silver_roc_period": [3, 5, 10],
+            "ratio_z_filter": [1.5, 2.5],
+            "pullback_lookback": [10, 20, 30],
+            "min_confluence": [3, 4, 5],
+            "hold": [5, 10, 20, 30],
+            **exit_params,
+        }
+    elif pipeline == "gold_silver_pullback_mtf":
+        return {
+            "sma_fast": [20, 50],
+            "sma_slow": [100, 200],
+            "pullback_atr_mult": [0.5, 1.0, 1.5],
+            "silver_roc_period": [3, 5, 10],
+            "ratio_z_filter": [1.5, 2.5],
+            "pullback_lookback": [10, 20, 30],
+            "min_confluence": [3, 4, 5],
+            "hold": [15, 30, 60, 120],  # H4 bars (= 2.5, 5, 10, 20 D1 days)
+            "trailing_atr_mult": [0.0, 2.0, 3.0],
+            **exit_params,
+        }
     else:
         return {}
 
@@ -162,6 +188,10 @@ def get_tunable_timeframes(pipeline: str) -> List[str]:
         return ["D1", "H4", "H1"]
     elif pipeline in ("xgboost", "xgboost_ensemble"):
         return ["D1", "H4"]
+    elif pipeline == "gold_silver_pullback":
+        return ["D1", "H4"]
+    elif pipeline == "gold_silver_pullback_mtf":
+        return ["D1+H4"]
     else:
         return ["D1", "H4", "H1"]
 
@@ -203,25 +233,52 @@ def _simulate_exit(
     direction: str, entry: float, sl: float, tp: float,
     high: np.ndarray, low: np.ndarray, close: np.ndarray,
     entry_bar: int, max_hold: int,
+    trailing_atr_mult: float = 0.0, atr: "np.ndarray | None" = None,
 ) -> Dict[str, Any]:
     """Walk forward bar-by-bar to find SL/TP hit or max-hold expiry.
+
+    When trailing_atr_mult > 0 and atr is provided, the stop loss trails
+    behind the best price at trailing_atr_mult * ATR distance.
 
     Returns dict with exit_price, pnl_pct, exit_reason, bars_held.
     """
     end_bar = min(entry_bar + max_hold, len(close) - 1)
+    current_sl = sl
+    best_price = entry  # Track best price for trailing
+
     for j in range(entry_bar + 1, end_bar + 1):
+        # --- Trailing stop update (before checking SL hit) ---
+        if trailing_atr_mult > 0 and atr is not None and not np.isnan(atr[j]):
+            trail_dist = atr[j] * trailing_atr_mult
+            if direction == "BUY":
+                # Trail below the highest price seen
+                if high[j] > best_price:
+                    best_price = high[j]
+                new_sl = best_price - trail_dist
+                if new_sl > current_sl:
+                    current_sl = new_sl
+            else:  # SELL
+                # Trail above the lowest price seen
+                if low[j] < best_price:
+                    best_price = low[j]
+                new_sl = best_price + trail_dist
+                if new_sl < current_sl:
+                    current_sl = new_sl
+
+        # --- Check SL/TP ---
         if direction == "BUY":
-            # Check SL first (conservative: assume worst case hit first)
-            if low[j] <= sl:
-                pnl = (sl - entry) / entry * 100
-                return {"exit": sl, "pnl_pct": pnl, "reason": "sl", "bars": j - entry_bar}
+            if low[j] <= current_sl:
+                pnl = (current_sl - entry) / entry * 100
+                reason = "trailing_sl" if current_sl > sl else "sl"
+                return {"exit": current_sl, "pnl_pct": pnl, "reason": reason, "bars": j - entry_bar}
             if high[j] >= tp:
                 pnl = (tp - entry) / entry * 100
                 return {"exit": tp, "pnl_pct": pnl, "reason": "tp", "bars": j - entry_bar}
         else:  # SELL
-            if high[j] >= sl:
-                pnl = (entry - sl) / entry * 100
-                return {"exit": sl, "pnl_pct": pnl, "reason": "sl", "bars": j - entry_bar}
+            if high[j] >= current_sl:
+                pnl = (entry - current_sl) / entry * 100
+                reason = "trailing_sl" if current_sl < sl else "sl"
+                return {"exit": current_sl, "pnl_pct": pnl, "reason": reason, "bars": j - entry_bar}
             if low[j] <= tp:
                 pnl = (entry - tp) / entry * 100
                 return {"exit": tp, "pnl_pct": pnl, "reason": "tp", "bars": j - entry_bar}
@@ -906,6 +963,219 @@ def _backtest_xgboost_from_cache(
 
 
 # ------------------------------------------------------------------
+# Gold/Silver pullback precompute & backtest
+# ------------------------------------------------------------------
+
+def _load_silver_data(timeframe: str, bars: int) -> Optional[pd.DataFrame]:
+    """Load XAGUSD data from MT5 for gold/silver pullback strategy."""
+    try:
+        return load_mt5_data("XAGUSD", timeframe, bars)
+    except Exception as e:
+        logger.warning(f"Failed to load XAGUSD {timeframe}: {e}")
+        return None
+
+
+def _precompute_gold_silver_signals(
+    gold_df: pd.DataFrame,
+    silver_df: pd.DataFrame,
+    sma_fast: int = 50,
+    sma_slow: int = 200,
+    pullback_atr_mult: float = 1.0,
+    silver_roc_period: int = 5,
+    ratio_z_filter: float = 2.0,
+    pullback_lookback: int = 20,
+) -> List[Optional[Dict]]:
+    """Pre-compute gold/silver pullback signals once per parameter combo.
+
+    Returns list of dicts (one per bar) with confluence scores for BUY and SELL.
+    """
+    gold_high = gold_df["high"].values
+    gold_low = gold_df["low"].values
+    gold_close = gold_df["close"].values
+    gold_open = gold_df["open"].values
+    silver_close = silver_df["close"].values
+    atr = _compute_atr(gold_high, gold_low, gold_close)
+
+    min_bars = max(sma_slow + 10, 260)
+    signals = []
+
+    for i in range(min_bars, len(gold_close)):
+        if np.isnan(atr[i]):
+            signals.append(None)
+            continue
+
+        result = analyze_gold_silver_pullback(
+            gold_high[:i + 1],
+            gold_low[:i + 1],
+            gold_close[:i + 1],
+            gold_open[:i + 1],
+            silver_close[:i + 1],
+            sma_fast=sma_fast,
+            sma_slow=sma_slow,
+            pullback_atr_mult=pullback_atr_mult,
+            silver_roc_period=silver_roc_period,
+            ratio_z_filter=ratio_z_filter,
+            pullback_lookback=pullback_lookback,
+            min_confluence=0,  # Store all; filter in backtest
+        )
+        signals.append({
+            "bar": i,
+            "price": float(gold_close[i]),
+            "atr": float(atr[i]),
+            "direction": result["direction"],
+            "buy_score": result["buy_score"],
+            "sell_score": result["sell_score"],
+            "swing_low": result["swing_low"],
+            "swing_high": result["swing_high"],
+        })
+    return signals
+
+
+def _backtest_gold_silver_from_cache(
+    signals: List[Optional[Dict]],
+    df: pd.DataFrame,
+    hold_days: int = 30,
+    atr_sl_mult: float = 1.5,
+    rr_ratio: float = 2.0,
+    min_confluence: int = 4,
+    trailing_atr_mult: float = 0.0,
+) -> List[Dict]:
+    """Backtest gold/silver pullback using pre-computed confluence signals.
+
+    Supports both BUY and SELL based on confluence score.
+    When trailing_atr_mult > 0, the stop trails behind the best price.
+    """
+    high = df["high"].values
+    low = df["low"].values
+    close = df["close"].values
+    atr = _compute_atr(high, low, close) if trailing_atr_mult > 0 else None
+    trades = []
+    last_exit_bar = -1
+
+    for sig in signals:
+        if sig is None:
+            continue
+
+        i = sig["bar"]
+        if i >= len(close) - 1 or i <= last_exit_bar:
+            continue
+
+        entry = sig["price"]
+        atr_val = sig["atr"]
+        sl_dist = atr_val * atr_sl_mult
+        tp_dist = sl_dist * rr_ratio
+
+        # Check BUY
+        if sig["buy_score"] >= min_confluence:
+            sl_atr = entry - sl_dist
+            sl_swing = sig["swing_low"]
+            sl = max(sl_atr, sl_swing)
+            if sl >= entry:
+                sl = entry - atr_val
+            actual_sl_dist = entry - sl
+            tp = entry + actual_sl_dist * rr_ratio
+
+            exit_info = _simulate_exit("BUY", entry, sl, tp, high, low, close, i, hold_days,
+                                       trailing_atr_mult=trailing_atr_mult, atr=atr)
+            trades.append({"bar": i, "direction": "BUY", "entry": entry, **exit_info})
+            last_exit_bar = i + exit_info["bars"]
+
+        # Check SELL (only if no BUY taken)
+        elif sig["sell_score"] >= min_confluence:
+            sl_atr = entry + sl_dist
+            sl_swing = sig["swing_high"]
+            sl = min(sl_atr, sl_swing)
+            if sl <= entry:
+                sl = entry + atr_val
+            actual_sl_dist = sl - entry
+            tp = entry - actual_sl_dist * rr_ratio
+
+            exit_info = _simulate_exit("SELL", entry, sl, tp, high, low, close, i, hold_days,
+                                       trailing_atr_mult=trailing_atr_mult, atr=atr)
+            trades.append({"bar": i, "direction": "SELL", "entry": entry, **exit_info})
+            last_exit_bar = i + exit_info["bars"]
+
+    return trades
+
+
+def _precompute_gold_silver_mtf_signals(
+    d1_gold_df: pd.DataFrame,
+    d1_silver_df: pd.DataFrame,
+    h4_gold_df: pd.DataFrame,
+    h4_silver_df: pd.DataFrame,
+    sma_fast: int = 50,
+    sma_slow: int = 200,
+    pullback_atr_mult: float = 1.0,
+    silver_roc_period: int = 5,
+    ratio_z_filter: float = 2.0,
+    pullback_lookback: int = 20,
+) -> List[Optional[Dict]]:
+    """Pre-compute MTF gold/silver signals: D1 trend + H4 entries.
+
+    Iterates over H4 bars. For each H4 bar, finds the corresponding D1 bar
+    (last D1 close <= H4 timestamp) to get trend/ratio state.
+    """
+    d1_gold_close = d1_gold_df["close"].values
+    d1_silver_close = d1_silver_df["close"].values
+    d1_dates = d1_gold_df["date"].values if "date" in d1_gold_df.columns else np.arange(len(d1_gold_df))
+
+    h4_gold_high = h4_gold_df["high"].values
+    h4_gold_low = h4_gold_df["low"].values
+    h4_gold_close = h4_gold_df["close"].values
+    h4_gold_open = h4_gold_df["open"].values
+    h4_silver_close = h4_silver_df["close"].values
+    h4_dates = h4_gold_df["date"].values if "date" in h4_gold_df.columns else np.arange(len(h4_gold_df))
+
+    h4_atr = _compute_atr(h4_gold_high, h4_gold_low, h4_gold_close)
+
+    # Build D1 index: for each H4 bar, find last D1 bar before it
+    d1_idx_for_h4 = np.searchsorted(d1_dates, h4_dates, side="right") - 1
+    d1_idx_for_h4 = np.clip(d1_idx_for_h4, 0, len(d1_gold_close) - 1)
+
+    min_h4_bars = max(pullback_lookback + 10, 50)
+    min_d1_bars = max(sma_slow, 252)
+    signals = []
+
+    for i in range(min_h4_bars, len(h4_gold_close)):
+        if np.isnan(h4_atr[i]):
+            signals.append(None)
+            continue
+
+        d1_end = int(d1_idx_for_h4[i]) + 1
+        if d1_end < min_d1_bars:
+            signals.append(None)
+            continue
+
+        result = analyze_gold_silver_pullback_mtf(
+            d1_gold_close=d1_gold_close[:d1_end],
+            d1_silver_close=d1_silver_close[:d1_end],
+            h4_gold_high=h4_gold_high[:i + 1],
+            h4_gold_low=h4_gold_low[:i + 1],
+            h4_gold_close=h4_gold_close[:i + 1],
+            h4_gold_open=h4_gold_open[:i + 1],
+            h4_silver_close=h4_silver_close[:i + 1],
+            sma_fast=sma_fast,
+            sma_slow=sma_slow,
+            pullback_atr_mult=pullback_atr_mult,
+            silver_roc_period=silver_roc_period,
+            ratio_z_filter=ratio_z_filter,
+            pullback_lookback=pullback_lookback,
+            min_confluence=0,  # Store all; filter in backtest
+        )
+        signals.append({
+            "bar": i,
+            "price": float(h4_gold_close[i]),
+            "atr": float(h4_atr[i]),
+            "direction": result["direction"],
+            "buy_score": result["buy_score"],
+            "sell_score": result["sell_score"],
+            "swing_low": result["swing_low"],
+            "swing_high": result["swing_high"],
+        })
+    return signals
+
+
+# ------------------------------------------------------------------
 # Pipeline-to-backtest dispatch
 # ------------------------------------------------------------------
 
@@ -992,6 +1262,43 @@ def _run_pipeline_sweep(pipeline, df, timeframe, grid, precomputed_cache=None,
                 signal_threshold=params.get("signal_threshold", 0.60),
                 atr_sl_mult=atr_sl, rr_ratio=rr,
             )
+        elif pipeline == "gold_silver_pullback":
+            # Cache key is a tuple of signal-generation params
+            cache_key = (
+                params.get("sma_fast", 50),
+                params.get("sma_slow", 200),
+                params.get("pullback_atr_mult", 1.0),
+                params.get("silver_roc_period", 5),
+                params.get("ratio_z_filter", 2.0),
+                params.get("pullback_lookback", 20),
+            )
+            signals = precomputed_cache.get(cache_key) if precomputed_cache else None
+            if signals is None:
+                continue
+            trades = _backtest_gold_silver_from_cache(
+                signals, df, hold_days=params["hold"],
+                atr_sl_mult=atr_sl, rr_ratio=rr,
+                min_confluence=params.get("min_confluence", 4),
+            )
+        elif pipeline == "gold_silver_pullback_mtf":
+            cache_key = (
+                params.get("sma_fast", 50),
+                params.get("sma_slow", 200),
+                params.get("pullback_atr_mult", 1.0),
+                params.get("silver_roc_period", 5),
+                params.get("ratio_z_filter", 2.0),
+                params.get("pullback_lookback", 20),
+            )
+            signals = precomputed_cache.get(cache_key) if precomputed_cache else None
+            if signals is None:
+                continue
+            # Reuse same backtest function — signals are H4-based
+            trades = _backtest_gold_silver_from_cache(
+                signals, df, hold_days=params["hold"],
+                atr_sl_mult=atr_sl, rr_ratio=rr,
+                min_confluence=params.get("min_confluence", 4),
+                trailing_atr_mult=params.get("trailing_atr_mult", 0.0),
+            )
         else:
             continue
 
@@ -1046,6 +1353,16 @@ def best_params_to_config_updates(pipeline: str, best: TuneResult) -> Dict[str, 
     elif pipeline in ("xgboost", "xgboost_ensemble"):
         st = best.params.get("signal_threshold", 0.60)
         updates["min_confidence"] = round(st, 2)
+    elif pipeline in ("gold_silver_pullback", "gold_silver_pullback_mtf"):
+        updates["gold_silver_params"] = {
+            "sma_fast": best.params.get("sma_fast", 50),
+            "sma_slow": best.params.get("sma_slow", 200),
+            "pullback_atr_mult": best.params.get("pullback_atr_mult", 1.0),
+            "silver_roc_period": best.params.get("silver_roc_period", 5),
+            "ratio_z_filter": best.params.get("ratio_z_filter", 2.0),
+            "pullback_lookback": best.params.get("pullback_lookback", 20),
+            "min_confluence": best.params.get("min_confluence", 4),
+        }
 
     return updates
 
@@ -1100,6 +1417,8 @@ async def run_tune(
         else "Pre-compute VP signals" if pipeline == "volume_profile"
         else "Pre-compute MTF alignment" if pipeline == "smc_mtf"
         else "Pre-compute XGBoost predictions" if pipeline in ("xgboost", "xgboost_ensemble")
+        else "Pre-compute gold/silver signals" if pipeline == "gold_silver_pullback"
+        else "Pre-compute MTF gold/silver signals" if pipeline == "gold_silver_pullback_mtf"
         else "Pre-compute signals"
     )
     steps = [
@@ -1118,7 +1437,7 @@ async def run_tune(
     steps[0]["status"] = "running"
     _progress("loading_data", 0, total_combos, f"Connecting to MT5...")
 
-    is_mtf = pipeline == "smc_mtf"
+    is_mtf = pipeline in ("smc_mtf", "gold_silver_pullback_mtf")
     data = {}       # {tf_key: df} for single-TF, {tf_pair: (htf_df, ltf_df)} for MTF
     raw_data = {}   # cache individual TF loads to avoid duplicates
 
@@ -1224,6 +1543,92 @@ async def run_tune(
             )
             _progress("precompute", total_bars, total_bars,
                       f"Got {len(tf_caches[tf])} XGBoost signals for {tf}")
+    elif pipeline == "gold_silver_pullback":
+        # Load silver data for each timeframe
+        from itertools import product as _product
+        for tf, gold_df in data.items():
+            _progress("precompute", 0, 1, f"Loading XAGUSD {tf} data...")
+            silver_df = await asyncio.to_thread(_load_silver_data, tf, len(gold_df) + 50)
+            if silver_df is None or len(silver_df) < 260:
+                logger.warning(f"Insufficient XAGUSD data for {tf}, skipping")
+                tf_caches[tf] = {}
+                continue
+
+            # Align gold and silver by trimming to same length
+            min_len = min(len(gold_df), len(silver_df))
+            gold_aligned = gold_df.tail(min_len).reset_index(drop=True)
+            silver_aligned = silver_df.tail(min_len).reset_index(drop=True)
+
+            # Pre-compute for each unique param combo of signal-gen params
+            param_combos = list(_product(
+                grid.get("sma_fast", [50]),
+                grid.get("sma_slow", [200]),
+                grid.get("pullback_atr_mult", [1.0]),
+                grid.get("silver_roc_period", [5]),
+                grid.get("ratio_z_filter", [2.0]),
+                grid.get("pullback_lookback", [20]),
+            ))
+            cache = {}
+            for pc_idx, (sf, ss, pam, srp, rzf, plb) in enumerate(param_combos):
+                if sf >= ss:
+                    continue  # sma_fast must be < sma_slow
+                _progress("precompute", pc_idx, len(param_combos),
+                          f"Pre-computing gold/silver signals for {tf} (SMA {sf}/{ss}, pullback {pam}x, lb={plb})...")
+                key = (sf, ss, pam, srp, rzf, plb)
+                cache[key] = await asyncio.to_thread(
+                    _precompute_gold_silver_signals,
+                    gold_aligned, silver_aligned,
+                    sma_fast=sf, sma_slow=ss,
+                    pullback_atr_mult=pam, silver_roc_period=srp,
+                    ratio_z_filter=rzf, pullback_lookback=plb,
+                )
+            tf_caches[tf] = cache
+    elif pipeline == "gold_silver_pullback_mtf":
+        from itertools import product as _product_mtf
+        for tf_pair, (htf_df, ltf_df) in data.items():
+            # Load silver for both timeframes
+            _progress("precompute", 0, 1, f"Loading XAGUSD D1 + H4 data...")
+            d1_silver = await asyncio.to_thread(_load_silver_data, "D1", len(htf_df) + 50)
+            h4_silver = await asyncio.to_thread(_load_silver_data, "H4", len(ltf_df) + 50)
+            if d1_silver is None or h4_silver is None:
+                logger.warning(f"Insufficient XAGUSD data for MTF, skipping")
+                tf_caches[tf_pair] = {}
+                continue
+
+            # Align D1 gold+silver
+            d1_min = min(len(htf_df), len(d1_silver))
+            d1_gold = htf_df.tail(d1_min).reset_index(drop=True)
+            d1_silver_aligned = d1_silver.tail(d1_min).reset_index(drop=True)
+
+            # Align H4 gold+silver
+            h4_min = min(len(ltf_df), len(h4_silver))
+            h4_gold = ltf_df.tail(h4_min).reset_index(drop=True)
+            h4_silver_aligned = h4_silver.tail(h4_min).reset_index(drop=True)
+
+            param_combos = list(_product_mtf(
+                grid.get("sma_fast", [50]),
+                grid.get("sma_slow", [200]),
+                grid.get("pullback_atr_mult", [1.0]),
+                grid.get("silver_roc_period", [5]),
+                grid.get("ratio_z_filter", [2.0]),
+                grid.get("pullback_lookback", [20]),
+            ))
+            cache = {}
+            for pc_idx, (sf, ss, pam, srp, rzf, plb) in enumerate(param_combos):
+                if sf >= ss:
+                    continue
+                _progress("precompute", pc_idx, len(param_combos),
+                          f"Pre-computing MTF gold/silver for {tf_pair} (SMA {sf}/{ss}, pb {pam}x, lb={plb})...")
+                key = (sf, ss, pam, srp, rzf, plb)
+                cache[key] = await asyncio.to_thread(
+                    _precompute_gold_silver_mtf_signals,
+                    d1_gold, d1_silver_aligned,
+                    h4_gold, h4_silver_aligned,
+                    sma_fast=sf, sma_slow=ss,
+                    pullback_atr_mult=pam, silver_roc_period=srp,
+                    ratio_z_filter=rzf, pullback_lookback=plb,
+                )
+            tf_caches[tf_pair] = cache
     else:
         for tf in data:
             tf_caches[tf] = None

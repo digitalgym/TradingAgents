@@ -34,6 +34,11 @@ class PairScore:
     volume_confirmation: bool = False
     spread_cost_ratio: float = 0.0
 
+    # Regime detection
+    regime: str = ""            # "trending", "ranging", "squeeze", "volatile_trend", etc.
+    recommended_pipeline: str = ""  # Pipeline best suited for this regime
+    recommended_timeframe: str = ""  # Best analysis timeframe for this regime
+
     # Filters
     is_choppy: bool = False
     spread_too_wide: bool = False
@@ -57,6 +62,30 @@ class PairScanner:
 
     def __init__(self, config: Optional[ScannerConfig] = None):
         self.config = config or ScannerConfig()
+        self._blacklist = self._load_blacklist()
+
+    @staticmethod
+    def _load_blacklist() -> set:
+        """Load blacklisted symbol+pipeline combos from batch training results."""
+        try:
+            from tradingagents.xgb_quant.batch_trainer import BatchTrainer
+            entries = BatchTrainer.load_blacklist()
+            # Build a set of "SYMBOL:pipeline" for fast lookup
+            # Map strategy names back to pipeline names where they differ
+            _STRATEGY_TO_PIPELINE = {
+                "trend_following": "xgboost",
+                "mean_reversion": "xgboost",
+                "breakout": "xgboost",
+                "smc_zones": "xgboost",
+                "volume_profile_strat": "xgboost",
+            }
+            bl = set()
+            for e in entries:
+                # Blacklist the specific strategy for xgboost routing
+                bl.add(f"{e['symbol']}:{e['strategy']}:{e.get('timeframe', '')}")
+            return bl
+        except Exception:
+            return set()
 
     def scan(
         self,
@@ -189,6 +218,39 @@ class PairScanner:
         spread_est = avg_range * 0.01  # Rough estimate, 1% of range
         spread_ratio = spread_est / current_atr if current_atr > 0 else 1.0
 
+        # --- Bollinger Band squeeze detection ---
+        bb_period = 20
+        bb_std_mult = 2.0
+        sma = pd.Series(close).rolling(bb_period).mean().values
+        std = pd.Series(close).rolling(bb_period).std().values
+        bb_width = (std[-1] * bb_std_mult * 2) / sma[-1] if sma[-1] > 0 else 0
+        avg_bb_width = np.nanmean(
+            (std[-40:] * bb_std_mult * 2) / np.where(sma[-40:] > 0, sma[-40:], 1)
+        )
+        bb_squeeze = bb_width < avg_bb_width * 0.6 if avg_bb_width > 0 else False
+
+        # BB recently tight but now expanding = fresh breakout signature.
+        # Check if BB was squeezed 3-5 bars ago but current width is above squeeze threshold.
+        bb_width_prev = np.nanmean(
+            (std[-6:-1] * bb_std_mult * 2) / np.where(sma[-6:-1] > 0, sma[-6:-1], 1)
+        ) if len(std) > 6 else bb_width
+        bb_was_squeezed = bb_width_prev < avg_bb_width * 0.6 if avg_bb_width > 0 else False
+        bb_expanding = not bb_squeeze and bb_was_squeezed  # Was tight, now opening up
+
+        # --- ADX slope (is trend strengthening or fading?) ---
+        # Compare current ADX to ADX 5 bars ago
+        adx_prev = adx[-6] if len(adx) > 6 and not np.isnan(adx[-6]) else adx_val
+        adx_slope = adx_val - adx_prev  # positive = strengthening, negative = fading
+
+        # --- RSI for exhaustion divergence ---
+        rsi_val = self._compute_rsi(close)
+
+        # --- Regime classification ---
+        regime, recommended_pipeline, recommended_tf = self._classify_regime(
+            adx_val, atr_expansion, bb_squeeze, structure_break, ema_aligned, dir_move,
+            adx_slope, rsi_val, bb_expanding, vol_confirm,
+        )
+
         # --- Score calculation ---
         score = 0
 
@@ -233,6 +295,14 @@ class PairScanner:
         if vol_confirm:
             score += 5
 
+        # Validate assignment against backtest blacklist
+        # If the xgboost strategy for this pair is blacklisted, the selector
+        # will route to a better one automatically. But if a non-xgboost pipeline
+        # (e.g. range_quant) has no backtest data, we trust the regime mapping.
+        recommended_pipeline, recommended_tf = self._validate_assignment(
+            symbol, recommended_pipeline, recommended_tf, regime,
+        )
+
         return PairScore(
             symbol=symbol,
             direction=direction,
@@ -244,9 +314,135 @@ class PairScanner:
             ema_alignment=ema_aligned,
             volume_confirmation=vol_confirm,
             spread_cost_ratio=spread_ratio,
+            regime=regime,
+            recommended_pipeline=recommended_pipeline,
+            recommended_timeframe=recommended_tf,
             is_choppy=adx_val < self.config.min_adx,
             spread_too_wide=spread_ratio > self.config.max_spread_atr_ratio,
         )
+
+    # Regime → (pipeline, timeframe) mapping.
+    # Timeframe rationale: trends develop on D1, breakouts on H4, ranging on H4.
+    REGIME_PIPELINE_MAP = {
+        "strong_trend":     ("rule_based",     "D1"),  # 75% WR on D1, trends need daily perspective
+        "moderate_trend":   ("xgboost",        "D1"),  # ML picks pattern, D1 best in backtests
+        "ranging":          ("range_quant",    "H4"),  # Mean-reversion needs faster granularity
+        "squeeze":          ("breakout_quant", "H4"),  # Breakouts need H4 to catch the move
+        "breakout_fresh":   ("breakout_quant", "H4"),  # Continuation entry on H4
+        "volatile_trend":   ("smc_mtf",        "D1"),  # MTF uses D1 as higher TF
+        "trend_exhaustion": ("smc_quant_basic","D1"),  # LLM needs D1 context to judge exhaustion
+    }
+
+    @staticmethod
+    def _classify_regime(
+        adx: float,
+        atr_expansion: float,
+        bb_squeeze: bool,
+        structure_break: bool,
+        ema_aligned: bool,
+        dir_move: float,
+        adx_slope: float = 0.0,
+        rsi: float = 50.0,
+        bb_expanding: bool = False,
+        volume_confirmed: bool = False,
+    ) -> tuple:
+        """
+        Classify market regime from scanner indicators.
+
+        Returns (regime_name, recommended_pipeline, recommended_timeframe).
+        """
+        abs_move = abs(dir_move)
+
+        def _map(regime: str):
+            pipeline, tf = PairScanner.REGIME_PIPELINE_MAP[regime]
+            return regime, pipeline, tf
+
+        # Squeeze: tight BB + low ADX + no structure break → about to move
+        if bb_squeeze and adx < 25 and not structure_break:
+            return _map("squeeze")
+
+        # Fresh breakout: BB was squeezed but just expanded + structure break.
+        if bb_expanding and structure_break:
+            return _map("breakout_fresh")
+
+        # Trend exhaustion: ADX was high but is now falling + RSI extreme.
+        if adx > 25 and adx_slope < -3 and (rsi > 70 or rsi < 30):
+            return _map("trend_exhaustion")
+
+        # Strong trend: high ADX + EMA aligned + big move
+        if adx > 35 and ema_aligned and abs_move > 0.8:
+            if atr_expansion > 1.5:
+                return _map("volatile_trend")
+            return _map("strong_trend")
+
+        # Moderate trend: decent ADX or clear EMA alignment
+        if adx > 22 and (ema_aligned or abs_move > 0.5):
+            if atr_expansion > 1.4:
+                return _map("volatile_trend")
+            return _map("moderate_trend")
+
+        # Ranging: low ADX, small move, no alignment
+        if adx < 22 and abs_move < 0.5:
+            return _map("ranging")
+
+        # Default: moderate trend (safe fallback)
+        return _map("moderate_trend")
+
+    @staticmethod
+    def _compute_rsi(close: np.ndarray, period: int = 14) -> float:
+        """Compute current RSI value."""
+        if len(close) < period + 1:
+            return 50.0
+        deltas = np.diff(close[-(period + 1):])
+        gains = np.where(deltas > 0, deltas, 0)
+        losses = np.where(deltas < 0, -deltas, 0)
+        avg_gain = np.mean(gains)
+        avg_loss = np.mean(losses)
+        if avg_loss == 0:
+            return 100.0
+        rs = avg_gain / avg_loss
+        return 100.0 - (100.0 / (1.0 + rs))
+
+    def _validate_assignment(
+        self,
+        symbol: str,
+        pipeline: str,
+        timeframe: str,
+        regime: str,
+    ) -> tuple:
+        """
+        Check if the assigned pipeline has viable backtest results for this pair.
+
+        If xgboost is assigned but no good model exists for this pair, fall back
+        to rule_based. Other pipelines (range_quant, breakout_quant, etc.) are
+        trusted since they don't depend on trained models.
+        """
+        # Only xgboost depends on trained models
+        if pipeline != "xgboost":
+            return pipeline, timeframe
+
+        # Check if any viable model exists for this pair
+        try:
+            from tradingagents.xgb_quant.strategy_selector import StrategySelector
+            selector = StrategySelector()
+            selection = selector.select(symbol, regime=regime)
+
+            # If best strategy has decent backtest, keep xgboost
+            if selection.sharpe > 0 and selection.win_rate >= 40:
+                # Use the selector's recommended timeframe if available
+                return pipeline, selection.recommended_timeframe or timeframe
+
+            # Bad backtest — fall back to rule_based (free, no model needed)
+            logger.info(
+                f"SCANNER: {symbol} xgboost has poor backtest "
+                f"(Sharpe={selection.sharpe:.2f}, WR={selection.win_rate:.0f}%), "
+                f"falling back to rule_based"
+            )
+            return "rule_based", "D1"
+
+        except Exception:
+            # Can't check — trust the regime mapping
+            return pipeline, timeframe
 
     def _fetch_mt5_data(self, symbol: str, timeframe: str, bars: int) -> Optional[pd.DataFrame]:
         """Fetch data from MT5."""

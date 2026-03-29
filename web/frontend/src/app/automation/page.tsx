@@ -21,6 +21,11 @@ import {
   saveSelectedSymbols,
   DailyCycleStatus,
   PendingPrediction,
+  // Scanner
+  runPairScan,
+  getScannerStatus,
+  PairScoreResult,
+  ScanResultResponse,
   // Quant Automation
   listAutomationInstances,
   getQuantAutomationStatus,
@@ -81,6 +86,7 @@ import {
   Pencil,
   Check,
   Eye,
+  Radar,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -246,6 +252,12 @@ export default function AutomationPage() {
   // Market status
   const [marketStatus, setMarketStatus] = useState<Record<string, { open: boolean; reason: string }>>({})
   const [marketSession, setMarketSession] = useState<string>("")
+
+  // Scanner state
+  const [scanResult, setScanResult] = useState<ScanResultResponse | null>(null)
+  const [scanning, setScanning] = useState(false)
+  const [scanMinScore, setScanMinScore] = useState(40)
+  const [scanTimeframe, setScanTimeframe] = useState("H4")
 
   // Global symbol position limits
   const [symbolLimits, setSymbolLimits] = useState<Record<string, { max_positions: number }>>({})
@@ -732,6 +744,16 @@ export default function AutomationPage() {
     await Promise.all(runningNames.map(name => pollUntilStatus(name, ["stopped"])))
   }
 
+  const handleRunScan = async () => {
+    setScanning(true)
+    setScanResult(null)
+    const result = await runPairScan(scanMinScore, 10, scanTimeframe)
+    if (result.data) {
+      setScanResult(result.data)
+    }
+    setScanning(false)
+  }
+
   const handleInstanceTest = async (name: string) => {
     const inst = instances[name]
     if (!inst?.testSymbol) return
@@ -867,6 +889,14 @@ export default function AutomationPage() {
       enable_reversal_close: true,
       default_lot_size: 0.01,
       max_risk_per_trade_pct: 1.0,
+      // Auto-enable scanner for SCANNER_AUTO pipeline
+      ...(newInstancePipeline === 'scanner_auto' ? {
+        enable_scanner: true,
+        scanner_interval_seconds: 300,
+        scanner_min_score: 40,
+        scanner_max_candidates: 3,
+        scanner_timeframe: 'H4',
+      } : {}),
     }
 
     // Save config to backend (without starting)
@@ -894,6 +924,9 @@ export default function AutomationPage() {
     multi_agent: "Multi-Agent AI",
     xgboost: "XGBoost ML",
     xgboost_ensemble: "XGBoost Ensemble",
+    scanner_auto: "Scanner Auto",
+    gold_silver_pullback: "Gold/Silver Pullback",
+    gold_silver_pullback_mtf: "Gold/Silver MTF",
   }
 
   const pipelineColors: Record<string, string> = {
@@ -907,6 +940,9 @@ export default function AutomationPage() {
     multi_agent: "text-amber-500",
     xgboost: "text-rose-500",
     xgboost_ensemble: "text-pink-500",
+    scanner_auto: "text-fuchsia-500",
+    gold_silver_pullback: "text-yellow-500",
+    gold_silver_pullback_mtf: "text-amber-500",
   }
 
   // Pipeline descriptions with backtest results from XAUUSD (Oct 2022 - Dec 2025, 827 D1 bars)
@@ -972,6 +1008,24 @@ export default function AutomationPage() {
       recommendedTimeframes: "D1 (best), H4",
       recommendedInterval: "15-60 min (instant inference)",
     },
+    scanner_auto: {
+      summary: "Scans 17 pairs, detects regime, auto-routes each to the best pipeline. Fully adaptive.",
+      details: "The scanner analyses momentum, trend strength, volatility and squeeze across the full watchlist. For each qualifying pair it classifies the regime (strong trend → rule_based, moderate trend → xgboost, ranging → range_quant, squeeze → breakout_quant, volatile trend → smc_mtf) and dispatches to the best pipeline automatically. As markets shift regime, the automation shifts with them. Scanner is always enabled in this mode.",
+      recommendedTimeframes: "D1 (best), H4",
+      recommendedInterval: "15-60 min (scanner + analysis)",
+    },
+    gold_silver_pullback: {
+      summary: "Gold pullback strategy on D1 using silver momentum + Au/Ag ratio. Long-term, ~8 trades/year.",
+      details: "D1-only: 75% WR, Sharpe 2.15, PF 6.40 on 28 trades (~3.5 years). Very selective — requires 5/7 confluence (trend, pullback depth, fib zone, reversal candle, silver confirmation, ratio filter, structure). Best for long-term validation alongside the MTF version.",
+      recommendedTimeframes: "D1",
+      recommendedInterval: "240 min (daily signals)",
+    },
+    gold_silver_pullback_mtf: {
+      summary: "Gold pullback with D1 trend + H4 entries. ~12 trades/year, no LLM.",
+      details: "Backtest: 55.8% WR, Sharpe 1.25, PF 3.70 on 43 trades. D1 provides trend filter (SMA50>100) + Au/Ag ratio. H4 provides entry: pullback 1.5x ATR + reversal candle closing above prior high + silver breakout/acceleration. 3:1 RR, wide 2.5x ATR stop. Trades every ~3 weeks. Requires XAUUSD + XAGUSD in MT5.",
+      recommendedTimeframes: "D1+H4",
+      recommendedInterval: "120 min (H4 candle period)",
+    },
   }
 
   // Sensible defaults per pipeline. Timeframe from XAUUSD backtest (D1 wins across all strategies).
@@ -988,6 +1042,9 @@ export default function AutomationPage() {
     multi_agent:    { timeframe: "D1", interval: 7200,  confidence: 0.70, atrMultiplier: 2.0 },
     xgboost:        { timeframe: "D1", interval: 900,   confidence: 0.60, atrMultiplier: 1.5 },
     xgboost_ensemble:{ timeframe: "D1", interval: 900,  confidence: 0.60, atrMultiplier: 1.5 },
+    scanner_auto:    { timeframe: "D1", interval: 900,  confidence: 0.60, atrMultiplier: 1.5 },
+    gold_silver_pullback: { timeframe: "D1", interval: 14400, confidence: 0.60, atrMultiplier: 2.5 },
+    gold_silver_pullback_mtf: { timeframe: "D1", interval: 7200, confidence: 0.60, atrMultiplier: 2.5 },
   }
 
   const executionModeColors: Record<string, string> = {
@@ -1578,6 +1635,126 @@ export default function AutomationPage() {
       <Separator className="my-8" />
       <TradeManagementSection />
 
+      {/* Pair Scanner */}
+      <Separator className="my-8" />
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Radar className="h-5 w-5 text-rose-500" />
+            Pair Scanner
+          </CardTitle>
+          <CardDescription>
+            Scan the full watchlist for high-momentum pairs. Use with XGBoost pipelines or manually pick symbols.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <label className="text-xs text-muted-foreground">Min Score</label>
+              <HelpTooltip content="Minimum momentum score (0-100) to qualify. Score = ATR expansion (25) + ADX strength (25) + directional move (20) + structure break (15) + EMA alignment (10) + volume (5). 40 = moderate, 60 = strict." />
+            </div>
+            <Input
+              type="number"
+              className="h-8 w-20 text-xs"
+              min={0}
+              max={100}
+              value={scanMinScore}
+              onChange={(e) => setScanMinScore(parseInt(e.target.value) || 40)}
+            />
+            <div className="flex items-center gap-1">
+              <label className="text-xs text-muted-foreground">Timeframe</label>
+              <HelpTooltip content="Timeframe for momentum data. H4 balances signal and noise. D1 for swing. H1 for fast rotation." />
+            </div>
+            <Select value={scanTimeframe} onValueChange={setScanTimeframe}>
+              <SelectTrigger className="h-8 w-20 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="H1">H1</SelectItem>
+                <SelectItem value="H4">H4</SelectItem>
+                <SelectItem value="D1">D1</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button size="sm" className="h-8" onClick={handleRunScan} disabled={scanning}>
+              {scanning ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Radar className="mr-1 h-3 w-3" />}
+              Scan
+            </Button>
+          </div>
+
+          {scanResult && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <span>Scanned {scanResult.watchlist_size} pairs</span>
+                <span>{scanResult.shortlist.length} qualified</span>
+                <span>{scanResult.disqualified_count} filtered out</span>
+              </div>
+
+              {/* Shortlist */}
+              {scanResult.shortlist.length > 0 && (
+                <div className="space-y-1">
+                  <h4 className="text-xs font-semibold text-green-500">Candidates</h4>
+                  <div className="grid gap-1">
+                    {scanResult.shortlist.map((pair) => (
+                      <div key={pair.symbol} className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/50 text-xs">
+                        <span className="font-medium w-16">{pair.symbol}</span>
+                        <Badge
+                          variant={pair.direction === "LONG" ? "buy" : "sell"}
+                          className="text-[10px] px-1.5 py-0"
+                        >
+                          {pair.direction}
+                        </Badge>
+                        <div className="flex items-center gap-1">
+                          <span className="text-muted-foreground">Score:</span>
+                          <span className={`font-bold ${pair.momentum_score >= 70 ? "text-green-500" : pair.momentum_score >= 50 ? "text-yellow-500" : "text-muted-foreground"}`}>
+                            {pair.momentum_score}
+                          </span>
+                        </div>
+                        {pair.regime && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-fuchsia-500 text-fuchsia-500">
+                            {pair.regime.replace("_", " ")}
+                          </Badge>
+                        )}
+                        {pair.recommended_pipeline && (
+                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${pipelineColors[pair.recommended_pipeline] || ""}`}>
+                            {pair.recommended_timeframe || ""} → {pipelineLabels[pair.recommended_pipeline] || pair.recommended_pipeline}
+                          </Badge>
+                        )}
+                        <div className="flex items-center gap-2 ml-auto text-muted-foreground">
+                          {pair.structure_break && <Badge variant="outline" className="text-[10px] px-1 py-0">Break</Badge>}
+                          {pair.ema_alignment && <Badge variant="outline" className="text-[10px] px-1 py-0">EMA</Badge>}
+                          {pair.volume_confirmation && <Badge variant="outline" className="text-[10px] px-1 py-0">Vol</Badge>}
+                          <span>ADX {pair.adx_strength.toFixed(0)}</span>
+                          <span>ATR×{pair.atr_expansion.toFixed(1)}</span>
+                          <span>Move {pair.directional_move_pct > 0 ? "+" : ""}{pair.directional_move_pct.toFixed(2)}%</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Disqualified (collapsible) */}
+              {scanResult.disqualified && scanResult.disqualified.length > 0 && (
+                <details className="text-xs">
+                  <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                    {scanResult.disqualified.length} disqualified pairs
+                  </summary>
+                  <div className="grid gap-1 mt-1">
+                    {scanResult.disqualified.map((pair) => (
+                      <div key={pair.symbol} className="flex items-center gap-2 px-3 py-1 rounded-md text-muted-foreground">
+                        <span className="w-16">{pair.symbol}</span>
+                        <span className="text-[10px]">{pair.disqualify_reason}</span>
+                        <span className="ml-auto">Score: {pair.momentum_score}</span>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Quant Automation Instances */}
       <Separator className="my-8" />
       <div className="space-y-6">
@@ -2013,6 +2190,94 @@ export default function AutomationPage() {
                               />
                             </div>
                           </div>
+
+                          {/* Scanner Settings */}
+                            <>
+                              <Separator />
+                              <div className="space-y-2">
+                                <h4 className="text-xs font-semibold flex items-center gap-1">
+                                  <Search className="h-3 w-3" /> Pair Scanner
+                                  <HelpTooltip content="When enabled, the scanner automatically finds high-momentum pairs from the full watchlist (17 pairs) each cycle. Instead of analyzing only your configured symbols, it picks the top movers and runs your chosen pipeline on those. Disable to stick with your manually selected symbols." />
+                                </h4>
+                                <div className="flex items-center gap-2">
+                                  <Switch
+                                    checked={inst.config.enable_scanner ?? false}
+                                    onCheckedChange={(v) => handleInstanceConfigUpdate(name, 'enable_scanner', v)}
+                                    disabled={isRunning}
+                                  />
+                                  <span className="text-xs text-muted-foreground">
+                                    {inst.config.enable_scanner ? "Scanner picks symbols dynamically" : "Using manual symbol list"}
+                                  </span>
+                                </div>
+                                {inst.config.enable_scanner && (
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                      <div className="flex items-center gap-1">
+                                        <label className="text-xs text-muted-foreground">Scan Interval (s)</label>
+                                        <HelpTooltip content="How often the scanner re-scans the watchlist. 300s (5 min) is a good default — pairs don't change momentum that fast." />
+                                      </div>
+                                      <Input
+                                        type="number"
+                                        className="h-7 text-xs"
+                                        value={inst.config.scanner_interval_seconds ?? 300}
+                                        onChange={(e) => handleInstanceConfigUpdate(name, 'scanner_interval_seconds', parseInt(e.target.value) || 300)}
+                                        disabled={isRunning}
+                                      />
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center gap-1">
+                                        <label className="text-xs text-muted-foreground">Min Score</label>
+                                        <HelpTooltip content="Minimum momentum score (0-100) to qualify. 40 = moderate filter (more signals). 60 = strict (fewer but stronger). Score combines: ATR expansion (25pts), ADX trend strength (25pts), directional move (20pts), structure break (15pts), EMA alignment (10pts), volume (5pts)." />
+                                      </div>
+                                      <Input
+                                        type="number"
+                                        className="h-7 text-xs"
+                                        min={0}
+                                        max={100}
+                                        value={inst.config.scanner_min_score ?? 40}
+                                        onChange={(e) => handleInstanceConfigUpdate(name, 'scanner_min_score', parseInt(e.target.value) || 40)}
+                                        disabled={isRunning}
+                                      />
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center gap-1">
+                                        <label className="text-xs text-muted-foreground">Max Candidates</label>
+                                        <HelpTooltip content="Maximum pairs to trade from scanner results. 3 = focused (recommended). More candidates = more positions to manage but more diversification." />
+                                      </div>
+                                      <Input
+                                        type="number"
+                                        className="h-7 text-xs"
+                                        min={1}
+                                        max={10}
+                                        value={inst.config.scanner_max_candidates ?? 3}
+                                        onChange={(e) => handleInstanceConfigUpdate(name, 'scanner_max_candidates', parseInt(e.target.value) || 3)}
+                                        disabled={isRunning}
+                                      />
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center gap-1">
+                                        <label className="text-xs text-muted-foreground">Scanner TF</label>
+                                        <HelpTooltip content="Timeframe for scanner momentum data. H4 is recommended — captures intraday momentum without noise. D1 for swing trading, H1 for faster rotation." />
+                                      </div>
+                                      <Select
+                                        value={inst.config.scanner_timeframe ?? "H4"}
+                                        onValueChange={(v) => handleInstanceConfigUpdate(name, 'scanner_timeframe', v)}
+                                        disabled={isRunning}
+                                      >
+                                        <SelectTrigger className="h-7 text-xs">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="H1">H1</SelectItem>
+                                          <SelectItem value="H4">H4</SelectItem>
+                                          <SelectItem value="D1">D1</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </>
 
                           {/* Test Analysis */}
                           <Separator />
@@ -2509,6 +2774,9 @@ export default function AutomationPage() {
                   <SelectItem value="multi_agent">Multi-Agent AI</SelectItem>
                   <SelectItem value="xgboost">XGBoost ML</SelectItem>
                   <SelectItem value="xgboost_ensemble">XGBoost Ensemble</SelectItem>
+                  <SelectItem value="scanner_auto">Scanner Auto</SelectItem>
+                  <SelectItem value="gold_silver_pullback">Gold/Silver Pullback D1 (no LLM)</SelectItem>
+                  <SelectItem value="gold_silver_pullback_mtf">Gold/Silver MTF D1+H4 (no LLM)</SelectItem>
                 </SelectContent>
               </Select>
               {pipelineDescriptions[newInstancePipeline] && (

@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { HelpTooltip } from "@/components/ui/help-tooltip"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { getPortfolioConfig, getMarketWatchSymbols, addToMarketWatch, removeFromMarketWatch, searchSymbols, addPortfolioSymbol, removePortfolioSymbol, getPortfolioSuggestions, updatePortfolioConfig, PortfolioConfigUpdateParams } from "@/lib/api"
+import { getPortfolioConfig, getMarketWatchSymbols, addToMarketWatch, removeFromMarketWatch, searchSymbols, addPortfolioSymbol, removePortfolioSymbol, getPortfolioSuggestions, updatePortfolioConfig, PortfolioConfigUpdateParams, startBatchTraining, getBatchTrainingStatus, cancelBatchTraining, BatchTrainStatus, startOptimization, getOptimizationStatus, cancelOptimization, OptimizeStatus } from "@/lib/api"
 
 interface SymbolConfig {
   symbol: string
@@ -112,6 +112,13 @@ export default function SettingsPage() {
   const [perfMatrix, setPerfMatrix] = useState<any>(null)
   const [forceRetrain, setForceRetrain] = useState(false)
 
+  // Batch training state
+  const [batchStatus, setBatchStatus] = useState<BatchTrainStatus | null>(null)
+  const [batchPolling, setBatchPolling] = useState(false)
+
+  // Optimization state
+  const [optStatus, setOptStatus] = useState<OptimizeStatus | null>(null)
+
   const allXgbStrategies = [
     { key: "trend_following", label: "Trend Following" },
     { key: "mean_reversion", label: "Mean Reversion" },
@@ -123,14 +130,63 @@ export default function SettingsPage() {
   const fetchTrainedModels = async () => {
     try {
       const [modelsRes, perfRes] = await Promise.all([
-        fetch("http://localhost:8000/api/xgboost/models"),
-        fetch("http://localhost:8000/api/xgboost/performance-matrix"),
+        fetch("/api/xgboost/models"),
+        fetch("/api/xgboost/performance-matrix"),
       ])
       const modelsData = await modelsRes.json()
       const perfData = await perfRes.json()
       if (modelsData.status === "success") setTrainedModels(modelsData.models)
       if (perfData.status === "success") setPerfMatrix(perfData.matrix)
     } catch { /* ignore */ }
+  }
+
+  const handleBatchTrain = async () => {
+    const res = await startBatchTraining(forceRetrain ? 0 : 7)
+    if (res.data) {
+      setBatchStatus(res.data)
+      setBatchPolling(true)
+      // Poll for status
+      const interval = setInterval(async () => {
+        const statusRes = await getBatchTrainingStatus()
+        if (statusRes.data) {
+          setBatchStatus(statusRes.data)
+          if (statusRes.data.status !== "running" && statusRes.data.status !== "cancelling") {
+            clearInterval(interval)
+            setBatchPolling(false)
+            // Refresh models list
+            fetch("/api/xgboost/models").then(r => r.json()).then(d => { if (d.status === "success") setTrainedModels(d.models) })
+            fetch("/api/xgboost/performance-matrix").then(r => r.json()).then(d => { if (d.status === "success") setPerfMatrix(d.matrix) })
+          }
+        }
+      }, 3000)
+    }
+  }
+
+  const handleOptimize = async () => {
+    const res = await startOptimization(6)
+    if (res.data) {
+      setOptStatus(res.data)
+      const interval = setInterval(async () => {
+        const statusRes = await getOptimizationStatus()
+        if (statusRes.data) {
+          setOptStatus(statusRes.data)
+          if (statusRes.data.status !== "running" && statusRes.data.status !== "cancelling") {
+            clearInterval(interval)
+            fetch("/api/xgboost/performance-matrix").then(r => r.json()).then(d => { if (d.status === "success") setPerfMatrix(d.matrix) })
+          }
+        }
+      }, 5000)
+    }
+  }
+
+  const handleCancelOptimize = async () => {
+    await cancelOptimization()
+    setOptStatus(prev => prev ? { ...prev, status: "cancelling", message: "Cancelling..." } : null)
+  }
+
+  const handleCancelBatch = async () => {
+    await cancelBatchTraining()
+    setBatchStatus(prev => prev ? { ...prev, status: "cancelling", message: "Cancelling..." } : null)
   }
 
   const runTraining = async (trainAll = false) => {
@@ -150,7 +206,7 @@ export default function SettingsPage() {
         body.timeframe = trainTimeframe
       }
 
-      const res = await fetch("http://localhost:8000/api/xgboost/train", {
+      const res = await fetch("/api/xgboost/train", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -1356,6 +1412,194 @@ export default function SettingsPage() {
               <p className="text-sm text-muted-foreground">
                 No trained models yet. Train models above to enable XGBoost pipelines.
               </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Batch Training (All Pairs) */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-fuchsia-500" />
+              Backtest &amp; Train All Pairs
+            </CardTitle>
+            <CardDescription>
+              Walk-forward backtest + train XGBoost models for all 17 pairs × 2 timeframes (D1 + H4) × 5 strategies.
+              Each combo is backtested to find win rate, Sharpe, and profit factor. Bad combos are blacklisted so Scanner Auto avoids them. Run weekly.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={handleBatchTrain}
+                disabled={batchStatus?.status === "running" || batchStatus?.status === "cancelling"}
+              >
+                {batchStatus?.status === "running" ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Training {batchStatus.current}/{batchStatus.total}...</>
+                ) : (
+                  <><Brain className="mr-2 h-4 w-4" />Backtest &amp; Train All</>
+                )}
+              </Button>
+              {batchStatus?.status === "running" && (
+                <Button variant="outline" size="sm" onClick={handleCancelBatch}>
+                  <X className="mr-1 h-3 w-3" />Cancel
+                </Button>
+              )}
+              <label className="flex items-center gap-1.5 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={forceRetrain}
+                  onChange={(e) => setForceRetrain(e.target.checked)}
+                  className="rounded"
+                />
+                <span className="text-muted-foreground">Force retrain all</span>
+              </label>
+              <HelpTooltip content="Runs walk-forward backtests on 170 combos (17 pairs × 2 TFs × 5 strategies), trains XGBoost models for each, and blacklists bad combos (Sharpe<0, WR<40%, PF<0.8). Scanner Auto uses the results to only route pairs to strategies that actually work. Without 'Force retrain', skips models tested in the last 7 days." />
+            </div>
+
+            {batchStatus?.status === "running" && (
+              <div className="space-y-2">
+                {(batchStatus.total ?? 0) > 0 && (
+                  <>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">
+                        {batchStatus.current ?? 0} / {batchStatus.total ?? 0} models
+                      </span>
+                      <span className="font-medium">
+                        {Math.round(((batchStatus.current ?? 0) / (batchStatus.total ?? 1)) * 100)}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2.5">
+                      <div
+                        className="bg-fuchsia-500 h-2.5 rounded-full transition-all duration-500"
+                        style={{ width: `${((batchStatus.current ?? 0) / (batchStatus.total ?? 1)) * 100}%` }}
+                      />
+                    </div>
+                  </>
+                )}
+                {batchStatus.message && (
+                  <p className="text-xs text-muted-foreground font-mono">{batchStatus.message}</p>
+                )}
+              </div>
+            )}
+
+            {batchStatus?.status === "cancelling" && (
+              <p className="text-sm text-yellow-500">Cancelling...</p>
+            )}
+
+            {batchStatus?.status === "done" && batchStatus.result && (
+              <div className="space-y-2">
+                <div className="flex gap-3 text-sm">
+                  <Badge variant="outline" className="text-green-500 border-green-500">{batchStatus.result.completed} trained</Badge>
+                  <Badge variant="outline">{batchStatus.result.skipped} skipped</Badge>
+                  {batchStatus.result.failed > 0 && <Badge variant="destructive">{batchStatus.result.failed} failed</Badge>}
+                  <span className="text-muted-foreground">{batchStatus.result.duration_seconds}s</span>
+                </div>
+
+                {Object.keys(batchStatus.result.best_per_symbol).length > 0 && (
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Best strategy per pair:</label>
+                    <div className="grid grid-cols-2 gap-1 text-xs">
+                      {Object.entries(batchStatus.result.best_per_symbol).map(([symbol, best]) => (
+                        <div key={symbol} className="flex items-center gap-2 px-2 py-1 rounded bg-muted/50">
+                          <span className="font-medium w-14">{symbol}</span>
+                          <span className="text-muted-foreground">{best.strategy} {best.timeframe}</span>
+                          <span className="ml-auto text-green-500">Sharpe {best.sharpe.toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {batchStatus?.status === "error" && (
+              <Alert variant="destructive">
+                <AlertDescription>{batchStatus.error}</AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Per-Pair Optimization */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-emerald-500" />
+              Optimize Per Pair
+            </CardTitle>
+            <CardDescription>
+              Reviews backtest results, identifies improvable combos, and runs staged optimization
+              (risk tune → full XGB tune → window profiles) with holdout validation. Run after batch backtest.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={handleOptimize}
+                disabled={optStatus?.status === "running" || optStatus?.status === "cancelling"}
+              >
+                {optStatus?.status === "running" ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Optimizing {optStatus.current ?? 0}/{optStatus.total ?? 0}...</>
+                ) : (
+                  <><TrendingUp className="mr-2 h-4 w-4" />Optimize All Pairs</>
+                )}
+              </Button>
+              {optStatus?.status === "running" && (
+                <Button variant="outline" size="sm" onClick={handleCancelOptimize}>
+                  <X className="mr-1 h-3 w-3" />Cancel
+                </Button>
+              )}
+              <HelpTooltip content="Triages each combo into Tier A (good), B (improvable), C (hopeless). Tier B combos go through: Phase 1 risk-only tune (SL/TP), Phase 2 full XGB tune, Phase 3 feature window profiles. Holdout validation (last 20% of data) catches overfitting. Takes 4-6 hours for all 17 pairs." />
+            </div>
+
+            {optStatus?.status === "running" && (
+              <div className="space-y-2">
+                {(optStatus.total ?? 0) > 0 && (
+                  <>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Pair {optStatus.current ?? 0} / {optStatus.total ?? 0}</span>
+                      <span className="font-medium">{Math.round(((optStatus.current ?? 0) / (optStatus.total ?? 1)) * 100)}%</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2.5">
+                      <div
+                        className="bg-emerald-500 h-2.5 rounded-full transition-all duration-500"
+                        style={{ width: `${((optStatus.current ?? 0) / (optStatus.total ?? 1)) * 100}%` }}
+                      />
+                    </div>
+                  </>
+                )}
+                {optStatus.message && (
+                  <p className="text-xs text-muted-foreground font-mono">{optStatus.message}</p>
+                )}
+              </div>
+            )}
+
+            {optStatus?.status === "cancelling" && (
+              <p className="text-sm text-yellow-500">Cancelling...</p>
+            )}
+
+            {optStatus?.status === "done" && optStatus.result && (
+              <div className="space-y-2">
+                <div className="flex gap-3 text-sm flex-wrap">
+                  <Badge variant="outline" className="text-green-500 border-green-500">{optStatus.result.tier_b_improved} improved</Badge>
+                  <Badge variant="outline">{optStatus.result.tier_a_count} already good</Badge>
+                  <Badge variant="outline" className="text-muted-foreground">{optStatus.result.tier_c_count} non-viable</Badge>
+                  {optStatus.result.overfit_count > 0 && (
+                    <Badge variant="destructive">{optStatus.result.overfit_count} overfit</Badge>
+                  )}
+                  <span className="text-muted-foreground text-xs">{optStatus.result.duration_seconds}s</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Full report saved to results/_optimization/. Check viability report for per-pair details.
+                </p>
+              </div>
+            )}
+
+            {optStatus?.status === "error" && (
+              <Alert variant="destructive">
+                <AlertDescription>{optStatus.error}</AlertDescription>
+              </Alert>
             )}
           </CardContent>
         </Card>

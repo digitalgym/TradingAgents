@@ -21,7 +21,6 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 
-from tradingagents.dataflows.smc_utils import get_smc_position_review_context
 from tradingagents.dataflows.mt5_data import get_open_positions
 from tradingagents.trade_decisions import (
     list_active_decisions,
@@ -59,6 +58,7 @@ class PositionAssumptionReport:
     suggested_sl: Optional[float] = None
     suggested_tp: Optional[float] = None
     llm_assessment: Optional[str] = None  # LLM's nuanced interpretation
+    review_strategy: Optional[str] = None  # "smc", "mean_reversion", "breakout", etc.
     review_timestamp: datetime = field(default_factory=datetime.now)
     error: Optional[str] = None
 
@@ -116,235 +116,41 @@ def review_position_assumptions(
         pnl_pct=pnl_pct,
     )
 
-    # Get current SMC structure
-    try:
-        smc = get_smc_position_review_context(
-            symbol=symbol,
-            direction=direction,
-            entry_price=entry_price,
-            current_price=current_price,
-            sl=current_sl,
-            tp=current_tp,
-            timeframe=timeframe,
-        )
-    except Exception as e:
-        report.error = f"SMC analysis failed: {e}"
-        return report
+    # Route to the correct strategy-specific reviewer
+    from tradingagents.automation.strategy_reviewers import route_to_reviewer
+    reviewer = route_to_reviewer(decision)
+    logger.info(
+        f"  Reviewer: {reviewer.__name__} "
+        f"(pipeline={decision.get('pipeline')}, setup_type={decision.get('setup_type')})"
+    )
 
-    if smc.get("error"):
-        report.error = f"SMC analysis error: {smc['error']}"
-        return report
-
-    # Extract original assumptions from decision
-    original_rationale = decision.get("rationale", "")
-    original_smc = decision.get("smc_context", {})
-    original_sl = decision.get("stop_loss", 0)
-    original_tp = decision.get("take_profit", 0)
-
-    # === CHECK 1: Bias alignment ===
-    bias = smc.get("bias", "neutral")
-    bias_aligns = smc.get("bias_aligns", True)
-
-    if not bias_aligns:
-        report.findings.append(AssumptionFinding(
-            category="bias_shift",
-            severity="critical",
-            message=f"Market bias is now {bias.upper()} — against your {direction} position. "
-                    f"Original trade assumed {'bullish' if direction == 'BUY' else 'bearish'} conditions.",
-            suggested_action="close" if pnl_pct < 0 else "monitor",
-        ))
-
-    # === CHECK 2: Structure break (CHOCH) against position ===
-    if smc.get("structure_shift"):
-        report.findings.append(AssumptionFinding(
-            category="structure_break",
-            severity="critical",
-            message=f"Change of Character (CHOCH) detected AGAINST your {direction} position. "
-                    f"Market structure has shifted — the original trend assumption may be invalidated.",
-            suggested_action="close",
-        ))
-
-    # === CHECK 3: SL placement risk ===
-    if smc.get("sl_at_risk") and current_sl > 0:
-        report.findings.append(AssumptionFinding(
-            category="sl_risk",
-            severity="warning",
-            message=smc.get("sl_risk_reason", "SL is in a vulnerable location"),
-            suggested_action="adjust_sl",
-            suggested_value=smc.get("suggested_sl"),
-        ))
-
-    # Check if SL is no longer behind a valid zone
-    if current_sl > 0:
-        support_levels = smc.get("support_levels", [])
-        resistance_levels = smc.get("resistance_levels", [])
-
-        if direction == "BUY" and support_levels:
-            # SL should be below support. If nearest support is now ABOVE SL,
-            # that support may have disappeared or shifted
-            nearest_support_bottom = support_levels[0].get("bottom", 0)
-            if nearest_support_bottom > 0 and current_sl > nearest_support_bottom:
-                # SL is above the nearest support — it's exposed
-                report.findings.append(AssumptionFinding(
-                    category="sl_risk",
-                    severity="warning",
-                    message=f"SL at {current_sl:.5f} is above nearest support zone at {nearest_support_bottom:.5f}. "
-                            f"Your stop may get hit before the support zone can defend the position.",
-                    suggested_action="adjust_sl",
-                    suggested_value=nearest_support_bottom * 0.998,
-                ))
-        elif direction == "SELL" and resistance_levels:
-            nearest_resistance_top = resistance_levels[0].get("top", 0)
-            if nearest_resistance_top > 0 and current_sl < nearest_resistance_top:
-                report.findings.append(AssumptionFinding(
-                    category="sl_risk",
-                    severity="warning",
-                    message=f"SL at {current_sl:.5f} is below nearest resistance zone at {nearest_resistance_top:.5f}. "
-                            f"Your stop may get hit before the resistance zone can defend the position.",
-                    suggested_action="adjust_sl",
-                    suggested_value=nearest_resistance_top * 1.002,
-                ))
-
-    # === CHECK 4: TP still realistic? ===
-    if current_tp > 0:
-        support_levels = smc.get("support_levels", [])
-        resistance_levels = smc.get("resistance_levels", [])
-
-        if direction == "BUY" and resistance_levels:
-            # Check if a new resistance zone has appeared BEFORE our TP
-            for zone in resistance_levels:
-                zone_price = zone.get("price", 0)
-                zone_strength = zone.get("strength", 0)
-                if 0 < zone_price < current_tp and zone_price > current_price:
-                    # Resistance zone between current price and TP
-                    if zone_strength >= 0.6:
-                        report.findings.append(AssumptionFinding(
-                            category="tp_blocked",
-                            severity="warning",
-                            message=f"Resistance zone ({zone.get('type', 'zone')}) at {zone_price:.5f} "
-                                    f"(strength {zone_strength:.0%}) sits between current price and TP at {current_tp:.5f}. "
-                                    f"Price may stall or reverse here before reaching TP.",
-                            suggested_action="adjust_tp",
-                            suggested_value=zone.get("bottom", zone_price),
-                        ))
-                        break  # Only report the nearest blocking zone
-
-        elif direction == "SELL" and support_levels:
-            for zone in support_levels:
-                zone_price = zone.get("price", 0)
-                zone_strength = zone.get("strength", 0)
-                if 0 < zone_price > current_tp and zone_price < current_price:
-                    if zone_strength >= 0.6:
-                        report.findings.append(AssumptionFinding(
-                            category="tp_blocked",
-                            severity="warning",
-                            message=f"Support zone ({zone.get('type', 'zone')}) at {zone_price:.5f} "
-                                    f"(strength {zone_strength:.0%}) sits between current price and TP at {current_tp:.5f}. "
-                                    f"Price may bounce here before reaching TP.",
-                            suggested_action="adjust_tp",
-                            suggested_value=zone.get("top", zone_price),
-                        ))
-                        break
-
-    # === CHECK 5: Original entry zone status ===
-    # Check if the OB/FVG count has changed significantly
-    unmitigated_obs = smc.get("unmitigated_obs", 0)
-    unmitigated_fvgs = smc.get("unmitigated_fvgs", 0)
-
-    if direction == "BUY":
-        # For a BUY, we want bullish OBs/FVGs (support). If they've all been mitigated...
-        support_zones = smc.get("support_levels", [])
-        if not support_zones:
-            report.findings.append(AssumptionFinding(
-                category="zone_mitigated",
-                severity="warning",
-                message="No unmitigated support zones remain below current price. "
-                        "The order blocks or FVGs that supported the original entry may have been filled.",
-                suggested_action="monitor",
-            ))
-    else:
-        resistance_zones = smc.get("resistance_levels", [])
-        if not resistance_zones:
-            report.findings.append(AssumptionFinding(
-                category="zone_mitigated",
-                severity="warning",
-                message="No unmitigated resistance zones remain above current price. "
-                        "The order blocks or FVGs that supported the original entry may have been filled.",
-                suggested_action="monitor",
-            ))
-
-    # === CHECK 6: New zones emerged that help or hurt ===
-    # If a strong OB/FVG has appeared between entry and current price in the direction
-    # of the trade, that's positive (trailing stop opportunity). Report it as info.
-    if smc.get("trailing_sl") and current_sl > 0:
-        trailing_sl = smc["trailing_sl"]
-        trailing_source = smc.get("trailing_sl_source", "SMC zone")
-        is_better = (
-            (direction == "BUY" and trailing_sl > current_sl) or
-            (direction == "SELL" and trailing_sl < current_sl)
-        )
-        if is_better:
-            report.findings.append(AssumptionFinding(
-                category="zone_emerged",
-                severity="info",
-                message=f"New {trailing_source} has formed between entry and current price. "
-                        f"Trailing stop can be tightened from {current_sl:.5f} to {trailing_sl:.5f}.",
-                suggested_action="adjust_sl",
-                suggested_value=trailing_sl,
-            ))
-
-    # === Determine overall recommendation ===
-    _determine_recommendation(report, smc)
-
+    report = reviewer(decision, position, report, timeframe=timeframe)
     return report
 
 
-def _determine_recommendation(report: PositionAssumptionReport, smc: Dict[str, Any]):
-    """Set the overall recommendation based on findings."""
-    has_bias_shift = any(f.category == "bias_shift" for f in report.findings)
-    has_structure_break = any(f.category == "structure_break" for f in report.findings)
-    has_sl_risk = any(f.category == "sl_risk" for f in report.findings)
-    has_tp_blocked = any(f.category == "tp_blocked" for f in report.findings)
-    has_trailing_opportunity = any(
-        f.category == "zone_emerged" and f.suggested_action == "adjust_sl"
-        for f in report.findings
-    )
+def _get_llm_system_prompt(decision: Dict[str, Any]) -> str:
+    """Get strategy-aware system prompt for LLM assessment."""
+    pipeline = (decision.get("pipeline") or "").lower()
+    setup_type = (decision.get("setup_type") or "").lower()
 
-    # Critical: bias shift + structure break = close
-    if has_bias_shift and has_structure_break:
-        report.recommended_action = "close"
-        return
+    if pipeline in ("xgboost", "xgboost_ensemble"):
+        if "mean_reversion" in setup_type:
+            return ("You are a mean reversion trading analyst. Focus on z-scores, range boundaries, "
+                    "volatility regimes, and whether price is reverting to mean. Be concise and actionable.")
+        if "breakout" in setup_type:
+            return ("You are a breakout/momentum trading analyst. Focus on momentum indicators, "
+                    "volume, ADX, and whether the breakout is holding. Be concise and actionable.")
+    if pipeline in ("smc_quant", "smc_quant_basic", "smc_mtf"):
+        return ("You are an SMC (Smart Money Concepts) trading analyst reviewing open positions. "
+                "Be concise and actionable.")
+    if pipeline == "volume_profile":
+        return ("You are a volume profile trading analyst. Focus on POC, VAH, VAL shifts "
+                "and value area changes. Be concise and actionable.")
+    if pipeline == "rule_based":
+        return ("You are a trend-following trading analyst. Focus on EMA alignment, ADX strength, "
+                "and trend integrity. Be concise and actionable.")
 
-    # Critical: structure break alone in losing position = close
-    if has_structure_break and report.pnl_pct < 0:
-        report.recommended_action = "close"
-        return
-
-    # SL at risk — suggest adjustment
-    if has_sl_risk:
-        sl_findings = [f for f in report.findings if f.category == "sl_risk" and f.suggested_value]
-        if sl_findings:
-            report.recommended_action = "adjust_sl"
-            report.suggested_sl = sl_findings[0].suggested_value
-
-    # TP blocked — suggest adjustment
-    if has_tp_blocked:
-        tp_findings = [f for f in report.findings if f.category == "tp_blocked" and f.suggested_value]
-        if tp_findings:
-            if report.recommended_action == "hold":
-                report.recommended_action = "adjust_tp"
-            report.suggested_tp = tp_findings[0].suggested_value
-
-    # Trailing stop opportunity
-    if has_trailing_opportunity and report.recommended_action == "hold":
-        trail_findings = [f for f in report.findings if f.category == "zone_emerged" and f.suggested_value]
-        if trail_findings:
-            report.recommended_action = "adjust_sl"
-            report.suggested_sl = trail_findings[0].suggested_value
-
-    # If no findings, keep hold
-    if not report.findings:
-        report.recommended_action = "hold"
+    return "You are a trading analyst reviewing open positions. Be concise and actionable."
 
 
 def get_llm_assessment(
@@ -429,7 +235,7 @@ Be specific with price levels. Be direct — this is for an automated trading sy
             client=client,
             model=model,
             messages=[
-                {"role": "system", "content": "You are an SMC (Smart Money Concepts) trading analyst reviewing open positions. Be concise and actionable."},
+                {"role": "system", "content": _get_llm_system_prompt(decision)},
                 {"role": "user", "content": prompt},
             ],
             max_tokens=500,
@@ -515,13 +321,14 @@ def review_all_positions(
 
         position = ticket_to_position[ticket]
 
-        logger.info(f"Reviewing assumptions: {dec_symbol} #{ticket} ({decision.get('action')})")
+        logger.info(f"Reviewing assumptions: {dec_symbol} #{ticket} ({decision.get('action')}) "
+                    f"pipeline={decision.get('pipeline')}")
 
         try:
             report = review_position_assumptions(decision, position, timeframe=timeframe)
 
-            # Step 2: LLM assessment
-            if use_llm:
+            # Step 2: LLM assessment (only for SMC strategies that have SMC context)
+            if use_llm and report.review_strategy == "smc":
                 logger.warning(f"Step 2: Getting LLM assessment for {dec_symbol} #{ticket}")
                 try:
                     smc = get_smc_position_review_context(
