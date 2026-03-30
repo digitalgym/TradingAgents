@@ -5994,7 +5994,7 @@ class XGBoostAnalysisRequest(BaseModel):
 @app.post("/api/analysis/xgboost")
 async def run_xgboost_analysis(request: XGBoostAnalysisRequest):
     """
-    Run XGBoost strategy analysis. No LLM call — pure ML inference.
+    Run Rule-based quant strategy analysis. No LLM call — pure ML inference.
     Sub-100ms response time.
     """
     import time as _time
@@ -6002,7 +6002,7 @@ async def run_xgboost_analysis(request: XGBoostAnalysisRequest):
 
     try:
         from tradingagents.automation.auto_tuner import load_mt5_data, _compute_atr
-        from tradingagents.xgb_quant.predictor import LivePredictor
+        from tradingagents.quant_strats.predictor import LivePredictor
         import numpy as np_local
 
         df = load_mt5_data(request.symbol, request.timeframe, bars=500)
@@ -6035,7 +6035,7 @@ async def run_xgboost_analysis(request: XGBoostAnalysisRequest):
         else:
             strategy_name = request.strategy
             if not strategy_name:
-                from tradingagents.xgb_quant.strategy_selector import StrategySelector
+                from tradingagents.quant_strats.strategy_selector import StrategySelector
                 selector = StrategySelector()
                 selection = selector.select(request.symbol)
                 strategy_name = selection.recommended_strategy
@@ -6087,19 +6087,21 @@ async def train_xgboost_models(request: XGBoostTrainRequest):
 
     try:
         from tradingagents.automation.auto_tuner import load_mt5_data
-        from tradingagents.xgb_quant.trainer import WalkForwardTrainer
-        from tradingagents.xgb_quant.strategies.trend_following import TrendFollowingStrategy
-        from tradingagents.xgb_quant.strategies.mean_reversion import MeanReversionStrategy
-        from tradingagents.xgb_quant.strategies.breakout import BreakoutStrategy
-        from tradingagents.xgb_quant.strategies.smc_zones import SMCZonesStrategy
-        from tradingagents.xgb_quant.strategies.volume_profile_strat import VolumeProfileStrategy
+        from tradingagents.quant_strats.trainer import WalkForwardTrainer
+        from tradingagents.quant_strats.strategies.trend_following import TrendFollowingStrategy
+        from tradingagents.quant_strats.strategies.mean_reversion import MeanReversionStrategy
+        from tradingagents.quant_strats.strategies.breakout import BreakoutStrategy
+        from tradingagents.quant_strats.strategies.smc_zones import SMCZonesStrategy
+        from tradingagents.quant_strats.strategies.volume_profile_strat import VolumeProfileStrategy
+        from tradingagents.quant_strats.strategies.keltner_mean_reversion import KeltnerMeanReversionStrategy
 
         all_strategies = {
             "trend_following": TrendFollowingStrategy,
             "mean_reversion": MeanReversionStrategy,
-            "breakout": BreakoutStrategy,
+            "donchian_breakout": BreakoutStrategy,
             "smc_zones": SMCZonesStrategy,
             "volume_profile_strat": VolumeProfileStrategy,
+            "keltner_mean_reversion": KeltnerMeanReversionStrategy,
         }
 
         # Filter strategies if specified
@@ -6114,7 +6116,7 @@ async def train_xgboost_models(request: XGBoostTrainRequest):
         # Determine timeframes to train across
         timeframes = request.timeframes if request.timeframes else [request.timeframe]
 
-        from tradingagents.xgb_quant.config import MODELS_DIR
+        from tradingagents.quant_strats.config import MODELS_DIR
 
         trainer = WalkForwardTrainer()
         results = []
@@ -6165,7 +6167,7 @@ async def train_xgboost_models(request: XGBoostTrainRequest):
                     })
 
         # For skipped models, load their existing results so we can compare
-        from tradingagents.xgb_quant.config import RESULTS_DIR
+        from tradingagents.quant_strats.config import RESULTS_DIR
         import json as _json
         for r in results:
             if r["status"] == "skipped":
@@ -6209,7 +6211,7 @@ async def train_xgboost_models(request: XGBoostTrainRequest):
 async def get_xgboost_models():
     """List all available trained XGBoost models."""
     try:
-        from tradingagents.xgb_quant.config import MODELS_DIR
+        from tradingagents.quant_strats.config import MODELS_DIR
         models = {}
         if MODELS_DIR.exists():
             for strategy_dir in MODELS_DIR.iterdir():
@@ -6233,7 +6235,7 @@ async def get_xgboost_models():
 async def get_xgboost_performance_matrix():
     """Get performance matrix: symbol × strategy → metrics."""
     try:
-        from tradingagents.xgb_quant.strategy_selector import StrategySelector
+        from tradingagents.quant_strats.strategy_selector import StrategySelector
         selector = StrategySelector()
         matrix = selector.get_performance_matrix()
         return {"status": "success", "matrix": matrix}
@@ -6245,7 +6247,7 @@ async def get_xgboost_performance_matrix():
 async def run_pair_scan():
     """Scan watchlist for pairs on the move."""
     try:
-        from tradingagents.xgb_quant.scanner import PairScanner
+        from tradingagents.quant_strats.scanner import PairScanner
         from dataclasses import asdict
 
         scanner = PairScanner()

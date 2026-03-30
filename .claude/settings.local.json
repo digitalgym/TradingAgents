@@ -91,7 +91,15 @@
       "Bash(python scripts/migrate_to_db.py --dry-run)",
       "Bash(python scripts/migrate_to_db.py)",
       "Bash(docker exec tradingagents-postgres psql -U tradingagents -c \":*)",
-      "Bash(docker exec:*)"
+      "Bash(docker exec:*)",
+      "Bash(find c:/Repos/TradingAgents2 -type f \\\\\\(-name *.py -o -name *.json \\\\\\) -path */breakout*)",
+      "Bash(while read:*)",
+      "Bash(do sed:*)",
+      "Bash(do)",
+      "Bash(sed -i 's/PipelineType\\\\.XGBOOST_ENSEMBLE/PipelineType.RULE_QUANT_ENSEMBLE/g' \"$f\")",
+      "Bash(sed -i 's/PipelineType\\\\.XGBOOST/PipelineType.RULE_QUANT/g' \"$f\")",
+      "Bash(sed -i 's/XGBOOST_ENSEMBLE = \"\"xgboost_ensemble\"\"/RULE_QUANT_ENSEMBLE = \"\"rule_quant_ensemble\"\"/g' \"$f\")",
+      "Bash(sed -i 's/XGBOOST = \"\"xgboost\"\"/RULE_QUANT = \"\"rule_quant\"\"/g' \"$f\")"
     ]
   }
 }

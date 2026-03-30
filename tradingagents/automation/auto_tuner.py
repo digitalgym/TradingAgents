@@ -139,7 +139,7 @@ def get_parameter_grid(pipeline: str) -> Dict[str, List[Any]]:
             "require_channel": [True, False],
             **exit_params,
         }
-    elif pipeline in ("xgboost", "xgboost_ensemble"):
+    elif pipeline in ("rule_quant", "rule_quant_ensemble"):
         return {
             "signal_threshold": [0.55, 0.60, 0.65, 0.70],
             "hold": [5, 10, 15, 20],
@@ -160,7 +160,7 @@ def get_tunable_timeframes(pipeline: str) -> List[str]:
         return ["D1", "H4", "H1"]
     elif pipeline in ("range_quant", "breakout_quant", "volume_profile"):
         return ["D1", "H4", "H1"]
-    elif pipeline in ("xgboost", "xgboost_ensemble"):
+    elif pipeline in ("rule_quant", "rule_quant_ensemble"):
         return ["D1", "H4"]
     else:
         return ["D1", "H4", "H1"]
@@ -769,19 +769,19 @@ def _backtest_mtf_from_cache(signals, df, hold_days=5, min_alignment=60,
 # XGBoost backtest
 # ------------------------------------------------------------------
 
-def _precompute_xgboost_signals(df, pipeline, symbol, timeframe):
+def _precompute_rule_quant_signals(df, pipeline, symbol, timeframe):
     """Run XGBoost model(s) on historical data to generate signals.
 
     Uses batch prediction: computes features once, then predicts all bars at once.
     Returns list of dicts: {bar, direction, probability}.
     """
-    from tradingagents.xgb_quant.predictor import LivePredictor
-    from tradingagents.xgb_quant.strategy_selector import StrategySelector
+    from tradingagents.quant_strats.predictor import LivePredictor
+    from tradingagents.quant_strats.strategy_selector import StrategySelector
 
     predictor = LivePredictor()
     signals = []
 
-    if pipeline == "xgboost_ensemble":
+    if pipeline == "rule_quant_ensemble":
         # Get all available models for this symbol/TF
         strategy_names = predictor.get_available_models(symbol, timeframe)
         if len(strategy_names) < 2:
@@ -862,7 +862,7 @@ def _precompute_xgboost_signals(df, pipeline, symbol, timeframe):
     return signals
 
 
-def _backtest_xgboost_from_cache(
+def _backtest_rule_quant_from_cache(
     signals, df, hold_days=10, signal_threshold=0.60,
     atr_sl_mult=1.5, rr_ratio=2.0,
 ):
@@ -984,10 +984,10 @@ def _run_pipeline_sweep(pipeline, df, timeframe, grid, precomputed_cache=None,
                 require_channel=params.get("require_channel", True),
                 atr_sl_mult=atr_sl, rr_ratio=rr,
             )
-        elif pipeline in ("xgboost", "xgboost_ensemble"):
+        elif pipeline in ("rule_quant", "rule_quant_ensemble"):
             if precomputed_cache is None:
                 continue
-            trades = _backtest_xgboost_from_cache(
+            trades = _backtest_rule_quant_from_cache(
                 precomputed_cache, df, hold_days=params["hold"],
                 signal_threshold=params.get("signal_threshold", 0.60),
                 atr_sl_mult=atr_sl, rr_ratio=rr,
@@ -1043,7 +1043,7 @@ def best_params_to_config_updates(pipeline: str, best: TuneResult) -> Dict[str, 
     elif pipeline == "breakout_quant":
         sq = best.params.get("squeeze_threshold", 70)
         updates["min_confidence"] = round(max(0.50, min(0.90, sq / 100)), 2)
-    elif pipeline in ("xgboost", "xgboost_ensemble"):
+    elif pipeline in ("rule_quant", "rule_quant_ensemble"):
         st = best.params.get("signal_threshold", 0.60)
         updates["min_confidence"] = round(st, 2)
 
@@ -1099,7 +1099,7 @@ async def run_tune(
         else "Pre-compute breakout signals" if pipeline == "breakout_quant"
         else "Pre-compute VP signals" if pipeline == "volume_profile"
         else "Pre-compute MTF alignment" if pipeline == "smc_mtf"
-        else "Pre-compute XGBoost predictions" if pipeline in ("xgboost", "xgboost_ensemble")
+        else "Pre-compute XGBoost predictions" if pipeline in ("rule_quant", "rule_quant_ensemble")
         else "Pre-compute signals"
     )
     steps = [
@@ -1214,13 +1214,13 @@ async def run_tune(
                 _precompute_mtf_signals, htf_df, ltf_df, 5, 50,
                 lambda ph, cur, tot, msg: _progress("precompute", cur, tot, msg),
             )
-    elif pipeline in ("xgboost", "xgboost_ensemble"):
+    elif pipeline in ("rule_quant", "rule_quant_ensemble"):
         for tf, df in data.items():
             total_bars = len(df) - 200
             _progress("precompute", 0, total_bars,
                       f"Running XGBoost predictions for {tf} ({total_bars} bars)...")
             tf_caches[tf] = await asyncio.to_thread(
-                _precompute_xgboost_signals, df, pipeline, symbol, tf,
+                _precompute_rule_quant_signals, df, pipeline, symbol, tf,
             )
             _progress("precompute", total_bars, total_bars,
                       f"Got {len(tf_caches[tf])} XGBoost signals for {tf}")

@@ -171,8 +171,12 @@ class PipelineType(str, Enum):
     VOLUME_PROFILE = "volume_profile"
     RULE_BASED = "rule_based"
     MULTI_AGENT = "multi_agent"
-    XGBOOST = "xgboost"
-    XGBOOST_ENSEMBLE = "xgboost_ensemble"
+    RULE_QUANT = "rule_quant"
+    RULE_QUANT_ENSEMBLE = "rule_quant_ensemble"
+    DONCHIAN_BREAKOUT = "donchian_breakout"
+    KELTNER_MEAN_REVERSION = "keltner_mean_reversion"
+    COPPER_EMA_PULLBACK = "copper_ema_pullback"
+    GOLD_PLATINUM_RATIO = "gold_platinum_ratio"
 
 
 class AutomationStatus(str, Enum):
@@ -1499,6 +1503,20 @@ class QuantAutomation:
             )
             return result
 
+        # Check news blackout dates (FOMC/NFP — no new trades within 24hrs)
+        try:
+            from tradingagents.quant_strats.config import NEWS_BLACKOUT_DATES
+            today_str = datetime.now().strftime("%Y-%m-%d")
+            yesterday_str = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+            if today_str in NEWS_BLACKOUT_DATES or yesterday_str in NEWS_BLACKOUT_DATES:
+                self.logger.warning(
+                    f"NEWS BLACKOUT: skipping trade for {result.symbol} "
+                    f"(FOMC/NFP within 24hrs)"
+                )
+                return result
+        except ImportError:
+            pass
+
         # Check position limits
         # 1) Per-automation: count BOTH open positions AND recent active decisions
         #    (prevents rapid re-entry after SL hit)
@@ -2434,7 +2452,7 @@ class QuantAutomation:
 
                     # --- Reversal Signal Close ---
                     if self.config.enable_reversal_close:
-                        if self.config.pipeline in (PipelineType.SMC_QUANT_BASIC, PipelineType.SMC_QUANT, PipelineType.BREAKOUT_QUANT, PipelineType.RANGE_QUANT, PipelineType.RULE_BASED, PipelineType.SMC_MTF, PipelineType.XGBOOST, PipelineType.XGBOOST_ENSEMBLE):
+                        if self.config.pipeline in (PipelineType.SMC_QUANT_BASIC, PipelineType.SMC_QUANT, PipelineType.BREAKOUT_QUANT, PipelineType.RANGE_QUANT, PipelineType.RULE_BASED, PipelineType.SMC_MTF, PipelineType.RULE_QUANT, PipelineType.RULE_QUANT_ENSEMBLE, PipelineType.DONCHIAN_BREAKOUT, PipelineType.KELTNER_MEAN_REVERSION, PipelineType.COPPER_EMA_PULLBACK, PipelineType.GOLD_PLATINUM_RATIO):
                             if self.config.pipeline == PipelineType.SMC_QUANT:
                                 analysis = await self._run_smc_quant_analysis(symbol)
                             elif self.config.pipeline == PipelineType.BREAKOUT_QUANT:
@@ -2445,8 +2463,16 @@ class QuantAutomation:
                                 analysis = await self._run_rule_based_analysis(symbol)
                             elif self.config.pipeline == PipelineType.SMC_MTF:
                                 analysis = await self._run_smc_mtf_analysis(symbol)
-                            elif self.config.pipeline in (PipelineType.XGBOOST, PipelineType.XGBOOST_ENSEMBLE):
-                                analysis = await self._run_xgboost_analysis(symbol)
+                            elif self.config.pipeline in (PipelineType.RULE_QUANT, PipelineType.RULE_QUANT_ENSEMBLE):
+                                analysis = await self._run_rule_quant_analysis(symbol)
+                            elif self.config.pipeline == PipelineType.DONCHIAN_BREAKOUT:
+                                analysis = await self._run_donchian_breakout_analysis(symbol)
+                            elif self.config.pipeline == PipelineType.KELTNER_MEAN_REVERSION:
+                                analysis = await self._run_keltner_mr_analysis(symbol)
+                            elif self.config.pipeline == PipelineType.COPPER_EMA_PULLBACK:
+                                analysis = await self._run_rule_strategy_analysis(symbol, "copper_ema_pullback")
+                            elif self.config.pipeline == PipelineType.GOLD_PLATINUM_RATIO:
+                                analysis = await self._run_rule_strategy_analysis(symbol, "gold_platinum_ratio")
                             else:
                                 analysis = await self._run_quant_analysis(symbol)
 
@@ -2688,8 +2714,16 @@ class QuantAutomation:
                         result = await self._run_vp_analysis(symbol)
                     elif self.config.pipeline == PipelineType.RULE_BASED:
                         result = await self._run_rule_based_analysis(symbol)
-                    elif self.config.pipeline in (PipelineType.XGBOOST, PipelineType.XGBOOST_ENSEMBLE):
-                        result = await self._run_xgboost_analysis(symbol)
+                    elif self.config.pipeline in (PipelineType.RULE_QUANT, PipelineType.RULE_QUANT_ENSEMBLE):
+                        result = await self._run_rule_quant_analysis(symbol)
+                    elif self.config.pipeline == PipelineType.DONCHIAN_BREAKOUT:
+                        result = await self._run_donchian_breakout_analysis(symbol)
+                    elif self.config.pipeline == PipelineType.KELTNER_MEAN_REVERSION:
+                        result = await self._run_keltner_mr_analysis(symbol)
+                    elif self.config.pipeline == PipelineType.COPPER_EMA_PULLBACK:
+                        result = await self._run_rule_strategy_analysis(symbol, "copper_ema_pullback")
+                    elif self.config.pipeline == PipelineType.GOLD_PLATINUM_RATIO:
+                        result = await self._run_rule_strategy_analysis(symbol, "gold_platinum_ratio")
                     else:
                         result = await self._run_multi_agent_analysis(symbol)
 
@@ -3280,20 +3314,165 @@ class QuantAutomation:
             return await self._run_vp_analysis(symbol)
         elif self.config.pipeline == PipelineType.RULE_BASED:
             return await self._run_rule_based_analysis(symbol)
-        elif self.config.pipeline in (PipelineType.XGBOOST, PipelineType.XGBOOST_ENSEMBLE):
-            return await self._run_xgboost_analysis(symbol)
+        elif self.config.pipeline in (PipelineType.RULE_QUANT, PipelineType.RULE_QUANT_ENSEMBLE):
+            return await self._run_rule_quant_analysis(symbol)
+        elif self.config.pipeline == PipelineType.DONCHIAN_BREAKOUT:
+            return await self._run_donchian_breakout_analysis(symbol)
+        elif self.config.pipeline == PipelineType.KELTNER_MEAN_REVERSION:
+            return await self._run_keltner_mr_analysis(symbol)
+        elif self.config.pipeline == PipelineType.COPPER_EMA_PULLBACK:
+            return await self._run_rule_strategy_analysis(symbol, "copper_ema_pullback")
+        elif self.config.pipeline == PipelineType.GOLD_PLATINUM_RATIO:
+            return await self._run_rule_strategy_analysis(symbol, "gold_platinum_ratio")
         else:
             return await self._run_multi_agent_analysis(symbol)
 
-    async def _run_xgboost_analysis(self, symbol: str) -> "AnalysisCycleResult":
-        """Run XGBoost strategy analysis — local inference, no LLM call."""
+    async def _run_donchian_breakout_analysis(self, symbol: str) -> "AnalysisCycleResult":
+        """Run donchian_breakout strategy — rule-based, no LLM call."""
         import time as _time
         start = _time.time()
 
         try:
             from tradingagents.automation.auto_tuner import load_mt5_data, _compute_atr
-            from tradingagents.xgb_quant.predictor import LivePredictor
-            from tradingagents.xgb_quant.config import REGIME_SUITABILITY
+            from tradingagents.quant_strats.predictor import LivePredictor
+
+            df = load_mt5_data(symbol, self.config.timeframe, bars=500)
+            high = df["high"].values.astype(float)
+            low = df["low"].values.astype(float)
+            close = df["close"].values.astype(float)
+            atr = _compute_atr(high, low, close)
+            current_atr = float(atr[-1]) if not np.isnan(atr[-1]) else 1.0
+            current_price = float(close[-1])
+
+            predictor = LivePredictor()
+            signal = predictor.predict_single(
+                "donchian_breakout", symbol, self.config.timeframe,
+                df, current_price, current_atr,
+            )
+
+            return AnalysisCycleResult(
+                timestamp=datetime.now(), symbol=symbol,
+                pipeline="donchian_breakout",
+                signal=signal.direction,
+                confidence=signal.confidence,
+                entry_price=signal.entry if signal.entry else current_price,
+                stop_loss=signal.stop_loss if signal.stop_loss else None,
+                take_profit=signal.take_profit if signal.take_profit else None,
+                rationale=signal.rationale,
+                duration_seconds=_time.time() - start,
+            )
+
+        except Exception as e:
+            self.logger.error(f"Donchian breakout analysis failed for {symbol}: {e}")
+            return AnalysisCycleResult(
+                timestamp=datetime.now(), symbol=symbol,
+                pipeline="donchian_breakout",
+                signal="HOLD", confidence=0.0,
+                rationale=f"Donchian breakout error: {e}",
+                duration_seconds=_time.time() - start,
+            )
+
+    async def _run_rule_strategy_analysis(
+        self, symbol: str, strategy_name: str
+    ) -> "AnalysisCycleResult":
+        """Run any rule-based strategy by name — generic dispatcher."""
+        import time as _time
+        start = _time.time()
+
+        try:
+            from tradingagents.automation.auto_tuner import load_mt5_data, _compute_atr
+            from tradingagents.quant_strats.predictor import LivePredictor
+
+            df = load_mt5_data(symbol, self.config.timeframe, bars=500)
+            high = df["high"].values.astype(float)
+            low = df["low"].values.astype(float)
+            close = df["close"].values.astype(float)
+            atr = _compute_atr(high, low, close)
+            current_atr = float(atr[-1]) if not np.isnan(atr[-1]) else 1.0
+            current_price = float(close[-1])
+
+            predictor = LivePredictor()
+            signal = predictor.predict_single(
+                strategy_name, symbol, self.config.timeframe,
+                df, current_price, current_atr,
+            )
+
+            return AnalysisCycleResult(
+                timestamp=datetime.now(), symbol=symbol,
+                pipeline=strategy_name,
+                signal=signal.direction,
+                confidence=signal.confidence,
+                entry_price=signal.entry if signal.entry else current_price,
+                stop_loss=signal.stop_loss if signal.stop_loss else None,
+                take_profit=signal.take_profit if signal.take_profit else None,
+                rationale=signal.rationale,
+                duration_seconds=_time.time() - start,
+            )
+
+        except Exception as e:
+            self.logger.error(f"{strategy_name} analysis failed for {symbol}: {e}")
+            return AnalysisCycleResult(
+                timestamp=datetime.now(), symbol=symbol,
+                pipeline=strategy_name,
+                signal="HOLD", confidence=0.0,
+                rationale=f"{strategy_name} error: {e}",
+                duration_seconds=_time.time() - start,
+            )
+
+    async def _run_keltner_mr_analysis(self, symbol: str) -> "AnalysisCycleResult":
+        """Run Keltner mean-reversion strategy — rule-based, no LLM call."""
+        import time as _time
+        start = _time.time()
+
+        try:
+            from tradingagents.automation.auto_tuner import load_mt5_data, _compute_atr
+            from tradingagents.quant_strats.predictor import LivePredictor
+
+            df = load_mt5_data(symbol, self.config.timeframe, bars=500)
+            high = df["high"].values.astype(float)
+            low = df["low"].values.astype(float)
+            close = df["close"].values.astype(float)
+            atr = _compute_atr(high, low, close)
+            current_atr = float(atr[-1]) if not np.isnan(atr[-1]) else 1.0
+            current_price = float(close[-1])
+
+            predictor = LivePredictor()
+            signal = predictor.predict_single(
+                "keltner_mean_reversion", symbol, self.config.timeframe,
+                df, current_price, current_atr,
+            )
+
+            return AnalysisCycleResult(
+                timestamp=datetime.now(), symbol=symbol,
+                pipeline="keltner_mean_reversion",
+                signal=signal.direction,
+                confidence=signal.confidence,
+                entry_price=signal.entry if signal.entry else current_price,
+                stop_loss=signal.stop_loss if signal.stop_loss else None,
+                take_profit=signal.take_profit if signal.take_profit else None,
+                rationale=signal.rationale,
+                duration_seconds=_time.time() - start,
+            )
+
+        except Exception as e:
+            self.logger.error(f"Keltner MR analysis failed for {symbol}: {e}")
+            return AnalysisCycleResult(
+                timestamp=datetime.now(), symbol=symbol,
+                pipeline="keltner_mean_reversion",
+                signal="HOLD", confidence=0.0,
+                rationale=f"Keltner MR error: {e}",
+                duration_seconds=_time.time() - start,
+            )
+
+    async def _run_rule_quant_analysis(self, symbol: str) -> "AnalysisCycleResult":
+        """Run Rule-based quant strategy analysis — local inference, no LLM call."""
+        import time as _time
+        start = _time.time()
+
+        try:
+            from tradingagents.automation.auto_tuner import load_mt5_data, _compute_atr
+            from tradingagents.quant_strats.predictor import LivePredictor
+            from tradingagents.quant_strats.config import REGIME_SUITABILITY
 
             df = load_mt5_data(symbol, self.config.timeframe, bars=500)
             high = df["high"].values.astype(float)
@@ -3305,7 +3484,7 @@ class QuantAutomation:
 
             predictor = LivePredictor()
 
-            if self.config.pipeline == PipelineType.XGBOOST_ENSEMBLE:
+            if self.config.pipeline == PipelineType.RULE_QUANT_ENSEMBLE:
                 available = predictor.get_available_models(symbol, self.config.timeframe)
                 if len(available) < 2:
                     return AnalysisCycleResult(
@@ -3321,7 +3500,7 @@ class QuantAutomation:
                 )
             else:
                 # Single strategy — use strategy selector to pick best
-                from tradingagents.xgb_quant.strategy_selector import StrategySelector
+                from tradingagents.quant_strats.strategy_selector import StrategySelector
                 selector = StrategySelector()
                 selection = selector.select(symbol)
                 strategy_name = selection.recommended_strategy
@@ -3330,7 +3509,7 @@ class QuantAutomation:
                 timeframe = selection.recommended_timeframe or self.config.timeframe
                 if timeframe != self.config.timeframe:
                     self.logger.info(
-                        f"XGBoost: using best timeframe {timeframe} "
+                        f"Rule quant: using best timeframe {timeframe} "
                         f"(trained) instead of {self.config.timeframe} (configured) "
                         f"for {strategy_name} on {symbol}"
                     )
@@ -3360,12 +3539,12 @@ class QuantAutomation:
             )
 
         except Exception as e:
-            self.logger.error(f"XGBoost analysis failed for {symbol}: {e}")
+            self.logger.error(f"Rule quant analysis failed for {symbol}: {e}")
             return AnalysisCycleResult(
                 timestamp=datetime.now(), symbol=symbol,
                 pipeline=self.config.pipeline.value,
                 signal="HOLD", confidence=0.0,
-                rationale=f"XGBoost error: {e}",
+                rationale=f"Rule quant error: {e}",
                 duration_seconds=_time.time() - start,
             )
 

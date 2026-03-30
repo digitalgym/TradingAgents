@@ -1,0 +1,9 @@
+{
+  "strategy": "breakout",
+  "risk": {
+    "sl_atr_mult": 2.9452702060318185,
+    "tp_atr_mult": 1.8206838412567308,
+    "signal_threshold": 0.5582642234326669,
+    "max_hold_bars": 10
+  }
+}

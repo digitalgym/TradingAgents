@@ -1,0 +1,9 @@
+{
+  "strategy": "volume_profile_strat",
+  "risk": {
+    "sl_atr_mult": 1.5,
+    "tp_atr_mult": 2.5,
+    "signal_threshold": 0.6,
+    "max_hold_bars": 20
+  }
+}

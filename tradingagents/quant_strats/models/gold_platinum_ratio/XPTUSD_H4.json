@@ -1,0 +1,9 @@
+{
+  "strategy": "gold_platinum_ratio",
+  "risk": {
+    "sl_atr_mult": 2.81,
+    "tp_atr_mult": 2.16,
+    "signal_threshold": 0.741,
+    "max_hold_bars": 30
+  }
+}
