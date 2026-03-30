@@ -45,6 +45,7 @@ class ParameterTuner:
         search_mode: str = "full",
         fixed_xgb_params: Optional[Dict[str, Any]] = None,
         fixed_risk: Optional[RiskDefaults] = None,
+        min_trades: int = 30,
     ) -> TuneResult:
         """
         Tune strategy hyperparameters using Optuna.
@@ -60,6 +61,8 @@ class ParameterTuner:
                          or "xgb_only" (8 XGB params)
             fixed_xgb_params: When search_mode="risk_only", use these XGB params
             fixed_risk: When search_mode="xgb_only", use these risk params
+            min_trades: Minimum trade count to accept a trial (default 30).
+                        Prevents overfitting to a handful of "perfect" trades.
 
         Returns:
             TuneResult with best parameters and performance
@@ -68,6 +71,7 @@ class ParameterTuner:
         optuna.logging.set_verbosity(optuna.logging.WARNING)
 
         best_result_holder = [None]
+        best_score_holder = [-999.0]
 
         def objective(trial):
             # XGBoost hyperparameters
@@ -116,8 +120,14 @@ class ParameterTuner:
                 logger.debug(f"Trial failed: {e}")
                 return -999
 
-            # Track best result
-            if best_result_holder[0] is None or result.sharpe > (best_result_holder[0].sharpe or -999):
+            # Reject trials with too few trades — prevents overfitting
+            # to a handful of "perfect" trades with inflated Sharpe
+            if result.total_trades < min_trades:
+                return -999
+
+            # Track best result (by Sharpe, but only among valid trials)
+            if result.sharpe > best_score_holder[0]:
+                best_score_holder[0] = result.sharpe
                 best_result_holder[0] = result
 
             return result.sharpe
@@ -125,14 +135,21 @@ class ParameterTuner:
         study = optuna.create_study(direction="maximize")
         study.optimize(objective, n_trials=n_trials, timeout=timeout)
 
+        best_value = best_score_holder[0] if best_result_holder[0] else study.best_value
+
         logger.info(
             f"Tuning ({search_mode}) for {strategy.name} on {symbol}: "
-            f"best Sharpe={study.best_value:.3f} in {len(study.trials)} trials"
+            f"best Sharpe={best_value:.3f} in {len(study.trials)} trials "
+            f"(min_trades={min_trades})"
         )
 
+        # Use best_params from the study only if it produced a valid result,
+        # otherwise fall back to empty params to signal no valid trial found
+        best_params = study.best_params if best_result_holder[0] else {}
+
         return TuneResult(
-            best_params=study.best_params,
-            best_sharpe=study.best_value,
+            best_params=best_params,
+            best_sharpe=best_value,
             best_result=best_result_holder[0],
             n_trials=len(study.trials),
         )
