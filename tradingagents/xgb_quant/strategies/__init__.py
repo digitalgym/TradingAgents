@@ -7,6 +7,7 @@ from tradingagents.xgb_quant.strategies.breakout import BreakoutStrategy
 from tradingagents.xgb_quant.strategies.smc_zones import SMCZonesStrategy
 from tradingagents.xgb_quant.strategies.volume_profile_strat import VolumeProfileStrategy
 from tradingagents.xgb_quant.strategies.donchian_breakout import DonchianBreakoutStrategy
+from tradingagents.xgb_quant.strategies.flag_continuation import FlagContinuationStrategy
 
 __all__ = [
     "BaseStrategy",
@@ -16,4 +17,5 @@ __all__ = [
     "SMCZonesStrategy",
     "VolumeProfileStrategy",
     "DonchianBreakoutStrategy",
+    "FlagContinuationStrategy",
 ]

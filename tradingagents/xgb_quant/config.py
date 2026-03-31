@@ -123,12 +123,42 @@ STRATEGY_XGB_DEFAULTS: Dict[str, Dict[str, Any]] = {
         "objective": "binary:logistic",
         "eval_metric": "logloss",
     },
+    "flag_continuation": {
+        "max_depth": 4,
+        "learning_rate": 0.05,
+        "n_estimators": 250,
+        "subsample": 0.8,
+        "min_child_weight": 5,
+        "colsample_bytree": 0.85,
+        "reg_alpha": 0.2,
+        "reg_lambda": 1.5,
+        "objective": "binary:logistic",
+        "eval_metric": "logloss",
+    },
 }
 
 
 # ---------------------------------------------------------------------------
 # Donchian Breakout strategy defaults (mechanical + XGBoost hybrid)
 # ---------------------------------------------------------------------------
+
+FLAG_CONTINUATION_DEFAULTS: Dict[str, Any] = {
+    "timeframe": "H4",
+    "impulse_lookback": 20,
+    "impulse_min_atr_mult": 3.0,
+    "consolidation_min_bars": 5,
+    "consolidation_max_bars": 20,
+    "consolidation_retrace_max": 0.50,
+    "range_contraction_pct": 0.60,
+    "vol_decline_threshold": 0.80,
+    "breakout_atr_mult": 0.5,
+    "adx_threshold": 25,
+    "sl_atr_mult": 1.5,
+    "rr_target": 2.5,
+    "atr_period": 14,
+    "risk_per_trade": 0.01,
+}
+
 
 DONCHIAN_BREAKOUT_DEFAULTS: Dict[str, Any] = {
     "timeframe": "D1",
@@ -214,6 +244,9 @@ REGIME_SUITABILITY: Dict[str, Dict[str, float]] = {
     },
     "donchian_breakout": {
         "trending-up": 0.9, "trending-down": 0.9, "ranging": 0.1,
+    },
+    "flag_continuation": {
+        "trending-up": 0.95, "trending-down": 0.95, "ranging": 0.1,
     },
 }
 

@@ -137,7 +137,7 @@ class MT5Worker:
                     SELECT instance_name, status, config, pipeline
                     FROM automation_status
                     WHERE status IN ('pending_start', 'running')
-                      AND instance_name != 'mt5_worker'
+                      AND instance_name NOT IN ('mt5_worker', 'tma_worker', 'trade_manager')
                 """)
 
                 if not rows:
@@ -437,6 +437,7 @@ class MT5Worker:
                         WHERE command_id IN (
                             SELECT command_id FROM automation_control
                             WHERE status = 'pending'
+                              AND instance_name != 'trade_manager'
                             ORDER BY created_at
                             LIMIT 10
                             FOR UPDATE SKIP LOCKED
@@ -523,52 +524,13 @@ class MT5Worker:
                 del self._automation_instances[instance_name]
 
         try:
-            # Hardcode: trade_manager instance ALWAYS uses TMA, regardless of config
+            # TMA is handled by tma_worker.py — reject if it somehow gets here
             if instance_name == "trade_manager":
-                old_pipeline = config.get("pipeline", "MISSING")
-                config["pipeline"] = "trade_management"
-                print(f"[MT5 Worker] Forced pipeline: {old_pipeline} -> trade_management for {instance_name}")
-
-            pipeline_name = config.get("pipeline", "smc_quant_basic")
-            print(f"[MT5 Worker] ROUTING DECISION: {instance_name} -> pipeline={pipeline_name}")
-
-            # Trade Management Agent — separate path
-            if pipeline_name == "trade_management":
-                print(f"[MT5 Worker] Starting Trade Management Agent (TradeManagementAgent class)...")
-                from tradingagents.automation.trade_management_agent import (
-                    TradeManagementAgent,
-                    TradeManagementConfig,
-                )
-                config["instance_name"] = instance_name
-                tma_config = TradeManagementConfig.from_dict(config)
-                agent = TradeManagementAgent(tma_config)
-                self._automation_instances[instance_name] = agent
-
-                worker_ref = self
-
-                def tma_done_callback(task):
-                    try:
-                        exc = task.exception()
-                        if exc:
-                            print(f"[MT5 Worker] ERROR: TMA failed: {exc}")
-                            import traceback
-                            traceback.print_exception(type(exc), exc, exc.__traceback__)
-                            asyncio.ensure_future(worker_ref._broadcast_status(
-                                instance_name, "error", error=str(exc)
-                            ))
-                    except asyncio.CancelledError:
-                        pass
-
-                task = asyncio.create_task(agent.start())
-                task.add_done_callback(tma_done_callback)
-                self._automation_tasks[instance_name] = task
-                print(f"[MT5 Worker] Trade Management Agent started (TradeManagementAgent)")
-                await self._broadcast_status(instance_name, "running")
+                print(f"[MT5 Worker] REJECTED: trade_manager must use tma_worker.py, not mt5_worker")
                 return
 
-            # If we reach here, it's a quant automation — warn if instance is trade_manager
-            if instance_name == "trade_manager":
-                print(f"[MT5 Worker] WARNING: trade_manager fell through to QuantAutomation! pipeline={pipeline_name}")
+            pipeline_name = config.get("pipeline", "smc_quant_basic")
+            print(f"[MT5 Worker] Starting quant: {instance_name} -> pipeline={pipeline_name}")
 
             from tradingagents.automation.quant_automation import (
                 QuantAutomation,

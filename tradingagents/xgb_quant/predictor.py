@@ -32,6 +32,7 @@ def _ensure_registry():
     from tradingagents.xgb_quant.strategies.smc_zones import SMCZonesStrategy
     from tradingagents.xgb_quant.strategies.volume_profile_strat import VolumeProfileStrategy
     from tradingagents.xgb_quant.strategies.donchian_breakout import DonchianBreakoutStrategy
+    from tradingagents.xgb_quant.strategies.flag_continuation import FlagContinuationStrategy
 
     STRATEGY_CLASSES.update({
         "trend_following": TrendFollowingStrategy,
@@ -40,6 +41,7 @@ def _ensure_registry():
         "smc_zones": SMCZonesStrategy,
         "volume_profile_strat": VolumeProfileStrategy,
         "donchian_breakout": DonchianBreakoutStrategy,
+        "flag_continuation": FlagContinuationStrategy,
     })
 
 

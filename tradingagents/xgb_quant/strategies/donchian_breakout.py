@@ -98,13 +98,13 @@ def is_trend_or_squeeze_regime(
         regime = "trend"
         is_valid = True
     elif current_bb_width < bb_squeeze_threshold and current_bb_width > prev_bb_width:
-        # Squeeze that's starting to expand
+        # Squeeze that's starting to expand — this IS the breakout moment
         regime = "squeeze"
         is_valid = True
     elif current_bb_width < bb_squeeze_threshold:
-        # Still compressed but not expanding yet
-        regime = "squeeze"
-        is_valid = True
+        # Still compressed, not expanding yet — wait for expansion
+        regime = "squeeze_building"
+        is_valid = False
     else:
         regime = "range"
         is_valid = False
@@ -401,13 +401,14 @@ class DonchianBreakoutFeatures(TechnicalFeatures):
             np.abs(sma_fast - sma_slow), atr
         )
 
-        # ADX proxy (efficiency ratio)
+        # ADX proxy (efficiency ratio) — vectorised
         lookback = 25
-        adx_proxy = np.full(n, np.nan)
-        for i in range(lookback, n):
-            displacement = abs(close[i] - close[i - lookback])
-            total_path = sum(abs(close[j] - close[j - 1]) for j in range(i - lookback + 1, i + 1))
-            adx_proxy[i] = (displacement / (total_path + 1e-10)) * 50.0
+        abs_diffs = np.abs(np.diff(close, prepend=close[0]))
+        rolling_path = pd.Series(abs_diffs).rolling(lookback).sum().values
+        displacement = np.abs(close - np.roll(close, lookback))
+        displacement[:lookback] = np.nan
+        adx_proxy = (displacement / (rolling_path + 1e-10)) * 50.0
+        adx_proxy[:lookback] = np.nan
         features["adx_proxy"] = adx_proxy
 
         # BB squeeze percentile

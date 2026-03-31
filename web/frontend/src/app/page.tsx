@@ -429,10 +429,10 @@ export default function Dashboard() {
                             <span className="text-xs text-muted-foreground">
                               {(result.confidence * 100).toFixed(0)}%
                             </span>
-                            {result.executed && result.execution_ticket && (
+                            {result.executed && result.decision_id && (
                               <Badge variant="success" className="text-[10px] h-4 px-1">Executed</Badge>
                             )}
-                            {result.executed && !result.execution_ticket && (
+                            {result.executed && !result.decision_id && (
                               <Badge variant="outline" className="text-[10px] h-4 px-1 border-yellow-500 text-yellow-500">Pending</Badge>
                             )}
                             {!result.executed && result.execution_error && (

@@ -9534,9 +9534,12 @@ async def list_automation_instances():
 
         from datetime import datetime, timezone
 
+        # Infrastructure instances — not user-facing automations
+        _HIDDEN_INSTANCES = {"mt5_worker", "tma_worker", "trade_manager"}
+
         for status in remote_statuses:
             name = status.get("instance_name")
-            if not name:
+            if not name or name in _HIDDEN_INSTANCES:
                 continue
 
             # Check if status is stale (no update in 60 seconds = likely stopped)
@@ -10018,6 +10021,7 @@ async def update_quant_automation_config(updates: Dict[str, Any], instance: str 
 
     # Get current config from Postgres
     saved_configs = await _load_saved_configs()
+    is_new_instance = instance not in saved_configs
     config_dict = saved_configs.get(instance, {})
     config_dict.update(updates)
 
@@ -10025,7 +10029,7 @@ async def update_quant_automation_config(updates: Dict[str, Any], instance: str 
     try:
         await control.update_status(
             instance_name=instance,
-            status=None,  # Don't change status
+            status="stopped" if is_new_instance else None,  # New instances need a default status
             pipeline=config_dict.get("pipeline"),
             symbols=config_dict.get("symbols"),
             auto_execute=config_dict.get("auto_execute"),
@@ -10296,7 +10300,7 @@ async def start_tune(
             symbol = automation.config.symbols[0] if automation.config.symbols else None
             pipeline = automation.config.pipeline
         else:
-            saved_configs = _load_saved_configs()
+            saved_configs = await _load_saved_configs()
             cfg = saved_configs.get(instance_name, {})
             symbol = cfg.get("symbols", [None])[0] if cfg.get("symbols") else None
             pipeline = cfg.get("pipeline", "")
@@ -10453,7 +10457,7 @@ def _apply_tune_config(instance_name: str, config_updates: Dict[str, Any]):
     Snapshots the current config before applying so we can revert later.
     """
     # Snapshot current config values (only the keys we're about to change)
-    saved_configs = _load_saved_configs()
+    saved_configs = _load_saved_configs_sync()
     current_cfg = saved_configs.get(instance_name, {})
     config_before = {k: current_cfg.get(k) for k in config_updates}
 

@@ -544,6 +544,7 @@ class PairOptimizer:
         from tradingagents.xgb_quant.strategies.smc_zones import SMCZonesStrategy
         from tradingagents.xgb_quant.strategies.volume_profile_strat import VolumeProfileStrategy
         from tradingagents.xgb_quant.strategies.donchian_breakout import DonchianBreakoutStrategy
+        from tradingagents.xgb_quant.strategies.flag_continuation import FlagContinuationStrategy
 
         registry = {
             "trend_following": TrendFollowingStrategy,
@@ -552,6 +553,7 @@ class PairOptimizer:
             "smc_zones": SMCZonesStrategy,
             "volume_profile_strat": VolumeProfileStrategy,
             "donchian_breakout": DonchianBreakoutStrategy,
+            "flag_continuation": FlagContinuationStrategy,
         }
         return {k: v for k, v in registry.items() if k in names}
 

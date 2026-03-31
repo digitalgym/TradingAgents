@@ -47,13 +47,22 @@ def bb_bounce_signal(
     tp_atr_mult: float = 2.0,
     atr_period: int = 14,
     require_reversal: bool = True,
+    structural_bias: str = "neutral",
+    rsi_filter: bool = True,
+    rsi_period: int = 14,
 ) -> MechanicalSignal:
     """
     Bollinger Band Bounce — enter when price touches a band and reverses.
 
-    BUY: close touches/pierces lower band AND current bar closes above it
-         (i.e. wick below, body back inside = rejection).
-    SELL: close touches/pierces upper band AND current bar closes below it.
+    BUY: low pierces lower band AND current bar closes above it (wick rejection)
+         AND RSI < 35 (oversold confirmation, prevents catching falling knives).
+    SELL: high pierces upper band AND current bar closes below it
+         AND RSI > 65 (overbought confirmation).
+
+    Structural bias filter:
+    - Bullish bias: only BUY signals allowed (don't fade the uptrend)
+    - Bearish bias: only SELL signals allowed (don't fade the downtrend)
+    - Neutral: both directions valid
 
     Args:
         high, low, close: Price arrays (need at least bb_period + 10 bars)
@@ -63,9 +72,12 @@ def bb_bounce_signal(
         tp_atr_mult: Take profit distance in ATR multiples
         atr_period: ATR lookback
         require_reversal: If True, require the candle to close back inside the band
+        structural_bias: "bullish", "bearish", or "neutral" from higher TF
+        rsi_filter: If True, require RSI confirmation (oversold for BUY, overbought for SELL)
+        rsi_period: RSI lookback period
     """
     n = len(close)
-    if n < max(bb_period, atr_period) + 5:
+    if n < max(bb_period, atr_period, rsi_period) + 5:
         return MechanicalSignal(direction="HOLD", rationale="Not enough data", strategy="bb_bounce")
 
     cs = pd.Series(close)
@@ -80,6 +92,16 @@ def bb_bounce_signal(
     if np.isnan(current_atr) or current_atr < 1e-10:
         return MechanicalSignal(direction="HOLD", rationale="ATR unavailable", strategy="bb_bounce")
 
+    # RSI for confirmation
+    current_rsi = np.nan
+    if rsi_filter:
+        delta = cs.diff()
+        gain = delta.where(delta > 0, 0.0).rolling(rsi_period).mean()
+        loss = (-delta.where(delta < 0, 0.0)).rolling(rsi_period).mean()
+        rs = gain / (loss + 1e-10)
+        rsi_values = (100 - (100 / (1 + rs))).values
+        current_rsi = rsi_values[-1]
+
     curr_close = close[-1]
     curr_low = low[-1]
     curr_high = high[-1]
@@ -90,32 +112,52 @@ def bb_bounce_signal(
         return MechanicalSignal(direction="HOLD", rationale="BB not ready", strategy="bb_bounce")
 
     # BUY: low pierced lower band, close back inside (rejection wick)
-    if curr_low <= curr_lower:
-        if not require_reversal or curr_close > curr_lower:
+    if curr_low <= curr_lower and structural_bias != "bearish":
+        reversal_ok = not require_reversal or curr_close > curr_lower
+        rsi_ok = not rsi_filter or (not np.isnan(current_rsi) and current_rsi < 35)
+        if reversal_ok and rsi_ok:
             entry = curr_close
             sl = entry - current_atr * sl_atr_mult
             tp = entry + current_atr * tp_atr_mult
+            rsi_str = f", RSI={current_rsi:.1f}" if not np.isnan(current_rsi) else ""
             return MechanicalSignal(
                 direction="BUY", entry=entry, stop_loss=sl, take_profit=tp,
                 rationale=(
                     f"BB Bounce BUY: low={curr_low:.5f} pierced lower band={curr_lower:.5f}, "
-                    f"close={curr_close:.5f} back inside. SL={sl:.5f}, TP={tp:.5f}"
+                    f"close={curr_close:.5f} back inside{rsi_str}. "
+                    f"Bias={structural_bias}. SL={sl:.5f}, TP={tp:.5f}"
                 ),
+                strategy="bb_bounce",
+            )
+        elif reversal_ok and not rsi_ok:
+            return MechanicalSignal(
+                direction="HOLD",
+                rationale=f"BB lower touch but RSI={current_rsi:.1f} not oversold (<35) — no confirmation",
                 strategy="bb_bounce",
             )
 
     # SELL: high pierced upper band, close back inside
-    if curr_high >= curr_upper:
-        if not require_reversal or curr_close < curr_upper:
+    if curr_high >= curr_upper and structural_bias != "bullish":
+        reversal_ok = not require_reversal or curr_close < curr_upper
+        rsi_ok = not rsi_filter or (not np.isnan(current_rsi) and current_rsi > 65)
+        if reversal_ok and rsi_ok:
             entry = curr_close
             sl = entry + current_atr * sl_atr_mult
             tp = entry - current_atr * tp_atr_mult
+            rsi_str = f", RSI={current_rsi:.1f}" if not np.isnan(current_rsi) else ""
             return MechanicalSignal(
                 direction="SELL", entry=entry, stop_loss=sl, take_profit=tp,
                 rationale=(
                     f"BB Bounce SELL: high={curr_high:.5f} pierced upper band={curr_upper:.5f}, "
-                    f"close={curr_close:.5f} back inside. SL={sl:.5f}, TP={tp:.5f}"
+                    f"close={curr_close:.5f} back inside{rsi_str}. "
+                    f"Bias={structural_bias}. SL={sl:.5f}, TP={tp:.5f}"
                 ),
+                strategy="bb_bounce",
+            )
+        elif reversal_ok and not rsi_ok:
+            return MechanicalSignal(
+                direction="HOLD",
+                rationale=f"BB upper touch but RSI={current_rsi:.1f} not overbought (>65) — no confirmation",
                 strategy="bb_bounce",
             )
 
@@ -135,7 +177,6 @@ def ratio_zscore_signal(
     close_b: np.ndarray,
     zscore_period: int = 50,
     entry_threshold: float = 2.0,
-    exit_threshold: float = 0.0,
     sl_atr_mult: float = 2.0,
     tp_atr_mult: float = 2.5,
     high_a: Optional[np.ndarray] = None,
@@ -154,7 +195,6 @@ def ratio_zscore_signal(
         close_b: Close prices of the reference asset (same length)
         zscore_period: Lookback for mean/std of ratio
         entry_threshold: Z-score magnitude to trigger entry (default 2.0)
-        exit_threshold: Z-score magnitude for TP (revert to this, default 0 = mean)
         sl_atr_mult: Stop loss in ATR multiples of asset A
         tp_atr_mult: Take profit in ATR multiples of asset A
         high_a, low_a: For ATR calculation on asset A
@@ -281,8 +321,9 @@ def mechanical_mr_signal(
             strategy="mechanical_mr",
         )
 
-    # 1. BB Bounce
+    # 1. BB Bounce (pass structural bias from range analysis)
     bb_kw = bb_params or {}
+    bb_kw.setdefault("structural_bias", gate.get("structural_bias", "neutral"))
     bb = bb_bounce_signal(high, low, close, **bb_kw)
     if bb.direction != "HOLD":
         bb.rationale = f"[Range confirmed, MR={gate['mean_reversion_score']:.0f}] {bb.rationale}"

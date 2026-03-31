@@ -37,6 +37,7 @@ STRATEGY_NAMES = [
     "smc_zones",
     "volume_profile_strat",
     "donchian_breakout",
+    "flag_continuation",
 ]
 
 # Default timeframes to train across
@@ -231,6 +232,7 @@ class BatchTrainer:
         from tradingagents.xgb_quant.strategies.smc_zones import SMCZonesStrategy
         from tradingagents.xgb_quant.strategies.volume_profile_strat import VolumeProfileStrategy
         from tradingagents.xgb_quant.strategies.donchian_breakout import DonchianBreakoutStrategy
+        from tradingagents.xgb_quant.strategies.flag_continuation import FlagContinuationStrategy
 
         registry = {
             "trend_following": TrendFollowingStrategy,
@@ -239,6 +241,7 @@ class BatchTrainer:
             "smc_zones": SMCZonesStrategy,
             "volume_profile_strat": VolumeProfileStrategy,
             "donchian_breakout": DonchianBreakoutStrategy,
+            "flag_continuation": FlagContinuationStrategy,
         }
         return {k: v for k, v in registry.items() if k in names}
 

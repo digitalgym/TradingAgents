@@ -914,29 +914,33 @@ export default function AutomationPage() {
   }
 
   const pipelineLabels: Record<string, string> = {
-    smc_quant_basic: "SMC Quant Basic",
-    smc_quant: "SMC Quant",
-    smc_mtf: "SMC MTF",
-    breakout_quant: "Breakout Quant",
-    range_quant: "Range Quant",
+    rule_based: "SMC Rule-Based",
+    smc_quant_basic: "SMC Quant",
+    smc_quant: "SMC Quant Deep",
+    smc_mtf: "SMC Multi-Timeframe",
+    breakout_quant: "BB Squeeze Breakout",
+    donchian_breakout: "Donchian Breakout",
+    gold_trend_pullback: "Gold Trend-Pullback",
+    range_quant: "Range Mean Reversion",
     volume_profile: "Volume Profile",
-    rule_based: "Rule-Based SMC",
     multi_agent: "Multi-Agent AI",
-    xgboost: "XGBoost ML",
-    xgboost_ensemble: "XGBoost Ensemble",
+    xgboost: "ML Auto-Select",
+    xgboost_ensemble: "ML Ensemble Vote",
     scanner_auto: "Scanner Auto",
     gold_silver_pullback: "Gold/Silver Pullback",
     gold_silver_pullback_mtf: "Gold/Silver MTF",
   }
 
   const pipelineColors: Record<string, string> = {
+    rule_based: "text-cyan-500",
     smc_quant_basic: "text-purple-500",
     smc_quant: "text-emerald-500",
     smc_mtf: "text-indigo-500",
     breakout_quant: "text-orange-500",
+    donchian_breakout: "text-orange-400",
+    gold_trend_pullback: "text-yellow-400",
     range_quant: "text-teal-500",
     volume_profile: "text-blue-500",
-    rule_based: "text-cyan-500",
     multi_agent: "text-amber-500",
     xgboost: "text-rose-500",
     xgboost_ensemble: "text-pink-500",
@@ -979,10 +983,22 @@ export default function AutomationPage() {
       recommendedInterval: "30-60 min",
     },
     range_quant: {
-      summary: "Mean-reversion at range extremes with structural bias filter.",
-      details: "Backtest (XAUUSD D1): 64.5% WR, Sharpe 0.74, PF 1.87 on 31 trades. BUY at discount 75% WR vs SELL at premium 53.3%. Best with lookback=30, hold=3, MR threshold>65. D1 clearly best (H4: 57.6% WR, H1: 52.5% WR).",
+      summary: "Mean-reversion at range extremes with structural bias filter. Now has hard regime gate.",
+      details: "LLM analysis only fires when market is confirmed ranging (MR score >45, ADX <20, trend strength <0.35). Blocked for volatile pairs (XAUUSD, XAGUSD, BTCUSD). BUY at discount with bullish bias ~70% WR. Includes BB bounce + ratio z-score mechanical fallbacks.",
       recommendedTimeframes: "D1 (best), H4",
       recommendedInterval: "60-120 min (ranges evolve slowly)",
+    },
+    donchian_breakout: {
+      summary: "Donchian channel breakout with trend/squeeze regime gate + silver-lead confirmation for metals. No LLM.",
+      details: "Enters on Donchian 20-period channel breakouts when market is trending (ADX >25) or in a BB squeeze that's expanding. SMA50/200 trend bias filter prevents counter-trend entries. For XAUUSD/XAGUSD, requires silver to confirm by breaking its own Donchian within 3 bars. XGBoost model learns which breakouts succeed. 3:1 R:R target with 2x ATR stop.",
+      recommendedTimeframes: "D1 (best), H4",
+      recommendedInterval: "15-60 min (instant inference)",
+    },
+    gold_trend_pullback: {
+      summary: "BUY-only gold pullback strategy. 64% WR, Sharpe 1.18, PF 5.5. No LLM, instant.",
+      details: "Backtested on 800 D1 bars (3.2 years): buys pullbacks in gold's uptrend when SMA50>SMA100, price dips ≥1x ATR from swing high, and a bullish reversal candle forms. Requires 2+ confluence (RSI oversold, BB lower touch, silver rising, Au/Ag ratio not extreme, near EMA50). SL=1.5x ATR, TP=3:1 R:R, trailing stop 2x ATR. ~18 trades/year. XAUUSD only — sells blocked.",
+      recommendedTimeframes: "D1",
+      recommendedInterval: "240 min (daily signals)",
     },
     volume_profile: {
       summary: "Value area reversion using volume distribution.",
@@ -1038,6 +1054,8 @@ export default function AutomationPage() {
     smc_mtf:        { timeframe: "D1", interval: 900,   confidence: 0.60, atrMultiplier: 1.5 },
     breakout_quant: { timeframe: "D1", interval: 1800,  confidence: 0.65, atrMultiplier: 1.5 },
     range_quant:    { timeframe: "D1", interval: 3600,  confidence: 0.70, atrMultiplier: 2.5 },
+    donchian_breakout: { timeframe: "D1", interval: 900, confidence: 0.60, atrMultiplier: 2.0 },
+    gold_trend_pullback: { timeframe: "D1", interval: 14400, confidence: 0.40, atrMultiplier: 1.5 },
     volume_profile: { timeframe: "H4", interval: 1800,  confidence: 0.65, atrMultiplier: 2.0 },
     multi_agent:    { timeframe: "D1", interval: 7200,  confidence: 0.70, atrMultiplier: 2.0 },
     xgboost:        { timeframe: "D1", interval: 900,   confidence: 0.60, atrMultiplier: 1.5 },
@@ -2668,9 +2686,9 @@ export default function AutomationPage() {
                                     </div>
                                     <div className="text-right flex flex-col items-end gap-1">
                                       <div className="flex items-center gap-1">
-                                        {result.executed && result.execution_ticket ? (
+                                        {result.executed && result.decision_id ? (
                                           <Badge variant="success" className="text-xs">Executed</Badge>
-                                        ) : result.executed && !result.execution_ticket ? (
+                                        ) : result.executed && !result.decision_id ? (
                                           <Badge variant="outline" className="text-xs border-yellow-500 text-yellow-500">Pending</Badge>
                                         ) : result.execution_error ? (
                                           <>
@@ -2764,19 +2782,27 @@ export default function AutomationPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="rule_based">Rule-Based SMC (no LLM, instant)</SelectItem>
-                  <SelectItem value="smc_quant_basic">SMC Quant Basic</SelectItem>
-                  <SelectItem value="smc_quant">SMC Quant (deep)</SelectItem>
-                  <SelectItem value="smc_mtf">SMC MTF (multi-TF, no LLM)</SelectItem>
-                  <SelectItem value="breakout_quant">Breakout Quant</SelectItem>
-                  <SelectItem value="range_quant">Range Quant (SMC levels)</SelectItem>
-                  <SelectItem value="volume_profile">Volume Profile</SelectItem>
-                  <SelectItem value="multi_agent">Multi-Agent AI</SelectItem>
-                  <SelectItem value="xgboost">XGBoost ML</SelectItem>
-                  <SelectItem value="xgboost_ensemble">XGBoost Ensemble</SelectItem>
-                  <SelectItem value="scanner_auto">Scanner Auto</SelectItem>
+                  {/* --- SMC-based (institutional levels) --- */}
+                  <SelectItem value="rule_based">SMC Rule-Based (no LLM, instant)</SelectItem>
+                  <SelectItem value="smc_quant_basic">SMC Quant (LLM)</SelectItem>
+                  <SelectItem value="smc_quant">SMC Quant Deep (LLM, extended)</SelectItem>
+                  <SelectItem value="smc_mtf">SMC Multi-Timeframe (no LLM)</SelectItem>
+                  {/* --- Breakout strategies --- */}
+                  <SelectItem value="breakout_quant">BB Squeeze Breakout (LLM)</SelectItem>
+                  <SelectItem value="donchian_breakout">Donchian Breakout (no LLM, instant)</SelectItem>
+                  {/* --- Mean reversion / ranging --- */}
+                  <SelectItem value="range_quant">Range Mean Reversion (LLM)</SelectItem>
+                  <SelectItem value="volume_profile">Volume Profile (LLM)</SelectItem>
+                  {/* --- ML-driven --- */}
+                  <SelectItem value="xgboost">ML Auto-Select (no LLM, instant)</SelectItem>
+                  <SelectItem value="xgboost_ensemble">ML Ensemble Vote (no LLM, instant)</SelectItem>
+                  {/* --- Metals-specific --- */}
+                  <SelectItem value="gold_trend_pullback">Gold Trend-Pullback D1 (no LLM, best WR)</SelectItem>
                   <SelectItem value="gold_silver_pullback">Gold/Silver Pullback D1 (no LLM)</SelectItem>
                   <SelectItem value="gold_silver_pullback_mtf">Gold/Silver MTF D1+H4 (no LLM)</SelectItem>
+                  {/* --- Multi-agent / auto --- */}
+                  <SelectItem value="multi_agent">Multi-Agent AI (LLM, high cost)</SelectItem>
+                  <SelectItem value="scanner_auto">Scanner Auto (scans all pairs)</SelectItem>
                 </SelectContent>
               </Select>
               {pipelineDescriptions[newInstancePipeline] && (
@@ -2929,9 +2955,9 @@ export default function AutomationPage() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Status</span>
                   <span>
-                    {detailResult.executed && detailResult.execution_ticket ? (
-                      <Badge variant="success" className="text-xs">Executed #{detailResult.execution_ticket}</Badge>
-                    ) : detailResult.executed && !detailResult.execution_ticket ? (
+                    {detailResult.executed && detailResult.decision_id ? (
+                      <Badge variant="success" className="text-xs">Executed ({detailResult.decision_id})</Badge>
+                    ) : detailResult.executed && !detailResult.decision_id ? (
                       <Badge variant="outline" className="text-xs border-yellow-500 text-yellow-500">Pending (unfilled)</Badge>
                     ) : detailResult.execution_error ? (
                       <Badge variant="destructive" className="text-xs">Failed</Badge>

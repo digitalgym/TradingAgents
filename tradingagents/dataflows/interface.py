@@ -158,6 +158,7 @@ def route_to_vendor(method: str, *args, **kwargs):
 
     # Track results and execution state
     results = []
+    vendor_errors = []
     vendor_attempt_count = 0
     any_primary_vendor_attempted = False
     successful_vendor = None
@@ -186,17 +187,19 @@ def route_to_vendor(method: str, *args, **kwargs):
             try:
                 result = impl_func(*args, **kwargs)
                 vendor_results.append(result)
-                    
+
             except Exception as e:
                 # Log error but continue with other implementations
-                logger.error(f"Vendor implementation failed: {impl_func.__name__} from '{vendor_name}': {type(e).__name__}: {e}")
+                error_msg = f"{vendor_name}/{impl_func.__name__}: {type(e).__name__}: {e}"
+                logger.error(f"Vendor implementation failed: {error_msg}")
+                vendor_errors.append(error_msg)
                 continue
 
         # Add this vendor's results
         if vendor_results:
             results.extend(vendor_results)
             successful_vendor = vendor
-            
+
             # Stopping logic: Stop after first successful vendor for single-vendor configs
             # Multiple vendor configs (comma-separated) may want to collect from multiple sources
             if len(primary_vendors) == 1:
@@ -204,8 +207,9 @@ def route_to_vendor(method: str, *args, **kwargs):
 
     # Final result summary
     if not results:
-        logger.error(f"All vendor implementations failed for method '{method}'. Attempted vendors: {fallback_vendors}")
-        raise RuntimeError(f"All vendor implementations failed for method '{method}'")
+        errors_detail = "; ".join(vendor_errors) if vendor_errors else "no vendors attempted"
+        logger.error(f"All vendor implementations failed for method '{method}'. Attempted vendors: {fallback_vendors}. Errors: {errors_detail}")
+        raise RuntimeError(f"All vendor implementations failed for method '{method}'. Errors: {errors_detail}")
 
     # Return single result if only one, otherwise concatenate as string
     logger.info(f"route_to_vendor success: method={method}, vendor={successful_vendor}, results_count={len(results)}")

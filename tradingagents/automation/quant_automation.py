@@ -189,6 +189,8 @@ class PipelineType(str, Enum):
     MULTI_AGENT = "multi_agent"
     XGBOOST = "xgboost"
     XGBOOST_ENSEMBLE = "xgboost_ensemble"
+    DONCHIAN_BREAKOUT = "donchian_breakout"
+    GOLD_TREND_PULLBACK = "gold_trend_pullback"
     GOLD_SILVER_PULLBACK = "gold_silver_pullback"
     GOLD_SILVER_PULLBACK_MTF = "gold_silver_pullback_mtf"
     SCANNER_AUTO = "scanner_auto"  # Scanner detects regime per pair → dispatches to best pipeline
@@ -250,6 +252,9 @@ class QuantAutomationConfig:
     # Remote control settings
     enable_remote_control: bool = True  # Allow start/stop/config from web UI
     control_poll_seconds: int = 3  # Check for control commands every 3 seconds
+
+    # XGBoost strategy override (for XGBOOST pipeline)
+    xgb_strategy: str = ""  # Force a specific XGBoost strategy (e.g. "smc_zones", "flag_continuation"). Empty = auto-select via strategy selector.
 
     # Scanner settings (for XGBoost pipelines)
     enable_scanner: bool = False  # When True, scanner dynamically picks symbols each cycle
@@ -2839,6 +2844,8 @@ class QuantAutomation:
             "xgboost": self._run_xgboost_analysis,
             "xgboost_ensemble": self._run_xgboost_analysis,
             "multi_agent": self._run_multi_agent_analysis,
+            "donchian_breakout": self._run_donchian_breakout_analysis,
+            "gold_trend_pullback": self._run_gold_trend_pullback_analysis,
             "gold_silver_pullback": self._run_gold_silver_pullback_analysis,
             "gold_silver_pullback_mtf": self._run_gold_silver_pullback_analysis,
         }
@@ -3556,20 +3563,26 @@ class QuantAutomation:
                     df, current_price, current_atr,
                 )
             else:
-                # Single strategy — use strategy selector to pick best
-                from tradingagents.xgb_quant.strategy_selector import StrategySelector
-                from tradingagents.indicators.regime import RegimeDetector
+                # Single strategy — use forced strategy or auto-select
+                if self.config.xgb_strategy:
+                    strategy_name = self.config.xgb_strategy
+                    timeframe = self.config.timeframe
+                    self.logger.info(f"XGBoost: using forced strategy '{strategy_name}' for {symbol}")
+                else:
+                    from tradingagents.xgb_quant.strategy_selector import StrategySelector
+                    from tradingagents.indicators.regime import RegimeDetector
 
-                # Detect regime so selector can score strategies properly
-                detector = RegimeDetector()
-                market_regime = detector.detect_trend_regime(high, low, close)
+                    # Detect regime so selector can score strategies properly
+                    detector = RegimeDetector()
+                    market_regime = detector.detect_trend_regime(high, low, close)
 
-                selector = StrategySelector()
-                selection = selector.select(symbol, regime=market_regime)
-                strategy_name = selection.recommended_strategy
+                    selector = StrategySelector()
+                    selection = selector.select(symbol, regime=market_regime)
+                    strategy_name = selection.recommended_strategy
 
-                # Use the timeframe that performed best in training
-                timeframe = selection.recommended_timeframe or self.config.timeframe
+                    # Use the timeframe that performed best in training
+                    timeframe = selection.recommended_timeframe or self.config.timeframe
+
                 if timeframe != self.config.timeframe:
                     self.logger.info(
                         f"XGBoost: using best timeframe {timeframe} "
@@ -3608,6 +3621,172 @@ class QuantAutomation:
                 pipeline=self.config.pipeline.value,
                 signal="HOLD", confidence=0.0,
                 rationale=f"XGBoost error: {e}",
+                duration_seconds=_time.time() - start,
+            )
+
+    # ------------------------------------------------------------------
+    # Donchian Breakout
+    # ------------------------------------------------------------------
+
+    async def _run_donchian_breakout_analysis(self, symbol: str) -> "AnalysisCycleResult":
+        """
+        Run Donchian Channel Breakout analysis — local inference, no LLM call.
+
+        Uses XGBoost model with regime gate (trend/squeeze only) and optional
+        silver-lead confirmation for metals.
+        """
+        import time as _time
+        start = _time.time()
+
+        try:
+            from tradingagents.automation.auto_tuner import load_mt5_data, _compute_atr
+            from tradingagents.xgb_quant.predictor import LivePredictor
+
+            df = load_mt5_data(symbol, self.config.timeframe, bars=500)
+            high = df["high"].values.astype(float)
+            low = df["low"].values.astype(float)
+            close = df["close"].values.astype(float)
+            atr = _compute_atr(high, low, close)
+            current_atr = float(atr[-1]) if not np.isnan(atr[-1]) else 1.0
+            current_price = float(close[-1])
+
+            # Load silver data for metals confirmation
+            silver_df = None
+            if symbol in ("XAUUSD", "XAGUSD"):
+                try:
+                    silver_df = load_mt5_data("XAGUSD", self.config.timeframe, bars=500)
+                except Exception as e:
+                    self.logger.warning(f"Donchian: could not load XAGUSD for silver-lead: {e}")
+
+            predictor = LivePredictor()
+            strategy_name = "donchian_breakout"
+            key = f"{strategy_name}_{symbol}_{self.config.timeframe}"
+
+            if not predictor.load_strategy(strategy_name, symbol, self.config.timeframe):
+                return AnalysisCycleResult(
+                    timestamp=datetime.now(), symbol=symbol,
+                    pipeline="donchian_breakout",
+                    signal="HOLD", confidence=0.0,
+                    rationale=f"No trained donchian_breakout model for {symbol} {self.config.timeframe}",
+                    duration_seconds=_time.time() - start,
+                )
+
+            strategy = predictor._loaded_strategies[key]
+            feature_set = strategy.get_feature_set()
+            features = feature_set.compute(df)
+
+            signal = strategy.predict_signal(
+                features, current_atr, current_price,
+                high=high, low=low, close=close,
+                symbol=symbol, silver_df=silver_df,
+            )
+
+            return AnalysisCycleResult(
+                timestamp=datetime.now(), symbol=symbol,
+                pipeline="donchian_breakout",
+                signal=signal.direction,
+                confidence=signal.confidence,
+                entry_price=signal.entry if signal.entry else current_price,
+                stop_loss=signal.stop_loss if signal.stop_loss else None,
+                take_profit=signal.take_profit if signal.take_profit else None,
+                rationale=signal.rationale,
+                duration_seconds=_time.time() - start,
+            )
+
+        except Exception as e:
+            self.logger.error(f"Donchian breakout analysis failed for {symbol}: {e}")
+            return AnalysisCycleResult(
+                timestamp=datetime.now(), symbol=symbol,
+                pipeline="donchian_breakout",
+                signal="HOLD", confidence=0.0,
+                rationale=f"Donchian error: {e}",
+                duration_seconds=_time.time() - start,
+            )
+
+    # ------------------------------------------------------------------
+    # Gold Trend-Pullback (Mechanical, BUY-only)
+    # ------------------------------------------------------------------
+
+    async def _run_gold_trend_pullback_analysis(self, symbol: str) -> "AnalysisCycleResult":
+        """
+        Gold trend-pullback: mechanical, no LLM, BUY-only.
+
+        Backtested: 63.8% WR, Sharpe 1.18, PF 5.46, 10% DD on XAUUSD D1.
+        Requires XAGUSD data for silver confluence confirmation.
+        """
+        import time as _time
+        start = _time.time()
+
+        try:
+            from tradingagents.automation.auto_tuner import load_mt5_data
+            from tradingagents.xgb_quant.strategies.gold_trend_pullback import gold_trend_pullback
+
+            df_gold = load_mt5_data(symbol, self.config.timeframe, bars=500)
+            high = df_gold["high"].values.astype(float)
+            low = df_gold["low"].values.astype(float)
+            close = df_gold["close"].values.astype(float)
+            open_ = df_gold["open"].values.astype(float)
+
+            # Load silver for cross-reference
+            silver_close = None
+            try:
+                df_silver = load_mt5_data("XAGUSD", self.config.timeframe, bars=500)
+                silver_close = df_silver["close"].values.astype(float)
+            except Exception as e:
+                self.logger.warning(f"Gold Trend-Pullback: could not load XAGUSD: {e}")
+
+            # Optimal params from backtest iteration
+            signal = gold_trend_pullback(
+                high, low, close, open_,
+                silver_close=silver_close,
+                min_confluence=2,
+                pullback_atr_mult=1.0,
+                sl_atr_mult=1.5,
+                rr_target=3.0,
+            )
+
+            # BUY-only: block sells (they have 28% WR on gold)
+            if signal.direction == "SELL":
+                self.logger.info(
+                    f"Gold Trend-Pullback: SELL blocked (BUY-only strategy). "
+                    f"Original: {signal.rationale}"
+                )
+                signal = type(signal)(
+                    direction="HOLD",
+                    rationale=f"SELL blocked (BUY-only): {signal.rationale}",
+                )
+
+            self.logger.info(
+                f"Gold Trend-Pullback for {symbol}: {signal.direction} "
+                f"conf={signal.confluence_count} "
+                f"factors={signal.confluence_factors}"
+            )
+
+            return AnalysisCycleResult(
+                timestamp=datetime.now(),
+                symbol=symbol,
+                pipeline="gold_trend_pullback",
+                signal=signal.direction,
+                confidence=min(signal.confluence_count / 5.0, 1.0) if signal.direction == "BUY" else 0.0,
+                entry_price=signal.entry if signal.entry else None,
+                stop_loss=signal.stop_loss if signal.stop_loss else None,
+                take_profit=signal.take_profit if signal.take_profit else None,
+                rationale=signal.rationale,
+                trailing_stop_atr_multiplier=2.0,
+                duration_seconds=_time.time() - start,
+            )
+
+        except Exception as e:
+            self.logger.error(f"Gold Trend-Pullback error for {symbol}: {e}")
+            import traceback
+            self.logger.error(traceback.format_exc())
+            return AnalysisCycleResult(
+                timestamp=datetime.now(),
+                symbol=symbol,
+                pipeline="gold_trend_pullback",
+                signal="HOLD",
+                confidence=0.0,
+                rationale=f"Error: {str(e)}",
                 duration_seconds=_time.time() - start,
             )
 
