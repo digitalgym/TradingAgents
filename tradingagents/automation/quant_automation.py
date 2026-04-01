@@ -11,6 +11,7 @@ Supports:
 
 import asyncio
 import logging
+import logging.handlers
 import os
 import time
 import json
@@ -18,6 +19,21 @@ import numpy as np
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Literal
+
+
+class SafeFileHandler(logging.FileHandler):
+    """FileHandler that recovers from stale file handles on Windows (sleep/wake cycles)."""
+
+    def emit(self, record):
+        try:
+            super().emit(record)
+        except OSError:
+            try:
+                self.close()
+                self.stream = self._open()
+                super().emit(record)
+            except Exception:
+                pass
 from dataclasses import dataclass, field, fields, asdict
 from enum import Enum
 
@@ -177,6 +193,10 @@ class PipelineType(str, Enum):
     KELTNER_MEAN_REVERSION = "keltner_mean_reversion"
     COPPER_EMA_PULLBACK = "copper_ema_pullback"
     GOLD_PLATINUM_RATIO = "gold_platinum_ratio"
+    GOLD_TREND_PULLBACK = "gold_trend_pullback"
+    GOLD_SILVER_PULLBACK = "gold_silver_pullback"
+    GOLD_SILVER_PULLBACK_MTF = "gold_silver_pullback_mtf"
+    SCANNER_AUTO = "scanner_auto"  # Scanner detects regime per pair → dispatches to best pipeline
 
 
 class AutomationStatus(str, Enum):
@@ -235,6 +255,16 @@ class QuantAutomationConfig:
     # Remote control settings
     enable_remote_control: bool = True  # Allow start/stop/config from web UI
     control_poll_seconds: int = 3  # Check for control commands every 3 seconds
+
+    # XGBoost strategy override (for XGBOOST pipeline)
+    xgb_strategy: str = ""  # Force a specific XGBoost strategy (e.g. "smc_zones", "flag_continuation"). Empty = auto-select via strategy selector.
+
+    # Scanner settings (for XGBoost pipelines)
+    enable_scanner: bool = False  # When True, scanner dynamically picks symbols each cycle
+    scanner_interval_seconds: int = 300  # How often to re-scan (5 min default)
+    scanner_min_score: int = 40  # Minimum momentum score to qualify
+    scanner_max_candidates: int = 3  # Max pairs to trade from scan results
+    scanner_timeframe: str = "H4"  # Timeframe for scanner data
 
     # State persistence
     state_file: str = "quant_automation_state.json"
@@ -342,6 +372,13 @@ class QuantAutomation:
         self._trail_min_interval = 30  # minimum seconds between trailing stop modifications per ticket
         self._price_extremes: Dict[int, Dict[str, Any]] = {}  # ticket -> {high, low, direction} for excursion analysis
 
+        # Scanner state
+        self._last_scan_time: Optional[datetime] = None
+        self._last_scan_result: Optional[Dict[str, Any]] = None
+        self._scanner_symbols: List[str] = []  # Dynamically discovered symbols from scanner
+        self._scanner_pipelines: Dict[str, str] = {}  # symbol -> recommended pipeline (SCANNER_AUTO mode)
+        self._scanner_timeframes: Dict[str, str] = {}  # symbol -> recommended timeframe (SCANNER_AUTO mode)
+
         # Lock for state file writes (multiple async loops share this)
         self._state_lock = asyncio.Lock()
 
@@ -382,7 +419,7 @@ class QuantAutomation:
 
         # File handler
         log_file = logs_dir / f"quant_{datetime.now().strftime('%Y%m%d')}.log"
-        file_handler = logging.FileHandler(log_file)
+        file_handler = SafeFileHandler(log_file)
         file_handler.setFormatter(
             logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
         )
@@ -940,6 +977,48 @@ class QuantAutomation:
         start_time = time.time()
 
         try:
+            # --- Regime gate: check if market is ranging before calling LLM ---
+            from tradingagents.automation.auto_tuner import load_mt5_data
+            from tradingagents.agents.analysts.range_quant import analyze_range
+            from tradingagents.xgb_quant.strategies.mean_reversion import MR_EXCLUDED_PAIRS
+
+            if symbol in MR_EXCLUDED_PAIRS:
+                self.logger.info(f"Range Quant: {symbol} excluded from mean reversion (too volatile)")
+                return AnalysisCycleResult(
+                    timestamp=datetime.now(), symbol=symbol,
+                    pipeline="range_quant", signal="HOLD", confidence=0.0,
+                    rationale=f"{symbol} excluded from range trading (volatile/trending pair)",
+                    duration_seconds=time.time() - start_time,
+                )
+
+            try:
+                gate_df = load_mt5_data(symbol, self.config.timeframe, bars=200)
+                gate_analysis = analyze_range(
+                    gate_df["high"].values.astype(float),
+                    gate_df["low"].values.astype(float),
+                    gate_df["close"].values.astype(float),
+                )
+                if not gate_analysis.get("is_ranging", False):
+                    reason = (
+                        f"trend_strength={gate_analysis.get('trend_strength', 0):.2f}, "
+                        f"mr_score={gate_analysis.get('mean_reversion_score', 0):.0f}, "
+                        f"adx_proxy={gate_analysis.get('adx_proxy', 0):.1f}"
+                    )
+                    self.logger.info(f"Range Quant regime gate BLOCKED for {symbol}: {reason}")
+                    return AnalysisCycleResult(
+                        timestamp=datetime.now(), symbol=symbol,
+                        pipeline="range_quant", signal="HOLD", confidence=0.0,
+                        rationale=f"Regime gate: market not ranging ({reason})",
+                        duration_seconds=time.time() - start_time,
+                    )
+                self.logger.info(
+                    f"Range Quant regime gate PASSED for {symbol}: "
+                    f"mr_score={gate_analysis.get('mean_reversion_score', 0):.0f}, "
+                    f"position={gate_analysis.get('price_position')}"
+                )
+            except Exception as gate_err:
+                self.logger.warning(f"Range Quant regime gate check failed: {gate_err} — proceeding with API call")
+
             import aiohttp
 
             self.logger.info(f"Range Quant: calling API for {symbol} (timeout=120s)...")
@@ -2452,29 +2531,13 @@ class QuantAutomation:
 
                     # --- Reversal Signal Close ---
                     if self.config.enable_reversal_close:
-                        if self.config.pipeline in (PipelineType.SMC_QUANT_BASIC, PipelineType.SMC_QUANT, PipelineType.BREAKOUT_QUANT, PipelineType.RANGE_QUANT, PipelineType.RULE_BASED, PipelineType.SMC_MTF, PipelineType.RULE_QUANT, PipelineType.RULE_QUANT_ENSEMBLE, PipelineType.DONCHIAN_BREAKOUT, PipelineType.KELTNER_MEAN_REVERSION, PipelineType.COPPER_EMA_PULLBACK, PipelineType.GOLD_PLATINUM_RATIO):
-                            if self.config.pipeline == PipelineType.SMC_QUANT:
-                                analysis = await self._run_smc_quant_analysis(symbol)
-                            elif self.config.pipeline == PipelineType.BREAKOUT_QUANT:
-                                analysis = await self._run_breakout_quant_analysis(symbol)
-                            elif self.config.pipeline == PipelineType.RANGE_QUANT:
-                                analysis = await self._run_range_quant_analysis(symbol)
-                            elif self.config.pipeline == PipelineType.RULE_BASED:
-                                analysis = await self._run_rule_based_analysis(symbol)
-                            elif self.config.pipeline == PipelineType.SMC_MTF:
-                                analysis = await self._run_smc_mtf_analysis(symbol)
-                            elif self.config.pipeline in (PipelineType.RULE_QUANT, PipelineType.RULE_QUANT_ENSEMBLE):
-                                analysis = await self._run_rule_quant_analysis(symbol)
-                            elif self.config.pipeline == PipelineType.DONCHIAN_BREAKOUT:
-                                analysis = await self._run_donchian_breakout_analysis(symbol)
-                            elif self.config.pipeline == PipelineType.KELTNER_MEAN_REVERSION:
-                                analysis = await self._run_keltner_mr_analysis(symbol)
-                            elif self.config.pipeline == PipelineType.COPPER_EMA_PULLBACK:
-                                analysis = await self._run_rule_strategy_analysis(symbol, "copper_ema_pullback")
-                            elif self.config.pipeline == PipelineType.GOLD_PLATINUM_RATIO:
-                                analysis = await self._run_rule_strategy_analysis(symbol, "gold_platinum_ratio")
+                        if self.config.pipeline != PipelineType.MULTI_AGENT:
+                            # In SCANNER_AUTO, use the assigned pipeline for this symbol
+                            if self.config.pipeline == PipelineType.SCANNER_AUTO and symbol in self._scanner_pipelines:
+                                rev_pipeline = self._scanner_pipelines[symbol]
                             else:
-                                analysis = await self._run_quant_analysis(symbol)
+                                rev_pipeline = self.config.pipeline.value
+                            analysis = await self._dispatch_analysis(symbol, rev_pipeline)
 
                             is_reversal = analysis.signal == "CLOSE" or (
                                 analysis.signal != "HOLD" and
@@ -2671,6 +2734,185 @@ class QuantAutomation:
         self.logger.debug(f"--- Position management cycle end ({len(results)} positions checked) ---")
         return results
 
+    async def _run_gold_silver_pullback_analysis(self, symbol: str) -> "AnalysisCycleResult":
+        """Run gold/silver pullback analysis (no LLM, uses MT5 data directly)."""
+        start_time = time.time()
+        try:
+            import MetaTrader5 as mt5
+            import numpy as np
+            from tradingagents.agents.analysts.gold_silver_pullback_quant import analyze_gold_silver_pullback
+            from tradingagents.automation.auto_tuner import load_mt5_data
+
+            tf = self.config.timeframe or "D1"
+            bars = 300  # Need 260+ for ratio stats
+
+            gold_df = await asyncio.to_thread(load_mt5_data, "XAUUSD", tf, bars)
+            silver_df = await asyncio.to_thread(load_mt5_data, "XAGUSD", tf, bars)
+
+            min_len = min(len(gold_df), len(silver_df))
+            gold_df = gold_df.tail(min_len).reset_index(drop=True)
+            silver_df = silver_df.tail(min_len).reset_index(drop=True)
+
+            # Use config params if available, else defaults
+            gs_params = getattr(self.config, "gold_silver_params", {}) or {}
+            result = analyze_gold_silver_pullback(
+                gold_high=gold_df["high"].values,
+                gold_low=gold_df["low"].values,
+                gold_close=gold_df["close"].values,
+                gold_open=gold_df["open"].values,
+                silver_close=silver_df["close"].values,
+                sma_fast=gs_params.get("sma_fast", 50),
+                sma_slow=gs_params.get("sma_slow", 200),
+                pullback_atr_mult=gs_params.get("pullback_atr_mult", 1.5),
+                silver_roc_period=gs_params.get("silver_roc_period", 5),
+                ratio_z_filter=gs_params.get("ratio_z_filter", 2.0),
+            )
+
+            duration = time.time() - start_time
+            current_price = float(gold_df["close"].values[-1])
+
+            if result["signal"]:
+                entry = current_price
+                sl = result["swing_low"]
+                atr_sl = entry - result["atr"] * self.config.trailing_stop_atr_multiplier
+                sl = max(sl, atr_sl)
+                if sl >= entry:
+                    sl = entry - result["atr"]
+                sl_dist = entry - sl
+                rr = getattr(self.config, "risk_reward_ratio", 2.0) or 2.0
+                tp = entry + sl_dist * rr
+
+                rationale = (
+                    f"Gold/Silver Pullback BUY: uptrend (SMA{gs_params.get('sma_fast', 50)}>{gs_params.get('sma_slow', 200)}), "
+                    f"pullback {result['pullback_depth_atr']:.1f}x ATR, "
+                    f"silver accelerating (ROC={result['silver_roc']:.4f}), "
+                    f"Au/Ag ratio Z={result['ratio_z']:.2f}"
+                )
+
+                self.logger.info(f"Gold/Silver Pullback: BUY signal for {symbol} @ {entry:.2f}, SL={sl:.2f}, TP={tp:.2f}")
+                return AnalysisCycleResult(
+                    timestamp=datetime.now(),
+                    symbol=symbol,
+                    pipeline="gold_silver_pullback",
+                    signal="BUY",
+                    confidence=0.70,
+                    entry_price=entry,
+                    stop_loss=sl,
+                    take_profit=tp,
+                    rationale=rationale,
+                    duration_seconds=duration,
+                )
+            else:
+                reasons = []
+                if not result["uptrend"]:
+                    reasons.append("no uptrend")
+                if not result["is_pullback"]:
+                    reasons.append("no pullback")
+                if not result["bullish_candle"]:
+                    reasons.append("no bullish candle")
+                if not result["silver_accelerating"]:
+                    reasons.append("silver not accelerating")
+                if not result["ratio_ok"]:
+                    reasons.append(f"ratio extreme (Z={result['ratio_z']:.2f})")
+
+                self.logger.info(f"Gold/Silver Pullback: HOLD for {symbol} — {', '.join(reasons)}")
+                return AnalysisCycleResult(
+                    timestamp=datetime.now(),
+                    symbol=symbol,
+                    pipeline="gold_silver_pullback",
+                    signal="HOLD",
+                    confidence=0.0,
+                    rationale=f"No signal: {', '.join(reasons)}",
+                    duration_seconds=duration,
+                )
+
+        except Exception as e:
+            elapsed = time.time() - start_time
+            self.logger.error(f"Gold/Silver Pullback error for {symbol}: {e}")
+            import traceback
+            self.logger.error(traceback.format_exc())
+            return AnalysisCycleResult(
+                timestamp=datetime.now(),
+                symbol=symbol,
+                pipeline="gold_silver_pullback",
+                signal="HOLD",
+                confidence=0.0,
+                rationale=f"Error: {str(e)}",
+                duration_seconds=elapsed,
+            )
+
+    async def _dispatch_analysis(
+        self, symbol: str, pipeline: str, timeframe: Optional[str] = None,
+    ) -> "AnalysisCycleResult":
+        """Dispatch analysis to the correct pipeline method by name.
+
+        When *timeframe* is provided (SCANNER_AUTO mode), temporarily overrides
+        self.config.timeframe so analysis methods pick up the right TF.
+        Also applies per-pair trailing stop from optimization results if available.
+        """
+        _DISPATCH = {
+            "smc_quant_basic": self._run_quant_analysis,
+            "smc_quant": self._run_smc_quant_analysis,
+            "smc_mtf": self._run_smc_mtf_analysis,
+            "breakout_quant": self._run_breakout_quant_analysis,
+            "range_quant": self._run_range_quant_analysis,
+            "volume_profile": self._run_vp_analysis,
+            "rule_based": self._run_rule_based_analysis,
+            "xgboost": self._run_xgboost_analysis,
+            "xgboost_ensemble": self._run_xgboost_analysis,
+            "multi_agent": self._run_multi_agent_analysis,
+            "donchian_breakout": self._run_donchian_breakout_analysis,
+            "gold_trend_pullback": self._run_gold_trend_pullback_analysis,
+            "gold_silver_pullback": self._run_gold_silver_pullback_analysis,
+            "gold_silver_pullback_mtf": self._run_gold_silver_pullback_analysis,
+        }
+        handler = _DISPATCH.get(pipeline, self._run_multi_agent_analysis)
+
+        # Temporarily swap timeframe and trailing stop for this analysis call
+        original_tf = self.config.timeframe
+        original_trail = self.config.trailing_stop_atr_multiplier
+
+        if timeframe and timeframe != original_tf:
+            self.config.timeframe = timeframe
+
+        # Apply per-pair trailing stop from optimization results
+        pair_trail = self._get_optimized_trailing(symbol)
+        if pair_trail is not None:
+            self.config.trailing_stop_atr_multiplier = pair_trail
+
+        try:
+            result = await handler(symbol)
+            # Tag the result with the trailing config used
+            if pair_trail is not None:
+                result.trailing_stop_atr_multiplier = pair_trail
+            return result
+        finally:
+            self.config.timeframe = original_tf
+            self.config.trailing_stop_atr_multiplier = original_trail
+
+    def _get_optimized_trailing(self, symbol: str) -> Optional[float]:
+        """Load per-pair optimized trailing stop from optimization results."""
+        try:
+            from tradingagents.xgb_quant.config import RESULTS_DIR
+            params_file = RESULTS_DIR / "_optimization" / "optimized_params" / f"{symbol}.json"
+            if not params_file.exists():
+                return None
+            import json
+            data = json.loads(params_file.read_text())
+            # Find the best combo's trailing param
+            best = data.get("best_combo")
+            if not best:
+                return None
+            for combo in data.get("combos", []):
+                if combo.get("strategy") == best.get("strategy") and combo.get("timeframe") == best.get("timeframe"):
+                    params = combo.get("best_params", {})
+                    trail = params.get("trailing_atr_mult")
+                    if trail is not None and trail > 0:
+                        return trail
+            return None
+        except Exception:
+            return None
+
     async def _analysis_loop(self):
         """Main analysis loop."""
         await asyncio.sleep(0)  # Yield to let other coroutines start
@@ -2678,7 +2920,10 @@ class QuantAutomation:
             try:
                 now = datetime.now()
 
-                for symbol in self.config.symbols:
+                # Run scanner to get symbols (returns config.symbols when scanner disabled)
+                analysis_symbols = await self._run_scanner()
+
+                for symbol in analysis_symbols:
                     # Check if enough time has passed since last analysis
                     last_time = self._last_analysis_time.get(symbol)
                     if last_time:
@@ -2697,35 +2942,21 @@ class QuantAutomation:
                     except Exception as mkt_err:
                         self.logger.warning(f"Could not check market status for {symbol}: {mkt_err}")
 
-                    self.logger.info(f"Running {self.config.pipeline.value} analysis for {symbol}...")
+                    # Determine which pipeline + timeframe to use for this symbol
+                    if self.config.pipeline == PipelineType.SCANNER_AUTO and symbol in self._scanner_pipelines:
+                        effective_pipeline = self._scanner_pipelines[symbol]
+                        effective_tf = self._scanner_timeframes.get(symbol)
+                        self.logger.info(
+                            f"Running {effective_pipeline} {effective_tf or ''} analysis for {symbol} "
+                            f"(scanner auto: {self._scanner_pipelines.get(symbol, '?')})"
+                        )
+                    else:
+                        effective_pipeline = self.config.pipeline.value
+                        effective_tf = None  # Use config default
+                        self.logger.info(f"Running {effective_pipeline} analysis for {symbol}...")
 
                     # Run analysis based on pipeline
-                    if self.config.pipeline == PipelineType.SMC_QUANT_BASIC:
-                        result = await self._run_quant_analysis(symbol)
-                    elif self.config.pipeline == PipelineType.SMC_QUANT:
-                        result = await self._run_smc_quant_analysis(symbol)
-                    elif self.config.pipeline == PipelineType.SMC_MTF:
-                        result = await self._run_smc_mtf_analysis(symbol)
-                    elif self.config.pipeline == PipelineType.BREAKOUT_QUANT:
-                        result = await self._run_breakout_quant_analysis(symbol)
-                    elif self.config.pipeline == PipelineType.RANGE_QUANT:
-                        result = await self._run_range_quant_analysis(symbol)
-                    elif self.config.pipeline == PipelineType.VOLUME_PROFILE:
-                        result = await self._run_vp_analysis(symbol)
-                    elif self.config.pipeline == PipelineType.RULE_BASED:
-                        result = await self._run_rule_based_analysis(symbol)
-                    elif self.config.pipeline in (PipelineType.RULE_QUANT, PipelineType.RULE_QUANT_ENSEMBLE):
-                        result = await self._run_rule_quant_analysis(symbol)
-                    elif self.config.pipeline == PipelineType.DONCHIAN_BREAKOUT:
-                        result = await self._run_donchian_breakout_analysis(symbol)
-                    elif self.config.pipeline == PipelineType.KELTNER_MEAN_REVERSION:
-                        result = await self._run_keltner_mr_analysis(symbol)
-                    elif self.config.pipeline == PipelineType.COPPER_EMA_PULLBACK:
-                        result = await self._run_rule_strategy_analysis(symbol, "copper_ema_pullback")
-                    elif self.config.pipeline == PipelineType.GOLD_PLATINUM_RATIO:
-                        result = await self._run_rule_strategy_analysis(symbol, "gold_platinum_ratio")
-                    else:
-                        result = await self._run_multi_agent_analysis(symbol)
+                    result = await self._dispatch_analysis(symbol, effective_pipeline, effective_tf)
 
                     self.logger.info(
                         f"{symbol}: {result.signal} (confidence: {result.confidence:.2f}, htf_bias: {result.htf_bias})"
@@ -3186,6 +3417,11 @@ class QuantAutomation:
         self.logger.info(f"Auto-execute: {self.config.auto_execute}")
         self.logger.info(f"Trade queue: {'enabled' if self.config.enable_trade_queue else 'disabled'}")
         self.logger.info(f"Remote control: {'enabled' if self.config.enable_remote_control else 'disabled'}")
+        if self.config.enable_scanner:
+            self.logger.info(f"Scanner: ENABLED (interval={self.config.scanner_interval_seconds}s, "
+                           f"min_score={self.config.scanner_min_score}, max_candidates={self.config.scanner_max_candidates})")
+        else:
+            self.logger.info("Scanner: disabled (using static symbol list)")
         self.logger.info("=" * 50)
 
         # Report initial status to Postgres
@@ -3300,32 +3536,14 @@ class QuantAutomation:
 
     async def run_single_analysis(self, symbol: str) -> AnalysisCycleResult:
         """Run a single analysis cycle for testing."""
-        if self.config.pipeline == PipelineType.SMC_QUANT_BASIC:
-            return await self._run_quant_analysis(symbol)
-        elif self.config.pipeline == PipelineType.SMC_QUANT:
-            return await self._run_smc_quant_analysis(symbol)
-        elif self.config.pipeline == PipelineType.SMC_MTF:
-            return await self._run_smc_mtf_analysis(symbol)
-        elif self.config.pipeline == PipelineType.BREAKOUT_QUANT:
-            return await self._run_breakout_quant_analysis(symbol)
-        elif self.config.pipeline == PipelineType.RANGE_QUANT:
-            return await self._run_range_quant_analysis(symbol)
-        elif self.config.pipeline == PipelineType.VOLUME_PROFILE:
-            return await self._run_vp_analysis(symbol)
-        elif self.config.pipeline == PipelineType.RULE_BASED:
-            return await self._run_rule_based_analysis(symbol)
-        elif self.config.pipeline in (PipelineType.RULE_QUANT, PipelineType.RULE_QUANT_ENSEMBLE):
-            return await self._run_rule_quant_analysis(symbol)
-        elif self.config.pipeline == PipelineType.DONCHIAN_BREAKOUT:
-            return await self._run_donchian_breakout_analysis(symbol)
-        elif self.config.pipeline == PipelineType.KELTNER_MEAN_REVERSION:
-            return await self._run_keltner_mr_analysis(symbol)
-        elif self.config.pipeline == PipelineType.COPPER_EMA_PULLBACK:
-            return await self._run_rule_strategy_analysis(symbol, "copper_ema_pullback")
-        elif self.config.pipeline == PipelineType.GOLD_PLATINUM_RATIO:
-            return await self._run_rule_strategy_analysis(symbol, "gold_platinum_ratio")
-        else:
-            return await self._run_multi_agent_analysis(symbol)
+        if self.config.pipeline == PipelineType.SCANNER_AUTO:
+            # For test, run a quick scan to determine the best pipeline + timeframe
+            await self._run_scanner()
+            pipeline = self._scanner_pipelines.get(symbol, "rule_based")
+            timeframe = self._scanner_timeframes.get(symbol)
+            self.logger.info(f"SCANNER_AUTO test: {symbol} -> {pipeline} {timeframe or ''}")
+            return await self._dispatch_analysis(symbol, pipeline, timeframe)
+        return await self._dispatch_analysis(symbol, self.config.pipeline.value)
 
     async def _run_donchian_breakout_analysis(self, symbol: str) -> "AnalysisCycleResult":
         """Run donchian_breakout strategy — rule-based, no LLM call."""
@@ -3499,14 +3717,26 @@ class QuantAutomation:
                     df, current_price, current_atr,
                 )
             else:
-                # Single strategy — use strategy selector to pick best
-                from tradingagents.quant_strats.strategy_selector import StrategySelector
-                selector = StrategySelector()
-                selection = selector.select(symbol)
-                strategy_name = selection.recommended_strategy
+                # Single strategy — use forced strategy or auto-select
+                if hasattr(self.config, 'xgb_strategy') and self.config.xgb_strategy:
+                    strategy_name = self.config.xgb_strategy
+                    timeframe = self.config.timeframe
+                    self.logger.info(f"Rule quant: using forced strategy '{strategy_name}' for {symbol}")
+                else:
+                    from tradingagents.quant_strats.strategy_selector import StrategySelector
+                    from tradingagents.indicators.regime import RegimeDetector
 
-                # Use the timeframe that performed best in training
-                timeframe = selection.recommended_timeframe or self.config.timeframe
+                    # Detect regime so selector can score strategies properly
+                    detector = RegimeDetector()
+                    market_regime = detector.detect_trend_regime(high, low, close)
+
+                    selector = StrategySelector()
+                    selection = selector.select(symbol, regime=market_regime)
+                    strategy_name = selection.recommended_strategy
+
+                    # Use the timeframe that performed best in training
+                    timeframe = selection.recommended_timeframe or self.config.timeframe
+
                 if timeframe != self.config.timeframe:
                     self.logger.info(
                         f"Rule quant: using best timeframe {timeframe} "
@@ -3547,6 +3777,295 @@ class QuantAutomation:
                 rationale=f"Rule quant error: {e}",
                 duration_seconds=_time.time() - start,
             )
+
+    # ------------------------------------------------------------------
+    # Donchian Breakout
+    # ------------------------------------------------------------------
+
+    async def _run_donchian_breakout_analysis(self, symbol: str) -> "AnalysisCycleResult":
+        """
+        Run Donchian Channel Breakout analysis — local inference, no LLM call.
+
+        Uses XGBoost model with regime gate (trend/squeeze only) and optional
+        silver-lead confirmation for metals.
+        """
+        import time as _time
+        start = _time.time()
+
+        try:
+            from tradingagents.automation.auto_tuner import load_mt5_data, _compute_atr
+            from tradingagents.xgb_quant.predictor import LivePredictor
+
+            df = load_mt5_data(symbol, self.config.timeframe, bars=500)
+            high = df["high"].values.astype(float)
+            low = df["low"].values.astype(float)
+            close = df["close"].values.astype(float)
+            atr = _compute_atr(high, low, close)
+            current_atr = float(atr[-1]) if not np.isnan(atr[-1]) else 1.0
+            current_price = float(close[-1])
+
+            # Load silver data for metals confirmation
+            silver_df = None
+            if symbol in ("XAUUSD", "XAGUSD"):
+                try:
+                    silver_df = load_mt5_data("XAGUSD", self.config.timeframe, bars=500)
+                except Exception as e:
+                    self.logger.warning(f"Donchian: could not load XAGUSD for silver-lead: {e}")
+
+            predictor = LivePredictor()
+            strategy_name = "donchian_breakout"
+            key = f"{strategy_name}_{symbol}_{self.config.timeframe}"
+
+            if not predictor.load_strategy(strategy_name, symbol, self.config.timeframe):
+                return AnalysisCycleResult(
+                    timestamp=datetime.now(), symbol=symbol,
+                    pipeline="donchian_breakout",
+                    signal="HOLD", confidence=0.0,
+                    rationale=f"No trained donchian_breakout model for {symbol} {self.config.timeframe}",
+                    duration_seconds=_time.time() - start,
+                )
+
+            strategy = predictor._loaded_strategies[key]
+            feature_set = strategy.get_feature_set()
+            features = feature_set.compute(df)
+
+            signal = strategy.predict_signal(
+                features, current_atr, current_price,
+                high=high, low=low, close=close,
+                symbol=symbol, silver_df=silver_df,
+            )
+
+            return AnalysisCycleResult(
+                timestamp=datetime.now(), symbol=symbol,
+                pipeline="donchian_breakout",
+                signal=signal.direction,
+                confidence=signal.confidence,
+                entry_price=signal.entry if signal.entry else current_price,
+                stop_loss=signal.stop_loss if signal.stop_loss else None,
+                take_profit=signal.take_profit if signal.take_profit else None,
+                rationale=signal.rationale,
+                duration_seconds=_time.time() - start,
+            )
+
+        except Exception as e:
+            self.logger.error(f"Donchian breakout analysis failed for {symbol}: {e}")
+            return AnalysisCycleResult(
+                timestamp=datetime.now(), symbol=symbol,
+                pipeline="donchian_breakout",
+                signal="HOLD", confidence=0.0,
+                rationale=f"Donchian error: {e}",
+                duration_seconds=_time.time() - start,
+            )
+
+    # ------------------------------------------------------------------
+    # Gold Trend-Pullback (Mechanical, BUY-only)
+    # ------------------------------------------------------------------
+
+    async def _run_gold_trend_pullback_analysis(self, symbol: str) -> "AnalysisCycleResult":
+        """
+        Gold trend-pullback: mechanical, no LLM, BUY-only.
+
+        Backtested: 63.8% WR, Sharpe 1.18, PF 5.46, 10% DD on XAUUSD D1.
+        Requires XAGUSD data for silver confluence confirmation.
+        """
+        import time as _time
+        start = _time.time()
+
+        try:
+            from tradingagents.automation.auto_tuner import load_mt5_data
+            from tradingagents.xgb_quant.strategies.gold_trend_pullback import gold_trend_pullback
+
+            df_gold = load_mt5_data(symbol, self.config.timeframe, bars=500)
+            high = df_gold["high"].values.astype(float)
+            low = df_gold["low"].values.astype(float)
+            close = df_gold["close"].values.astype(float)
+            open_ = df_gold["open"].values.astype(float)
+
+            # Load silver for cross-reference
+            silver_close = None
+            try:
+                df_silver = load_mt5_data("XAGUSD", self.config.timeframe, bars=500)
+                silver_close = df_silver["close"].values.astype(float)
+            except Exception as e:
+                self.logger.warning(f"Gold Trend-Pullback: could not load XAGUSD: {e}")
+
+            # Optimal params from backtest iteration
+            signal = gold_trend_pullback(
+                high, low, close, open_,
+                silver_close=silver_close,
+                min_confluence=2,
+                pullback_atr_mult=1.0,
+                sl_atr_mult=1.5,
+                rr_target=3.0,
+            )
+
+            # BUY-only: block sells (they have 28% WR on gold)
+            if signal.direction == "SELL":
+                self.logger.info(
+                    f"Gold Trend-Pullback: SELL blocked (BUY-only strategy). "
+                    f"Original: {signal.rationale}"
+                )
+                signal = type(signal)(
+                    direction="HOLD",
+                    rationale=f"SELL blocked (BUY-only): {signal.rationale}",
+                )
+
+            self.logger.info(
+                f"Gold Trend-Pullback for {symbol}: {signal.direction} "
+                f"conf={signal.confluence_count} "
+                f"factors={signal.confluence_factors}"
+            )
+
+            return AnalysisCycleResult(
+                timestamp=datetime.now(),
+                symbol=symbol,
+                pipeline="gold_trend_pullback",
+                signal=signal.direction,
+                confidence=min(signal.confluence_count / 5.0, 1.0) if signal.direction == "BUY" else 0.0,
+                entry_price=signal.entry if signal.entry else None,
+                stop_loss=signal.stop_loss if signal.stop_loss else None,
+                take_profit=signal.take_profit if signal.take_profit else None,
+                rationale=signal.rationale,
+                trailing_stop_atr_multiplier=2.0,
+                duration_seconds=_time.time() - start,
+            )
+
+        except Exception as e:
+            self.logger.error(f"Gold Trend-Pullback error for {symbol}: {e}")
+            import traceback
+            self.logger.error(traceback.format_exc())
+            return AnalysisCycleResult(
+                timestamp=datetime.now(),
+                symbol=symbol,
+                pipeline="gold_trend_pullback",
+                signal="HOLD",
+                confidence=0.0,
+                rationale=f"Error: {str(e)}",
+                duration_seconds=_time.time() - start,
+            )
+
+    # ------------------------------------------------------------------
+    # Pair Scanner
+    # ------------------------------------------------------------------
+
+    async def _run_scanner(self) -> List[str]:
+        """
+        Run pair scanner to find momentum candidates.
+
+        Returns list of symbols to analyse this cycle.  When the scanner is
+        disabled, returns self.config.symbols unchanged.
+
+        In SCANNER_AUTO mode, also populates self._scanner_pipelines with
+        per-symbol pipeline assignments based on detected regime.
+        """
+        if not self.config.enable_scanner:
+            return list(self.config.symbols)
+
+        # Throttle: only re-scan every scanner_interval_seconds
+        now = datetime.now()
+        if self._last_scan_time:
+            elapsed = (now - self._last_scan_time).total_seconds()
+            if elapsed < self.config.scanner_interval_seconds and self._scanner_symbols:
+                return list(self._scanner_symbols)
+
+        import time as _time
+        scan_start = _time.time()
+
+        try:
+            from tradingagents.xgb_quant.scanner import PairScanner
+            from tradingagents.xgb_quant.config import ScannerConfig
+
+            scanner_cfg = ScannerConfig(
+                scan_timeframe=self.config.scanner_timeframe,
+                min_momentum_score=self.config.scanner_min_score,
+            )
+            scanner = PairScanner(config=scanner_cfg)
+
+            # Get existing positions to filter them out
+            existing = []
+            try:
+                from tradingagents.mt5_interface import get_open_positions
+                positions = get_open_positions()
+                if positions:
+                    existing = list({p.get("symbol", "") for p in positions})
+            except Exception:
+                pass
+
+            result = await asyncio.to_thread(
+                scanner.scan,
+                existing_positions=existing,
+            )
+
+            scan_duration = _time.time() - scan_start
+            self._last_scan_time = now
+
+            top = result.shortlist[:self.config.scanner_max_candidates]
+
+            # Build scan result dict for status reporting
+            from dataclasses import asdict
+            self._last_scan_result = {
+                "timestamp": result.timestamp,
+                "watchlist_size": result.watchlist_size,
+                "shortlist": [asdict(s) for s in top],
+                "disqualified_count": len(result.disqualified),
+                "best_candidate": asdict(result.best_candidate) if result.best_candidate else None,
+                "duration_seconds": round(scan_duration, 2),
+            }
+
+            # Extract top candidate symbols + pipeline/timeframe assignments
+            candidates = [s.symbol for s in top]
+            self._scanner_pipelines = {
+                s.symbol: s.recommended_pipeline for s in top if s.recommended_pipeline
+            }
+            self._scanner_timeframes = {
+                s.symbol: s.recommended_timeframe for s in top if s.recommended_timeframe
+            }
+
+            if candidates:
+                self._scanner_symbols = candidates
+                # Build descriptive log with regime info
+                parts = []
+                for s in top:
+                    regime_tag = (
+                        f" [{s.regime} {s.recommended_timeframe}→{s.recommended_pipeline}]"
+                        if s.regime else ""
+                    )
+                    parts.append(f"{s.symbol} {s.direction} ({s.momentum_score}){regime_tag}")
+                self.logger.info(
+                    f"SCANNER: {len(candidates)} candidates from "
+                    f"{result.watchlist_size} pairs in {scan_duration:.1f}s — "
+                    f"{', '.join(parts)}"
+                )
+            else:
+                # No candidates — keep existing config symbols as fallback
+                self._scanner_symbols = list(self.config.symbols)
+                self._scanner_pipelines = {}
+                self._scanner_timeframes = {}
+                self.logger.info(
+                    f"SCANNER: No candidates above threshold ({self.config.scanner_min_score}) "
+                    f"from {result.watchlist_size} pairs in {scan_duration:.1f}s. "
+                    f"Using configured symbols: {', '.join(self.config.symbols)}"
+                )
+
+            return list(self._scanner_symbols)
+
+        except Exception as e:
+            self.logger.error(f"Scanner failed: {e}")
+            import traceback
+            self.logger.error(traceback.format_exc())
+            # Fall back to configured symbols
+            return list(self.config.symbols)
+
+    def get_scanner_status(self) -> Optional[Dict[str, Any]]:
+        """Return the last scan result for API exposure."""
+        if not self._last_scan_result:
+            return None
+        return {
+            **self._last_scan_result,
+            "enabled": self.config.enable_scanner,
+            "active_symbols": list(self._scanner_symbols) if self._scanner_symbols else list(self.config.symbols),
+            "last_scan_time": self._last_scan_time.isoformat() if self._last_scan_time else None,
+        }
 
 
 # Global instance for API access

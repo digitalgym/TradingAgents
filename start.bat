@@ -37,6 +37,27 @@ if "%1"=="--mt5" (
     start "MT5 Worker" cmd /k "title MT5 Worker && python mt5_worker.py start"
 )
 
+:: TMA worker commands: --tma, --tma-restart, --tma-stop
+if "%1"=="--tma-restart" (
+    echo Restarting TMA worker...
+    cd /d "%~dp0web\backend"
+    python tma_worker.py stop
+    timeout /t 3 /nobreak >nul
+    start "TMA Worker" cmd /k "title TMA Worker && python tma_worker.py start"
+    goto :end
+)
+if "%1"=="--tma-stop" (
+    echo Stopping TMA worker...
+    cd /d "%~dp0web\backend"
+    python tma_worker.py stop
+    goto :end
+)
+if "%1"=="--tma" (
+    echo Starting TMA worker...
+    cd /d "%~dp0web\backend"
+    start "TMA Worker" cmd /k "title TMA Worker && python tma_worker.py start"
+)
+
 :: Wait for backend to be ready
 echo Waiting for backend...
 timeout /t 5 /nobreak >nul

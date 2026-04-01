@@ -34,16 +34,20 @@ def _ensure_registry():
     from tradingagents.quant_strats.strategies.keltner_mean_reversion import KeltnerMeanReversionStrategy
     from tradingagents.quant_strats.strategies.copper_ema_pullback import CopperEMAPullbackStrategy
     from tradingagents.quant_strats.strategies.gold_platinum_ratio import GoldPlatinumRatioStrategy
+    from tradingagents.quant_strats.strategies.donchian_breakout import DonchianBreakoutStrategy
+    from tradingagents.quant_strats.strategies.flag_continuation import FlagContinuationStrategy
 
     STRATEGY_CLASSES.update({
         "trend_following": TrendFollowingStrategy,
         "mean_reversion": MeanReversionStrategy,
-        "donchian_breakout": BreakoutStrategy,
+        "breakout": BreakoutStrategy,
         "smc_zones": SMCZonesStrategy,
         "volume_profile_strat": VolumeProfileStrategy,
         "keltner_mean_reversion": KeltnerMeanReversionStrategy,
         "copper_ema_pullback": CopperEMAPullbackStrategy,
         "gold_platinum_ratio": GoldPlatinumRatioStrategy,
+        "donchian_breakout": DonchianBreakoutStrategy,
+        "flag_continuation": FlagContinuationStrategy,
     })
 
 
@@ -111,6 +115,17 @@ class LivePredictor:
 
         feature_set = strategy.get_feature_set()
         features = feature_set.compute(df)
+
+        # Pass price arrays for strategies with regime gates (e.g. mean_reversion)
+        if hasattr(strategy, "check_regime_gate"):
+            high = df["high"].values.astype(float)
+            low = df["low"].values.astype(float)
+            close = df["close"].values.astype(float)
+            return strategy.predict_signal(
+                features, atr, current_price,
+                high=high, low=low, close=close, symbol=symbol,
+            )
+
         return strategy.predict_signal(features, atr, current_price)
 
     def predict_ensemble(

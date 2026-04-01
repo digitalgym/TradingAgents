@@ -43,6 +43,10 @@ class ParameterTuner:
         timeframe: str,
         n_trials: int = 50,
         timeout: Optional[int] = 600,
+        search_mode: str = "full",
+        fixed_xgb_params: Optional[Dict[str, Any]] = None,
+        fixed_risk: Optional[RiskDefaults] = None,
+        min_trades: int = 30,
     ) -> TuneResult:
         """
         Tune risk parameters using Optuna.
@@ -54,6 +58,12 @@ class ParameterTuner:
             timeframe: Timeframe
             n_trials: Number of Optuna trials
             timeout: Max seconds for tuning (default 10 min)
+            search_mode: "full" (all 12 params), "risk_only" (4 risk params),
+                         or "xgb_only" (8 XGB params)
+            fixed_xgb_params: When search_mode="risk_only", use these XGB params
+            fixed_risk: When search_mode="xgb_only", use these risk params
+            min_trades: Minimum trade count to accept a trial (default 30).
+                        Prevents overfitting to a handful of "perfect" trades.
 
         Returns:
             TuneResult with best parameters and performance
@@ -62,17 +72,44 @@ class ParameterTuner:
         optuna.logging.set_verbosity(optuna.logging.WARNING)
 
         best_result_holder = [None]
+        best_score_holder = [-999.0]
         cfg = self.training_config
 
         def objective(trial):
-            # Risk parameters only (no ML hyperparams to tune)
-            risk = RiskDefaults(
-                sl_atr_mult=trial.suggest_float("sl_atr_mult", 1.0, 3.0),
-                tp_atr_mult=trial.suggest_float("tp_atr_mult", 1.5, 4.0),
-                signal_threshold=trial.suggest_float("signal_threshold", 0.55, 0.75),
-                max_hold_bars=trial.suggest_int("max_hold_bars", 10, 30, step=5),
-            )
+            # XGBoost hyperparameters
+            if search_mode == "risk_only" and fixed_xgb_params:
+                xgb_params = dict(fixed_xgb_params)
+            elif search_mode != "risk_only":
+                xgb_params = {
+                    "max_depth": trial.suggest_int("max_depth", 2, 7),
+                    "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.15, log=True),
+                    "n_estimators": trial.suggest_int("n_estimators", 100, 500, step=50),
+                    "subsample": trial.suggest_float("subsample", 0.6, 1.0),
+                    "min_child_weight": trial.suggest_int("min_child_weight", 1, 15),
+                    "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
+                    "reg_alpha": trial.suggest_float("reg_alpha", 0.01, 1.0, log=True),
+                    "reg_lambda": trial.suggest_float("reg_lambda", 0.5, 5.0),
+                    "objective": "binary:logistic",
+                    "eval_metric": "logloss",
+                }
+            else:
+                xgb_params = None
 
+            # Risk parameters
+            if search_mode == "xgb_only" and fixed_risk:
+                risk = fixed_risk
+            else:
+                risk = RiskDefaults(
+                    sl_atr_mult=trial.suggest_float("sl_atr_mult", 1.0, 3.0),
+                    tp_atr_mult=trial.suggest_float("tp_atr_mult", 1.5, 4.0),
+                    signal_threshold=trial.suggest_float("signal_threshold", 0.55, 0.75),
+                    max_hold_bars=trial.suggest_int("max_hold_bars", 10, 30, step=5),
+                    trailing_atr_mult=trial.suggest_float("trailing_atr_mult", 0.0, 3.0),
+                )
+
+            # Apply params to strategy
+            if xgb_params is not None and hasattr(strategy, 'xgb_params'):
+                strategy.xgb_params = xgb_params
             strategy.risk = risk
 
             trainer = WalkForwardTrainer(config=cfg, risk=risk)
@@ -89,21 +126,22 @@ class ParameterTuner:
                 return -999
 
             # Penalty: not enough trades
-            if result.total_trades < cfg.min_trades:
+            if result.total_trades < min_trades:
                 logger.debug(
-                    f"Trial pruned: {result.total_trades} trades < min {cfg.min_trades}"
+                    f"Trial pruned: {result.total_trades} trades < min {min_trades}"
                 )
                 return -999
 
             # Penalty: fold instability
             penalty = 0.0
-            if result.fold_win_rate_std > cfg.max_fold_wr_std:
+            if hasattr(result, 'fold_win_rate_std') and result.fold_win_rate_std > cfg.max_fold_wr_std:
                 penalty += (result.fold_win_rate_std - cfg.max_fold_wr_std) * 3.0
 
             adjusted_sharpe = result.sharpe - penalty
 
             # Track best result
-            if best_result_holder[0] is None or adjusted_sharpe > (best_result_holder[0].sharpe or -999):
+            if adjusted_sharpe > best_score_holder[0]:
+                best_score_holder[0] = adjusted_sharpe
                 best_result_holder[0] = result
 
             return adjusted_sharpe
@@ -111,14 +149,21 @@ class ParameterTuner:
         study = optuna.create_study(direction="maximize")
         study.optimize(objective, n_trials=n_trials, timeout=timeout)
 
+        best_value = best_score_holder[0] if best_result_holder[0] else study.best_value
+
         logger.info(
-            f"Tuning complete for {strategy.name} on {symbol}: "
-            f"best Sharpe={study.best_value:.3f} in {len(study.trials)} trials"
+            f"Tuning ({search_mode}) for {strategy.name} on {symbol}: "
+            f"best Sharpe={best_value:.3f} in {len(study.trials)} trials "
+            f"(min_trades={min_trades})"
         )
 
+        # Use best_params from the study only if it produced a valid result,
+        # otherwise fall back to empty params to signal no valid trial found
+        best_params = study.best_params if best_result_holder[0] else {}
+
         return TuneResult(
-            best_params=study.best_params,
-            best_sharpe=study.best_value,
+            best_params=best_params,
+            best_sharpe=best_value,
             best_result=best_result_holder[0],
             n_trials=len(study.trials),
         )

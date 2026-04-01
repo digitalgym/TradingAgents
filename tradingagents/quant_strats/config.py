@@ -46,6 +46,136 @@ class FeatureWindows:
     donchian_period: int = 20
 
 
+# ---------------------------------------------------------------------------
+# XGBoost default hyperparameters per strategy
+# ---------------------------------------------------------------------------
+
+STRATEGY_XGB_DEFAULTS: Dict[str, Dict[str, Any]] = {
+    "trend_following": {
+        "max_depth": 4,
+        "learning_rate": 0.05,
+        "n_estimators": 200,
+        "subsample": 0.8,
+        "min_child_weight": 5,
+        "colsample_bytree": 0.8,
+        "reg_alpha": 0.1,
+        "reg_lambda": 1.0,
+        "objective": "binary:logistic",
+        "eval_metric": "logloss",
+    },
+    "mean_reversion": {
+        "max_depth": 3,
+        "learning_rate": 0.03,
+        "n_estimators": 300,
+        "subsample": 0.7,
+        "min_child_weight": 10,
+        "colsample_bytree": 0.7,
+        "reg_alpha": 0.5,
+        "reg_lambda": 2.0,
+        "objective": "binary:logistic",
+        "eval_metric": "logloss",
+    },
+    "breakout": {
+        "max_depth": 5,
+        "learning_rate": 0.05,
+        "n_estimators": 200,
+        "subsample": 0.8,
+        "min_child_weight": 3,
+        "colsample_bytree": 0.9,
+        "reg_alpha": 0.1,
+        "reg_lambda": 1.0,
+        "objective": "binary:logistic",
+        "eval_metric": "logloss",
+    },
+    "smc_zones": {
+        "max_depth": 5,
+        "learning_rate": 0.03,
+        "n_estimators": 300,
+        "subsample": 0.8,
+        "min_child_weight": 5,
+        "colsample_bytree": 0.8,
+        "reg_alpha": 0.3,
+        "reg_lambda": 1.5,
+        "objective": "binary:logistic",
+        "eval_metric": "logloss",
+    },
+    "volume_profile_strat": {
+        "max_depth": 4,
+        "learning_rate": 0.05,
+        "n_estimators": 200,
+        "subsample": 0.8,
+        "min_child_weight": 5,
+        "colsample_bytree": 0.8,
+        "reg_alpha": 0.1,
+        "reg_lambda": 1.0,
+        "objective": "binary:logistic",
+        "eval_metric": "logloss",
+    },
+    "donchian_breakout": {
+        "max_depth": 4,
+        "learning_rate": 0.05,
+        "n_estimators": 200,
+        "subsample": 0.8,
+        "min_child_weight": 5,
+        "colsample_bytree": 0.8,
+        "reg_alpha": 0.1,
+        "reg_lambda": 1.0,
+        "objective": "binary:logistic",
+        "eval_metric": "logloss",
+    },
+    "flag_continuation": {
+        "max_depth": 4,
+        "learning_rate": 0.05,
+        "n_estimators": 250,
+        "subsample": 0.8,
+        "min_child_weight": 5,
+        "colsample_bytree": 0.85,
+        "reg_alpha": 0.2,
+        "reg_lambda": 1.5,
+        "objective": "binary:logistic",
+        "eval_metric": "logloss",
+    },
+}
+
+
+# ---------------------------------------------------------------------------
+# Donchian Breakout strategy defaults (mechanical + XGBoost hybrid)
+# ---------------------------------------------------------------------------
+
+FLAG_CONTINUATION_DEFAULTS: Dict[str, Any] = {
+    "timeframe": "H4",
+    "impulse_lookback": 20,
+    "impulse_min_atr_mult": 3.0,
+    "consolidation_min_bars": 5,
+    "consolidation_max_bars": 20,
+    "consolidation_retrace_max": 0.50,
+    "range_contraction_pct": 0.60,
+    "vol_decline_threshold": 0.80,
+    "breakout_atr_mult": 0.5,
+    "adx_threshold": 25,
+    "sl_atr_mult": 1.5,
+    "rr_target": 2.5,
+    "atr_period": 14,
+    "risk_per_trade": 0.01,
+}
+
+
+DONCHIAN_BREAKOUT_DEFAULTS: Dict[str, Any] = {
+    "timeframe": "D1",
+    "donchian_length": 20,
+    "adx_threshold": 25,
+    "bb_width_squeeze_threshold": 0.018,
+    "atr_period": 14,
+    "sl_atr_mult": 2.0,
+    "rr_target": 3.0,
+    "use_trailing": True,
+    "silver_lead_bars": 3,
+    "trend_bias_fast_ma": 50,
+    "trend_bias_slow_ma": 200,
+    "risk_per_trade": 0.01,
+    "partial_exit_pct": 0.5,
+}
+
 
 # ---------------------------------------------------------------------------
 # Risk / execution defaults
@@ -58,6 +188,7 @@ class RiskDefaults:
     tp_atr_mult: float = 2.77
     signal_threshold: float = 0.625
     max_hold_bars: int = 25
+    trailing_atr_mult: float = 0.0  # 0 = no trailing stop, >0 = trail distance in ATR multiples
 
 
 # ---------------------------------------------------------------------------
@@ -67,11 +198,13 @@ class RiskDefaults:
 @dataclass
 class TrainingConfig:
     """Walk-forward training configuration."""
-    train_window: int = 500
-    test_window: int = 100
-    min_train_bars: int = 200     # Minimum bars after indicator warmup
+    train_window: int = 1000
+    test_window: int = 250
+    min_train_bars: int = 400     # Minimum bars after indicator warmup
     warmup_bars: int = 60         # Bars needed for indicator warmup (longest EMA)
     total_bars: int = 2000        # How many bars to fetch from MT5
+    purge_bars: int = 10          # Embargo gap between train/test to prevent leakage
+    n_splits: int = 5             # Number of purged K-fold splits (0 = walk-forward only)
     # Minimum trades required for a backtest result to be considered valid
     min_trades: int = 30
     # Overfitting detection: max allowed gap between train and test win rates
@@ -124,6 +257,9 @@ REGIME_SUITABILITY: Dict[str, Dict[str, float]] = {
     "gold_platinum_ratio": {
         "trending-up": 0.5, "trending-down": 0.5, "ranging": 0.7,
     },
+    "flag_continuation": {
+        "trending-up": 0.95, "trending-down": 0.95, "ranging": 0.1,
+    },
 }
 
 
@@ -159,8 +295,50 @@ DEFAULT_WATCHLIST: List[str] = [
 # Cold start pair-strategy defaults (before backtest data exists)
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Feature window profiles for optimization Phase 3
+# ---------------------------------------------------------------------------
+
+WINDOW_PROFILES: Dict[str, "FeatureWindows"] = {
+    "fast": FeatureWindows(short=5, mid=10, long=30, ema_short=10, ema_long=30),
+    "default": FeatureWindows(),
+    "slow": FeatureWindows(short=20, mid=40, long=100, ema_short=30, ema_long=80),
+}
+
+
+# ---------------------------------------------------------------------------
+# Per-pair optimization config
+# ---------------------------------------------------------------------------
+
+@dataclass
+class OptimizationConfig:
+    """Thresholds and budgets for pair optimization loop."""
+    holdout_frac: float = 0.20
+    min_holdout_bars: int = 200
+    # Tier A: already good
+    tier_a_sharpe: float = 0.3
+    tier_a_win_rate: float = 45.0
+    tier_a_pf: float = 1.0
+    tier_a_min_trades: int = 20
+    # Tier B: improvable
+    tier_b_sharpe: float = -0.5
+    tier_b_win_rate: float = 30.0
+    tier_b_pf: float = 0.5
+    tier_b_min_trades: int = 10
+    # Phase budgets
+    phase1_trials: int = 30
+    phase1_timeout: int = 120
+    phase2_trials: int = 40
+    phase2_timeout: int = 300
+    # Convergence
+    plateau_threshold: float = 0.05
+    min_trades_valid: int = 15
+    overfit_sharpe_ratio: float = 0.50
+
+
 PAIR_STRATEGY_DEFAULTS: Dict[str, str] = {
     "XAUUSD": "trend_following",
+    "XAGUSD": "trend_following",
     "GBPJPY": "trend_following",
     "EURJPY": "trend_following",
     "BTCUSD": "volume_profile_strat",

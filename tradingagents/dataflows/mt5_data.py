@@ -1025,6 +1025,8 @@ def get_open_positions(symbol: str = None) -> list:
             "sl": p.sl,
             "tp": p.tp,
             "profit": p.profit,
+            "swap": p.swap,
+            "time": p.time,
             "comment": p.comment,
         }
         for p in positions

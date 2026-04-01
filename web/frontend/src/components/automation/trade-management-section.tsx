@@ -41,6 +41,7 @@ import {
   ChevronUp,
   Trash2,
   Bell,
+  Eye,
 } from "lucide-react"
 
 export function TradeManagementSection() {
@@ -454,6 +455,43 @@ export function TradeManagementSection() {
                     onCheckedChange={(v) => updateLocal("enable_partial_tp", v)}
                   />
                 </div>
+
+                <div className="flex items-center justify-between rounded-lg border p-3">
+                  <div className="flex items-center gap-2">
+                    <Eye className="h-4 w-4 text-purple-500" />
+                    <Label className="text-sm">Assumption Review</Label>
+                    <HelpTooltip content="Each cycle, reviews open positions against current SMC structure. Checks if bias has shifted, if SL/TP zones are still valid, if CHOCH occurred against your position. Can optionally auto-adjust SL/TP." />
+                  </div>
+                  <Switch
+                    checked={localConfig.enable_assumption_review ?? true}
+                    onCheckedChange={(v) => updateLocal("enable_assumption_review", v)}
+                  />
+                </div>
+
+                {(localConfig.enable_assumption_review ?? true) && (
+                  <>
+                    <div className="flex items-center justify-between rounded-lg border p-3 ml-4">
+                      <div className="flex items-center gap-2">
+                        <Label className="text-sm">Auto-Apply SL/TP</Label>
+                        <HelpTooltip content="When assumption review recommends adjusting SL or TP, apply it automatically. Close recommendations still require manual confirmation. Turn this off to just log recommendations without acting." />
+                      </div>
+                      <Switch
+                        checked={localConfig.assumption_review_auto_apply ?? false}
+                        onCheckedChange={(v) => updateLocal("assumption_review_auto_apply", v)}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border p-3 ml-4">
+                      <div className="flex items-center gap-2">
+                        <Label className="text-sm">Use LLM Assessment</Label>
+                        <HelpTooltip content="Add an LLM-powered nuanced assessment on top of the rule-based checks. More insightful but uses API tokens. Disable to use rule-based checks only (free, faster)." />
+                      </div>
+                      <Switch
+                        checked={localConfig.assumption_review_use_llm ?? false}
+                        onCheckedChange={(v) => updateLocal("assumption_review_use_llm", v)}
+                      />
+                    </div>
+                  </>
+                )}
 
                 <div className="flex items-center justify-between rounded-lg border p-3">
                   <div className="flex items-center gap-2">

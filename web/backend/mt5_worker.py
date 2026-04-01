@@ -61,11 +61,12 @@ class MT5Worker:
         # Recover stale instances (pending_start/running with no active worker)
         await self._recover_stale_instances()
 
-        # Run both loops concurrently
+        # Run all loops concurrently
         await asyncio.gather(
             self._trade_queue_loop(),
             self._control_loop(),
             self._status_update_loop(),
+            self._reconciliation_loop(),
         )
 
     async def stop(self):
@@ -81,7 +82,9 @@ class MT5Worker:
             except Exception as e:
                 print(f"[MT5 Worker] Error stopping {name}: {e}")
 
-        # Update DB status to "stopped" for all managed instances
+        # Mark instances for auto-recovery on next worker startup.
+        # Previously this set status='stopped', which prevented recovery.
+        # Now we set 'pending_start' so _recover_stale_instances picks them up.
         if self.pool:
             try:
                 async with self.pool.acquire() as conn:
@@ -89,13 +92,14 @@ class MT5Worker:
                         try:
                             await conn.execute("""
                                 UPDATE automation_status
-                                SET status = 'stopped', updated_at = NOW()
+                                SET status = 'pending_start', updated_at = NOW()
                                 WHERE instance_name = $1
                             """, name)
+                            print(f"[MT5 Worker] Marked {name} as pending_start for recovery")
                         except Exception as e:
                             print(f"[MT5 Worker] Failed to update DB status for {name}: {e}")
 
-                    # Also mark mt5_worker as stopped
+                    # Mark mt5_worker itself as stopped (it's the worker, not an automation)
                     await conn.execute("""
                         UPDATE automation_status
                         SET status = 'stopped', updated_at = NOW()
@@ -130,10 +134,10 @@ class MT5Worker:
             async with self.pool.acquire() as conn:
                 # Find instances that were pending_start or running (from a previous worker)
                 rows = await conn.fetch("""
-                    SELECT instance_name, status, config
+                    SELECT instance_name, status, config, pipeline
                     FROM automation_status
                     WHERE status IN ('pending_start', 'running')
-                      AND instance_name != 'mt5_worker'
+                      AND instance_name NOT IN ('mt5_worker', 'tma_worker', 'trade_manager')
                 """)
 
                 if not rows:
@@ -151,6 +155,13 @@ class MT5Worker:
                         config = raw_config
                     else:
                         config = {}
+
+                    # Inject pipeline from DB column into config (recovery may lose it)
+                    db_pipeline = row.get("pipeline")
+                    config_pipeline_before = config.get("pipeline", "MISSING")
+                    if db_pipeline:
+                        config.setdefault("pipeline", db_pipeline)
+                    print(f"[MT5 Worker] Recovery {name}: db_pipeline={db_pipeline}, config_pipeline_before={config_pipeline_before}, config_pipeline_after={config.get('pipeline', 'MISSING')}")
 
                     if not config:
                         print(f"[MT5 Worker] Skipping {name}: no config saved")
@@ -426,6 +437,7 @@ class MT5Worker:
                         WHERE command_id IN (
                             SELECT command_id FROM automation_control
                             WHERE status = 'pending'
+                              AND instance_name != 'trade_manager'
                             ORDER BY created_at
                             LIMIT 10
                             FOR UPDATE SKIP LOCKED
@@ -454,7 +466,7 @@ class MT5Worker:
         else:
             config = {}
 
-        print(f"[MT5 Worker] Control: {action} for {instance}")
+        print(f"[MT5 Worker] Control: {action} for {instance}, payload pipeline={config.get('pipeline', 'MISSING')}")
 
         try:
             if action == "start":
@@ -470,6 +482,12 @@ class MT5Worker:
             elif action == "restart":
                 await self._stop_automation(instance)
                 await self._start_automation(instance, config)
+            elif action == "batch_train":
+                await self._run_batch_train(instance, config, conn, cmd_id)
+                return  # batch_train manages its own completion status
+            elif action == "optimize":
+                await self._run_pair_optimization(instance, config, conn, cmd_id)
+                return
             else:
                 print(f"[MT5 Worker] Unknown action: {action}")
 
@@ -491,52 +509,28 @@ class MT5Worker:
 
     async def _start_automation(self, instance_name: str, config: dict):
         """Start an automation instance."""
-        print(f"[MT5 Worker] _start_automation called for {instance_name}")
-        print(f"[MT5 Worker] Config: {json.dumps(config, indent=2)}")
+        print(f"[MT5 Worker] _start_automation called for {instance_name}, config pipeline={config.get('pipeline', 'MISSING')}")
 
         if instance_name in self._automation_instances:
             automation = self._automation_instances[instance_name]
-            print(f"[MT5 Worker] Found existing instance, _running={getattr(automation, '_running', 'N/A')}")
+            inst_type = type(automation).__name__
+            print(f"[MT5 Worker] Found existing instance type={inst_type}, _running={getattr(automation, '_running', 'N/A')}")
             if automation._running:
-                print(f"[MT5 Worker] {instance_name} is already running, skipping")
+                print(f"[MT5 Worker] {instance_name} is already running as {inst_type}, skipping")
                 return
+            else:
+                # Stale stopped instance — remove so we can start fresh
+                print(f"[MT5 Worker] Removing stale stopped {inst_type} instance {instance_name}")
+                del self._automation_instances[instance_name]
 
         try:
-            pipeline_name = config.get("pipeline", "smc_quant_basic")
-
-            # Trade Management Agent — separate path
-            if pipeline_name == "trade_management":
-                print(f"[MT5 Worker] Starting Trade Management Agent...")
-                from tradingagents.automation.trade_management_agent import (
-                    TradeManagementAgent,
-                    TradeManagementConfig,
-                )
-                config["instance_name"] = instance_name
-                tma_config = TradeManagementConfig.from_dict(config)
-                agent = TradeManagementAgent(tma_config)
-                self._automation_instances[instance_name] = agent
-
-                worker_ref = self
-
-                def tma_done_callback(task):
-                    try:
-                        exc = task.exception()
-                        if exc:
-                            print(f"[MT5 Worker] ERROR: TMA failed: {exc}")
-                            import traceback
-                            traceback.print_exception(type(exc), exc, exc.__traceback__)
-                            asyncio.ensure_future(worker_ref._broadcast_status(
-                                instance_name, "error", error=str(exc)
-                            ))
-                    except asyncio.CancelledError:
-                        pass
-
-                task = asyncio.create_task(agent.start())
-                task.add_done_callback(tma_done_callback)
-                self._automation_tasks[instance_name] = task
-                print(f"[MT5 Worker] Trade Management Agent started")
-                await self._broadcast_status(instance_name, "running")
+            # TMA is handled by tma_worker.py — reject if it somehow gets here
+            if instance_name == "trade_manager":
+                print(f"[MT5 Worker] REJECTED: trade_manager must use tma_worker.py, not mt5_worker")
                 return
+
+            pipeline_name = config.get("pipeline", "smc_quant_basic")
+            print(f"[MT5 Worker] Starting quant: {instance_name} -> pipeline={pipeline_name}")
 
             from tradingagents.automation.quant_automation import (
                 QuantAutomation,
@@ -669,6 +663,137 @@ class MT5Worker:
         await automation.update_config(updates)
         print(f"[MT5 Worker] Updated config for: {instance_name}")
 
+    async def _run_batch_train(self, instance_name: str, config: dict, conn, cmd_id: str):
+        """Run batch training in the worker (has MT5 data access)."""
+        print(f"[MT5 Worker] Starting batch training: {config}")
+
+        await self._broadcast_status(instance_name, "running", message="Batch training starting...")
+
+        try:
+            from tradingagents.xgb_quant.batch_trainer import BatchTrainer
+            from dataclasses import asdict
+
+            trainer = BatchTrainer()
+            worker_ref = self
+            loop = asyncio.get_running_loop()
+
+            def progress(current, total, msg):
+                # Schedule broadcast on the main event loop from this background thread
+                loop.call_soon_threadsafe(
+                    loop.create_task,
+                    worker_ref._broadcast_status(
+                        instance_name, "running",
+                        current=current, total=total, message=msg,
+                    ),
+                )
+
+            trainer.on_progress(progress)
+
+            result = await asyncio.to_thread(
+                trainer.run,
+                symbols=config.get("symbols") or None,
+                timeframes=config.get("timeframes", ["D1", "H4"]),
+                strategies=config.get("strategies") or None,
+                bars=config.get("bars", 2000),
+                skip_fresh_days=config.get("skip_fresh_days", 0),
+            )
+
+            result_dict = asdict(result)
+
+            await self._broadcast_status(
+                instance_name, "done",
+                message=(
+                    f"Done: {result.completed} trained, {result.skipped} skipped, "
+                    f"{result.failed} failed, {len(result.blacklist)} blacklisted "
+                    f"in {result.duration_seconds:.0f}s"
+                ),
+                result=result_dict,
+            )
+
+            await conn.execute("""
+                UPDATE automation_control
+                SET status = 'completed', applied_at = NOW()
+                WHERE command_id = $1
+            """, cmd_id)
+            print(f"[MT5 Worker] Batch training completed: {result.completed} trained")
+
+        except Exception as e:
+            import traceback
+            print(f"[MT5 Worker] Batch training failed: {e}")
+            traceback.print_exc()
+            await self._broadcast_status(instance_name, "error", error=str(e))
+            await conn.execute("""
+                UPDATE automation_control
+                SET status = 'failed', error = $2, applied_at = NOW()
+                WHERE command_id = $1
+            """, cmd_id, str(e))
+
+    async def _run_pair_optimization(self, instance_name: str, config: dict, conn, cmd_id: str):
+        """Run per-pair optimization in the worker."""
+        print(f"[MT5 Worker] Starting pair optimization: {config}")
+        await self._broadcast_status(instance_name, "running", message="Pair optimization starting...")
+
+        try:
+            from tradingagents.xgb_quant.pair_optimizer import PairOptimizer
+            from tradingagents.xgb_quant.config import OptimizationConfig
+            from dataclasses import asdict
+
+            optimizer = PairOptimizer(
+                config=OptimizationConfig(),
+                max_hours=config.get("max_hours", 6.0),
+            )
+            loop = asyncio.get_running_loop()
+
+            def progress(pair_idx, total_pairs, msg):
+                loop.call_soon_threadsafe(
+                    loop.create_task,
+                    self._broadcast_status(
+                        instance_name, "running",
+                        current=pair_idx, total=total_pairs, message=msg,
+                    ),
+                )
+
+            optimizer.on_progress(progress)
+
+            result = await asyncio.to_thread(
+                optimizer.run,
+                symbols=config.get("symbols") or None,
+                timeframes=config.get("timeframes", ["D1", "H4"]),
+                strategies=config.get("strategies") or None,
+                bars=config.get("bars", 2000),
+            )
+
+            result_dict = asdict(result)
+            await self._broadcast_status(
+                instance_name, "done",
+                message=(
+                    f"Done: {result.tier_b_improved} improved, "
+                    f"{result.tier_a_count} already good, "
+                    f"{result.tier_c_count} non-viable, "
+                    f"{result.overfit_count} overfit "
+                    f"in {result.duration_seconds:.0f}s"
+                ),
+                result=result_dict,
+            )
+
+            await conn.execute("""
+                UPDATE automation_control
+                SET status = 'completed', applied_at = NOW()
+                WHERE command_id = $1
+            """, cmd_id)
+            print(f"[MT5 Worker] Pair optimization completed")
+
+        except Exception as e:
+            import traceback
+            print(f"[MT5 Worker] Pair optimization failed: {e}")
+            traceback.print_exc()
+            await self._broadcast_status(instance_name, "error", error=str(e))
+            await conn.execute("""
+                UPDATE automation_control
+                SET status = 'failed', error = $2, applied_at = NOW()
+                WHERE command_id = $1
+            """, cmd_id, str(e))
+
     async def _status_update_loop(self):
         """Periodically update automation status in DB."""
         print("[MT5 Worker] Status update loop started")
@@ -740,6 +865,29 @@ class MT5Worker:
                 print(f"[MT5 Worker] Status update error: {e}")
 
             await asyncio.sleep(10)  # Check every 10 seconds
+
+
+    async def _reconciliation_loop(self):
+        """Periodically reconcile active decisions against MT5 closed positions.
+
+        Catches orphaned decisions (still 'active' in DB but position already
+        closed in MT5) regardless of whether TMA or quant automation is running.
+        """
+        print("[MT5 Worker] Reconciliation loop started (every 5 min)")
+        await asyncio.sleep(60)  # Initial delay — let other loops start first
+
+        while self.running:
+            try:
+                from tradingagents.trade_decisions import reconcile_decisions
+                reconciled = reconcile_decisions(days_back=14)
+                if reconciled:
+                    print(f"[MT5 Worker] Reconciled {len(reconciled)} orphaned decision(s):")
+                    for d in reconciled:
+                        print(f"  {d.get('decision_id')}: {d.get('symbol')} {d.get('action')} -> closed")
+            except Exception as e:
+                print(f"[MT5 Worker] Reconciliation error: {e}")
+
+            await asyncio.sleep(300)  # Every 5 minutes
 
 
 async def main():

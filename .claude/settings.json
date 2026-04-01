@@ -4,7 +4,11 @@
       "Bash(xargs:*)",
       "Bash(POSTGRES_URL=\"postgresql://tradingagents:tradingagents@localhost:5432/tradingagents\" python -c \":*)",
       "Bash(git rm:*)",
-      "Bash(tail -30 d:/Documents/TradingAgents/logs/trade_management/*.log)"
+      "Bash(tail -30 d:/Documents/TradingAgents/logs/trade_management/*.log)",
+      "Read(//d/Documents/TradingAgents/$HOME/.claude/**)",
+      "Read(//d/Documents/TradingAgents/$HOME/.claude/plans/**)",
+      "Read(//d:/Documents/**)",
+      "Bash(curl -s -X POST http://localhost:8000/api/automation/quant/start -H 'Content-Type: application/json' -d '{:*)"
     ]
   }
 }

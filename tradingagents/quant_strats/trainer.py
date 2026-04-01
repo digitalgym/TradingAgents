@@ -5,6 +5,8 @@ Evaluates strategies using walk-forward validation:
 - No look-ahead bias (features computed only from past data)
 - Rolling test windows for out-of-sample evaluation
 - Uses existing _simulate_exit() for realistic trade outcome simulation
+- Regime-filtered training: strategies can restrict training to specific regimes
+- Regime-gated backtesting: trades only count when regime gate passes
 """
 
 import json
@@ -22,6 +24,65 @@ from tradingagents.quant_strats.config import (
 from tradingagents.quant_strats.strategies.base import BaseStrategy
 
 logger = logging.getLogger(__name__)
+
+
+def _compute_regime_mask(
+    df: pd.DataFrame,
+    regime_type: str = "ranging",
+    lookback: int = 25,
+) -> np.ndarray:
+    """
+    Pre-compute a boolean regime mask for every bar in the DataFrame.
+
+    For each bar i (where i >= lookback), runs analyze_range() on bars [i-lookback:i+1]
+    and stores whether the market is in the requested regime.
+
+    Args:
+        df: OHLCV DataFrame
+        regime_type: "ranging" (for mean reversion) or "trending" (for trend/breakout)
+        lookback: Window size for regime detection
+
+    Returns:
+        Boolean array of length len(df). True = bar is in the requested regime.
+    """
+    from tradingagents.agents.analysts.range_quant import analyze_range
+
+    high = df["high"].values.astype(float)
+    low = df["low"].values.astype(float)
+    close = df["close"].values.astype(float)
+    n = len(close)
+
+    mask = np.zeros(n, dtype=bool)
+
+    for i in range(lookback, n):
+        analysis = analyze_range(
+            high[:i + 1],
+            low[:i + 1],
+            close[:i + 1],
+            lookback=lookback,
+        )
+
+        if regime_type == "ranging":
+            mask[i] = analysis.get("is_ranging", False)
+        elif regime_type == "trending":
+            mask[i] = not analysis.get("is_ranging", True)
+
+    ranging_pct = mask.sum() / max(n, 1) * 100
+    logger.info(
+        f"  Regime mask ({regime_type}): {mask.sum()}/{n} bars "
+        f"({ranging_pct:.1f}%) pass filter"
+    )
+
+    return mask
+
+
+# Map strategy names to their required regime
+STRATEGY_REGIME_FILTER: Dict[str, str] = {
+    "mean_reversion": "ranging",
+    # Add more as needed:
+    # "trend_following": "trending",
+    # "donchian_breakout": "trending",
+}
 
 
 @dataclass
@@ -49,6 +110,10 @@ class BacktestResult:
     train_win_rate: float = 0.0
     test_win_rate: float = 0.0
     train_test_gap: float = 0.0
+    # Regime filtering info
+    regime_filtered: bool = False       # Was regime filtering applied?
+    regime_type: Optional[str] = None   # "ranging", "trending", or None
+    regime_bars_pct: float = 0.0        # % of bars that passed the regime filter
 
     def __post_init__(self):
         if self.fold_win_rates is None:
@@ -76,12 +141,26 @@ class WalkForwardTrainer:
         symbol: str,
         timeframe: str,
         use_trade_labels: bool = False,
+        regime_filter: bool = True,
     ) -> BacktestResult:
         """
         Walk-forward evaluate a rule-based strategy.
 
         No training step — strategies use fixed rules.
         Walk-forward structure is kept to measure stability across time windows.
+
+        Args:
+            strategy: Strategy instance with feature set and params
+            df: Full OHLCV DataFrame
+            symbol: Symbol name (for logging/saving)
+            timeframe: Timeframe string
+            use_trade_labels: If True, use trade-outcome labels instead of direction
+            regime_filter: If True, apply regime filtering to training and backtesting.
+                           Mean reversion only trains/trades on ranging bars.
+                           Set False to see unfiltered performance.
+
+        Returns:
+            BacktestResult with performance metrics
         """
         feature_set = strategy.get_feature_set()
         cfg = self.config
@@ -99,24 +178,53 @@ class WalkForwardTrainer:
             f"({valid_rows / total_rows * 100:.0f}%), {len(features.columns)} columns"
         )
 
+        # Regime mask — filter training and backtest bars to the correct regime
+        regime_mask = None
+        required_regime = STRATEGY_REGIME_FILTER.get(strategy.name)
+        if regime_filter and required_regime:
+            logger.info(
+                f"  Computing regime mask for {strategy.name} "
+                f"(required: {required_regime})..."
+            )
+            regime_mask = _compute_regime_mask(df, regime_type=required_regime)
+
         # Walk-forward folds (for stability measurement, not training)
         all_trades = []
         n = len(df)
+        purge = cfg.purge_bars
+
+        if cfg.n_splits > 0:
+            # Purged K-fold: splits data into n_splits sequential folds,
+            # with a purge gap between train and test to prevent leakage
+            # from labels that look ahead (e.g. next-bar direction).
+            folds = self._purged_kfold_splits(n, cfg.n_splits, purge)
+            fold_mode = f"purged {cfg.n_splits}-fold"
+        else:
+            # Classic walk-forward with purge gap
+            folds = []
+            for fold_start in range(0, n - cfg.train_window - cfg.test_window, cfg.test_window):
+                train_end = fold_start + cfg.train_window
+                test_start = train_end + purge
+                test_end = min(test_start + cfg.test_window, n - 1)
+                if test_start >= test_end:
+                    continue
+                folds.append((fold_start, train_end, test_start, test_end))
+            fold_mode = "walk-forward"
+
+        logger.info(
+            f"  {fold_mode}: {len(folds)} folds "
+            f"(train={cfg.train_window}, test={cfg.test_window}, "
+            f"purge={purge}, min_train={cfg.min_train_bars})"
+        )
+
         fold_count = 0
         fold_win_rates: List[float] = []
 
-        total_folds = max(1, (n - cfg.train_window - cfg.test_window) // cfg.test_window + 1)
-        logger.info(
-            f"  Walk-forward: {total_folds} potential folds "
-            f"(window={cfg.test_window})"
-        )
-
-        for fold_start in range(cfg.train_window, n - cfg.test_window, cfg.test_window):
-            fold_end = min(fold_start + cfg.test_window, n - 1)
-
+        for train_start, train_end, test_start, test_end in folds:
             # Score and simulate trades for this fold
             fold_trades = self._simulate_trades_from_rules(
-                features, fold_start, fold_end, df, strategy,
+                features, test_start, test_end, df, strategy,
+                regime_mask=regime_mask,
             )
             all_trades.extend(fold_trades)
 
@@ -127,7 +235,7 @@ class WalkForwardTrainer:
 
             fold_count += 1
             logger.info(
-                f"  Fold {fold_count}: bars={fold_start}-{fold_end}, "
+                f"  Fold {fold_count}: bars={test_start}-{test_end}, "
                 f"trades={len(fold_trades)}"
                 + (f", wr={fold_wr:.1%}" if fold_trades else "")
             )
@@ -166,17 +274,55 @@ class WalkForwardTrainer:
                 f"(minimum {cfg.min_trades})."
             )
 
+        # Tag with regime info
+        if regime_mask is not None:
+            result.regime_filtered = True
+            result.regime_type = required_regime
+            result.regime_bars_pct = float(regime_mask.sum() / max(len(regime_mask), 1) * 100)
+
         # Save result
         self._save_result(result)
 
+        regime_tag = f" [regime={required_regime}, {result.regime_bars_pct:.0f}% bars]" if result.regime_filtered else ""
         logger.info(
-            f"{strategy.name} on {symbol} {timeframe}: "
+            f"{strategy.name} on {symbol} {timeframe}{regime_tag}: "
             f"{result.total_trades} trades, {result.win_rate:.1f}% WR, "
             f"PF={result.profit_factor:.2f}, Sharpe={result.sharpe:.2f}, "
             f"fold std={result.fold_win_rate_std:.1%}"
         )
 
         return result
+
+    @staticmethod
+    def _purged_kfold_splits(
+        n: int, n_splits: int, purge: int,
+    ) -> list:
+        """
+        Generate purged K-fold splits for time series data.
+
+        Each split uses all data before the test fold as training,
+        with a purge gap between train end and test start to prevent
+        label leakage (e.g. when labels look 1+ bars ahead).
+
+        Returns list of (train_start, train_end, test_start, test_end) tuples.
+        """
+        fold_size = n // n_splits
+        splits = []
+
+        for i in range(n_splits):
+            test_start = i * fold_size
+            test_end = min(test_start + fold_size, n)
+
+            # Train on everything BEFORE the test fold (with purge gap)
+            train_end = max(0, test_start - purge)
+
+            if train_end < 100:
+                # Not enough training data for early folds — skip
+                continue
+
+            splits.append((0, train_end, test_start, test_end))
+
+        return splits
 
     def _simulate_trades_from_rules(
         self,
@@ -185,8 +331,14 @@ class WalkForwardTrainer:
         end_idx: int,
         df: pd.DataFrame,
         strategy: BaseStrategy,
+        regime_mask: Optional[np.ndarray] = None,
     ) -> List[Dict[str, Any]]:
-        """Score each bar with rules and simulate trades."""
+        """
+        Score each bar with rules and simulate trades.
+
+        If regime_mask is provided, trades are only taken on bars where
+        the mask is True — matching what the live regime gate does.
+        """
         from tradingagents.automation.auto_tuner import _simulate_exit, _compute_atr
 
         high = df["high"].values.astype(float)
@@ -195,11 +347,17 @@ class WalkForwardTrainer:
         atr = _compute_atr(high, low, close)
 
         trades = []
+        gated_count = 0
         threshold = strategy.risk.signal_threshold
         max_hold = strategy.risk.max_hold_bars
 
         for i in range(start_idx, end_idx):
             if np.isnan(atr[i]) or atr[i] < 1e-10:
+                continue
+
+            # Regime gate: skip bars where regime doesn't match
+            if regime_mask is not None and not regime_mask[i]:
+                gated_count += 1
                 continue
 
             row = features.iloc[i]
@@ -220,8 +378,12 @@ class WalkForwardTrainer:
             tp = signal.take_profit
             prob = signal.confidence
 
-            # Simulate exit
-            result = _simulate_exit(direction, entry, sl, tp, high, low, close, i, max_hold)
+            # Simulate exit (with trailing stop if configured)
+            result = _simulate_exit(
+                direction, entry, sl, tp, high, low, close, i, max_hold,
+                trailing_atr_mult=strategy.risk.trailing_atr_mult,
+                atr=atr,
+            )
 
             trades.append({
                 "bar": i,
@@ -235,6 +397,9 @@ class WalkForwardTrainer:
                 "bars_held": result["bars"],
                 "prob": float(prob),
             })
+
+        if gated_count > 0:
+            logger.info(f"    Regime gate blocked {gated_count} trades in this fold")
 
         return trades
 

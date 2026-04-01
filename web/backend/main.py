@@ -34,7 +34,7 @@ SCHEDULER_STATE_FILE = PROJECT_ROOT / "scheduler_state.json"
 
 from tradingagents.default_config import DEFAULT_CONFIG
 from tradingagents import trade_decisions
-from state_store import AutomationState, LearningCycleState, AnalysisCache, TrailingStopState, AgentOutputCache
+from state_store import AutomationState, LearningCycleState, AnalysisCache, AgentOutputCache
 from tradingagents.schemas import (
     TradeAnalysisResult,
     PositionReview,
@@ -63,113 +63,8 @@ def safe_attr(obj, attr, default=None):
 websocket_connections: List[WebSocket] = []
 analysis_tasks: dict = {}
 
-# Trailing stop monitor state
-trailing_stop_monitor_running = False
 
-
-async def trailing_stop_monitor():
-    """Background task that monitors and updates trailing stops.
-
-    Runs every 2 seconds, checks all positions with active trailing stops,
-    and updates SL as price moves favorably.
-    """
-    global trailing_stop_monitor_running
-    trailing_stop_monitor_running = True
-    print("[Trailing Stop Monitor] Started")
-
-    import MetaTrader5 as mt5
-
-    while trailing_stop_monitor_running:
-        try:
-            # Get all active trailing stops
-            trailing_stops = TrailingStopState.get_all()
-
-            if trailing_stops:
-                # Ensure MT5 is initialized
-                if not mt5.initialize():
-                    print("[Trailing Stop Monitor] MT5 not initialized, skipping cycle")
-                    await asyncio.sleep(2)
-                    continue
-
-                # Get all open positions
-                positions = mt5.positions_get()
-                if positions is None:
-                    positions = []
-
-                open_tickets = {p.ticket for p in positions}
-
-                for ticket, config in list(trailing_stops.items()):
-                    # Remove trailing stop if position is closed
-                    if ticket not in open_tickets:
-                        TrailingStopState.disable(ticket)
-                        print(f"[Trailing Stop Monitor] Position {ticket} closed, removing trailing stop")
-                        continue
-
-                    # Get current position
-                    pos = next((p for p in positions if p.ticket == ticket), None)
-                    if not pos:
-                        continue
-
-                    # Get current price
-                    tick = mt5.symbol_info_tick(pos.symbol)
-                    if tick is None:
-                        continue
-
-                    current_price = tick.bid if pos.type == 1 else tick.ask  # type 1 = SELL
-                    direction = config["direction"]
-                    trail_distance = config["trail_distance"]
-                    best_price = config["best_price"]
-
-                    # Check if price moved favorably
-                    new_best = best_price
-                    if direction == "BUY" and current_price > best_price:
-                        new_best = current_price
-                    elif direction == "SELL" and current_price < best_price:
-                        new_best = current_price
-
-                    if new_best != best_price:
-                        # Price moved favorably - calculate new SL
-                        if direction == "BUY":
-                            new_sl = new_best - trail_distance
-                        else:
-                            new_sl = new_best + trail_distance
-
-                        # Get symbol info for rounding
-                        symbol_info = mt5.symbol_info(pos.symbol)
-                        if symbol_info:
-                            new_sl = round(new_sl, symbol_info.digits)
-
-                        # Only move SL if it's better than current
-                        should_update = False
-                        if direction == "BUY" and (pos.sl == 0 or new_sl > pos.sl):
-                            should_update = True
-                        elif direction == "SELL" and (pos.sl == 0 or new_sl < pos.sl):
-                            should_update = True
-
-                        if should_update:
-                            # Modify position
-                            modify_request = {
-                                "action": mt5.TRADE_ACTION_SLTP,
-                                "position": ticket,
-                                "symbol": pos.symbol,
-                                "sl": new_sl,
-                                "tp": pos.tp,
-                            }
-
-                            result = mt5.order_send(modify_request)
-
-                            if result.retcode == mt5.TRADE_RETCODE_DONE:
-                                TrailingStopState.update_best_price(ticket, new_best)
-                                print(f"[Trailing Stop Monitor] {pos.symbol} #{ticket}: Trailed SL to {new_sl} (best: {new_best})")
-                            else:
-                                print(f"[Trailing Stop Monitor] Failed to trail {ticket}: {result.comment}")
-
-        except Exception as e:
-            print(f"[Trailing Stop Monitor] Error: {e}")
-
-        await asyncio.sleep(2)  # Check every 2 seconds
-
-    print("[Trailing Stop Monitor] Stopped")
+# Old trailing stop monitor removed — replaced by Trade Management Agent (TMA)
 
 
 async def check_and_recover_services():
@@ -246,19 +141,13 @@ async def check_and_recover_services():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events"""
-    global trailing_stop_monitor_running
     print("TradingAgents API starting...")
 
     # Check and recover services that should be running
     await check_and_recover_services()
 
-    # Start trailing stop monitor
-    asyncio.create_task(trailing_stop_monitor())
-
     yield
 
-    # Stop trailing stop monitor
-    trailing_stop_monitor_running = False
     print("TradingAgents API shutting down...")
 
 
@@ -685,16 +574,20 @@ async def list_positions():
     from tradingagents.risk.stop_loss import get_atr_for_symbol
     atr_cache: dict[str, float | None] = {}
 
-    # Add trailing stop status, ATR, and automation source to each position
-    trailing_stops = TrailingStopState.get_all()
+    # Add trailing stop status from TMA policies, ATR, and automation source
+    tma_policies = {}
+    try:
+        store = _get_management_store()
+        tma_policies = store.load_all_management_policies()
+    except Exception:
+        pass
+
     for pos in positions:
-        trailing_config = trailing_stops.get(pos["ticket"])
-        if trailing_config:
-            pos["trailing_active"] = True
-            pos["trailing_distance"] = trailing_config["trail_distance"]
-            pos["trailing_best_price"] = trailing_config["best_price"]
-        else:
-            pos["trailing_active"] = False
+        ticket = pos["ticket"]
+        policy = tma_policies.get(ticket, {})
+        pos["trailing_active"] = not policy.get("frozen", False) and policy.get("enable_trailing_stop", True) if policy else False
+        pos["trailing_distance"] = policy.get("trail_distance") if policy else None
+        pos["trailing_best_price"] = policy.get("best_price") if policy else None
 
         # Automation source tag
         pos["source"] = ticket_source.get(pos["ticket"])
@@ -1041,15 +934,20 @@ async def set_position_trailing(ticket: int, request: TrailingStopRequest = None
         if result.retcode != mt5.TRADE_RETCODE_DONE:
             raise HTTPException(status_code=400, detail=f"Modify failed: {result.comment}")
 
-        # Enable automatic trailing - this will be monitored by the background task
-        TrailingStopState.enable(
-            ticket=ticket,
-            symbol=pos.symbol,
-            direction=direction,
-            trail_distance=trail_distance,
-            atr_multiplier=multiplier,
-            current_price=current_price
-        )
+        # Store as TMA policy so the Trade Management Agent picks it up
+        try:
+            store = _get_management_store()
+            store.save_management_policy(ticket, pos.symbol, {
+                "ticket": ticket,
+                "symbol": pos.symbol,
+                "trailing_stop_atr_multiplier": multiplier,
+                "enable_trailing_stop": True,
+                "trail_distance": trail_distance,
+                "best_price": current_price,
+                "direction": direction,
+            })
+        except Exception as e:
+            logger.warning(f"Failed to save TMA policy: {e}")
 
         return {
             "success": True,
@@ -1069,11 +967,12 @@ async def set_position_trailing(ticket: int, request: TrailingStopRequest = None
 async def disable_position_trailing(ticket: int):
     """Disable automatic trailing for a position (keeps current SL)."""
     try:
-        trailing_config = TrailingStopState.get(ticket)
-        if not trailing_config:
+        store = _get_management_store()
+        policy = store.load_management_policy(ticket)
+        if not policy:
             raise HTTPException(status_code=404, detail="No active trailing stop for this position")
 
-        TrailingStopState.disable(ticket)
+        store.delete_management_policy(ticket)
 
         return {
             "success": True,
@@ -1087,22 +986,22 @@ async def disable_position_trailing(ticket: int):
 
 @app.get("/api/positions/trailing")
 async def get_active_trailing_stops():
-    """Get all positions with active trailing stops."""
+    """Get all positions with active trailing stops (from TMA policies)."""
     try:
-        trailing_stops = TrailingStopState.get_all()
+        store = _get_management_store()
+        policies = store.load_all_management_policies()
         return {
             "trailing_stops": [
                 {
-                    "ticket": config["ticket"],
-                    "symbol": config["symbol"],
-                    "direction": config["direction"],
-                    "trail_distance": config["trail_distance"],
-                    "atr_multiplier": config["atr_multiplier"],
-                    "best_price": config["best_price"],
-                    "enabled_at": config["enabled_at"],
-                    "last_updated": config.get("last_updated"),
+                    "ticket": int(ticket),
+                    "symbol": policy.get("symbol"),
+                    "direction": policy.get("direction"),
+                    "trail_distance": policy.get("trail_distance"),
+                    "atr_multiplier": policy.get("trailing_stop_atr_multiplier"),
+                    "best_price": policy.get("best_price"),
                 }
-                for config in trailing_stops.values()
+                for ticket, policy in policies.items()
+                if policy.get("enable_trailing_stop", True) and not policy.get("frozen", False)
             ]
         }
     except Exception as e:
@@ -6243,27 +6142,298 @@ async def get_xgboost_performance_matrix():
         return {"status": "error", "error": str(e)}
 
 
+class PairScanRequest(BaseModel):
+    min_score: int = 40
+    max_candidates: int = 10
+    timeframe: str = "H4"
+
+
 @app.post("/api/xgboost/scan")
-async def run_pair_scan():
+async def run_pair_scan(request: PairScanRequest = PairScanRequest()):
     """Scan watchlist for pairs on the move."""
     try:
         from tradingagents.quant_strats.scanner import PairScanner
+        from tradingagents.quant_strats.config import ScannerConfig
         from dataclasses import asdict
 
-        scanner = PairScanner()
-        result = scanner.scan()
+        cfg = ScannerConfig(
+            scan_timeframe=request.timeframe,
+            min_momentum_score=request.min_score,
+        )
+        scanner = PairScanner(config=cfg)
+
+        # Get existing positions to mark them
+        existing = []
+        try:
+            from tradingagents.mt5_interface import get_open_positions
+            positions = get_open_positions()
+            if positions:
+                existing = list({p.get("symbol", "") for p in positions})
+        except Exception:
+            pass
+
+        result = scanner.scan(existing_positions=existing)
+
+        shortlist = result.shortlist[:request.max_candidates]
 
         return {
             "status": "success",
             "timestamp": result.timestamp,
             "watchlist_size": result.watchlist_size,
-            "shortlist": [asdict(s) for s in result.shortlist],
+            "shortlist": [asdict(s) for s in shortlist],
+            "disqualified": [asdict(s) for s in result.disqualified],
             "disqualified_count": len(result.disqualified),
             "best_candidate": asdict(result.best_candidate) if result.best_candidate else None,
         }
     except Exception as e:
         import traceback
         return {"status": "error", "error": str(e), "traceback": traceback.format_exc()}
+
+
+@app.get("/api/xgboost/scanner-status")
+async def get_scanner_status(instance: str = ""):
+    """Get scanner status from a running automation instance."""
+    try:
+        # Check local instances first
+        if instance and instance in _automation_instances:
+            inst = _automation_instances[instance]
+            if hasattr(inst, "automation") and inst.automation:
+                status = inst.automation.get_scanner_status()
+                return {"status": "success", "scanner": status}
+
+        # Check all local instances for any scanner data
+        for name, inst in _automation_instances.items():
+            if hasattr(inst, "automation") and inst.automation:
+                status = inst.automation.get_scanner_status()
+                if status:
+                    return {"status": "success", "instance": name, "scanner": status}
+
+        return {"status": "success", "scanner": None, "message": "No active scanner found"}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+# ----- XGBoost Batch Training (Weekly Job) -----
+# Runs in the MT5 worker via command queue (has MT5 data access).
+# Status updates arrive via WebSocket broadcast from the worker.
+
+_batch_train_task: Dict[str, Any] = {}  # Updated by WebSocket broadcasts from worker
+
+
+class BatchTrainRequest(BaseModel):
+    symbols: List[str] = []  # Empty = full watchlist
+    timeframes: List[str] = ["D1", "H4"]
+    strategies: List[str] = []  # Empty = all 5
+    bars: int = 2000
+    skip_fresh_days: int = 0  # 0 = retrain all, 7 = skip models < 7 days old
+
+
+@app.post("/api/xgboost/batch-train")
+async def start_batch_training(request: BatchTrainRequest = BatchTrainRequest()):
+    """Send batch training command to the MT5 worker."""
+    if _batch_train_task.get("status") == "running":
+        return {"status": "error", "error": "Batch training already running", "task": _batch_train_task}
+
+    try:
+        control = _get_automation_control()
+
+        payload = {
+            "symbols": request.symbols,
+            "timeframes": request.timeframes,
+            "strategies": request.strategies,
+            "bars": request.bars,
+            "skip_fresh_days": request.skip_fresh_days,
+        }
+
+        command_id = await control.send_command(
+            instance_name="batch_trainer",
+            action="batch_train",
+            payload=payload,
+        )
+
+        _batch_train_task.clear()
+        _batch_train_task.update({
+            "status": "running",
+            "started_at": datetime.utcnow().isoformat(),
+            "current": 0,
+            "total": 0,
+            "message": "Sent to MT5 worker, waiting for start...",
+            "command_id": command_id,
+            "result": None,
+        })
+
+        return {"status": "started", "message": "Batch training sent to MT5 worker", "command_id": command_id}
+
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/xgboost/batch-train/status")
+async def get_batch_training_status():
+    """Get current batch training progress (updated via WebSocket from worker)."""
+    if not _batch_train_task:
+        return {"status": "idle", "message": "No batch training has been run"}
+    return _batch_train_task
+
+
+@app.post("/api/xgboost/batch-train/cancel")
+async def cancel_batch_training():
+    """Send cancel command to the MT5 worker."""
+    if _batch_train_task.get("status") != "running":
+        return {"status": "error", "error": "No running batch training to cancel"}
+    try:
+        control = _get_automation_control()
+        await control.send_command(
+            instance_name="batch_trainer",
+            action="stop",
+            payload={},
+        )
+        _batch_train_task["status"] = "cancelling"
+        _batch_train_task["message"] = "Cancel sent to worker..."
+        return {"status": "cancelling"}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+# ----- XGBoost Per-Pair Optimization -----
+
+_optimize_task: Dict[str, Any] = {}
+
+
+class OptimizeRequest(BaseModel):
+    symbols: List[str] = []
+    timeframes: List[str] = ["D1", "H4"]
+    strategies: List[str] = []
+    bars: int = 2000
+    max_hours: float = 6.0
+
+
+@app.post("/api/xgboost/optimize")
+async def start_pair_optimization(request: OptimizeRequest = OptimizeRequest()):
+    """Send per-pair optimization command to the MT5 worker."""
+    if _optimize_task.get("status") == "running":
+        return {"status": "error", "error": "Optimization already running", "task": _optimize_task}
+
+    try:
+        control = _get_automation_control()
+        payload = {
+            "symbols": request.symbols,
+            "timeframes": request.timeframes,
+            "strategies": request.strategies,
+            "bars": request.bars,
+            "max_hours": request.max_hours,
+        }
+        command_id = await control.send_command(
+            instance_name="pair_optimizer",
+            action="optimize",
+            payload=payload,
+        )
+
+        _optimize_task.clear()
+        _optimize_task.update({
+            "status": "running",
+            "started_at": datetime.utcnow().isoformat(),
+            "current": 0,
+            "total": 0,
+            "message": "Sent to MT5 worker, waiting for start...",
+            "command_id": command_id,
+            "result": None,
+        })
+        return {"status": "started", "command_id": command_id}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/xgboost/optimize/status")
+async def get_optimization_status():
+    """Get per-pair optimization progress."""
+    if not _optimize_task:
+        return {"status": "idle", "message": "No optimization has been run"}
+    return _optimize_task
+
+
+@app.post("/api/xgboost/optimize/cancel")
+async def cancel_optimization():
+    """Cancel running optimization."""
+    if _optimize_task.get("status") != "running":
+        return {"status": "error", "error": "No running optimization to cancel"}
+    try:
+        control = _get_automation_control()
+        await control.send_command(instance_name="pair_optimizer", action="stop", payload={})
+        _optimize_task["status"] = "cancelling"
+        _optimize_task["message"] = "Cancel sent to worker..."
+        return {"status": "cancelling"}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+# ----- Gold/Silver Pullback Backtest -----
+
+_gs_backtest_task = {"status": "idle"}
+
+class GoldSilverBacktestRequest(BaseModel):
+    bars: int = 800
+    min_trades: int = 3
+    timeframes: list = ["D1", "H4"]
+
+
+@app.post("/api/backtest/gold-silver-pullback")
+async def start_gold_silver_backtest(request: GoldSilverBacktestRequest = GoldSilverBacktestRequest()):
+    """Run gold/silver pullback strategy backtest via auto-tuner."""
+    if _gs_backtest_task.get("status") == "running":
+        return {"status": "already_running"}
+
+    _gs_backtest_task.update({
+        "status": "running",
+        "started_at": datetime.now().isoformat(),
+        "progress": {"phase": "starting", "current": 0, "total": 0, "message": "Starting backtest...", "steps": []},
+        "result": None,
+        "error": None,
+    })
+
+    async def _run_gs_backtest():
+        loop = asyncio.get_running_loop()
+
+        def progress_callback(phase, current, total, message, steps=None):
+            _gs_backtest_task["progress"] = {
+                "phase": phase,
+                "current": current,
+                "total": total,
+                "message": message,
+                "steps": steps or _gs_backtest_task["progress"].get("steps", []),
+            }
+
+        try:
+            from tradingagents.automation.auto_tuner import run_tune
+            result = await run_tune(
+                symbol="XAUUSD",
+                pipeline="gold_silver_pullback",
+                timeframes=request.timeframes,
+                bars=request.bars,
+                min_trades=request.min_trades,
+                progress_callback=progress_callback,
+            )
+            if result.get("error"):
+                _gs_backtest_task["status"] = "error"
+                _gs_backtest_task["error"] = result["error"]
+                _gs_backtest_task["result"] = result
+            else:
+                _gs_backtest_task["status"] = "done"
+                _gs_backtest_task["result"] = result
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            _gs_backtest_task["status"] = "error"
+            _gs_backtest_task["error"] = str(e)
+
+    asyncio.create_task(_run_gs_backtest())
+    return {"status": "started"}
+
+
+@app.get("/api/backtest/gold-silver-pullback/status")
+async def get_gold_silver_backtest_status():
+    """Get current gold/silver backtest progress."""
+    return _gs_backtest_task
 
 
 # ----- SMC MTF Analysis (Multi-Timeframe OTE & Channel, No LLM) -----
@@ -7055,6 +7225,67 @@ async def run_vp_quant_analysis(request: VPQuantAnalysisRequest):
                 "hold": "HOLD",
                 "close": "HOLD",
             }
+
+            # --- VP QUALITY FILTERS ---
+            # Filter 1: Block counter-trend mean reversion in strong trends
+            raw_signal = vp_quant_decision.get("signal", "hold")
+            if isinstance(raw_signal, dict):
+                raw_signal = raw_signal.get("value", raw_signal.get("signal", "hold"))
+            raw_signal_str = str(raw_signal).lower().strip()
+            mapped_signal = signal_map.get(raw_signal_str, "HOLD")
+
+            if adx > 30 and mapped_signal != "HOLD":
+                is_counter_trend = (
+                    (market_regime == "trending-up" and mapped_signal == "SELL") or
+                    (market_regime == "trending-down" and mapped_signal == "BUY")
+                )
+                if is_counter_trend:
+                    logger.warning(
+                        f"[VP FILTER] BLOCKED counter-trend {mapped_signal} in {market_regime} "
+                        f"(ADX={adx:.1f}). VP mean reversion unreliable in strong trends."
+                    )
+                    vp_quant_decision["signal"] = "hold"
+                    vp_quant_decision["justification"] = (
+                        f"BLOCKED: {mapped_signal} signal in {market_regime} (ADX={adx:.1f}). "
+                        f"VP mean reversion is unreliable against strong trends. Original: {vp_quant_decision.get('justification', '')}"
+                    )
+
+            # Filter 2: Cap TP at nearest intermediate level instead of distant POC
+            vp_tp = vp_quant_decision.get("profit_target") or vp_quant_decision.get("take_profit")
+            vp_entry = vp_quant_decision.get("entry_price")
+            if vp_tp and vp_entry and volume_profile and mapped_signal != "HOLD":
+                tp_dist_pct = abs(vp_tp - vp_entry) / vp_entry * 100
+                # If TP is more than 3% away, cap at nearest HVN or 1.5x ATR
+                if tp_dist_pct > 3.0:
+                    atr_tp = vp_entry + (1.5 * atr if mapped_signal == "BUY" else -1.5 * atr)
+                    # Find nearest HVN between entry and TP
+                    hvn_tp = None
+                    for node in (volume_profile.high_volume_nodes or []):
+                        node_price = node.price if hasattr(node, 'price') else node.get('price', 0)
+                        if mapped_signal == "BUY" and vp_entry < node_price < vp_tp:
+                            hvn_tp = node_price
+                            break
+                        elif mapped_signal == "SELL" and vp_tp < node_price < vp_entry:
+                            hvn_tp = node_price
+                            break
+
+                    # Use whichever is closer: HVN or 1.5x ATR
+                    candidates = [c for c in [hvn_tp, atr_tp] if c]
+                    if candidates:
+                        if mapped_signal == "BUY":
+                            new_tp = min(candidates)
+                        else:
+                            new_tp = max(candidates)
+
+                        new_dist_pct = abs(new_tp - vp_entry) / vp_entry * 100
+                        if new_dist_pct < tp_dist_pct:
+                            logger.info(
+                                f"[VP FILTER] TP capped: {vp_tp:.2f} ({tp_dist_pct:.1f}%) -> "
+                                f"{new_tp:.2f} ({new_dist_pct:.1f}%) "
+                                f"{'(nearest HVN)' if new_tp == hvn_tp else '(1.5x ATR)'}"
+                            )
+                            vp_quant_decision["profit_target"] = new_tp
+
             raw_signal = vp_quant_decision.get("signal", "hold")
             if isinstance(raw_signal, dict):
                 raw_signal = raw_signal.get("value", "hold")
@@ -8417,6 +8648,48 @@ async def run_range_quant_analysis(request: RangeQuantAnalysisRequest):
 
         range_analysis = analyze_range(high_arr, low_arr, close_arr, lookback=25)
 
+        # === REGIME GATE: Skip LLM call if market is NOT ranging ===
+        # This saves the expensive LLM call when the market is clearly trending.
+        # The LLM should only make decisions inside confirmed ranges.
+        if not range_analysis.get("is_ranging", False):
+            _gate_duration = _time.time() - _endpoint_start
+            gate_reason = (
+                f"Market not ranging for {request.symbol}: "
+                f"trend_strength={range_analysis.get('trend_strength', 0):.2f}, "
+                f"adx_proxy={range_analysis.get('adx_proxy', 0):.1f}, "
+                f"mr_score={range_analysis.get('mean_reversion_score', 0):.0f}"
+            )
+            logger.info(f"[RANGE QUANT API] REGIME GATE blocked: {gate_reason}")
+            return {
+                "status": "ok",
+                "symbol": request.symbol,
+                "decision": {
+                    "signal": "hold",
+                    "confidence": 0.0,
+                    "symbol": request.symbol,
+                    "justification": f"Regime gate: {gate_reason}",
+                    "invalidation_condition": "Market enters ranging conditions",
+                    "entry_price": None,
+                    "stop_loss": None,
+                    "profit_target": None,
+                    "risk_reward_ratio": None,
+                    "leverage": None,
+                    "risk_usd": None,
+                    "risk_level": "low",
+                    "order_type": None,
+                    "trailing_stop_atr_multiplier": None,
+                },
+                "report": f"Range quant blocked by regime gate — {gate_reason}",
+                "range_analysis": range_analysis,
+                "regime": {
+                    "market_regime": market_regime,
+                    "volatility_regime": volatility_regime,
+                },
+                "analysis_mode": "range_quant",
+                "prompt_sent": None,
+                "llm_duration_seconds": 0,
+            }
+
         # === STEP 4: Get SMC Context ===
         smc_context = ""
         smc_analysis = {}
@@ -8650,6 +8923,28 @@ async def broadcast_quant_status(payload: Dict[str, Any]):
     """
     instance = payload.get("instance_name")
     status = payload.get("status")
+
+    # Intercept pair_optimizer broadcasts
+    if instance == "pair_optimizer" and status:
+        _optimize_task["status"] = status
+        for key in ("message", "current", "total", "result", "error"):
+            if key in payload:
+                _optimize_task[key] = payload[key]
+
+    # Intercept batch_trainer broadcasts to update the in-memory task state
+    if instance == "batch_trainer" and status:
+        _batch_train_task["status"] = status
+        if "message" in payload:
+            _batch_train_task["message"] = payload["message"]
+        if "current" in payload:
+            _batch_train_task["current"] = payload["current"]
+        if "total" in payload:
+            _batch_train_task["total"] = payload["total"]
+        if "result" in payload:
+            _batch_train_task["result"] = payload["result"]
+        if "error" in payload:
+            _batch_train_task["error"] = payload["error"]
+
     if instance and status:
         await broadcast_automation_status(instance, status, **{
             k: v for k, v in payload.items() if k not in ("instance_name", "status")
@@ -9302,9 +9597,12 @@ async def list_automation_instances():
 
         from datetime import datetime, timezone
 
+        # Infrastructure instances — not user-facing automations
+        _HIDDEN_INSTANCES = {"mt5_worker", "tma_worker", "trade_manager"}
+
         for status in remote_statuses:
             name = status.get("instance_name")
-            if not name:
+            if not name or name in _HIDDEN_INSTANCES:
                 continue
 
             # Check if status is stale (no update in 60 seconds = likely stopped)
@@ -9786,6 +10084,7 @@ async def update_quant_automation_config(updates: Dict[str, Any], instance: str 
 
     # Get current config from Postgres
     saved_configs = await _load_saved_configs()
+    is_new_instance = instance not in saved_configs
     config_dict = saved_configs.get(instance, {})
     config_dict.update(updates)
 
@@ -9793,7 +10092,7 @@ async def update_quant_automation_config(updates: Dict[str, Any], instance: str 
     try:
         await control.update_status(
             instance_name=instance,
-            status=None,  # Don't change status
+            status="stopped" if is_new_instance else None,  # New instances need a default status
             pipeline=config_dict.get("pipeline"),
             symbols=config_dict.get("symbols"),
             auto_execute=config_dict.get("auto_execute"),
@@ -10064,7 +10363,7 @@ async def start_tune(
             symbol = automation.config.symbols[0] if automation.config.symbols else None
             pipeline = automation.config.pipeline
         else:
-            saved_configs = _load_saved_configs()
+            saved_configs = await _load_saved_configs()
             cfg = saved_configs.get(instance_name, {})
             symbol = cfg.get("symbols", [None])[0] if cfg.get("symbols") else None
             pipeline = cfg.get("pipeline", "")
@@ -10221,7 +10520,7 @@ def _apply_tune_config(instance_name: str, config_updates: Dict[str, Any]):
     Snapshots the current config before applying so we can revert later.
     """
     # Snapshot current config values (only the keys we're about to change)
-    saved_configs = _load_saved_configs()
+    saved_configs = _load_saved_configs_sync()
     current_cfg = saved_configs.get(instance_name, {})
     config_before = {k: current_cfg.get(k) for k in config_updates}
 
@@ -10398,6 +10697,7 @@ async def start_trade_manager(config: Dict[str, Any] = {}):
         logger.warning(f"Failed to check TMA remote status: {e}")
 
     try:
+        logger.info(f"[TMA START] Step 1: update_status(pipeline='trade_management', config keys={list(config.keys())})")
         await control.update_status(
             instance_name=instance_name,
             status="pending_start",
@@ -10411,12 +10711,14 @@ async def start_trade_manager(config: Dict[str, Any] = {}):
         # Ensure pipeline is always set so the worker routes to TMA, not quant
         config["pipeline"] = "trade_management"
         config["instance_name"] = instance_name
+        logger.info(f"[TMA START] Step 2: config['pipeline']={config['pipeline']}, sending command")
 
         command_id = await control.send_command(
             instance_name=instance_name,
             action="start",
             payload=config,
         )
+        logger.info(f"[TMA START] Step 3: command sent, id={command_id}, payload pipeline={config.get('pipeline')}")
 
         return {
             "status": "start_requested",
