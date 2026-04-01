@@ -7223,6 +7223,67 @@ async def run_vp_quant_analysis(request: VPQuantAnalysisRequest):
                 "hold": "HOLD",
                 "close": "HOLD",
             }
+
+            # --- VP QUALITY FILTERS ---
+            # Filter 1: Block counter-trend mean reversion in strong trends
+            raw_signal = vp_quant_decision.get("signal", "hold")
+            if isinstance(raw_signal, dict):
+                raw_signal = raw_signal.get("value", raw_signal.get("signal", "hold"))
+            raw_signal_str = str(raw_signal).lower().strip()
+            mapped_signal = signal_map.get(raw_signal_str, "HOLD")
+
+            if adx > 30 and mapped_signal != "HOLD":
+                is_counter_trend = (
+                    (market_regime == "trending-up" and mapped_signal == "SELL") or
+                    (market_regime == "trending-down" and mapped_signal == "BUY")
+                )
+                if is_counter_trend:
+                    logger.warning(
+                        f"[VP FILTER] BLOCKED counter-trend {mapped_signal} in {market_regime} "
+                        f"(ADX={adx:.1f}). VP mean reversion unreliable in strong trends."
+                    )
+                    vp_quant_decision["signal"] = "hold"
+                    vp_quant_decision["justification"] = (
+                        f"BLOCKED: {mapped_signal} signal in {market_regime} (ADX={adx:.1f}). "
+                        f"VP mean reversion is unreliable against strong trends. Original: {vp_quant_decision.get('justification', '')}"
+                    )
+
+            # Filter 2: Cap TP at nearest intermediate level instead of distant POC
+            vp_tp = vp_quant_decision.get("profit_target") or vp_quant_decision.get("take_profit")
+            vp_entry = vp_quant_decision.get("entry_price")
+            if vp_tp and vp_entry and volume_profile and mapped_signal != "HOLD":
+                tp_dist_pct = abs(vp_tp - vp_entry) / vp_entry * 100
+                # If TP is more than 3% away, cap at nearest HVN or 1.5x ATR
+                if tp_dist_pct > 3.0:
+                    atr_tp = vp_entry + (1.5 * atr if mapped_signal == "BUY" else -1.5 * atr)
+                    # Find nearest HVN between entry and TP
+                    hvn_tp = None
+                    for node in (volume_profile.high_volume_nodes or []):
+                        node_price = node.price if hasattr(node, 'price') else node.get('price', 0)
+                        if mapped_signal == "BUY" and vp_entry < node_price < vp_tp:
+                            hvn_tp = node_price
+                            break
+                        elif mapped_signal == "SELL" and vp_tp < node_price < vp_entry:
+                            hvn_tp = node_price
+                            break
+
+                    # Use whichever is closer: HVN or 1.5x ATR
+                    candidates = [c for c in [hvn_tp, atr_tp] if c]
+                    if candidates:
+                        if mapped_signal == "BUY":
+                            new_tp = min(candidates)
+                        else:
+                            new_tp = max(candidates)
+
+                        new_dist_pct = abs(new_tp - vp_entry) / vp_entry * 100
+                        if new_dist_pct < tp_dist_pct:
+                            logger.info(
+                                f"[VP FILTER] TP capped: {vp_tp:.2f} ({tp_dist_pct:.1f}%) -> "
+                                f"{new_tp:.2f} ({new_dist_pct:.1f}%) "
+                                f"{'(nearest HVN)' if new_tp == hvn_tp else '(1.5x ATR)'}"
+                            )
+                            vp_quant_decision["profit_target"] = new_tp
+
             raw_signal = vp_quant_decision.get("signal", "hold")
             if isinstance(raw_signal, dict):
                 raw_signal = raw_signal.get("value", "hold")

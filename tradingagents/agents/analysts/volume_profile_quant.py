@@ -339,29 +339,37 @@ and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placem
 
 ### Trading Setups
 
-**Setup 1: Mean Reversion to POC**
+**Setup 1: Mean Reversion to POC** (ONLY in ranging markets, ADX < 25)
 - Price is significantly above/below POC
 - Enter in direction of POC
-- Target: POC level
+- Target: NEAREST HVN or VAL/VAH edge — NOT full POC when it's >2% away
 - Stop: Beyond the extreme
+- CRITICAL: Do NOT use this setup when ADX > 25 (trending market). Mean reversion FAILS in trends.
 
-**Setup 2: Value Area Edge Trade**
+**Setup 2: Value Area Edge Trade** (ONLY when price approaches from INSIDE VA)
 - Price touches VAH/VAL from inside
 - Fade the move (short at VAH, long at VAL)
-- Target: POC
+- Target: POC or nearest HVN
 - Stop: Beyond VAH/VAL by 1 ATR
+- CRITICAL: Do NOT fade if price is BREAKING OUT of VA with momentum (ADX rising)
 
-**Setup 3: Value Area Breakout**
+**Setup 3: Value Area Breakout** (USE when ADX > 25 and price outside VA)
 - Price closes outside VA with increasing volume
-- Trade the breakout direction
+- Trade the breakout direction (WITH the trend, not against it)
 - Target: Next HVN or previous day's POC
 - Stop: Back inside VA
 
 **Setup 4: HVN Bounce**
 - Price approaches significant HVN
-- Enter on rejection at HVN
+- Enter on rejection at HVN (need confirmation candle)
 - Target: Next HVN or POC
 - Stop: Beyond the HVN
+
+### CRITICAL FILTERS (check BEFORE selecting a setup)
+1. **If ADX > 30**: Only trade WITH the trend (Setup 3). Do NOT mean revert (Setup 1/2).
+2. **If price is >3% from POC**: Do NOT target POC. Target nearest HVN instead.
+3. **If no HVN nearby for stop placement**: Output HOLD. Bad risk management = no trade.
+4. **VP signals are SHORT-DURATION**: Expect 0.5-1.5% moves, not 5%+ swings. Set realistic TPs.
 
 ## RISK MANAGEMENT RULES (NEVER BREAK)
 

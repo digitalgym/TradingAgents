@@ -101,6 +101,61 @@ def _compute_adx(df: pd.DataFrame, period: int = 14) -> Optional[float]:
         return None
 
 
+def _compute_directional_indicators(df: pd.DataFrame, period: int = 14) -> Optional[Dict[str, float]]:
+    """Compute ADX, +DI, -DI, EMA20, EMA50, z-score from OHLCV DataFrame."""
+    if df is None or len(df) < period * 3:
+        return None
+    try:
+        high = df["high"].values.astype(float)
+        low = df["low"].values.astype(float)
+        close = df["close"].values.astype(float)
+
+        plus_dm = np.maximum(high[1:] - high[:-1], 0)
+        minus_dm = np.maximum(low[:-1] - low[1:], 0)
+        mask = plus_dm > minus_dm
+        minus_dm[mask] = 0
+        plus_dm[~mask] = 0
+
+        tr = np.maximum(high[1:] - low[1:],
+                        np.maximum(np.abs(high[1:] - close[:-1]),
+                                   np.abs(low[1:] - close[:-1])))
+
+        atr = pd.Series(tr).rolling(period).mean().values
+        plus_di = 100 * pd.Series(plus_dm).rolling(period).mean().values / (atr + 1e-10)
+        minus_di = 100 * pd.Series(minus_dm).rolling(period).mean().values / (atr + 1e-10)
+
+        dx = 100 * np.abs(plus_di - minus_di) / (plus_di + minus_di + 1e-10)
+        adx_vals = pd.Series(dx).rolling(period).mean().values
+
+        ema20 = float(pd.Series(close).ewm(span=20).mean().iloc[-1])
+        ema50 = float(pd.Series(close).ewm(span=50).mean().iloc[-1])
+
+        sma20 = float(pd.Series(close).rolling(20).mean().iloc[-1])
+        std20 = float(pd.Series(close).rolling(20).std().iloc[-1])
+        zscore = (close[-1] - sma20) / (std20 + 1e-10)
+
+        adx = float(adx_vals[-1])
+        pdi = float(plus_di[-1])
+        mdi = float(minus_di[-1])
+
+        if any(np.isnan(v) for v in [adx, pdi, mdi]):
+            return None
+
+        return {
+            "adx": adx,
+            "plus_di": pdi,
+            "minus_di": mdi,
+            "ema20": ema20,
+            "ema50": ema50,
+            "zscore": zscore,
+            "current_price": float(close[-1]),
+            "momentum": "bullish" if pdi > mdi else "bearish",
+            "trend_strength": "strong" if adx > 25 else ("weak" if adx < 20 else "moderate"),
+        }
+    except Exception:
+        return None
+
+
 def _bb_width_percentile(close: np.ndarray, lookback: int = 100, bb_period: int = 20) -> float:
     """Bollinger Band width percentile over lookback bars."""
     if len(close) < lookback:

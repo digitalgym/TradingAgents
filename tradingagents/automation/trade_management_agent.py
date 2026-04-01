@@ -132,6 +132,20 @@ class TradeManagementConfig:
     # Logging
     logs_dir: str = "logs/trade_management"
 
+    # Scalp mode for volume profile trades
+    # Backtested optimal params: 1.5x ATR TP, 0.5x ATR BE, 6h max
+    # Turns VP from -4.15% to +1.79% (80% WR on 5 trades, 4 blocked by trend filter)
+    enable_scalp_mode: bool = True  # Auto-detect VP trades and apply scalp management
+    scalp_tp_atr_multiplier: float = 1.5  # Take profit at 1.5x ATR from entry
+    scalp_be_atr_multiplier: float = 0.5  # Move to breakeven after 0.5x ATR profit
+    scalp_max_hours: float = 6.0  # Close after 6 hours if still open
+    scalp_pipelines: List[str] = field(default_factory=lambda: ["volume_profile"])
+
+    # Opposing position conflict resolution
+    enable_opposing_check: bool = True
+    auto_resolve_opposing: bool = False  # When True, auto-close the weaker position
+    opposing_score_threshold: float = 20.0  # Minimum score difference to recommend closure
+
     # Remote control
     enable_remote_control: bool = True
 
@@ -716,6 +730,108 @@ class TradeManagementAgent:
                 trail_status = "disabled"
                 partial_status = "disabled"
                 time_status = "disabled"
+                scalp_status = "disabled"
+
+                # --- Scalp Mode (Volume Profile trades) ---
+                is_scalp = False
+                if self.config.enable_scalp_mode and decision:
+                    dec_pipeline = (decision.get("pipeline") or "").lower()
+                    if dec_pipeline in [p.lower() for p in self.config.scalp_pipelines]:
+                        is_scalp = True
+                        scalp_tp_dist = self.config.scalp_tp_atr_multiplier * atr
+                        scalp_be_dist = self.config.scalp_be_atr_multiplier * atr
+
+                        if direction == "BUY":
+                            profit_distance = current_price - entry_price
+                        else:
+                            profit_distance = entry_price - current_price
+
+                        # Scalp TP: close at 0.75x ATR profit
+                        if profit_distance >= scalp_tp_dist:
+                            result = close_position(ticket)
+                            action = ManagementAction(
+                                ticket=ticket, symbol=symbol,
+                                action_type="scalp_tp",
+                                old_value=entry_price, new_value=current_price,
+                                reason=f"Scalp TP hit: profit {profit_distance:.2f} >= {scalp_tp_dist:.2f} ({self.config.scalp_tp_atr_multiplier}x ATR)",
+                                success=result.get("success", False),
+                                decision_id=decision.get("decision_id"),
+                            )
+                            self._log_action(action)
+                            if action.success:
+                                scalp_status = f"TP_HIT +{profit_distance:.2f}"
+                                deal_info = get_closed_deal_by_ticket(ticket, days_back=7)
+                                exit_px = deal_info["price"] if deal_info else current_price
+                                self._close_decision_for_ticket(
+                                    ticket, exit_px, profit, "scalp_tp",
+                                    f"Scalp mode: VP trade closed at {self.config.scalp_tp_atr_multiplier}x ATR profit"
+                                )
+                            else:
+                                scalp_status = f"TP_CLOSE_FAILED"
+
+                        # Scalp BE: tighten SL to breakeven quickly
+                        elif profit_distance >= scalp_be_dist and current_sl != 0:
+                            if direction == "BUY":
+                                scalp_be_sl = entry_price + atr * 0.05  # Tiny buffer above entry
+                                should_move = scalp_be_sl > current_sl
+                            else:
+                                scalp_be_sl = entry_price - atr * 0.05
+                                should_move = scalp_be_sl < current_sl
+
+                            if should_move:
+                                result = modify_position(ticket, sl=round(scalp_be_sl, 5))
+                                if result.get("success"):
+                                    scalp_status = f"BE_SET {current_sl:.2f}->{scalp_be_sl:.2f}"
+                                    action = ManagementAction(
+                                        ticket=ticket, symbol=symbol,
+                                        action_type="scalp_breakeven",
+                                        old_value=current_sl, new_value=scalp_be_sl,
+                                        reason=f"Scalp BE: profit {profit_distance:.2f} >= {scalp_be_dist:.2f} ({self.config.scalp_be_atr_multiplier}x ATR)",
+                                        success=True,
+                                        decision_id=decision.get("decision_id"),
+                                    )
+                                    self._log_action(action)
+                                else:
+                                    scalp_status = f"BE_FAILED"
+                            else:
+                                scalp_status = f"BE_already_set"
+
+                        # Scalp time limit: close after max hours
+                        elif open_time:
+                            hours_open = (datetime.now().timestamp() - open_time) / 3600 if isinstance(open_time, (int, float)) else 0
+                            if hours_open >= self.config.scalp_max_hours:
+                                result = close_position(ticket)
+                                action = ManagementAction(
+                                    ticket=ticket, symbol=symbol,
+                                    action_type="scalp_time_close",
+                                    old_value=hours_open, new_value=0,
+                                    reason=f"Scalp time limit: {hours_open:.1f}h >= {self.config.scalp_max_hours}h",
+                                    success=result.get("success", False),
+                                    decision_id=decision.get("decision_id"),
+                                )
+                                self._log_action(action)
+                                if action.success:
+                                    scalp_status = f"TIME_CLOSED {hours_open:.1f}h"
+                                    deal_info = get_closed_deal_by_ticket(ticket, days_back=7)
+                                    exit_px = deal_info["price"] if deal_info else current_price
+                                    self._close_decision_for_ticket(
+                                        ticket, exit_px, profit, "scalp_time_limit",
+                                        f"Scalp mode: VP trade closed after {hours_open:.1f}h (limit {self.config.scalp_max_hours}h)"
+                                    )
+                                else:
+                                    scalp_status = f"TIME_CLOSE_FAILED"
+                            else:
+                                scalp_status = f"waiting({profit_distance:.2f}/{scalp_tp_dist:.2f}, {hours_open:.1f}h/{self.config.scalp_max_hours}h)"
+                        else:
+                            scalp_status = f"waiting({profit_distance:.2f}/{scalp_tp_dist:.2f})"
+
+                        # Log and skip default management for scalp trades
+                        self.logger.info(
+                            f"POS #{ticket} {symbol} {direction} [SCALP]: "
+                            f"entry={entry_price} cur={current_price} pnl={pnl_pct:+.2f}% "
+                            f"| SCALP: {scalp_status}"
+                        )
+                        continue  # Skip breakeven/trailing/partial — scalp mode handles it
 
                 # --- Breakeven Stop ---
                 enable_be = self._get_effective_setting(policy, "enable_breakeven_stop", symbol)
@@ -919,6 +1035,10 @@ class TradeManagementAgent:
 
             self._positions_managed = len(managed_tickets)
 
+            # Check for opposing positions on same symbol
+            if self.config.enable_opposing_check:
+                await self._check_opposing_positions(positions)
+
             # Detect closed positions
             await self._detect_closed_positions(managed_tickets)
 
@@ -928,6 +1048,244 @@ class TradeManagementAgent:
 
         self._last_management_cycle = datetime.now()
         self.logger.debug("--- Position management cycle end ---")
+
+    # ------------------------------------------------------------------
+    # Opposing position conflict resolution
+    # ------------------------------------------------------------------
+
+    async def _check_opposing_positions(self, positions: list) -> None:
+        """Detect and analyze opposing positions (BUY + SELL) on the same symbol."""
+        from tradingagents.automation.strategy_reviewers import (
+            _fetch_ohlcv, _compute_directional_indicators, _compute_atr,
+        )
+        from tradingagents.trade_decisions import find_decision_by_ticket
+
+        # Group positions by symbol
+        by_symbol: Dict[str, list] = {}
+        for pos in positions:
+            sym = pos.get("symbol", "")
+            by_symbol.setdefault(sym, []).append(pos)
+
+        for symbol, sym_positions in by_symbol.items():
+            buys = [p for p in sym_positions if p.get("type") == "BUY"]
+            sells = [p for p in sym_positions if p.get("type") == "SELL"]
+
+            if not buys or not sells:
+                continue  # No opposing positions
+
+            # Analyze each BUY vs SELL pair (take the most significant pair)
+            # Use the largest volume position from each side
+            buy = max(buys, key=lambda p: p.get("volume", 0))
+            sell = max(sells, key=lambda p: p.get("volume", 0))
+
+            buy_ticket = buy["ticket"]
+            sell_ticket = sell["ticket"]
+            buy_entry = buy.get("price_open", 0)
+            sell_entry = sell.get("price_open", 0)
+            current_price = buy.get("price_current", 0)
+
+            # P/L percentages
+            buy_pnl = ((current_price - buy_entry) / buy_entry * 100) if buy_entry else 0
+            sell_pnl = ((sell_entry - current_price) / sell_entry * 100) if sell_entry else 0
+
+            # TP capture percentages
+            buy_tp = buy.get("tp", 0)
+            sell_tp = sell.get("tp", 0)
+            buy_tp_capture = ((current_price - buy_entry) / (buy_tp - buy_entry) * 100) if buy_tp and buy_tp != buy_entry else 0
+            sell_tp_capture = ((sell_entry - current_price) / (sell_entry - sell_tp) * 100) if sell_tp and sell_entry != sell_tp else 0
+
+            # Age in hours
+            now_ts = datetime.now().timestamp()
+            buy_hours = (now_ts - buy.get("time", now_ts)) / 3600
+            sell_hours = (now_ts - sell.get("time", now_ts)) / 3600
+
+            # Fetch market indicators
+            df = _fetch_ohlcv(symbol, "H1", bars=250)
+            indicators = _compute_directional_indicators(df) if df is not None else None
+
+            # --- Score each position (0-100, higher = stronger) ---
+            buy_score = 0.0
+            sell_score = 0.0
+
+            # Dimension 1: Momentum alignment (30%)
+            if indicators:
+                adx = indicators["adx"]
+                momentum = indicators["momentum"]  # "bullish" or "bearish"
+
+                if adx > 25:
+                    # Strong trend — heavily favor aligned position
+                    if momentum == "bullish":
+                        buy_score += 85
+                        sell_score += 15
+                    else:
+                        buy_score += 15
+                        sell_score += 85
+                elif adx > 20:
+                    # Moderate — slight favor
+                    if momentum == "bullish":
+                        buy_score += 65
+                        sell_score += 35
+                    else:
+                        buy_score += 35
+                        sell_score += 65
+                else:
+                    # Weak/no trend — neutral
+                    buy_score += 50
+                    sell_score += 50
+
+                # EMA alignment bonus
+                if indicators["ema20"] > indicators["ema50"]:
+                    buy_score += 10
+                else:
+                    sell_score += 10
+            else:
+                buy_score += 50
+                sell_score += 50
+
+            # Dimension 2: Age/exhaustion (20%)
+            buy_age_score = max(0, 100 - (buy_hours / 24) * 15 - max(0, buy_tp_capture) * 0.5)
+            sell_age_score = max(0, 100 - (sell_hours / 24) * 15 - max(0, sell_tp_capture) * 0.5)
+            buy_score += buy_age_score
+            sell_score += sell_age_score
+
+            # Dimension 3: Profit asymmetry (25%)
+            buy_profit_score = max(0, min(100, 50 + buy_pnl * 5))
+            sell_profit_score = max(0, min(100, 50 + sell_pnl * 5))
+            # Bonus for remaining upside
+            buy_remaining = abs(buy_tp - current_price) / current_price * 100 if buy_tp else 0
+            sell_remaining = abs(current_price - sell_tp) / current_price * 100 if sell_tp else 0
+            if buy_remaining > 2 * abs(buy_pnl) and buy_remaining > 1:
+                buy_profit_score += 15
+            if sell_remaining > 2 * abs(sell_pnl) and sell_remaining > 1:
+                sell_profit_score += 15
+            buy_score += buy_profit_score
+            sell_score += sell_profit_score
+
+            # Dimension 4: Hedge cost (10%)
+            buy_swap = buy.get("swap", 0)
+            sell_swap = sell.get("swap", 0)
+            buy_score += max(0, min(100, 50 + buy_swap * 10))
+            sell_score += max(0, min(100, 50 + sell_swap * 10))
+
+            # Dimension 5: Regime alignment (15%)
+            buy_dec = find_decision_by_ticket(buy_ticket)
+            sell_dec = find_decision_by_ticket(sell_ticket)
+            buy_strategy = (buy_dec.get("setup_type", "") or "") if buy_dec else ""
+            sell_strategy = (sell_dec.get("setup_type", "") or "") if sell_dec else ""
+
+            if indicators and indicators["trend_strength"] == "weak":
+                # Low ADX: mean reversion favored
+                if "mean_reversion" in buy_strategy:
+                    buy_score += 80
+                else:
+                    buy_score += 40
+                if "mean_reversion" in sell_strategy:
+                    sell_score += 80
+                else:
+                    sell_score += 40
+            elif indicators and indicators["trend_strength"] == "strong":
+                # High ADX: trend following favored
+                if "trend" in buy_strategy or "breakout" in buy_strategy:
+                    buy_score += 80
+                else:
+                    buy_score += 50
+                if "trend" in sell_strategy or "breakout" in sell_strategy:
+                    sell_score += 80
+                else:
+                    sell_score += 50
+            else:
+                buy_score += 50
+                sell_score += 50
+
+            # --- Normalize to weighted average ---
+            # Weights: momentum=30, age=20, profit=25, hedge=10, regime=15 = 100
+            # Each dimension contributed raw 0-100 per position, sum is ~500 max
+            # Normalize to 0-100
+            buy_total = buy_score / 5
+            sell_total = sell_score / 5
+
+            score_diff = abs(buy_total - sell_total)
+            weaker = "BUY" if buy_total < sell_total else "SELL"
+            weaker_ticket = buy_ticket if buy_total < sell_total else sell_ticket
+            stronger_ticket = sell_ticket if buy_total < sell_total else buy_ticket
+
+            # Build reason string
+            ind_str = ""
+            if indicators:
+                ind_str = (f"ADX={indicators['adx']:.1f} "
+                           f"+DI={indicators['plus_di']:.1f} -DI={indicators['minus_di']:.1f} "
+                           f"momentum={indicators['momentum']}")
+
+            reason = (
+                f"OPPOSING {symbol}: BUY#{buy_ticket} score={buy_total:.1f} vs "
+                f"SELL#{sell_ticket} score={sell_total:.1f} (diff={score_diff:.1f}). "
+                f"BUY: pnl={buy_pnl:+.2f}% age={buy_hours:.0f}h tp_capture={buy_tp_capture:.0f}%. "
+                f"SELL: pnl={sell_pnl:+.2f}% age={sell_hours:.0f}h tp_capture={sell_tp_capture:.0f}%. "
+                f"{ind_str}"
+            )
+
+            if score_diff >= self.config.opposing_score_threshold:
+                self.logger.warning(
+                    f"  {reason} -> RECOMMEND closing {weaker} #{weaker_ticket}"
+                )
+
+                action = ManagementAction(
+                    ticket=weaker_ticket,
+                    symbol=symbol,
+                    action_type="opposing_analysis",
+                    old_value=None,
+                    new_value=None,
+                    reason=f"close_hedge: {reason}",
+                    success=True,
+                )
+                self._log_action(action)
+
+                if self.config.auto_resolve_opposing:
+                    from tradingagents.dataflows.mt5_data import close_position
+                    from tradingagents.trade_decisions import close_decision
+
+                    result = close_position(weaker_ticket)
+                    if result.get("success"):
+                        self.logger.info(
+                            f"  AUTO-CLOSED {weaker} #{weaker_ticket} "
+                            f"(profit={result.get('profit', 0):.2f})"
+                        )
+                        # Close the decision record with rationale
+                        dec = find_decision_by_ticket(weaker_ticket)
+                        if dec:
+                            try:
+                                exit_price = current_price
+                                close_decision(
+                                    dec["decision_id"],
+                                    exit_price=exit_price,
+                                    outcome_notes=f"Auto-closed by TMA opposing position resolution. {reason}",
+                                    exit_reason="opposing_hedge_close",
+                                )
+                            except Exception as e:
+                                self.logger.warning(f"  Failed to close decision: {e}")
+
+                        close_action = ManagementAction(
+                            ticket=weaker_ticket,
+                            symbol=symbol,
+                            action_type="close_hedge",
+                            old_value=None,
+                            new_value=result.get("profit", 0),
+                            reason=reason,
+                            success=True,
+                        )
+                        self._log_action(close_action)
+                    else:
+                        self.logger.error(f"  Failed to close #{weaker_ticket}: {result.get('error')}")
+                else:
+                    self.logger.info(
+                        f"  Set auto_resolve_opposing=True to auto-close"
+                    )
+            else:
+                self.logger.info(
+                    f"  OPPOSING {symbol}: BUY#{buy_ticket}={buy_total:.1f} vs "
+                    f"SELL#{sell_ticket}={sell_total:.1f} (diff={score_diff:.1f} < "
+                    f"{self.config.opposing_score_threshold}) -> HOLD both"
+                )
 
     # ------------------------------------------------------------------
     # Closed position detection
@@ -1376,6 +1734,8 @@ class TradeManagementAgent:
         self.logger.info(f"Partial TP: {'enabled' if self.config.enable_partial_tp else 'disabled'}")
         self.logger.info(f"Assumption review: {'enabled' if self.config.enable_assumption_review else 'disabled'} (auto_apply={self.config.assumption_review_auto_apply}, llm={self.config.assumption_review_use_llm})")
         self.logger.info(f"Time limit: {'enabled' if self.config.enable_time_limit else 'disabled'} ({self.config.max_position_hours}h)")
+        self.logger.info(f"Scalp mode: {'enabled' if self.config.enable_scalp_mode else 'disabled'} (TP={self.config.scalp_tp_atr_multiplier}x ATR, BE={self.config.scalp_be_atr_multiplier}x ATR, max={self.config.scalp_max_hours}h, pipelines={self.config.scalp_pipelines})")
+        self.logger.info(f"Opposing check: {'enabled' if self.config.enable_opposing_check else 'disabled'} (auto_resolve={self.config.auto_resolve_opposing}, threshold={self.config.opposing_score_threshold})")
         self.logger.info("=" * 50)
 
         # Report initial status
