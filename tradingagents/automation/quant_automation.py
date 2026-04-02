@@ -196,6 +196,7 @@ class PipelineType(str, Enum):
     GOLD_TREND_PULLBACK = "gold_trend_pullback"
     GOLD_SILVER_PULLBACK = "gold_silver_pullback"
     GOLD_SILVER_PULLBACK_MTF = "gold_silver_pullback_mtf"
+    WYCKOFF_VOLUME = "wyckoff_volume"  # XGBoost breakout + LLM Wyckoff gatekeeper
     SCANNER_AUTO = "scanner_auto"  # Scanner detects regime per pair → dispatches to best pipeline
 
 
@@ -265,6 +266,11 @@ class QuantAutomationConfig:
     scanner_min_score: int = 40  # Minimum momentum score to qualify
     scanner_max_candidates: int = 3  # Max pairs to trade from scan results
     scanner_timeframe: str = "H4"  # Timeframe for scanner data
+
+    # Direction filter: "both", "long_only", "short_only"
+    # Default "long_only" — gold (XAUUSD) is in a multi-year uptrend; shorting
+    # pullbacks has 0% win rate in backtests. Override per-symbol if needed.
+    direction_filter: str = "long_only"
 
     # State persistence
     state_file: str = "quant_automation_state.json"
@@ -589,6 +595,13 @@ class QuantAutomation:
                     tmp_file.unlink(missing_ok=True)
                 except Exception:
                     pass
+
+    def _get_wyckoff_gatekeeper(self):
+        """Get or create cached WyckoffGatekeeper instance (used by wyckoff_volume pipeline)."""
+        if not hasattr(self, "_wyckoff_gatekeeper"):
+            from tradingagents.quant_strats.wyckoff_volume import WyckoffGatekeeper
+            self._wyckoff_gatekeeper = WyckoffGatekeeper()
+        return self._wyckoff_gatekeeper
 
     def _get_account_balance(self) -> float:
         """Get current account balance from MT5."""
@@ -1580,6 +1593,21 @@ class QuantAutomation:
                 f"Confidence {result.confidence:.2f} below threshold "
                 f"{self.config.min_confidence} for {result.symbol}, skipping"
             )
+            return result
+
+        # Direction filter (e.g. long_only for gold)
+        direction_filter = self.config.direction_filter
+        if direction_filter == "long_only" and result.signal == "SELL":
+            self.logger.info(
+                f"Direction filter: SELL blocked for {result.symbol} (long_only mode)"
+            )
+            result.rationale += " | SELL blocked by direction filter (long_only)"
+            return result
+        if direction_filter == "short_only" and result.signal == "BUY":
+            self.logger.info(
+                f"Direction filter: BUY blocked for {result.symbol} (short_only mode)"
+            )
+            result.rationale += " | BUY blocked by direction filter (short_only)"
             return result
 
         # Check news blackout dates (FOMC/NFP — no new trades within 24hrs)
@@ -2865,6 +2893,10 @@ class QuantAutomation:
             "gold_trend_pullback": self._run_gold_trend_pullback_analysis,
             "gold_silver_pullback": self._run_gold_silver_pullback_analysis,
             "gold_silver_pullback_mtf": self._run_gold_silver_pullback_analysis,
+            "rule_quant": self._run_rule_quant_analysis,
+            "rule_quant_ensemble": self._run_rule_quant_analysis,
+            "keltner_mean_reversion": self._run_keltner_mr_analysis,
+            "wyckoff_volume": self._run_wyckoff_volume_analysis,
         }
         handler = _DISPATCH.get(pipeline, self._run_multi_agent_analysis)
 
@@ -3854,6 +3886,130 @@ class QuantAutomation:
                 pipeline="donchian_breakout",
                 signal="HOLD", confidence=0.0,
                 rationale=f"Donchian error: {e}",
+                duration_seconds=_time.time() - start,
+            )
+
+    # ------------------------------------------------------------------
+    # Wyckoff Volume (XGBoost breakout + LLM Wyckoff gatekeeper)
+    # ------------------------------------------------------------------
+
+    async def _run_wyckoff_volume_analysis(self, symbol: str) -> "AnalysisCycleResult":
+        """
+        Wyckoff Volume strategy: XGBoost breakout signal + LLM Wyckoff gatekeeper.
+
+        1. Runs the breakout strategy to generate a signal
+        2. If signal fires (prob >= threshold), passes through the Wyckoff LLM gatekeeper
+        3. Gatekeeper APPROVE → return signal for execution
+        4. Gatekeeper REJECT → return HOLD (signal filtered out)
+        5. Gatekeeper HOLD → return HOLD with hold_condition in rationale
+        """
+        import time as _time
+        start = _time.time()
+
+        try:
+            from tradingagents.automation.auto_tuner import load_mt5_data, _compute_atr
+
+            df = load_mt5_data(symbol, self.config.timeframe, bars=500)
+            high = df["high"].values.astype(float)
+            low = df["low"].values.astype(float)
+            close = df["close"].values.astype(float)
+            atr = _compute_atr(high, low, close)
+            current_atr = float(atr[-1]) if not np.isnan(atr[-1]) else 1.0
+            current_price = float(close[-1])
+
+            # Step 1: Generate signal via breakout strategy
+            from tradingagents.quant_strats.strategies.breakout import BreakoutStrategy
+            strategy = BreakoutStrategy()
+            strategy.load_model(symbol, self.config.timeframe)
+            feature_set = strategy.get_feature_set()
+            features = feature_set.compute(df)
+            signal = strategy.predict_signal(features, current_atr, current_price)
+
+            if signal.direction == "HOLD":
+                return AnalysisCycleResult(
+                    timestamp=datetime.now(), symbol=symbol,
+                    pipeline="wyckoff_volume",
+                    signal="HOLD", confidence=0.0,
+                    rationale=f"Breakout strategy: no signal ({signal.rationale})",
+                    duration_seconds=_time.time() - start,
+                )
+
+            self.logger.info(
+                f"Wyckoff Volume: {symbol} breakout signal {signal.direction} "
+                f"conf={signal.confidence:.2f}, passing to LLM gatekeeper"
+            )
+
+            # Step 2: Pass through Wyckoff LLM gatekeeper
+            gatekeeper = self._get_wyckoff_gatekeeper()
+            verdict = await gatekeeper.async_evaluate(
+                df=df,
+                xgb_prob=signal.confidence,
+                direction=signal.direction,
+                symbol=symbol,
+                timeframe=self.config.timeframe,
+                htf_bias=None,
+            )
+
+            duration = _time.time() - start
+
+            if verdict.verdict == "APPROVE":
+                self.logger.info(
+                    f"Wyckoff APPROVED {symbol} {signal.direction} "
+                    f"(phase={verdict.wyckoff_phase}, conf={verdict.confidence:.2f})"
+                )
+                return AnalysisCycleResult(
+                    timestamp=datetime.now(), symbol=symbol,
+                    pipeline="wyckoff_volume",
+                    signal=signal.direction,
+                    confidence=signal.confidence,
+                    entry_price=signal.entry if signal.entry else current_price,
+                    stop_loss=signal.stop_loss if signal.stop_loss else None,
+                    take_profit=signal.take_profit if signal.take_profit else None,
+                    rationale=(
+                        f"Breakout: {signal.rationale} | "
+                        f"Wyckoff APPROVED (phase={verdict.wyckoff_phase}): {verdict.reasoning}"
+                    ),
+                    duration_seconds=duration,
+                )
+
+            elif verdict.verdict == "HOLD":
+                self.logger.info(
+                    f"Wyckoff HOLD {symbol} {signal.direction}: "
+                    f"{verdict.hold_condition or verdict.reasoning}"
+                )
+                return AnalysisCycleResult(
+                    timestamp=datetime.now(), symbol=symbol,
+                    pipeline="wyckoff_volume",
+                    signal="HOLD", confidence=0.0,
+                    rationale=(
+                        f"Breakout: {signal.direction} conf={signal.confidence:.2f} | "
+                        f"Wyckoff HOLD: {verdict.hold_condition or verdict.reasoning}"
+                    ),
+                    duration_seconds=duration,
+                )
+
+            else:  # REJECT
+                self.logger.info(
+                    f"Wyckoff REJECTED {symbol} {signal.direction}: {verdict.reasoning}"
+                )
+                return AnalysisCycleResult(
+                    timestamp=datetime.now(), symbol=symbol,
+                    pipeline="wyckoff_volume",
+                    signal="HOLD", confidence=0.0,
+                    rationale=(
+                        f"Breakout: {signal.direction} conf={signal.confidence:.2f} | "
+                        f"Wyckoff REJECTED: {verdict.reasoning}"
+                    ),
+                    duration_seconds=duration,
+                )
+
+        except Exception as e:
+            self.logger.error(f"Wyckoff Volume analysis failed for {symbol}: {e}")
+            return AnalysisCycleResult(
+                timestamp=datetime.now(), symbol=symbol,
+                pipeline="wyckoff_volume",
+                signal="HOLD", confidence=0.0,
+                rationale=f"Wyckoff Volume error: {e}",
                 duration_seconds=_time.time() - start,
             )
 

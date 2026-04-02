@@ -712,7 +712,7 @@ export const saveTradeDecision = (params: SaveDecisionParams) =>
 
 export interface QuantAutomationConfig {
   instance_name: string
-  pipeline: 'smc_quant_basic' | 'smc_quant' | 'smc_mtf' | 'breakout_quant' | 'range_quant' | 'volume_profile' | 'rule_based' | 'multi_agent' | 'xgboost' | 'xgboost_ensemble' | 'scanner_auto'
+  pipeline: 'smc_quant_basic' | 'smc_quant' | 'smc_mtf' | 'breakout_quant' | 'range_quant' | 'volume_profile' | 'rule_based' | 'multi_agent' | 'xgboost' | 'xgboost_ensemble' | 'scanner_auto' | 'rule_quant' | 'rule_quant_ensemble' | 'donchian_breakout' | 'keltner_mean_reversion' | 'copper_ema_pullback' | 'gold_platinum_ratio' | 'gold_trend_pullback' | 'gold_silver_pullback' | 'gold_silver_pullback_mtf' | 'wyckoff_volume'
   symbols: string[]
   timeframe: string
   analysis_interval_seconds: number
@@ -736,6 +736,8 @@ export interface QuantAutomationConfig {
   scanner_min_score?: number
   scanner_max_candidates?: number
   scanner_timeframe?: string
+  // Direction filter
+  direction_filter?: 'both' | 'long_only' | 'short_only'
 }
 
 export interface QuantAutomationStatus {

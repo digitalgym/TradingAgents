@@ -9524,6 +9524,8 @@ class QuantAutomationConfigRequest(BaseModel):
     default_lot_size: float = 0.01
     daily_loss_limit_pct: float = 3.0
     max_consecutive_losses: int = 3
+    # Direction filter
+    direction_filter: str = "long_only"
 
 
 def _get_automation_instance(instance_name: str):

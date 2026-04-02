@@ -889,6 +889,7 @@ export default function AutomationPage() {
       enable_reversal_close: true,
       default_lot_size: 0.01,
       max_risk_per_trade_pct: 1.0,
+      direction_filter: 'long_only',
       // Auto-enable scanner for SCANNER_AUTO pipeline
       ...(newInstancePipeline === 'scanner_auto' ? {
         enable_scanner: true,
@@ -927,6 +928,7 @@ export default function AutomationPage() {
     xgboost: "ML Auto-Select",
     xgboost_ensemble: "ML Ensemble Vote",
     scanner_auto: "Scanner Auto",
+    wyckoff_volume: "Wyckoff Volume",
     gold_silver_pullback: "Gold/Silver Pullback",
     gold_silver_pullback_mtf: "Gold/Silver MTF",
   }
@@ -945,6 +947,7 @@ export default function AutomationPage() {
     xgboost: "text-rose-500",
     xgboost_ensemble: "text-pink-500",
     scanner_auto: "text-fuchsia-500",
+    wyckoff_volume: "text-lime-500",
     gold_silver_pullback: "text-yellow-500",
     gold_silver_pullback_mtf: "text-amber-500",
   }
@@ -1024,6 +1027,12 @@ export default function AutomationPage() {
       recommendedTimeframes: "D1 (best), H4",
       recommendedInterval: "15-60 min (instant inference)",
     },
+    wyckoff_volume: {
+      summary: "XGBoost breakout signals filtered by LLM Wyckoff volume-spread analysis. Best for XAUUSD D1.",
+      details: "Two-stage pipeline: (1) XGBoost breakout model generates signals, (2) LLM applies Wyckoff phase, effort-vs-result, and bar quality analysis to filter bad trades. Backtest (XAUUSD D1, 500 bars): 70.1% WR, PF 3.18, avg +2.0%/trade. Catches counter-trend signals the model misses. Adds ~2s LLM latency per signal. Uses Grok by default.",
+      recommendedTimeframes: "D1 (best)",
+      recommendedInterval: "15-60 min",
+    },
     scanner_auto: {
       summary: "Scans 17 pairs, detects regime, auto-routes each to the best pipeline. Fully adaptive.",
       details: "The scanner analyses momentum, trend strength, volatility and squeeze across the full watchlist. For each qualifying pair it classifies the regime (strong trend → rule_based, moderate trend → xgboost, ranging → range_quant, squeeze → breakout_quant, volatile trend → smc_mtf) and dispatches to the best pipeline automatically. As markets shift regime, the automation shifts with them. Scanner is always enabled in this mode.",
@@ -1060,6 +1069,7 @@ export default function AutomationPage() {
     multi_agent:    { timeframe: "D1", interval: 7200,  confidence: 0.70, atrMultiplier: 2.0 },
     xgboost:        { timeframe: "D1", interval: 900,   confidence: 0.60, atrMultiplier: 1.5 },
     xgboost_ensemble:{ timeframe: "D1", interval: 900,  confidence: 0.60, atrMultiplier: 1.5 },
+    wyckoff_volume:  { timeframe: "D1", interval: 900,  confidence: 0.60, atrMultiplier: 2.0 },
     scanner_auto:    { timeframe: "D1", interval: 900,  confidence: 0.60, atrMultiplier: 1.5 },
     gold_silver_pullback: { timeframe: "D1", interval: 14400, confidence: 0.60, atrMultiplier: 2.5 },
     gold_silver_pullback_mtf: { timeframe: "D1", interval: 7200, confidence: 0.60, atrMultiplier: 2.5 },
@@ -2118,6 +2128,27 @@ export default function AutomationPage() {
                             </div>
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
+                                <Label className="text-xs">Direction Filter</Label>
+                                <HelpTooltip content="Controls which trade directions are allowed. Long Only is the default and recommended for XAUUSD — gold is in a multi-year uptrend and shorting pullbacks has a 0% win rate in backtests. Use Both only for ranging pairs or if you have strong counter-trend evidence." />
+                              </div>
+                              <select
+                                className="text-xs rounded-md border border-input bg-background px-2 py-1"
+                                value={inst.config.direction_filter || 'long_only'}
+                                onChange={(e) => handleInstanceConfigUpdate(name, 'direction_filter', e.target.value)}
+                                disabled={isRunning}
+                              >
+                                <option value="long_only">Long Only (recommended for Gold)</option>
+                                <option value="both">Both Directions</option>
+                                <option value="short_only">Short Only</option>
+                              </select>
+                            </div>
+                            {(inst.config.direction_filter || 'long_only') === 'long_only' && (inst.config.symbols || []).some((s: string) => s.includes('XAU')) && (
+                              <div className="p-2 rounded-md bg-yellow-500/10 border border-yellow-500/20 text-xs text-yellow-600">
+                                Gold (XAUUSD) is in a multi-year uptrend. Long Only mode blocks SELL signals which have 0% win rate in backtests. This is the recommended setting.
+                              </div>
+                            )}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
                                 <Label htmlFor={`delegate-${name}`} className="text-xs">Delegate to Trade Manager</Label>
                                 <HelpTooltip content="Hand off position management (trailing stops, breakeven, reversal close) to the centralized Trade Management Agent. When enabled, this instance stops managing its own positions. Make sure the Trade Manager is running before enabling." />
                               </div>
@@ -2800,6 +2831,8 @@ export default function AutomationPage() {
                   <SelectItem value="gold_trend_pullback">Gold Trend-Pullback D1 (no LLM, best WR)</SelectItem>
                   <SelectItem value="gold_silver_pullback">Gold/Silver Pullback D1 (no LLM)</SelectItem>
                   <SelectItem value="gold_silver_pullback_mtf">Gold/Silver MTF D1+H4 (no LLM)</SelectItem>
+                  {/* --- Wyckoff --- */}
+                  <SelectItem value="wyckoff_volume">Wyckoff Volume (XGBoost + LLM gatekeeper)</SelectItem>
                   {/* --- Multi-agent / auto --- */}
                   <SelectItem value="multi_agent">Multi-Agent AI (LLM, high cost)</SelectItem>
                   <SelectItem value="scanner_auto">Scanner Auto (scans all pairs)</SelectItem>

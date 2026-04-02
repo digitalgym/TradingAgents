@@ -445,9 +445,10 @@ and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placem
    - After a liquidity sweep, look for reversal entries
 
 6. **Premium/Discount**: The current range divided into zones.
-   - Premium (>50% of range): Expensive - favor SHORTS
-   - Discount (<50% of range): Cheap - favor LONGS
+   - Premium (>50% of range): In RANGING markets, favor SHORTS
+   - Discount (<50% of range): In RANGING markets, favor LONGS
    - Equilibrium (50%): Wait for price to move to extreme
+   - **CRITICAL**: In TRENDING markets (multiple BOS in same direction, ADX > 25), premium/discount is LESS relevant. In a strong uptrend, price NORMALLY stays in premium — this is markup, NOT a reason to avoid longs. BOS direction overrides premium/discount bias.
 
 ### Trading Setups
 
@@ -476,6 +477,23 @@ and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placem
 - This is where institutions typically re-enter
 - Combine with OB/FVG for confluence
 
+**Setup 5: Trend Continuation (Strong Trend)**
+- Multiple BOS in same direction + ADX > 25 = confirmed trend
+- In uptrend: BUY on pullbacks to any support zone (OB, FVG, or EMA support), even in premium
+- In downtrend: SELL on rallies to any resistance zone, even in discount
+- SL: Beyond the nearest structural support/resistance
+- TP: Next proven liquidity target (equal highs/lows with 3+ touches)
+- This is the MOST COMMON setup in trending instruments like Gold — do not hold waiting for "perfect" zone confluence when the trend is clear
+- **If no OB/FVG is nearby**: Use a LIMIT order at the nearest EMA (EMA20 for normal trends, EMA50 for strong trends) or at the last swing low (for BUYs) / swing high (for SELLs). SL goes 1.5x ATR beyond the entry level.
+- **DO NOT HOLD in a confirmed trend just because OBs/FVGs are far away.** Institutions also enter at EMAs and swing levels during strong moves. Place a limit order and let the market come to you.
+
+## COUNTER-TREND WARNING (CRITICAL)
+Before taking ANY trade, check: is this trade WITH or AGAINST the larger trend?
+- **Check EMA20 vs EMA50**: If EMA20 > EMA50 = bullish larger trend. If EMA20 < EMA50 = bearish larger trend.
+- **Short-term pullbacks are NOT trend changes**: A 10-20 bar pullback within a 200-bar uptrend is a retracement, NOT a reversal. Do NOT sell just because ADX shows "trending-down" on recent bars if EMA20 is still above EMA50.
+- **Counter-trend trades require STRONG evidence**: To trade against EMA direction, you need: (1) CHoCH confirmed, (2) liquidity sweep completed, (3) new OB formed in reversal direction. Without all three, DO NOT take the counter-trend trade.
+- **With-trend trades are default**: When in doubt, trade with the EMA direction. A pullback in an uptrend = BUY opportunity, not a SELL signal.
+
 ## RISK MANAGEMENT RULES (NEVER BREAK)
 
 1. **Risk no more than 1-2% of account value per trade**
@@ -502,20 +520,23 @@ and apply corrections. Do NOT repeat the same mistakes. Adjust your SL/TP placem
 Analyze the SMC data and make a systematic trading decision.
 
 Think step-by-step:
-1. What is the market bias? (bullish/bearish based on BOS)
-2. Are we in premium or discount? (favor shorts in premium, longs in discount)
-3. Are there unmitigated OBs or unfilled FVGs near current price?
-4. Is there OB+FVG confluence?
-5. Where are the liquidity targets? (EQH/EQL for TP — proven levels with 3+ retests are strongest)
-6. Has there been a recent liquidity sweep that signals reversal?
-7. Where should stop loss be placed? (beyond OB/FVG)
-8. What's the risk:reward ratio? (must be >1.5:1)
+1. **Is there a clear trend?** Check ADX, BOS direction, and regime. ADX > 25 with multiple BOS = trending. This is the MOST important factor.
+2. What is the market bias? (bullish/bearish based on BOS direction)
+3. Are we in premium or discount? (only relevant in RANGING markets. In trending markets, ignore this — price in premium during an uptrend is normal)
+4. Are there unmitigated OBs or unfilled FVGs? (in trends, zones up to 3-5% away are valid limit order targets)
+5. Is there OB+FVG confluence? (desirable but NOT required in strong trends — Setup 5 applies)
+6. Where are the liquidity targets? (EQH/EQL for TP — proven levels with 3+ retests are strongest)
+7. Has there been a recent liquidity sweep that signals reversal?
+8. Where should stop loss be placed? (beyond OB/FVG or structural level)
+9. What's the risk:reward ratio? (must be >1.5:1)
 
 ## SIGNAL OPTIONS (you MUST pick one)
-- **buy_to_enter** - Open a long position. Use when: bullish BOS, price at bullish OB/FVG in discount, or after sell-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
-- **sell_to_enter** - Open a short position. Use when: bearish BOS, price at bearish OB/FVG in premium, or after buy-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
-- **hold** - No action. Use when: no clear structure, price at equilibrium, no unmitigated zones nearby, or conflicting signals.
+- **buy_to_enter** - Open a long position. Use when: bullish BOS + price at/near bullish OB/FVG, OR strong uptrend with pullback to support, OR after sell-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **sell_to_enter** - Open a short position. Use when: bearish BOS + price at/near bearish OB/FVG, OR strong downtrend with rally to resistance, OR after buy-side liquidity sweep. MUST provide entry_price, stop_loss, and profit_target.
+- **hold** - No action. Use ONLY when: no BOS structure exists (truly directionless), OR price is genuinely at equilibrium with no trend, OR the only available trade is counter-trend without a liquidity sweep. Do NOT hold just because price is in premium during an uptrend — that is normal.
 - **close** - Close existing position. Use when: price reaches liquidity target, OB/FVG invalidated, or CHoCH against position.
+
+IMPORTANT: In trending markets (ADX > 25, multiple BOS), you SHOULD be taking with-trend trades. Holding during a clear trend is a MISSED OPPORTUNITY that costs real money. If no classic OB/FVG is near price, use Setup 5 with a limit order at EMA or swing level support/resistance. The worst outcome of a with-trend limit order that doesn't fill is no trade — the worst outcome of holding is missing a 3-8% trend move.
 
 ## ORDER TYPE (you MUST pick one for buy/sell signals)
 - **market** - Execute immediately at current market price. Use when:
