@@ -303,7 +303,7 @@ def mechanical_mr_signal(
     Returns the first triggered signal, or HOLD if neither fires.
     """
     from tradingagents.agents.analysts.range_quant import analyze_range
-    from tradingagents.xgb_quant.strategies.mean_reversion import MR_EXCLUDED_PAIRS
+    from tradingagents.quant_strats.strategies.mean_reversion import MR_EXCLUDED_PAIRS
 
     if symbol in MR_EXCLUDED_PAIRS:
         return MechanicalSignal(

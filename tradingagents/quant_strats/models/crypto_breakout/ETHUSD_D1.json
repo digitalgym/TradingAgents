@@ -1,0 +1,9 @@
+{
+  "strategy": "crypto_breakout",
+  "risk": {
+    "sl_atr_mult": 1.39,
+    "tp_atr_mult": 2.77,
+    "signal_threshold": 0.625,
+    "max_hold_bars": 25
+  }
+}

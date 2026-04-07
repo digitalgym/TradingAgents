@@ -1,5 +1,10 @@
 @echo off
 title TradingAgents
+
+set "ROOT=%~dp0"
+set "ACTIVATE=%ROOT%.venv\Scripts\activate.bat"
+set "PYTHON=%ROOT%.venv\Scripts\python.exe"
+
 echo ==========================================
 echo  TradingAgents - Starting Application
 echo ==========================================
@@ -11,68 +16,33 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr :8000 ^| findstr LISTENING') 
 for /f "tokens=5" %%a in ('netstat -ano ^| findstr :3000 ^| findstr LISTENING') do taskkill /PID %%a /F >nul 2>&1
 timeout /t 2 /nobreak >nul
 
-:: Start backend
-echo Starting backend (port 8000)...
-cd /d "%~dp0web\backend"
-start "TradingAgents Backend" cmd /k "title TradingAgents Backend && python -m uvicorn main:app --host 0.0.0.0 --port 8000"
-
-:: MT5 worker commands: --mt5-restart, --mt5-stop
-if "%1"=="--mt5-restart" (
-    echo Restarting MT5 worker...
-    cd /d "%~dp0web\backend"
-    python mt5_worker.py stop
-    timeout /t 3 /nobreak >nul
-    start "MT5 Worker" cmd /k "title MT5 Worker && python mt5_worker.py start"
-    goto :end
-)
-if "%1"=="--mt5-stop" (
-    echo Stopping MT5 worker...
-    cd /d "%~dp0web\backend"
-    python mt5_worker.py stop
-    goto :end
-)
-if "%1"=="--mt5" (
-    echo Starting MT5 worker...
-    cd /d "%~dp0web\backend"
-    start "MT5 Worker" cmd /k "title MT5 Worker && python mt5_worker.py start"
-)
-
-:: TMA worker commands: --tma, --tma-restart, --tma-stop
-if "%1"=="--tma-restart" (
-    echo Restarting TMA worker...
-    cd /d "%~dp0web\backend"
-    python tma_worker.py stop
-    timeout /t 3 /nobreak >nul
-    start "TMA Worker" cmd /k "title TMA Worker && python tma_worker.py start"
-    goto :end
-)
-if "%1"=="--tma-stop" (
-    echo Stopping TMA worker...
-    cd /d "%~dp0web\backend"
-    python tma_worker.py stop
-    goto :end
-)
-if "%1"=="--tma" (
-    echo Starting TMA worker...
-    cd /d "%~dp0web\backend"
-    start "TMA Worker" cmd /k "title TMA Worker && python tma_worker.py start"
-)
-
-:: Wait for backend to be ready
-echo Waiting for backend...
-timeout /t 5 /nobreak >nul
-
-:: Start frontend
-echo Starting frontend (port 3000)...
-cd /d "%~dp0web\frontend"
+:: Install frontend deps if needed
+cd /d "%ROOT%web\frontend"
 if not exist "node_modules" (
     echo Installing frontend dependencies...
-    npm install
+    call npm install
 )
-start "TradingAgents Frontend" cmd /k "title TradingAgents Frontend && npm run dev"
 
-:: Wait for frontend to be ready
+:: Start backend (minimized)
+echo Starting backend (port 8000)...
+start /min "TradingAgents Backend" cmd /c "title TradingAgents Backend && cd /d %ROOT%web\backend && call %ACTIVATE% && python -m uvicorn main:app --host 0.0.0.0 --port 8000"
+
+:: Wait for backend
 timeout /t 5 /nobreak >nul
+
+:: Start MT5 worker (minimized)
+echo Starting MT5 worker...
+start /min "MT5 Worker" cmd /c "title MT5 Worker && cd /d %ROOT%web\backend && call %ACTIVATE% && python mt5_worker.py start"
+
+:: Start TMA worker (minimized)
+echo Starting TMA worker...
+start /min "TMA Worker" cmd /c "title TMA Worker && cd /d %ROOT%web\backend && call %ACTIVATE% && python tma_worker.py start"
+
+:: Start frontend (minimized)
+echo Starting frontend (port 3000)...
+start /min "TradingAgents Frontend" cmd /c "title TradingAgents Frontend && cd /d %ROOT%web\frontend && npx next dev -p 3000"
+
+timeout /t 3 /nobreak >nul
 
 echo.
 echo ==========================================
@@ -81,6 +51,6 @@ echo  Frontend: http://localhost:3000
 echo  Backend:  http://localhost:8000
 echo ==========================================
 echo.
-echo Close the Backend and Frontend windows to stop.
-:end
+echo Close this window to leave services running,
+echo or press any key then close all titled windows to stop.
 pause

@@ -5994,6 +5994,12 @@ async def train_xgboost_models(request: XGBoostTrainRequest):
         from tradingagents.quant_strats.strategies.volume_profile_strat import VolumeProfileStrategy
         from tradingagents.quant_strats.strategies.keltner_mean_reversion import KeltnerMeanReversionStrategy
 
+        from tradingagents.quant_strats.strategies.fvg_rebalance import FVGRebalanceStrategy
+        from tradingagents.quant_strats.strategies.crypto_trend_follow import CryptoTrendFollowStrategy
+        from tradingagents.quant_strats.strategies.d1_range_trade import D1RangeTradeStrategy
+        from tradingagents.quant_strats.strategies.crypto_breakout import CryptoBreakoutStrategy
+        from tradingagents.quant_strats.strategies.crypto_momentum import CryptoMomentumStrategy
+
         all_strategies = {
             "trend_following": TrendFollowingStrategy,
             "mean_reversion": MeanReversionStrategy,
@@ -6001,6 +6007,11 @@ async def train_xgboost_models(request: XGBoostTrainRequest):
             "smc_zones": SMCZonesStrategy,
             "volume_profile_strat": VolumeProfileStrategy,
             "keltner_mean_reversion": KeltnerMeanReversionStrategy,
+            "fvg_rebalance": FVGRebalanceStrategy,
+            "crypto_trend_follow": CryptoTrendFollowStrategy,
+            "d1_range_trade": D1RangeTradeStrategy,
+            "crypto_breakout": CryptoBreakoutStrategy,
+            "crypto_momentum": CryptoMomentumStrategy,
         }
 
         # Filter strategies if specified

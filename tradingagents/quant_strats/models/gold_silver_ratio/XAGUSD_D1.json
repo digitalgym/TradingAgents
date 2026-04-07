@@ -1,0 +1,9 @@
+{
+  "strategy": "gold_silver_ratio",
+  "risk": {
+    "sl_atr_mult": 2.845884302155435,
+    "tp_atr_mult": 2.061659256693794,
+    "signal_threshold": 0.6069673310587701,
+    "max_hold_bars": 20
+  }
+}

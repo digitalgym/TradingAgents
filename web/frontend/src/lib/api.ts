@@ -778,6 +778,7 @@ export interface QuantAnalysisResult {
   executed: boolean
   execution_ticket: number | null
   execution_error: string | null
+  decision_id: string | null
   duration_seconds: number
 }
 

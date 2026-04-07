@@ -19,10 +19,10 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-from tradingagents.xgb_quant.strategies.base import BaseStrategy, Signal
-from tradingagents.xgb_quant.features.base import BaseFeatureSet
-from tradingagents.xgb_quant.features.technical import TechnicalFeatures
-from tradingagents.xgb_quant.config import (
+from tradingagents.quant_strats.strategies.base import BaseStrategy, Signal
+from tradingagents.quant_strats.features.base import BaseFeatureSet
+from tradingagents.quant_strats.features.technical import TechnicalFeatures
+from tradingagents.quant_strats.config import (
     FeatureWindows, RiskDefaults, DONCHIAN_BREAKOUT_DEFAULTS,
 )
 

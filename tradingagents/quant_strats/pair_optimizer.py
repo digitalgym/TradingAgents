@@ -22,7 +22,7 @@ from typing import Dict, List, Optional, Any, Callable
 
 import pandas as pd
 
-from tradingagents.xgb_quant.config import (
+from tradingagents.quant_strats.config import (
     DEFAULT_WATCHLIST,
     RESULTS_DIR,
     MODELS_DIR,
@@ -247,7 +247,7 @@ class PairOptimizer:
         else:
             # No baseline — run one to get it
             try:
-                from tradingagents.xgb_quant.trainer import WalkForwardTrainer
+                from tradingagents.quant_strats.trainer import WalkForwardTrainer
                 trainer = WalkForwardTrainer()
                 strategy = strategy_cls()
                 bt = trainer.train_and_evaluate(strategy, df_opt, symbol, tf)
@@ -283,7 +283,7 @@ class PairOptimizer:
             self._report(f"  {symbol} {tf} {strat_name}: {phase_label}...")
 
             try:
-                from tradingagents.xgb_quant.parameter_tuner import ParameterTuner
+                from tradingagents.quant_strats.parameter_tuner import ParameterTuner
                 tuner = ParameterTuner()
                 tune_result = tuner.tune(
                     strategy=strategy_cls(),
@@ -346,7 +346,7 @@ class PairOptimizer:
         self._report(f"  {symbol} {tf} {strat_name}: Phase 2 (full XGB tune)...")
 
         try:
-            from tradingagents.xgb_quant.parameter_tuner import ParameterTuner
+            from tradingagents.quant_strats.parameter_tuner import ParameterTuner
             tuner = ParameterTuner()
             tune_result = tuner.tune(
                 strategy=strategy_cls(),
@@ -395,7 +395,7 @@ class PairOptimizer:
 
         best_window = "default"
         try:
-            from tradingagents.xgb_quant.trainer import WalkForwardTrainer
+            from tradingagents.quant_strats.trainer import WalkForwardTrainer
 
             for profile_name, windows in WINDOW_PROFILES.items():
                 if profile_name == "default":
@@ -457,7 +457,7 @@ class PairOptimizer:
             return
 
         try:
-            from tradingagents.xgb_quant.trainer import WalkForwardTrainer
+            from tradingagents.quant_strats.trainer import WalkForwardTrainer
 
             strategy = strategy_cls()
             if best_params:
@@ -538,13 +538,13 @@ class PairOptimizer:
 
     @staticmethod
     def _load_strategies(names: List[str]) -> Dict[str, type]:
-        from tradingagents.xgb_quant.strategies.trend_following import TrendFollowingStrategy
-        from tradingagents.xgb_quant.strategies.mean_reversion import MeanReversionStrategy
-        from tradingagents.xgb_quant.strategies.breakout import BreakoutStrategy
-        from tradingagents.xgb_quant.strategies.smc_zones import SMCZonesStrategy
-        from tradingagents.xgb_quant.strategies.volume_profile_strat import VolumeProfileStrategy
-        from tradingagents.xgb_quant.strategies.donchian_breakout import DonchianBreakoutStrategy
-        from tradingagents.xgb_quant.strategies.flag_continuation import FlagContinuationStrategy
+        from tradingagents.quant_strats.strategies.trend_following import TrendFollowingStrategy
+        from tradingagents.quant_strats.strategies.mean_reversion import MeanReversionStrategy
+        from tradingagents.quant_strats.strategies.breakout import BreakoutStrategy
+        from tradingagents.quant_strats.strategies.smc_zones import SMCZonesStrategy
+        from tradingagents.quant_strats.strategies.volume_profile_strat import VolumeProfileStrategy
+        from tradingagents.quant_strats.strategies.donchian_breakout import DonchianBreakoutStrategy
+        from tradingagents.quant_strats.strategies.flag_continuation import FlagContinuationStrategy
 
         registry = {
             "trend_following": TrendFollowingStrategy,
@@ -658,7 +658,7 @@ class PairOptimizer:
 
     def _update_blacklist(self, report: OptimizationReport):
         """Update blacklist with refined non-viable + overfit combos."""
-        from tradingagents.xgb_quant.batch_trainer import BatchTrainer
+        from tradingagents.quant_strats.batch_trainer import BatchTrainer
 
         blacklist = BatchTrainer.load_blacklist()
         existing_keys = {f"{e['symbol']}:{e['strategy']}:{e.get('timeframe', '')}" for e in blacklist}

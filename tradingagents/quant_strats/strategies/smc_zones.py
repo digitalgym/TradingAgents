@@ -92,4 +92,26 @@ class SMCZonesStrategy(BaseStrategy):
             elif (direction > 0 and rsi > 75) or (direction < 0 and rsi < 25):
                 score *= 0.5  # Cut signal in half — overextended
 
+        # 6. OTE zone overlap (highest probability entries)
+        in_ote = row.get("in_ote_zone", 0)
+        if not np.isnan(in_ote) and in_ote > 0:
+            score *= 1.15  # 15% bonus
+
+        # 7. Liquidity sweep confirmation
+        has_sweep = row.get("has_strong_sweep", 0)
+        if not np.isnan(has_sweep) and has_sweep > 0:
+            score *= 1.10  # 10% bonus — sweep trapped retail before reversal
+
+        # 8. Kill zone session bonus
+        in_kill = row.get("in_kill_zone", 0)
+        if not np.isnan(in_kill) and in_kill > 0:
+            score *= 1.05  # 5% bonus — institutional session
+
+        # 9. Strong displacement penalty/bonus
+        bos_disp = row.get("bos_displacement_strength", 0)
+        if not np.isnan(bos_disp) and bos_disp > 1.5:
+            score *= 1.10  # Strong structure = reliable zone
+        elif not np.isnan(bos_disp) and 0 < bos_disp < 0.8:
+            score *= 0.7  # Weak displacement = less reliable
+
         return float(np.clip(score, -1.0, 1.0))

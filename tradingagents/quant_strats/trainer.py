@@ -142,6 +142,7 @@ class WalkForwardTrainer:
         timeframe: str,
         use_trade_labels: bool = False,
         regime_filter: bool = True,
+        precomputed_features: Optional[pd.DataFrame] = None,
     ) -> BacktestResult:
         """
         Walk-forward evaluate a rule-based strategy.
@@ -158,6 +159,8 @@ class WalkForwardTrainer:
             regime_filter: If True, apply regime filtering to training and backtesting.
                            Mean reversion only trains/trades on ranging bars.
                            Set False to see unfiltered performance.
+            precomputed_features: Pre-computed feature DataFrame to skip expensive
+                                  recomputation (e.g., during parameter grid search).
 
         Returns:
             BacktestResult with performance metrics
@@ -165,11 +168,18 @@ class WalkForwardTrainer:
         feature_set = strategy.get_feature_set()
         cfg = self.config
 
-        logger.info(
-            f"Computing features for {strategy.name} on {symbol} {timeframe} "
-            f"({len(df)} bars, warmup={feature_set.warmup_bars})..."
-        )
-        features = feature_set.compute(df)
+        if precomputed_features is not None:
+            features = precomputed_features
+            logger.info(
+                f"Using precomputed features for {strategy.name} on {symbol} {timeframe} "
+                f"({len(features)} rows, {len(features.columns)} columns)"
+            )
+        else:
+            logger.info(
+                f"Computing features for {strategy.name} on {symbol} {timeframe} "
+                f"({len(df)} bars, warmup={feature_set.warmup_bars})..."
+            )
+            features = feature_set.compute(df)
 
         total_rows = len(features)
         valid_rows = features.notna().all(axis=1).sum()
@@ -221,6 +231,21 @@ class WalkForwardTrainer:
         fold_win_rates: List[float] = []
 
         for train_start, train_end, test_start, test_end in folds:
+            # Train ML model on training fold if strategy supports it
+            if hasattr(strategy, 'train_model') and callable(strategy.train_model):
+                try:
+                    # Generate trade labels from training data
+                    train_labels = self._generate_trade_labels(
+                        features, train_start, train_end, df, strategy,
+                    )
+                    if train_labels is not None and np.nansum(train_labels >= 0) > 20:
+                        strategy.train_model(
+                            features.iloc[train_start:train_end],
+                            train_labels,
+                        )
+                except Exception as e:
+                    logger.debug(f"ML training failed for fold, using rule-based: {e}")
+
             # Score and simulate trades for this fold
             fold_trades = self._simulate_trades_from_rules(
                 features, test_start, test_end, df, strategy,
@@ -324,6 +349,60 @@ class WalkForwardTrainer:
 
         return splits
 
+    def _generate_trade_labels(
+        self,
+        features: pd.DataFrame,
+        start: int,
+        end: int,
+        df: pd.DataFrame,
+        strategy: 'BaseStrategy',
+    ) -> Optional[np.ndarray]:
+        """
+        Generate binary trade labels for ML training.
+
+        Simulates trades on training data and labels each bar:
+        - 1.0 if a trade from that bar would have been profitable
+        - 0.0 if it would have lost
+        - NaN if no trade signal
+        """
+        from tradingagents.quant_strats.backtest_utils import simulate_exit as _simulate_exit, compute_atr as _compute_atr
+
+        high = df["high"].values.astype(float)
+        low = df["low"].values.astype(float)
+        close = df["close"].values.astype(float)
+
+        n = end - start
+        labels = np.full(n, np.nan)
+
+        atr_arr = _compute_atr(high, low, close)
+        risk = strategy.risk
+
+        for i in range(start, end):
+            idx_in_labels = i - start
+            atr = atr_arr[i] if i < len(atr_arr) and not np.isnan(atr_arr[i]) else 0
+            if atr <= 0:
+                continue
+
+            signal = strategy.predict_signal(features.iloc[:i + 1], atr, close[i])
+            if signal.direction == "HOLD":
+                continue
+
+            entry = close[i]
+            sl = signal.stop_loss
+            tp = signal.take_profit
+
+            exit_info = _simulate_exit(
+                signal.direction, entry, sl, tp,
+                high, low, close, i + 1, risk.max_hold_bars,
+            )
+
+            if exit_info and exit_info.get("pnl_pct", 0) > 0:
+                labels[idx_in_labels] = 1.0
+            elif exit_info:
+                labels[idx_in_labels] = 0.0
+
+        return labels
+
     def _simulate_trades_from_rules(
         self,
         features: pd.DataFrame,
@@ -339,7 +418,7 @@ class WalkForwardTrainer:
         If regime_mask is provided, trades are only taken on bars where
         the mask is True — matching what the live regime gate does.
         """
-        from tradingagents.automation.auto_tuner import _simulate_exit, _compute_atr
+        from tradingagents.quant_strats.backtest_utils import simulate_exit as _simulate_exit, compute_atr as _compute_atr
 
         high = df["high"].values.astype(float)
         low = df["low"].values.astype(float)

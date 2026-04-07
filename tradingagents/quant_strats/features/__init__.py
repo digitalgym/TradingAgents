@@ -7,6 +7,7 @@ from tradingagents.quant_strats.features.volume_profile import VolumeProfileFeat
 from tradingagents.quant_strats.features.regime import RegimeFeatures
 from tradingagents.quant_strats.features.composite import CompositeFeatures
 from tradingagents.quant_strats.features.wyckoff import WyckoffFeatures
+from tradingagents.quant_strats.features.session import SessionFeatures
 
 __all__ = [
     "BaseFeatureSet",
@@ -16,4 +17,5 @@ __all__ = [
     "RegimeFeatures",
     "CompositeFeatures",
     "WyckoffFeatures",
+    "SessionFeatures",
 ]

@@ -37,6 +37,7 @@ _STRATEGY_MAP = {
     "keltner_mean_reversion": ("tradingagents.quant_strats.strategies.keltner_mean_reversion", "KeltnerMeanReversionStrategy"),
     "copper_ema_pullback": ("tradingagents.quant_strats.strategies.copper_ema_pullback", "CopperEMAPullbackStrategy"),
     "gold_platinum_ratio": ("tradingagents.quant_strats.strategies.gold_platinum_ratio", "GoldPlatinumRatioStrategy"),
+    "gold_silver_ratio": ("tradingagents.quant_strats.strategies.gold_silver_ratio", "GoldSilverRatioStrategy"),
 }
 
 

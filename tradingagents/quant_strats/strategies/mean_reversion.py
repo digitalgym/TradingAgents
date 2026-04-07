@@ -23,6 +23,9 @@ from tradingagents.quant_strats.features.base import BaseFeatureSet
 from tradingagents.quant_strats.features.technical import TechnicalFeatures
 from tradingagents.quant_strats.config import FeatureWindows
 
+# Pairs excluded from mean-reversion: too volatile / trending for fade setups
+MR_EXCLUDED_PAIRS = frozenset({"BTCUSD", "GBPJPY", "ETHUSD", "XAUUSD", "XAGUSD"})
+
 
 class MeanReversionFeatures(TechnicalFeatures):
     """Technical features + mean reversion specific features."""

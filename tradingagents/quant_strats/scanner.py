@@ -68,7 +68,7 @@ class PairScanner:
     def _load_blacklist() -> set:
         """Load blacklisted symbol+pipeline combos from batch training results."""
         try:
-            from tradingagents.xgb_quant.batch_trainer import BatchTrainer
+            from tradingagents.quant_strats.batch_trainer import BatchTrainer
             entries = BatchTrainer.load_blacklist()
             # Build a set of "SYMBOL:pipeline" for fast lookup
             # Map strategy names back to pipeline names where they differ
@@ -423,7 +423,7 @@ class PairScanner:
 
         # Check if any viable model exists for this pair
         try:
-            from tradingagents.xgb_quant.strategy_selector import StrategySelector
+            from tradingagents.quant_strats.strategy_selector import StrategySelector
             selector = StrategySelector()
             selection = selector.select(symbol, regime=regime)
 

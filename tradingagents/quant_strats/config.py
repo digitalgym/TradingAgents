@@ -135,6 +135,30 @@ STRATEGY_XGB_DEFAULTS: Dict[str, Dict[str, Any]] = {
         "objective": "binary:logistic",
         "eval_metric": "logloss",
     },
+    "smc_confluence_ml": {
+        "max_depth": 4,
+        "learning_rate": 0.08,
+        "n_estimators": 200,
+        "subsample": 0.8,
+        "min_child_weight": 5,
+        "colsample_bytree": 0.6,       # ~91 features — force feature selection
+        "reg_alpha": 0.3,              # Strong L1 regularization
+        "reg_lambda": 2.0,             # Strong L2 regularization
+        "objective": "binary:logistic",
+        "eval_metric": "logloss",
+    },
+    "smc_sweep_ml": {
+        "max_depth": 4,
+        "learning_rate": 0.1,
+        "n_estimators": 150,
+        "subsample": 0.8,
+        "min_child_weight": 5,
+        "colsample_bytree": 0.8,       # 24 features — less subsampling
+        "reg_alpha": 0.1,
+        "reg_lambda": 1.0,
+        "objective": "binary:logistic",
+        "eval_metric": "logloss",
+    },
 }
 
 
@@ -259,6 +283,30 @@ REGIME_SUITABILITY: Dict[str, Dict[str, float]] = {
     },
     "flag_continuation": {
         "trending-up": 0.95, "trending-down": 0.95, "ranging": 0.1,
+    },
+    "fvg_rebalance": {
+        "trending-up": 0.6, "trending-down": 0.6, "ranging": 0.7,
+    },
+    "crypto_trend_follow": {
+        "trending-up": 0.9, "trending-down": 0.9, "ranging": 0.1,
+    },
+    "d1_range_trade": {
+        "trending-up": 0.2, "trending-down": 0.2, "ranging": 0.95,
+    },
+    "crypto_breakout": {
+        "trending-up": 0.7, "trending-down": 0.7, "ranging": 0.6,
+    },
+    "crypto_momentum": {
+        "trending-up": 0.8, "trending-down": 0.8, "ranging": 0.3,
+    },
+    "smc_confluence_ml": {
+        "trending-up": 0.8, "trending-down": 0.8, "ranging": 0.5,
+    },
+    "smc_sweep_ml": {
+        "trending-up": 0.6, "trending-down": 0.6, "ranging": 0.85,
+    },
+    "gold_silver_ratio": {
+        "trending-up": 0.5, "trending-down": 0.5, "ranging": 0.8,
     },
 }
 

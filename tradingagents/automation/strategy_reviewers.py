@@ -586,7 +586,7 @@ def review_mean_reversion(
 
     # --- XGBoost re-prediction ---
     try:
-        from tradingagents.xgb_quant.predictor import LivePredictor
+        from tradingagents.quant_strats.predictor import LivePredictor
         predictor = LivePredictor()
         atr = _compute_atr(df) if df is not None else 0
 

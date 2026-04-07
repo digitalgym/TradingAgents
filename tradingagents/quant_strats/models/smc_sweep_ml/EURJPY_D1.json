@@ -1,0 +1,36 @@
+{
+  "strategy": "smc_sweep_ml",
+  "risk": {
+    "sl_atr_mult": 1.39,
+    "tp_atr_mult": 2.77,
+    "signal_threshold": 0.625,
+    "max_hold_bars": 25
+  },
+  "feature_names": [
+    "sweep_bullish_recent",
+    "sweep_bearish_recent",
+    "nearest_sweep_rejection_strength",
+    "nearest_sweep_atr_penetration",
+    "has_strong_sweep",
+    "equal_highs_count",
+    "equal_lows_count",
+    "nearest_equal_level_dist_atr",
+    "max_equal_touches",
+    "in_ote_zone",
+    "ote_dist_atr",
+    "nearest_ob_dist_atr",
+    "nearest_bull_ob_strength",
+    "nearest_bear_ob_strength",
+    "nearest_fvg_dist_atr",
+    "premium_discount_pct",
+    "ema_cross",
+    "adx_14",
+    "di_diff",
+    "atr_pct",
+    "bb_width",
+    "squeeze_strength",
+    "volume_ratio",
+    "poc_dist_atr"
+  ],
+  "model_file": "EURJPY_D1_xgb.json"
+}

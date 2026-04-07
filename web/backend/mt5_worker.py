@@ -670,7 +670,7 @@ class MT5Worker:
         await self._broadcast_status(instance_name, "running", message="Batch training starting...")
 
         try:
-            from tradingagents.xgb_quant.batch_trainer import BatchTrainer
+            from tradingagents.quant_strats.batch_trainer import BatchTrainer
             from dataclasses import asdict
 
             trainer = BatchTrainer()
@@ -734,8 +734,8 @@ class MT5Worker:
         await self._broadcast_status(instance_name, "running", message="Pair optimization starting...")
 
         try:
-            from tradingagents.xgb_quant.pair_optimizer import PairOptimizer
-            from tradingagents.xgb_quant.config import OptimizationConfig
+            from tradingagents.quant_strats.pair_optimizer import PairOptimizer
+            from tradingagents.quant_strats.config import OptimizationConfig
             from dataclasses import asdict
 
             optimizer = PairOptimizer(

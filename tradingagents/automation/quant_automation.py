@@ -196,6 +196,8 @@ class PipelineType(str, Enum):
     GOLD_TREND_PULLBACK = "gold_trend_pullback"
     GOLD_SILVER_PULLBACK = "gold_silver_pullback"
     GOLD_SILVER_PULLBACK_MTF = "gold_silver_pullback_mtf"
+    XGBOOST = "xgboost"
+    XGBOOST_ENSEMBLE = "xgboost_ensemble"
     WYCKOFF_VOLUME = "wyckoff_volume"  # XGBoost breakout + LLM Wyckoff gatekeeper
     SCANNER_AUTO = "scanner_auto"  # Scanner detects regime per pair → dispatches to best pipeline
 
@@ -993,7 +995,7 @@ class QuantAutomation:
             # --- Regime gate: check if market is ranging before calling LLM ---
             from tradingagents.automation.auto_tuner import load_mt5_data
             from tradingagents.agents.analysts.range_quant import analyze_range
-            from tradingagents.xgb_quant.strategies.mean_reversion import MR_EXCLUDED_PAIRS
+            from tradingagents.quant_strats.strategies.mean_reversion import MR_EXCLUDED_PAIRS
 
             if symbol in MR_EXCLUDED_PAIRS:
                 self.logger.info(f"Range Quant: {symbol} excluded from mean reversion (too volatile)")
@@ -1610,19 +1612,9 @@ class QuantAutomation:
             result.rationale += " | BUY blocked by direction filter (short_only)"
             return result
 
-        # Check news blackout dates (FOMC/NFP — no new trades within 24hrs)
-        try:
-            from tradingagents.quant_strats.config import NEWS_BLACKOUT_DATES
-            today_str = datetime.now().strftime("%Y-%m-%d")
-            yesterday_str = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-            if today_str in NEWS_BLACKOUT_DATES or yesterday_str in NEWS_BLACKOUT_DATES:
-                self.logger.warning(
-                    f"NEWS BLACKOUT: skipping trade for {result.symbol} "
-                    f"(FOMC/NFP within 24hrs)"
-                )
-                return result
-        except ImportError:
-            pass
+        # NOTE: Static news blackout removed (2026-04-03). Was silently blocking
+        # all trades on FOMC/NFP dates including crypto. Future: replace with
+        # dynamic economic calendar API. See roadmap in memory/project_future_features.md
 
         # Check position limits
         # 1) Per-automation: count BOTH open positions AND recent active decisions
@@ -2886,8 +2878,8 @@ class QuantAutomation:
             "range_quant": self._run_range_quant_analysis,
             "volume_profile": self._run_vp_analysis,
             "rule_based": self._run_rule_based_analysis,
-            "xgboost": self._run_xgboost_analysis,
-            "xgboost_ensemble": self._run_xgboost_analysis,
+            "xgboost": self._run_rule_quant_analysis,
+            "xgboost_ensemble": self._run_rule_quant_analysis,
             "multi_agent": self._run_multi_agent_analysis,
             "donchian_breakout": self._run_donchian_breakout_analysis,
             "gold_trend_pullback": self._run_gold_trend_pullback_analysis,
@@ -2925,7 +2917,7 @@ class QuantAutomation:
     def _get_optimized_trailing(self, symbol: str) -> Optional[float]:
         """Load per-pair optimized trailing stop from optimization results."""
         try:
-            from tradingagents.xgb_quant.config import RESULTS_DIR
+            from tradingagents.quant_strats.config import RESULTS_DIR
             params_file = RESULTS_DIR / "_optimization" / "optimized_params" / f"{symbol}.json"
             if not params_file.exists():
                 return None
@@ -3734,7 +3726,7 @@ class QuantAutomation:
 
             predictor = LivePredictor()
 
-            if self.config.pipeline == PipelineType.RULE_QUANT_ENSEMBLE:
+            if self.config.pipeline in (PipelineType.RULE_QUANT_ENSEMBLE, PipelineType.XGBOOST_ENSEMBLE):
                 available = predictor.get_available_models(symbol, self.config.timeframe)
                 if len(available) < 2:
                     return AnalysisCycleResult(
@@ -3826,7 +3818,7 @@ class QuantAutomation:
 
         try:
             from tradingagents.automation.auto_tuner import load_mt5_data, _compute_atr
-            from tradingagents.xgb_quant.predictor import LivePredictor
+            from tradingagents.quant_strats.predictor import LivePredictor
 
             df = load_mt5_data(symbol, self.config.timeframe, bars=500)
             high = df["high"].values.astype(float)
@@ -4029,7 +4021,7 @@ class QuantAutomation:
 
         try:
             from tradingagents.automation.auto_tuner import load_mt5_data
-            from tradingagents.xgb_quant.strategies.gold_trend_pullback import gold_trend_pullback
+            from tradingagents.quant_strats.strategies.gold_trend_pullback import gold_trend_pullback
 
             df_gold = load_mt5_data(symbol, self.config.timeframe, bars=500)
             high = df_gold["high"].values.astype(float)
@@ -4128,8 +4120,8 @@ class QuantAutomation:
         scan_start = _time.time()
 
         try:
-            from tradingagents.xgb_quant.scanner import PairScanner
-            from tradingagents.xgb_quant.config import ScannerConfig
+            from tradingagents.quant_strats.scanner import PairScanner
+            from tradingagents.quant_strats.config import ScannerConfig
 
             scanner_cfg = ScannerConfig(
                 scan_timeframe=self.config.scanner_timeframe,

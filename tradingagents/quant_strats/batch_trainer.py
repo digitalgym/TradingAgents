@@ -21,7 +21,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 
-from tradingagents.xgb_quant.config import (
+from tradingagents.quant_strats.config import (
     DEFAULT_WATCHLIST,
     MODELS_DIR,
     RESULTS_DIR,
@@ -38,6 +38,9 @@ STRATEGY_NAMES = [
     "volume_profile_strat",
     "donchian_breakout",
     "flag_continuation",
+    "smc_confluence_ml",
+    "smc_sweep_ml",
+    "gold_silver_ratio",
 ]
 
 # Default timeframes to train across
@@ -96,7 +99,7 @@ class BatchTrainer:
             bars: History bars to fetch per symbol/TF.
             skip_fresh_days: Skip models trained within N days (0 = retrain all).
         """
-        from tradingagents.xgb_quant.trainer import WalkForwardTrainer
+        from tradingagents.quant_strats.trainer import WalkForwardTrainer
 
         symbols = symbols or DEFAULT_WATCHLIST
         timeframes = timeframes or DEFAULT_TIMEFRAMES
@@ -226,13 +229,16 @@ class BatchTrainer:
     @staticmethod
     def _load_strategies(names: List[str]) -> Dict[str, type]:
         """Lazy-load strategy classes by name."""
-        from tradingagents.xgb_quant.strategies.trend_following import TrendFollowingStrategy
-        from tradingagents.xgb_quant.strategies.mean_reversion import MeanReversionStrategy
-        from tradingagents.xgb_quant.strategies.breakout import BreakoutStrategy
-        from tradingagents.xgb_quant.strategies.smc_zones import SMCZonesStrategy
-        from tradingagents.xgb_quant.strategies.volume_profile_strat import VolumeProfileStrategy
-        from tradingagents.xgb_quant.strategies.donchian_breakout import DonchianBreakoutStrategy
-        from tradingagents.xgb_quant.strategies.flag_continuation import FlagContinuationStrategy
+        from tradingagents.quant_strats.strategies.trend_following import TrendFollowingStrategy
+        from tradingagents.quant_strats.strategies.mean_reversion import MeanReversionStrategy
+        from tradingagents.quant_strats.strategies.breakout import BreakoutStrategy
+        from tradingagents.quant_strats.strategies.smc_zones import SMCZonesStrategy
+        from tradingagents.quant_strats.strategies.volume_profile_strat import VolumeProfileStrategy
+        from tradingagents.quant_strats.strategies.donchian_breakout import DonchianBreakoutStrategy
+        from tradingagents.quant_strats.strategies.flag_continuation import FlagContinuationStrategy
+        from tradingagents.quant_strats.strategies.smc_confluence_ml import SMCConfluenceMLStrategy
+        from tradingagents.quant_strats.strategies.smc_sweep_ml import SMCSweepMLStrategy
+        from tradingagents.quant_strats.strategies.gold_silver_ratio import GoldSilverRatioStrategy
 
         registry = {
             "trend_following": TrendFollowingStrategy,
@@ -242,6 +248,9 @@ class BatchTrainer:
             "volume_profile_strat": VolumeProfileStrategy,
             "donchian_breakout": DonchianBreakoutStrategy,
             "flag_continuation": FlagContinuationStrategy,
+            "smc_confluence_ml": SMCConfluenceMLStrategy,
+            "smc_sweep_ml": SMCSweepMLStrategy,
+            "gold_silver_ratio": GoldSilverRatioStrategy,
         }
         return {k: v for k, v in registry.items() if k in names}
 

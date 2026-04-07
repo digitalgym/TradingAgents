@@ -19,10 +19,10 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-from tradingagents.xgb_quant.strategies.base import BaseStrategy, Signal
-from tradingagents.xgb_quant.features.technical import TechnicalFeatures
-from tradingagents.xgb_quant.features.base import BaseFeatureSet
-from tradingagents.xgb_quant.config import FeatureWindows, RiskDefaults
+from tradingagents.quant_strats.strategies.base import BaseStrategy, Signal
+from tradingagents.quant_strats.features.technical import TechnicalFeatures
+from tradingagents.quant_strats.features.base import BaseFeatureSet
+from tradingagents.quant_strats.config import FeatureWindows, RiskDefaults
 
 logger = logging.getLogger(__name__)
 
@@ -223,7 +223,7 @@ def generate_signals(df: pd.DataFrame, params: Optional[dict] = None) -> pd.Data
 
     For SHORT: mirror all conditions.
     """
-    from tradingagents.xgb_quant.config import FLAG_CONTINUATION_DEFAULTS
+    from tradingagents.quant_strats.config import FLAG_CONTINUATION_DEFAULTS
     p = {**FLAG_CONTINUATION_DEFAULTS, **(params or {})}
 
     close = df["close"].values.astype(float)
@@ -489,7 +489,7 @@ class FlagContinuationStrategy(BaseStrategy):
         path = np.sum(np.abs(np.diff(close[-lookback - 1:])))
         adx_proxy = (displacement / max(path, 1e-10)) * 50.0
 
-        from tradingagents.xgb_quant.config import FLAG_CONTINUATION_DEFAULTS
+        from tradingagents.quant_strats.config import FLAG_CONTINUATION_DEFAULTS
         threshold = FLAG_CONTINUATION_DEFAULTS.get("adx_threshold", 25)
 
         if adx_proxy >= threshold:
@@ -549,7 +549,7 @@ class FlagContinuationStrategy(BaseStrategy):
                 )
 
         # Adjust SL/TP using RR-based target
-        from tradingagents.xgb_quant.config import FLAG_CONTINUATION_DEFAULTS
+        from tradingagents.quant_strats.config import FLAG_CONTINUATION_DEFAULTS
         rr = FLAG_CONTINUATION_DEFAULTS.get("rr_target", 2.5)
         sl_distance = abs(signal.entry - signal.stop_loss)
         if signal.direction == "BUY":

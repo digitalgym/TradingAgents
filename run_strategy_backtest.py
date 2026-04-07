@@ -50,6 +50,12 @@ from tradingagents.quant_strats.strategies.volume_profile_strat import VolumePro
 from tradingagents.quant_strats.strategies.keltner_mean_reversion import KeltnerMeanReversionStrategy
 from tradingagents.quant_strats.strategies.copper_ema_pullback import CopperEMAPullbackStrategy
 from tradingagents.quant_strats.strategies.gold_platinum_ratio import GoldPlatinumRatioStrategy
+from tradingagents.quant_strats.strategies.smc_confluence_ml import SMCConfluenceMLStrategy
+from tradingagents.quant_strats.strategies.fvg_rebalance import FVGRebalanceStrategy
+from tradingagents.quant_strats.strategies.fvg_rebalance_ml import FVGRebalanceMLStrategy
+from tradingagents.quant_strats.strategies.fvg_rebalance_enhanced import FVGRebalanceEnhancedStrategy
+from tradingagents.quant_strats.strategies.smc_sweep_ml import SMCSweepMLStrategy
+from tradingagents.quant_strats.strategies.gold_silver_ratio import GoldSilverRatioStrategy
 
 logger = logging.getLogger("strategy_backtest")
 
@@ -62,6 +68,12 @@ STRATEGY_CLASSES = {
     "keltner_mean_reversion": KeltnerMeanReversionStrategy,
     "copper_ema_pullback": CopperEMAPullbackStrategy,
     "gold_platinum_ratio": GoldPlatinumRatioStrategy,
+    "smc_confluence_ml": SMCConfluenceMLStrategy,
+    "fvg_rebalance": FVGRebalanceStrategy,
+    "fvg_rebalance_ml": FVGRebalanceMLStrategy,
+    "fvg_rebalance_enhanced": FVGRebalanceEnhancedStrategy,
+    "smc_sweep_ml": SMCSweepMLStrategy,
+    "gold_silver_ratio": GoldSilverRatioStrategy,
 }
 
 

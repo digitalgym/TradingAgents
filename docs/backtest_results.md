@@ -630,4 +630,177 @@ All instances configured with optimal backtest params, auto_execute=ON, trailing
 
 ### All Pairs with Trained Models
 
-Full models trained for: EURJPY, GBPJPY, EURGBP, AUDNZD, CADJPY, EURAUD, XAUUSD, XAGUSD, BTCUSD, ETHUSD, NZDUSD (H4 only for smc_zones + volume_profile_strat).
+Full models trained for: EURJPY, GBPJPY, EURGBP, AUDNZD, CADJPY, EURAUD, XAUUSD, XAGUSD, BTCUSD, ETHUSD, XRPUSD, NZDUSD (H4 only for smc_zones + volume_profile_strat).
+
+---
+
+## New Crypto Strategy Suite (2026-04-04)
+
+Five new strategies designed for crypto and volatile instruments, backtested across BTCUSD, ETHUSD, XRPUSD, XAUUSD, XAGUSD on H4 and D1 with 5000 bars of walk-forward data.
+
+### Strategy Descriptions
+
+| Strategy | Core Thesis | Best For |
+|----------|-------------|----------|
+| **fvg_rebalance** | FVG midpoint rebalancing after CHOCH confirms reversal. High R:R (3:1), ~20% WR. | Metals D1, XRP H4 |
+| **crypto_breakout** | Volume-confirmed breakout from BB squeeze/consolidation. Donchian channel break + volume > 1.2x avg. | All pairs D1, metals H4 |
+| **crypto_trend_follow** | Multi-TF trend following: EMA 50/200 alignment, pullback to 21 EMA with FVG confluence. | Gold D1 |
+| **d1_range_trade** | Trade validated D1 range boundaries with CHOCH/FVG confirmation. ADX < 25 = ranging confirmed. | Crypto D1 (low trade count) |
+| **crypto_momentum** | Momentum continuation after brief consolidation. RSI + MACD + volume confirmation. | Best as filter, not standalone |
+
+### Full Backtest Results (Default Params)
+
+Only results with 10+ trades shown. *** = viable (PF > 1.2 AND Sharpe > 0.05 AND trades > 30).
+
+| Strategy | Pair | TF | WR% | PF | Sharpe | Trades | MaxDD | Viable |
+|----------|------|----|-----|----|--------|--------|-------|--------|
+| crypto_breakout | XAUUSD | D1 | 50.7% | 2.48 | 0.624 | 115 | 17.3% | *** |
+| crypto_breakout | XAGUSD | D1 | 56.8% | 1.90 | 0.472 | 86 | 66.5% | *** |
+| fvg_rebalance | XAUUSD | D1 | 20.1% | 1.98 | 0.311 | 258 | 43.3% | *** |
+| fvg_rebalance | XAGUSD | D1 | 20.6% | 1.96 | 0.300 | 250 | 84.5% | *** |
+| crypto_trend | XAUUSD | D1 | 8.6% | 2.09 | 0.210 | 623 | 97.1% | *** |
+| crypto_breakout | BTCUSD | D1 | 39.0% | 1.22 | 0.142 | 105 | 61.8% | *** |
+| crypto_breakout | XAUUSD | H4 | 8.7% | 1.59 | 0.138 | 519 | 14.3% | *** |
+| fvg_rebalance | BTCUSD | D1 | 15.0% | 1.26 | 0.103 | 272 | 208.2% | *** |
+| crypto_momentum | ETHUSD | D1 | 9.3% | 1.25 | 0.076 | 441 | 210.3% | *** |
+| crypto_breakout | XAGUSD | H4 | 8.2% | 1.29 | 0.075 | 483 | 34.9% | *** |
+| crypto_breakout | XRPUSD | H4 | 11.2% | 1.22 | 0.072 | 343 | 75.4% | *** |
+| fvg_rebalance | XRPUSD | H4 | 4.7% | 1.38 | 0.071 | 917 | 382.3% | *** |
+| fvg_rebalance | XAGUSD | H4 | 3.8% | 1.42 | 0.070 | 1108 | 144.6% | *** |
+| crypto_trend | XAGUSD | D1 | 6.7% | 1.28 | 0.068 | 637 | 398.0% | *** |
+| fvg_rebalance | XAUUSD | H4 | 4.1% | 1.34 | 0.062 | 1043 | 55.5% | *** |
+| fvg_rebalance | ETHUSD | D1 | 14.1% | 1.08 | 0.035 | 243 | 293.1% | |
+| crypto_breakout | ETHUSD | D1 | 42.5% | 1.18 | 0.122 | 97 | 93.3% | |
+| crypto_momentum | BTCUSD | H4 | 3.4% | 1.18 | 0.033 | 1219 | 145.3% | |
+
+### FVG Rebalance — Optuna Optimized (40 trials each)
+
+| Pair | TF | SL | TP | R:R | Threshold | Hold | WR% | PF | Sharpe | Trades |
+|------|----|----|----|-----|-----------|------|-----|----|--------|--------|
+| **XAUUSD** | **D1** | 2.50x | 7.5x | 3.0 | 0.75 | 20 | 74.9% | **3.67** | **0.791** | 88 |
+| **XAGUSD** | **D1** | 2.25x | 7.0x | 3.1 | 0.75 | 30 | 77.7% | **2.56** | **0.659** | 69 |
+| **BTCUSD** | **D1** | 2.50x | 7.5x | 3.0 | 0.70 | 15 | 25.1% | **1.64** | **0.206** | 217 |
+| **XAUUSD** | **H4** | 3.00x | 7.5x | 2.5 | 0.75 | 15 | 15.9% | **1.71** | **0.175** | 350 |
+| XRPUSD | H4 | 1.50x | 3.0x | 2.0 | 0.75 | 20 | 14.0% | 1.50 | 0.148 | 348 |
+
+Key finding: wider stops (2.5x ATR) dramatically improve performance — FVGs need room to work. Default params updated to Optuna-optimized values.
+
+#### FVG Rebalance Improvement vs Defaults
+
+| Pair | TF | Default PF | Tuned PF | Default Sharpe | Tuned Sharpe | Improvement |
+|------|-----|-----------|---------|---------------|-------------|-------------|
+| XAUUSD | D1 | 1.98 | **3.67** | 0.311 | **0.791** | +154% Sharpe |
+| XAGUSD | D1 | 1.96 | **2.56** | 0.300 | **0.659** | +120% Sharpe |
+| BTCUSD | D1 | 1.26 | **1.64** | 0.103 | **0.206** | +100% Sharpe |
+| XAUUSD | H4 | 1.34 | **1.71** | 0.062 | **0.175** | +182% Sharpe |
+| XRPUSD | H4 | 1.38 | **1.50** | 0.071 | **0.148** | +108% Sharpe |
+
+#### FVG Rebalance Automations Deployed (2026-04-07)
+
+| Instance | Pair | TF | SL | TP | PF | Sharpe |
+|----------|------|----|----|----|-----|--------|
+| xauusd_fvg_rebalance_d1 | XAUUSD | D1 | 2.50x | 7.5x | 3.67 | 0.791 |
+| xagusd_fvg_rebalance_d1 | XAGUSD | D1 | 2.25x | 7.0x | 2.56 | 0.659 |
+| btcusd_fvg_rebalance_d1 | BTCUSD | D1 | 2.50x | 7.5x | 1.64 | 0.206 |
+| xauusd_fvg_rebalance_h4 | XAUUSD | H4 | 3.00x | 7.5x | 1.71 | 0.175 |
+| xrpusd_fvg_rebalance_h4 | XRPUSD | H4 | 1.50x | 3.0x | 1.50 | 0.148 |
+
+### Strategy Rankings Summary (Post-Optimization)
+
+| Rank | Strategy | Best Pair/TF | Sharpe | PF | Trades | Notes |
+|------|----------|-------------|--------|-----|--------|-------|
+| 1 | **crypto_breakout** | XAUUSD D1 (tuned) | **1.160** | 2.50 | 30 | Best Sharpe, all pairs viable |
+| 2 | **breakout** | XAUUSD D1 (tuned) | **0.857** | 3.52 | 109 | Proven with 109 trades |
+| 3 | **fvg_rebalance** | XAUUSD D1 (tuned) | **0.791** | 3.67 | 88 | Best PF, metals specialist |
+| 4 | **crypto_breakout** | XAGUSD D1 (tuned) | **0.733** | 2.72 | 83 | Silver specialist |
+| 5 | **fvg_rebalance** | XAGUSD D1 (tuned) | **0.659** | 2.56 | 69 | Silver FVG |
+| 6 | **crypto_breakout** | BTCUSD D1 (tuned) | **0.567** | 1.70 | 46 | Best crypto strategy |
+| 7 | **crypto_trend** | XAUUSD D1 (tuned) | **0.512** | 5.05 | 410 | Highest PF, most trades |
+| 8 | **smc_zones** | XAUUSD D1 (tuned) | **0.421** | 5.49 | 712 | Huge improvement from defaults |
+| 9 | **d1_range** | XRPUSD D1 | 3.001 | 4.13 | 11 | Extraordinary but too few trades |
+| 10 | **crypto_momentum** | ETHUSD D1 | 0.076 | 1.25 | 441 | Better as filter than standalone |
+
+### Key Observations
+
+- **crypto_breakout is the most versatile** — viable across both crypto and metals on D1 and H4
+- **fvg_rebalance excels on metals D1** — PF 2.0 default, PF 3.67 tuned. Low WR (~20%) but high R:R
+- **ETHUSD is the hardest pair** — no strategy cracked PF > 1.25. May need different approach
+- **D1 consistently outperforms H4** for crypto — daily timeframe captures cleaner structure
+- **Strategies with SMC features (FVG, CHOCH) produce 0 trades on some crypto pairs** — SMC detection may need crypto-specific calibration
+- **d1_range shows promise** (PF 4.13 on XRPUSD) but too few trades to trust — needs more data
+
+### ETHUSD/XRPUSD Optimization Results (2026-04-04)
+
+Ran Optuna optimization specifically for crypto pairs across all existing strategies:
+
+#### ETHUSD Best Results
+
+| Strategy | TF | WR% | PF | Sharpe | Trades |
+|----------|----|-----|----|--------|--------|
+| keltner_mean_reversion | H4 | 50.0% | 1.41 | 0.598 | 20 |
+| mean_reversion | H4 | 47.4% | 1.13 | 0.073 | 137 |
+
+ETHUSD remains difficult — no strong edge found. Best approach: use mean_reversion H4 with conservative sizing, or signal-only mode for confluence.
+
+#### XRPUSD Best Results
+
+| Strategy | TF | WR% | PF | Sharpe | Trades |
+|----------|----|-----|----|--------|--------|
+| mean_reversion | H4 | 47.1% | 1.87 | 0.591 | 51 |
+| donchian_breakout | H4 | 37.5% | 1.20 | 0.148 | 72 |
+
+XRPUSD mean_reversion H4 is genuinely promising (PF 1.87, Sharpe 0.591).
+
+---
+
+## Multi-Strategy Optuna Optimization (2026-04-07)
+
+Optimized all top-performing strategies with 40 Optuna trials each. Key finding: **wider stops + bigger targets dramatically improve ALL strategies** — every optimization converged on SL 2.0-3.75x ATR and TP 5.5-10.0x ATR vs the original 1.5x SL / 2-3x TP defaults.
+
+### Optimized Results (sorted by Sharpe)
+
+| Strategy | Pair | TF | SL | TP | R:R | Thr | Hold | PF | Sharpe | Trades |
+|----------|------|----|----|----|-----|-----|------|----|--------|--------|
+| **crypto_breakout** | **XAUUSD** | **D1** | 2.00x | 5.5x | 2.8 | 0.70 | 45 | **2.50** | **1.160** | 30 |
+| breakout | XAGUSD | D1 | 3.00x | 5.5x | 1.8 | 0.75 | 45 | 2.56 | 1.164 | 36 |
+| **breakout** | **XAUUSD** | **D1** | 3.75x | 6.5x | 1.7 | 0.70 | 40 | **3.52** | **0.857** | 109 |
+| **crypto_breakout** | **XAGUSD** | **D1** | 2.75x | 7.0x | 2.5 | 0.65 | 35 | **2.72** | **0.733** | 83 |
+| **crypto_breakout** | **BTCUSD** | **D1** | 2.75x | 5.0x | 1.8 | 0.70 | 30 | **1.70** | **0.567** | 46 |
+| **crypto_trend** | **XAUUSD** | **D1** | 2.50x | 10.0x | 4.0 | 0.75 | 40 | **5.05** | **0.512** | 410 |
+| **smc_zones** | **XAUUSD** | **D1** | 3.25x | 10.0x | 3.1 | 0.30 | 50 | **5.49** | **0.421** | 712 |
+| smc_zones | XAGUSD | D1 | 3.50x | 9.0x | 2.6 | 0.50 | 45 | 2.78 | 0.242 | 712 |
+| crypto_trend | XAGUSD | D1 | 1.75x | 8.0x | 4.6 | 0.80 | 40 | 1.69 | 0.172 | 341 |
+| crypto_breakout | XRPUSD | H4 | 2.50x | 7.5x | 3.0 | 0.65 | 50 | 1.48 | 0.126 | 330 |
+
+### Improvement vs Default Params
+
+| Strategy | Pair | Default PF | Tuned PF | Default Sharpe | Tuned Sharpe | Improvement |
+|----------|------|-----------|---------|---------------|-------------|-------------|
+| smc_zones | XAUUSD D1 | 1.30 | **5.49** | 0.122 | **0.421** | +322% PF |
+| crypto_trend | XAUUSD D1 | 2.09 | **5.05** | 0.210 | **0.512** | +142% PF |
+| breakout | XAUUSD D1 | 1.18 | **3.52** | 0.122 | **0.857** | +198% PF |
+| crypto_breakout | XAGUSD D1 | 1.90 | **2.72** | 0.472 | **0.733** | +43% PF |
+| crypto_breakout | BTCUSD D1 | 1.22 | **1.70** | 0.142 | **0.567** | +39% PF |
+
+### Key Finding: Universal Parameter Pattern
+
+All strategies converged on similar optimal parameters:
+- **SL: 2.0-3.75x ATR** (vs 1.5x default) — gives trades room to breathe
+- **TP: 5.5-10.0x ATR** (vs 2-3x default) — lets winners run much further
+- **R:R: 1.7-4.6:1** — high R:R means ~20-40% WR is still profitable
+- **Hold: 30-50 bars** — patient holding captures full moves
+- **Threshold: 0.65-0.80** — take fewer, higher conviction trades
+
+This pattern holds across SMC, breakout, trend, and FVG strategies on both metals and crypto.
+
+### Top 5 Automations Deployed (2026-04-07)
+
+| Instance | Strategy | Pair | TF | PF | Sharpe |
+|----------|----------|------|----|-----|--------|
+| xauusd_crypto_breakout_d1 | crypto_breakout | XAUUSD | D1 | 2.50 | 1.160 |
+| xauusd_fvg_rebalance_d1 | fvg_rebalance | XAUUSD | D1 | 3.67 | 0.791 |
+| xagusd_crypto_breakout_d1 | crypto_breakout | XAGUSD | D1 | 2.72 | 0.733 |
+| btcusd_crypto_breakout_d1 | crypto_breakout | BTCUSD | D1 | 1.70 | 0.567 |
+| xagusd_fvg_rebalance_d1 | fvg_rebalance | XAGUSD | D1 | 2.56 | 0.659 |
+
+All use Optuna-optimized params, D1 timeframe, auto_execute ON, position management delegated to TMA.

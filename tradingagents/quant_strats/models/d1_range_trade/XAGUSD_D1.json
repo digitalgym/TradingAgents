@@ -1,0 +1,9 @@
+{
+  "strategy": "d1_range_trade",
+  "risk": {
+    "sl_atr_mult": 1.5,
+    "tp_atr_mult": 5.0,
+    "signal_threshold": 0.5,
+    "max_hold_bars": 40
+  }
+}

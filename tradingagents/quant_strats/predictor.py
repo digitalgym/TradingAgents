@@ -36,6 +36,9 @@ def _ensure_registry():
     from tradingagents.quant_strats.strategies.gold_platinum_ratio import GoldPlatinumRatioStrategy
     from tradingagents.quant_strats.strategies.donchian_breakout import DonchianBreakoutStrategy
     from tradingagents.quant_strats.strategies.flag_continuation import FlagContinuationStrategy
+    from tradingagents.quant_strats.strategies.smc_confluence_ml import SMCConfluenceMLStrategy
+    from tradingagents.quant_strats.strategies.smc_sweep_ml import SMCSweepMLStrategy
+    from tradingagents.quant_strats.strategies.gold_silver_ratio import GoldSilverRatioStrategy
 
     STRATEGY_CLASSES.update({
         "trend_following": TrendFollowingStrategy,
@@ -48,6 +51,9 @@ def _ensure_registry():
         "gold_platinum_ratio": GoldPlatinumRatioStrategy,
         "donchian_breakout": DonchianBreakoutStrategy,
         "flag_continuation": FlagContinuationStrategy,
+        "smc_confluence_ml": SMCConfluenceMLStrategy,
+        "smc_sweep_ml": SMCSweepMLStrategy,
+        "gold_silver_ratio": GoldSilverRatioStrategy,
     })
 
 

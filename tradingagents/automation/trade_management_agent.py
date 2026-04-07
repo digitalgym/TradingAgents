@@ -143,7 +143,7 @@ class TradeManagementConfig:
 
     # Opposing position conflict resolution
     enable_opposing_check: bool = True
-    auto_resolve_opposing: bool = False  # When True, auto-close the weaker position
+    auto_resolve_opposing: bool = True  # Auto-close the weaker opposing position
     opposing_score_threshold: float = 20.0  # Minimum score difference to recommend closure
 
     # Remote control

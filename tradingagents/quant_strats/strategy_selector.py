@@ -60,7 +60,7 @@ class StrategySelector:
         strategy_names = list(REGIME_SUITABILITY.keys())
 
         # Respect per-strategy exclusion lists
-        from tradingagents.xgb_quant.strategies.mean_reversion import MR_EXCLUDED_PAIRS
+        from tradingagents.quant_strats.strategies.mean_reversion import MR_EXCLUDED_PAIRS
         excluded_map = {
             "mean_reversion": MR_EXCLUDED_PAIRS,
         }

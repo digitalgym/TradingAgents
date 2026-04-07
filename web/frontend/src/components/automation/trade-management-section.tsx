@@ -138,8 +138,15 @@ export function TradeManagementSection() {
     switch (type) {
       case "trailing_stop": return <Target className="h-3.5 w-3.5 text-yellow-500" />
       case "breakeven": return <Shield className="h-3.5 w-3.5 text-green-500" />
+      case "scalp_breakeven": return <Shield className="h-3.5 w-3.5 text-cyan-500" />
       case "partial_close": return <TrendingUp className="h-3.5 w-3.5 text-blue-500" />
+      case "partial_tp": return <TrendingUp className="h-3.5 w-3.5 text-blue-500" />
       case "time_flag": return <Clock className="h-3.5 w-3.5 text-orange-500" />
+      case "scalp_tp": return <CheckCircle className="h-3.5 w-3.5 text-cyan-500" />
+      case "scalp_time_close": return <Clock className="h-3.5 w-3.5 text-cyan-500" />
+      case "opposing_analysis": return <AlertTriangle className="h-3.5 w-3.5 text-purple-500" />
+      case "close_hedge": return <XCircle className="h-3.5 w-3.5 text-purple-500" />
+      case "assumption_review": return <Eye className="h-3.5 w-3.5 text-indigo-500" />
       default: return <Activity className="h-3.5 w-3.5 text-muted-foreground" />
     }
   }
@@ -504,6 +511,43 @@ export function TradeManagementSection() {
                     onCheckedChange={(v) => updateLocal("enable_time_limit", v)}
                   />
                 </div>
+
+                <div className="flex items-center justify-between rounded-lg border p-3">
+                  <div className="flex items-center gap-2">
+                    <Target className="h-4 w-4 text-cyan-500" />
+                    <Label className="text-sm">Scalp Mode</Label>
+                    <HelpTooltip content="Volume Profile trades get scalp management: quick TP at 1.5x ATR, breakeven at 0.5x ATR, 6h max hold time. VP bounces are short-lived — this captures the initial move and exits before reversal." />
+                  </div>
+                  <Switch
+                    checked={localConfig.enable_scalp_mode ?? true}
+                    onCheckedChange={(v) => updateLocal("enable_scalp_mode", v)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between rounded-lg border p-3">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-purple-500" />
+                    <Label className="text-sm">Opposing Position Check</Label>
+                    <HelpTooltip content="Detects opposing positions on the same symbol (BUY + SELL). Scores each on momentum, age, profit, and regime alignment. Recommends closing the weaker one to eliminate hedge drag." />
+                  </div>
+                  <Switch
+                    checked={localConfig.enable_opposing_check ?? true}
+                    onCheckedChange={(v) => updateLocal("enable_opposing_check", v)}
+                  />
+                </div>
+
+                {(localConfig.enable_opposing_check ?? true) && (
+                  <div className="flex items-center justify-between rounded-lg border p-3 ml-4">
+                    <div className="flex items-center gap-2">
+                      <Label className="text-sm">Auto-Close Weaker</Label>
+                      <HelpTooltip content="When enabled, automatically closes the weaker opposing position instead of just logging a recommendation. The close rationale is captured in the decision record for learning." />
+                    </div>
+                    <Switch
+                      checked={localConfig.auto_resolve_opposing ?? true}
+                      onCheckedChange={(v) => updateLocal("auto_resolve_opposing", v)}
+                    />
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between rounded-lg border p-3">
                   <div className="flex items-center gap-2">
